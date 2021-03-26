@@ -1,0 +1,3 @@
+[submodule ".\\packages\\firelamp"]
+	path = .\\packages\\firelamp
+	url = https://github.com/thruthesky/firelamp
