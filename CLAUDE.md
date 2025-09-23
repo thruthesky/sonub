@@ -14,4 +14,8 @@ Sonub (sonub.com) Website Development Guidelines and Rules
   - [ ] Both Dark Mode and Light Mode must be supported, with Dark Mode taking priority during development.
   - [ ] Do not use custom colors, color HEX codes, or color word codes. Always use Bootstrap's default colors or Bootstrap's default color variables to support both Dark Mode and Light Mode.
 - [ ] Develop using jQuery.
+  - jQuery is already installed and loaded as deferred in the head section.
+  - Use jQuery directly without installing or importing it.
 - [ ] Develop using Alpine.js.
+  - Alpine.js is located at `/js/alpinejs-3.15.0.min.js` and already loaded in head as deferred.
+  - Use Alpine.js directly without installing or importing it.
