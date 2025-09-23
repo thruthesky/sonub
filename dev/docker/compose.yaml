@@ -1,0 +1,64 @@
+### sonub docker-compose file
+# sonub project root directory is ~/apps/sonub
+# php source code is in ~/apps/sonub
+# mount ~/apps/sonub to /sonub in the nginx container
+# mount ~/apps/sonub to /sonub in the php container
+# nginx log files are in ~/apps/sonub/var/log/nginx
+# php log files are in ~/apps/sonub/var/logs/php
+
+
+
+services:
+  # Sonub web server
+  nginx:
+    container_name: sonub-nginx
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - .:/docker
+      - ~/apps/sonub:/sonub
+      - ./etc/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./var/log/nginx:/var/log/nginx
+    command: [nginx-debug, "-g", "daemon off;"]
+    depends_on:
+      - php
+    networks:
+      - sonub-network
+
+  php:
+    container_name: sonub-php
+    build:
+      context: .
+      dockerfile: php.dockerfile
+    volumes:
+      - .:/docker
+      # Sonub source code
+      - ~/apps/sonub:/sonub
+      - ./etc/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+      - ./var/logs/php:/var/logs/php
+    networks:
+      - sonub-network
+
+  # mariadb:
+  #   container_name: mariadb
+  #   # 11.7.2 is the same version of the philgo db server
+  #   image: mariadb:11.7.2
+  #   ports:
+  #     - "3306:3306"
+  #   environment:
+  #     MYSQL_DATABASE: philgo
+  #     MYSQL_USER: philgo
+  #     MYSQL_PASSWORD: asdf
+  #     MYSQL_ROOT_PASSWORD: asdf
+  #   volumes:
+  #     - .:/docker
+  #     # New PhilGo api source code
+  #     - ../www:/www
+  #     - ./var/lib/mysql:/var/lib/mysql
+  #     - ./etc/mysql/mariadb.conf.d/50-server.cnf:/etc/mysql/mariadb.conf.d/50-server.cnf
+
+networks:
+  sonub-network:
+    driver: bridge

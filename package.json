@@ -1,0 +1,33 @@
+{
+  "name": "www",
+  "version": "1.0.0",
+  "description": "- Old README files is at ./backup/README.md",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib",
+    "test": "tests"
+  },
+  "scripts": {
+    "test:e2e:local": "npx playwright test",
+    "dev": "node ./etc/php-hot-reload.js",
+    "dev:browser-sync-conf": "browser-sync start --config ./etc/browser-sync/browser-sync-config.js",
+    "dev:hmr": "npm run dev:browser-sync-conf",
+    "host": "browser-sync start --config ./etc/browser-sync/browser-sync-config.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@types/node": "^24.3.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "browser-sync": "^3.0.4",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "chokidar": "^4.0.3",
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1"
+  }
+}

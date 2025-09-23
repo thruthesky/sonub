@@ -1,0 +1,217 @@
+{ // Link Patterns 규칙
+    "patternlinks.rules": [
+        {
+            // <?php include widget('admin/user/list'); ?>
+            "linkPattern": "widget\\(['\"]([^'\"\\)]+)",
+            "linkTarget": "/Users/thruthesky/apps/sonub/widgets/$1.php",
+            "languages": [
+                "php"
+            ] // (선택) PHP 파일에서만 활성화
+        },
+        {
+            // <?php include module('admin/user/list'); ?>
+            "linkPattern": "module\\(['\"]([^'\"\\)]+)",
+            "linkTarget": "/Users/thruthesky/apps/sonub/modules/$1.php",
+            "languages": [
+                "php"
+            ]
+        },
+        {
+            // etc_folder()
+            "linkPattern": "etc_folder\\(['\"]([^'\"\\)]+)",
+            "linkTarget": "/Users/thruthesky/apps/sonub/etc/$1.php",
+            "languages": [
+                "php"
+            ]
+        },
+        {
+            // <?php _js('app'); ?>
+            "linkPattern": "_js\\(['\"]([^'\"\\)]+)",
+            "linkTarget": "/Users/thruthesky/apps/sonub/js/$1.js",
+            "languages": [
+                "php"
+            ] // (선택) PHP 파일에서만 활성화
+        },
+        {
+            // <?php _css('app'); ?>
+            "linkPattern": "_css\\(['\"]([^'\"\\)]+)",
+            "linkTarget": "/Users/thruthesky/apps/sonub/css/$1.css",
+            "languages": [
+                "php"
+            ] // (선택) PHP 파일에서만 활성화
+        },
+        { // functions(.*)
+            "linkPattern": "functions\\(['\"]([^'\"\\)]+)",
+            "linkTarget": "/Users/thruthesky/apps/sonub/lib/$1.php",
+            "languages": [
+                "php"
+            ]
+        },
+        {
+            // <?php _css('/app'); ?>
+            "linkPattern": "_css\\(['\"]\/([^'\"\\)]+)",
+            "linkTarget": "/Users/thruthesky/apps/sonub/$1",
+            "languages": [
+                "php"
+            ] // (선택) PHP 파일에서만 활성화
+        },
+        {
+            // /lib/(*.php) 를 포함하는 링크
+            "linkPattern": "\/lib\/([^'\"\\)]+)",
+            "linkTarget": "/Users/thruthesky/apps/sonub/lib/$1",
+            "languages": [
+                "php"
+            ]
+        },
+        {
+            // /etc/(*.php) 를 포함하는 링크
+            "linkPattern": "\/etc\/([^'\"\\)]+)",
+            "linkTarget": "/Users/thruthesky/apps/sonub/etc/$1",
+            "languages": [
+                "php"
+            ]
+        },
+        {
+            // /widgets/(*.php) 를 포함하는 링크
+            "linkPattern": "\/widgets\/([^'\"\\)]+)",
+            "linkTarget": "/Users/thruthesky/apps/sonub/widgets/$1",
+            "languages": [
+                "php"
+            ]
+        },
+        {
+            // /boot.php 를 포함하는 링크
+            "linkPattern": "\/boot\\.php",
+            "linkTarget": "/Users/thruthesky/apps/sonub/boot.php",
+            "languages": [
+                "php"
+            ]
+        },
+        {
+            // /page.header.php 를 포함하는 링크
+            "linkPattern": "\/page\\.header\\.php",
+            "linkTarget": "/Users/thruthesky/apps/sonub/page.header.php",
+            "languages": [
+                "php"
+            ]
+        },
+        {
+            // /page.footer.php 를 포함하는 링크
+            "linkPattern": "\/page\\.footer\\.php",
+            "linkTarget": "/Users/thruthesky/apps/sonub/page.footer.php",
+            "languages": [
+                "php"
+            ]
+        },
+        {
+            // /page/* 를 포함하는 링크
+            "linkPattern": "\/page\\/([^'\"\\)]+)",
+            "linkTarget": "/Users/thruthesky/apps/sonub/page/$1",
+            "languages": [
+                "php"
+            ]
+        },
+        {
+            // /admin-menu.php 를 포함하는 링크
+            "linkPattern": "\/admin-menu\\.php",
+            "linkTarget": "/Users/thruthesky/apps/sonub/page/admin/admin-menu.php",
+            "languages": [
+                "php"
+            ]
+        },
+        {
+            // app.js 함수 연결 philgo_api 텍스트
+            "linkPattern": "philgo_api|getFormData|get_form_data|get_id_token|update_my_profile|update_my_company|save_fcm_token|update_fcm_token|get_fcm_token|show_toast|close_toast|show_dialog|close_dialog|get_posts|get_comments|href_post_view",
+            "linkTarget": "/Users/thruthesky/apps/sonub/js/app.js",
+            "languages": [
+                "php",
+                "javascript"
+            ]
+        },
+        {
+            // ready 텍스트
+            "linkPattern": "ready",
+            "linkTarget": "/Users/thruthesky/apps/sonub/etc/default-head-javascript.php",
+            "languages": [
+                "php",
+                "javascript"
+            ]
+        },
+        {
+            // initFileUpload 텍스트
+            "linkPattern": "initFileUpload|handleFileChange|handleDelete",
+            "linkTarget": "/Users/thruthesky/apps/sonub/widgets/file/upload/upload-v2.php",
+            "languages": [
+                "php",
+                "javascript"
+            ]
+        },
+        {
+            // docs/www/*.md
+            "linkPattern": "(docs\/www\/[^'\"\\)]+\\.md)",
+            "linkTarget": "/Users/thruthesky/apps/sonub/$1",
+            "languages": [
+                "php",
+                "javascript"
+            ]
+        },
+        {
+            // /family-site-header.php 를 포함하는 링크
+            "linkPattern": "\/family-site-header\\.php",
+            "linkTarget": "/Users/thruthesky/apps/sonub/family-site/family-site-header.php",
+            "languages": [
+                "php"
+            ]
+        },
+        {
+            // /family-site-footer.php 를 포함하는 링크
+            "linkPattern": "\/family-site-footer\\.php",
+            "linkTarget": "/Users/thruthesky/apps/sonub/family-site/family-site-footer.php",
+            "languages": [
+                "php"
+            ]
+        },
+        {
+            // 
+            "linkPattern": "t\\(\\)\\-\\>([^'\"\\ )]+)",
+            "linkTarget": "/Users/thruthesky/apps/sonub/etc/translations/texts.php",
+            "languages": [
+                "php"
+            ]
+        },
+        // {
+        //   // 기본 __DIR__ 링크: __DIR__ "*.php";
+        //   "linkPattern": "__DIR__ . ['\"]([^'\"\\)]+)",
+        //   "linkTarget": "./$1",
+        //   "languages": [
+        //     "php"
+        //   ]
+        // }
+        {
+            // initFileUpload 텍스트
+            "linkPattern": "initBannerComponent|showBannerCreateForm|showBannerUpdateForm",
+            "linkTarget": "/Users/thruthesky/apps/sonub/js/alpine-components/banner.component.js",
+            "languages": [
+                "php",
+                "javascript"
+            ]
+        },
+        {
+            // /lib/(*.php) 를 포함하는 링크
+            "linkPattern": "load_alpine_component\\(['\"]([^'\"\\)]+)",
+            "linkTarget": "/Users/thruthesky/apps/sonub/js/alpine-components/$1.component.js",
+            "languages": [
+                "php"
+            ]
+        },
+        {
+            // initFileUpload 텍스트
+            "linkPattern": "InfiniteScroll",
+            "linkTarget": "/Users/thruthesky/apps/sonub/js/infinite-scroll.js",
+            "languages": [
+                "php",
+                "javascript"
+            ]
+        },
+    ]
+}

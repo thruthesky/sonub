@@ -22,56 +22,66 @@ Sonub Coding Guideline
 
 ## Development System Startup
 
-### Using macOS Container
-The Sonub development environment uses macOS Container (Apple's native container runtime) to run Nginx and PHP-FPM services.
+### Using Docker Compose
+Sonub 개발 환경은 Docker Compose를 통해 Nginx와 PHP-FPM 서비스를 실행합니다.
 
 #### Prerequisites
-- macOS 26 (Tahoe) or later
-- macOS Container installed (`container` command available)
-- Project located at `~/apps/sonub/`
+- Docker 및 Docker Compose 설치 필요
+- 프로젝트 위치: `~/apps/sonub/`
 
 #### Quick Start Commands
 ```bash
-# Navigate to container directory
-cd ~/apps/sonub/dev/container
+# Docker 디렉토리로 이동
+cd ~/apps/sonub/dev/docker
 
-# Start the system (Nginx + PHP-FPM)
-./sonub.sh start
+# 시스템 시작 (Nginx + PHP-FPM)
+docker compose up -d
 
-# Check status
-./sonub.sh status
+# 컨테이너 상태 확인
+docker compose ps
 
-# View logs
-./sonub.sh logs
+# 로그 보기
+docker compose logs -f
 
-# Stop the system
-./sonub.sh stop
+# 시스템 중지
+docker compose down
 
-# Restart the system
-./sonub.sh restart
+# 시스템 재시작
+docker compose restart
 
-# Reload Nginx configuration
-./sonub.sh reload
-
-# Open browser to view the site
-./sonub.sh open
+# orphan 컨테이너 제거와 함께 시작
+docker compose up -d --remove-orphans
 ```
 
 #### Default Configuration
-- **Web Root**: `/Users/thruthesky/apps/sonub`
-- **HTTP Port**: 127.0.0.1:12345
-- **PHP Version**: 8.3-fpm-alpine
+- **Web Root**: `~/apps/sonub`
+- **HTTP Port**: 127.0.0.1:8080
+- **HTTPS Port**: 127.0.0.1:8443
+- **PHP Version**: 8.3-fpm (custom build)
 - **Nginx Version**: alpine (latest)
-- **Network**: webnet (192.168.65.x subnet)
+- **Network**: sonub-network (bridge)
+
+#### Directory Structure
+```
+dev/docker/
+├── compose.yaml         # Docker Compose 설정 파일
+├── php.dockerfile       # PHP-FPM 커스텀 이미지
+├── etc/
+│   ├── nginx/
+│   │   └── nginx.conf  # Nginx 메인 설정
+│   └── php.ini         # PHP 설정
+└── var/
+    ├── log/nginx/      # Nginx 로그
+    └── logs/php/       # PHP 로그
+```
 
 #### Key Features
-- Automatic PHP-FPM IP detection and configuration
-- Directory-based volume mounting (macOS Container requirement)
-- Automatic Nginx configuration updates
-- Health checks and status monitoring
+- Docker Compose를 통한 간편한 서비스 관리
+- Nginx와 PHP-FPM 자동 연동
+- 볼륨 마운트를 통한 실시간 코드 반영
+- 로그 파일 외부 저장
 
 #### Troubleshooting
-- If PHP-FPM IP changes, the script automatically updates Nginx configuration
-- Check logs with `./sonub.sh logs` for debugging
-- Ensure containers are on the same network (`webnet`)
-- PHP-FPM typically runs at 192.168.65.x:9000
+- 포트 충돌 시 compose.yaml에서 포트 번호 변경
+- `docker compose logs` 명령으로 오류 확인
+- ERR_UNSAFE_PORT 에러 발생 시 다른 포트 사용 (예: 8080)

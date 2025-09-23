@@ -19,6 +19,7 @@ include ROOT_DIR . '/etc/boot/boot.functions.php';
     <script defer src="/js/alpinejs-3.15.0.min.js"></script>
     <script defer src="/js/jquery-4.0.0-rc.1.min.js"></script>
     <script defer src="/js/app.js"></script>
+    <?php include etc_folder('hot-reload') ?>
 </head>
 
 <body>
@@ -29,7 +30,7 @@ include ROOT_DIR . '/etc/boot/boot.functions.php';
 
 
 
-    <?php include __DIR__ . '/etc/firebase/setup.php'; ?>
+    <?php include etc_folder('firebase/firebase-setup') ?>
 </body>
 
 </html>

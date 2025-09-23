@@ -5,7 +5,7 @@
 
 <script>
     // Your web app's Firebase configuration
-    <?php include etc('config/firebase-web-config'); ?>
+    <?php include etc_folder('config/firebase-web-config'); ?>
     const firebaseConfig = <?php echo json_encode(firebaseConfig); ?>;
 
     // Initialize Firebase
