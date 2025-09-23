@@ -23,6 +23,7 @@ function etc_folder(string $path): string
  * - Returns false if HTTP_HOST is not defined.
  *
  * @return bool true if the system wherein the PHP script is running is on localhost.
+ * 
  */
 function is_localhost(): bool
 {
