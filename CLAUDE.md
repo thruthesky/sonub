@@ -6,6 +6,12 @@ Sonub (sonub.com) Website Development Guidelines and Rules
 
 
 # Standard Workflow
+- [ ] **MANDATORY DOCUMENTATION REVIEW**: When a developer requests any development work, the AI MUST:
+  - [ ] **IMMEDIATELY search and identify relevant documentation in docs/**/*.md**
+  - [ ] **PRESENT the list of relevant documentation files to the developer BEFORE starting any work**
+  - [ ] **READ and ANALYZE these documents to understand existing patterns, conventions, and requirements**
+  - [ ] **REFERENCE these documents while developing to ensure consistency**
+  - [ ] The AI is STRICTLY PROHIBITED from starting development without first reviewing and presenting relevant documentation
 - [ ] Issue Creation: Before starting any work, create an issue that follows git commit message conventions.
 - [ ] All documentation content and source code comments must be written in English.
   - [ ] Comments in PHP, JavaScript, CSS, and all other source code must be written in English.

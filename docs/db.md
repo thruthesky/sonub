@@ -347,6 +347,7 @@ The `Entity` class (`/lib/db/entity.php`) provides the foundation for all entity
 
 #### Key Features
 - Automatic handling of `id`, `created_at`, and `updated_at` fields
+- **IMPORTANT**: All timestamp fields (`created_at`, `updated_at`, etc.) use Unix timestamps (integer values)
 - CRUD operations: `get()`, `create()`, `update()`, `delete()`
 - Data storage in `$data` array with magic getters/setters
 - Find methods for querying records
@@ -406,14 +407,14 @@ class Product extends Entity {
 ```php
 // Create with validation
 $user = User::create([
-    'display_name' => 'John Doe',
-    'email' => 'john@example.com',
-    'password' => 'secure_password' // Will be hashed automatically
+    'firebase_uid' => 'firebase_uid_abc123',
+    'phone_number' => '+1234567890',
+    'display_name' => 'John Doe'
 ]);
 
 // Access created entity data
 echo $user->getValue('id');           // Auto-generated ID
-echo $user->getValue('created_at');   // Timestamp
+echo $user->getValue('created_at');   // Unix timestamp (e.g., 1735030800)
 ```
 
 #### Read
@@ -462,22 +463,24 @@ User::destroy($id);
 The `User` class (`/lib/db/user.php`) extends Entity with user-specific functionality:
 
 ```php
-// Create user
+// Create user with Firebase Phone Authentication
 $user = User::create([
-    'display_name' => 'John Doe',
-    'email' => 'john@example.com',
-    'password' => 'password123' // Automatically hashed
+    'firebase_uid' => 'firebase_uid_123',
+    'phone_number' => '+1234567890',
+    'display_name' => 'John Doe' // Optional, will use masked phone if not provided
 ]);
 
 // Find users
-$user = User::findByEmail('john@example.com');
+$user = User::findByFirebaseUid('firebase_uid_123');
+$user = User::findByPhoneNumber('+1234567890');
 $user = User::findByDisplayName('John Doe');
 
-// Password management
-$user->setPassword('new_password');
-if ($user->verifyPassword('password123')) {
-    echo "Password is correct";
-}
+// Create or get user (useful for Firebase authentication flow)
+$user = User::createOrGetByFirebaseUid(
+    'firebase_uid_123',
+    '+1234567890',
+    ['display_name' => 'John Doe'] // Optional additional data
+);
 
 // Status management
 if ($user->isActive()) {

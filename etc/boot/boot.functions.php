@@ -1,6 +1,15 @@
 <?php
 
+if (!defined('ROOT_DIR')) {
+    define('ROOT_DIR', realpath(__DIR__ . '/../../'));
+}
 
+/**
+ * Returns the full path of a file in the etc folder.
+ *
+ * @param string $path The relative path within the etc folder, without the .php extension.
+ * @return string The full path to the specified file.
+ */
 function etc_folder(string $path): string
 {
     return ROOT_DIR . '/etc/' . $path . '.php';
@@ -37,9 +46,34 @@ function is_localhost(): bool
     return false;
 }
 
+/**
+ * Checks if running in MacOS.
+ * @return bool
+ */
+function is_mac_os(): bool
+{
+    return str_starts_with(PHP_OS_FAMILY, 'Darwin');
+}
+/**
+ * Checks if running in Windows.
+ * @return bool
+ */
+function is_windows(): bool
+{
+    return str_starts_with(PHP_OS_FAMILY, 'Windows');
+}
 
+
+/**
+ * Checks if running on developer's computer.
+ * @return bool
+ * - Return false if the script is running in MacOS or Windows.
+ */
 function is_dev_computer(): bool
 {
+    if (is_mac_os() || is_windows()) {
+        return true;
+    }
     return is_localhost();
 }
 

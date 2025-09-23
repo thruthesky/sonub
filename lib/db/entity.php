@@ -6,6 +6,11 @@
  * Base class for all database entities (users, posts, etc.)
  * Each entity represents a single database record with common fields and methods
  *
+ * IMPORTANT: All timestamp fields use Unix timestamps (integer values)
+ * - created_at: Unix timestamp when the record was created
+ * - updated_at: Unix timestamp when the record was last updated
+ * - All other datetime fields should also use Unix timestamps for consistency
+ *
  * Usage:
  * - Extend this class for each database table
  * - Override $table property with actual table name
@@ -137,13 +142,13 @@ abstract class Entity {
             throw new Exception('Table name not defined for ' . get_called_class());
         }
 
-        // Add created_at timestamp if not provided
+        // Add created_at Unix timestamp if not provided
         if (!isset($data['created_at'])) {
-            $data['created_at'] = date('Y-m-d H:i:s');
+            $data['created_at'] = time();
         }
 
-        // Add updated_at timestamp
-        $data['updated_at'] = date('Y-m-d H:i:s');
+        // Add updated_at Unix timestamp
+        $data['updated_at'] = time();
 
         // Insert into database
         $id = db()->insert($data)->into(static::$table);
@@ -169,8 +174,8 @@ abstract class Entity {
             throw new Exception('Entity ID not set');
         }
 
-        // Add updated_at timestamp
-        $data['updated_at'] = date('Y-m-d H:i:s');
+        // Add updated_at Unix timestamp
+        $data['updated_at'] = time();
 
         // Update database
         $affected = db()->update($data)

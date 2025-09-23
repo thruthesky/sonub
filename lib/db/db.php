@@ -1,4 +1,9 @@
 <?php
+if (is_dev_computer()) {
+    require_once etc_folder('config/db.dev.config');
+} else {
+    require_once etc_folder('config/db.config');
+}
 
 /**
  * Database Query Builder Class
@@ -467,10 +472,11 @@ function db_connection(): PDO
 {
     static $connection = null;
     if ($connection === null) {
-        $host = 'sonub-mariadb';
-        $db = 'sonub';
-        $user = 'sonub';
-        $pass = 'asdf';
+        // 설정 파일에서 정의된 상수 사용
+        $host = DB_HOST;
+        $db = DB_NAME;
+        $user = DB_USER;
+        $pass = DB_PASSWORD;
         $charset = 'utf8mb4';
         $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
         $options = [
