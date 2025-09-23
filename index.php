@@ -1,3 +1,7 @@
+<?php
+const ROOT_DIR = __DIR__;
+include ROOT_DIR . '/etc/boot/boot.functions.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -25,10 +29,7 @@
 
 
 
-    <script defer src="https://www.gstatic.com/firebasejs/12.3.0/firebase-app-compat.js"></script>
-    <script defer src="https://www.gstatic.com/firebasejs/12.3.0/firebase-auth-compat.js"></script>
-    <script defer src="https://www.gstatic.com/firebasejs/12.3.0/firebase-messaging-compat.js"></script>
-    <script defer src="https://www.gstatic.com/firebasejs/12.3.0/firebase-database-compat.js"></script>
+    <?php include __DIR__ . '/etc/firebase/setup.php'; ?>
 </body>
 
 </html>
