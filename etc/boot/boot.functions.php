@@ -36,11 +36,9 @@ function is_localhost(): bool
 
     if (str_contains($host, 'localhost') || str_contains($host, '127.0.0.1')) {
         return true;
-    } else if (str_contains($host, 'local.philgo.com')) {
-        return true;
     } else if (str_contains($host, '192.168.')) {
         return true;
-    } else if (in_array($host, ['apple.philgo.com', 'banana.philgo.com', 'cherry.philgo.com', 'durian.philgo.com', 'fig.philgo.com', 'yomama.philgo.com'])) {
+    } else if (str_contains($host, 'local.sonub.com')) {
         return true;
     }
     return false;
