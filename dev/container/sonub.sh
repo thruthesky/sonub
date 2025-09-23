@@ -409,7 +409,7 @@ stop_if_running() {
 # - -v: 볼륨 마운트
 #   - 소스코드: 읽기/쓰기 모드 (개발 시 실시간 반영)
 #   - PHP 설정 디렉터리: macOS Container는 파일 마운트를 지원하지 않음
-# - --rm: 컨테이너 종료 시 자동 삭제
+# 주의: --rm 옵션 제거 (관리자 권한 요청 방지)
 start_phpfpm() {
   say "[run] ${PHPFPM_CNAME}"
 
@@ -443,9 +443,9 @@ start_phpfpm() {
     -e TZ="${TZ}" \
     -v "${PUBLIC_DIR}:/var/www/html" \
     -v "${PHP_CONF_DIR}:/usr/local/etc/php/conf.d:ro" \
-    --rm "${IMG_PHPFPM}" >/dev/null || {
+    "${IMG_PHPFPM}" >/dev/null || {
       err "PHP-FPM 컨테이너 시작 실패"
-      err "디버그 명령: container run --rm -it -v ${PUBLIC_DIR}:/var/www/html ${IMG_PHPFPM} sh"
+      err "디버그 명령: container run -it -v ${PUBLIC_DIR}:/var/www/html ${IMG_PHPFPM} sh"
       exit 1
     }
 }
@@ -508,6 +508,7 @@ start_nginx() {
 
   # macOS Container는 파일 마운트를 지원하지 않으므로 디렉터리 전체를 마운트
   # Nginx는 /etc/nginx/conf.d/*.conf 파일을 자동으로 로드함
+  # 주의: --rm 옵션 제거 (관리자 권한 요청 방지)
   say "[실행] Nginx 컨테이너 시작 중..."
 
   if container run -d --name "${NGINX_CNAME}" \
@@ -516,13 +517,13 @@ start_nginx() {
     -v "${PUBLIC_DIR}:/var/www/html" \
     -v "${NGINX_CONF_DIR}:/etc/nginx/conf.d:ro" \
     --cpus "${NGINX_CPUS}" --memory "${NGINX_MEM}" \
-    --rm "${IMG_NGINX}" >/dev/null 2>&1; then
+    "${IMG_NGINX}" >/dev/null 2>&1; then
     say "  ✅ Nginx 컨테이너 시작 성공"
   else
     err "  ❌ Nginx 컨테이너 시작 실패"
     err ""
     err "문제 진단을 위한 상세 실행:"
-    err "container run --rm -it --name ${NGINX_CNAME} \\"
+    err "container run -it --name ${NGINX_CNAME} \\"
     err "  --network ${NET_NAME} \\"
     err "  -p ${HOST_HTTP}:${NGINX_PORT_IN_CONTAINER} \\"
     err "  -v ${PUBLIC_DIR}:/var/www/html \\"
@@ -530,7 +531,7 @@ start_nginx() {
     err "  ${IMG_NGINX}"
     err ""
     err "또는 대화형 셸로 진입:"
-    err "container run --rm -it --network ${NET_NAME} ${IMG_NGINX} sh"
+    err "container run -it --network ${NET_NAME} ${IMG_NGINX} sh"
     exit 1
   fi
 }
