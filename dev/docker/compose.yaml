@@ -14,8 +14,8 @@ services:
     container_name: sonub-nginx
     image: nginx:alpine
     ports:
-      - "8080:80"
-      - "8443:443"
+      - "80:80"
+      - "443:443"
     volumes:
       - .:/docker
       - ~/apps/sonub:/sonub
@@ -41,23 +41,24 @@ services:
     networks:
       - sonub-network
 
-  # mariadb:
-  #   container_name: mariadb
-  #   # 11.7.2 is the same version of the philgo db server
-  #   image: mariadb:11.7.2
-  #   ports:
-  #     - "3306:3306"
-  #   environment:
-  #     MYSQL_DATABASE: philgo
-  #     MYSQL_USER: philgo
-  #     MYSQL_PASSWORD: asdf
-  #     MYSQL_ROOT_PASSWORD: asdf
-  #   volumes:
-  #     - .:/docker
-  #     # New PhilGo api source code
-  #     - ../www:/www
-  #     - ./var/lib/mysql:/var/lib/mysql
-  #     - ./etc/mysql/mariadb.conf.d/50-server.cnf:/etc/mysql/mariadb.conf.d/50-server.cnf
+  mariadb:
+    container_name: sonub-mariadb
+    # 11.7.2 is the same version of the philgo db server
+    image: mariadb:11.7.2
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: sonub
+      MYSQL_USER: sonub
+      MYSQL_PASSWORD: asdf
+      MYSQL_ROOT_PASSWORD: asdf
+    volumes:
+      - .:/docker
+      - ~/apps/sonub:/sonub
+      - ./var/lib/mysql:/var/lib/mysql
+      - ./etc/mysql/mariadb.conf.d/50-server.cnf:/etc/mysql/mariadb.conf.d/50-server.cnf
+    networks:
+      - sonub-network
 
 networks:
   sonub-network:

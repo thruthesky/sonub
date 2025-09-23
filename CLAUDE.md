@@ -19,3 +19,14 @@ Sonub (sonub.com) Website Development Guidelines and Rules
 - [ ] Develop using Alpine.js.
   - Alpine.js is located at `/js/alpinejs-3.15.0.min.js` and already loaded in head as deferred.
   - Use Alpine.js directly without installing or importing it.
+- [ ] Documentation (*.md) and Table of Contents Management
+  - [ ] When editing any *.md file or docs/**/*.md file, a Table of Contents (ToC) must be added at the top of the document.
+  - [ ] The ToC must be updated whenever the document structure changes (adding, removing, or renaming sections).
+  - [ ] The ToC should reflect all main headings (##) and subheadings (###) in the document.
+  - [ ] Keep the ToC synchronized with the actual content at all times.
+- [ ] PHP Unit Testing Guidelines
+  - [ ] All PHP unit tests must be written in pure PHP without any external testing frameworks.
+  - [ ] Test files should be stored in the `tests` directory following the same structure as the source code.
+  - [ ] Test file names must end with `.test.php` (e.g., `db.test.php` for testing `db.php`).
+  - [ ] Each test file should be independently executable with direct PHP command: `php tests/db/db.test.php`
+  - [ ] Use simple assertions and clear output messages to indicate test results.

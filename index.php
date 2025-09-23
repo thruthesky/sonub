@@ -1,6 +1,7 @@
 <?php
 const ROOT_DIR = __DIR__;
 include ROOT_DIR . '/etc/boot/boot.functions.php';
+include etc_folder('includes');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,7 +27,7 @@ include ROOT_DIR . '/etc/boot/boot.functions.php';
     <h1>Welcome to Sonub</h1>
     <p>Sonub -- application is running!</p>
 
-
+    upated
 
 
 

@@ -1,6 +1,27 @@
 Sonub Coding Guideline
 =======================
 
+## Table of Contents
+- [General Coding Standards](#general-coding-standards)
+- [Framework and Library Storage Guidelines](#framework-and-library-storage-guidelines)
+  - [Complete Framework Packages](#complete-framework-packages)
+  - [Single JavaScript Libraries](#single-javascript-libraries)
+- [Development System Startup](#development-system-startup)
+  - [Quick Start (Required Commands)](#quick-start-required-commands)
+  - [Using Docker Compose](#using-docker-compose)
+    - [Prerequisites](#prerequisites)
+    - [Quick Start Commands](#quick-start-commands)
+    - [Local Development Domain Setup](#local-development-domain-setup)
+    - [Default Configuration](#default-configuration)
+    - [Directory Structure](#directory-structure)
+    - [Key Features](#key-features)
+    - [Troubleshooting](#troubleshooting)
+  - [Hot Reload Development Server](#hot-reload-development-server)
+    - [Features](#features)
+    - [Setup and Usage](#setup-and-usage)
+    - [Configuration](#configuration)
+    - [SSL Certificates](#ssl-certificates)
+
 ## General Coding Standards
 - Use 4 spaces for indentation, no tabs.
 - Use UTF-8 encoding without BOM.
@@ -23,51 +44,51 @@ Sonub Coding Guideline
 ## Development System Startup
 
 ### Quick Start (Required Commands)
-Sonub 개발을 시작하려면 **반드시 두 가지 명령을 실행**해야 합니다:
+To start Sonub development, you **must run two commands**:
 
 ```bash
-# 1. Docker 컨테이너 시작 (Nginx + PHP-FPM)
+# 1. Start Docker containers (Nginx + PHP-FPM)
 cd ~/apps/sonub/dev/docker
 docker compose up -d
 
-# 2. Hot Reload 서버 시작 (파일 변경 자동 감지)
+# 2. Start Hot Reload server (automatic file change detection)
 cd ~/apps/sonub
 npm run dev
 ```
 
-**중요**: 두 명령 모두 실행해야 완전한 개발 환경이 구성됩니다.
-- `docker compose up`: 웹 서버와 PHP 실행 환경 제공
-- `npm run dev`: 파일 변경 시 브라우저 자동 새로고침
+**Important**: Both commands must be executed to set up a complete development environment.
+- `docker compose up`: Provides web server and PHP runtime environment
+- `npm run dev`: Auto-refreshes browser when files change
 
 ### Using Docker Compose
-Sonub 개발 환경은 Docker Compose를 통해 Nginx와 PHP-FPM 서비스를 실행합니다.
+Sonub development environment runs Nginx and PHP-FPM services through Docker Compose.
 
 #### Prerequisites
-- Docker 및 Docker Compose 설치 필요
-- 프로젝트 위치: `~/apps/sonub/`
+- Docker and Docker Compose installation required
+- Project location: `~/apps/sonub/`
 - Local development domain setup required (see below)
 
 #### Quick Start Commands
 ```bash
-# Docker 디렉토리로 이동
+# Navigate to Docker directory
 cd ~/apps/sonub/dev/docker
 
-# 시스템 시작 (Nginx + PHP-FPM)
+# Start system (Nginx + PHP-FPM)
 docker compose up -d
 
-# 컨테이너 상태 확인
+# Check container status
 docker compose ps
 
-# 로그 보기
+# View logs
 docker compose logs -f
 
-# 시스템 중지
+# Stop system
 docker compose down
 
-# 시스템 재시작
+# Restart system
 docker compose restart
 
-# orphan 컨테이너 제거와 함께 시작
+# Start with orphan container removal
 docker compose up -d --remove-orphans
 ```
 
@@ -105,27 +126,27 @@ After adding this entry, you can access your development site at:
 #### Directory Structure
 ```
 dev/docker/
-├── compose.yaml         # Docker Compose 설정 파일
-├── php.dockerfile       # PHP-FPM 커스텀 이미지
+├── compose.yaml         # Docker Compose configuration file
+├── php.dockerfile       # PHP-FPM custom image
 ├── etc/
 │   ├── nginx/
-│   │   └── nginx.conf  # Nginx 메인 설정
-│   └── php.ini         # PHP 설정
+│   │   └── nginx.conf  # Nginx main configuration
+│   └── php.ini         # PHP configuration
 └── var/
-    ├── log/nginx/      # Nginx 로그
-    └── logs/php/       # PHP 로그
+    ├── log/nginx/      # Nginx logs
+    └── logs/php/       # PHP logs
 ```
 
 #### Key Features
-- Docker Compose를 통한 간편한 서비스 관리
-- Nginx와 PHP-FPM 자동 연동
-- 볼륨 마운트를 통한 실시간 코드 반영
-- 로그 파일 외부 저장
+- Easy service management through Docker Compose
+- Automatic Nginx and PHP-FPM integration
+- Real-time code reflection through volume mounts
+- External log file storage
 
 #### Troubleshooting
-- 포트 충돌 시 compose.yaml에서 포트 번호 변경
-- `docker compose logs` 명령으로 오류 확인
-- ERR_UNSAFE_PORT 에러 발생 시 다른 포트 사용 (예: 8080)
+- Change port number in compose.yaml if port conflict occurs
+- Check errors with `docker compose logs` command
+- Use different port (e.g., 8080) if ERR_UNSAFE_PORT error occurs
 
 ### Hot Reload Development Server
 Sonub provides a hot reload development server that automatically refreshes your browser when files change.
