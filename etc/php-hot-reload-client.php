@@ -2,9 +2,17 @@
 <script src="/js/socket.io/socket.io.min.js"></script>
 <script>
     (() => {
-        // Node 소켓 서버(wss)로 직접 접속 (Nginx 없이 포트로 바로)
-        const socket = io('https://local.philgo.com:3034', {
-            transports: ['websocket'], // 빠른 연결
+        // Dynamically determine the hot-reload server URL based on current hostname
+        // If accessing via local.sonub.com, connect to local.sonub.com:3034
+        // Otherwise, connect to localhost:3034
+        const currentHost = window.location.hostname;
+        const hotReloadHost = currentHost === 'local.sonub.com' ? 'local.sonub.com' : 'localhost';
+        const hotReloadUrl = `https://${hotReloadHost}:3034`;
+
+        console.log('[hotreload] Connecting to:', hotReloadUrl);
+
+        const socket = io(hotReloadUrl, {
+            transports: ['websocket'], // Fast connection
             withCredentials: true
         });
 

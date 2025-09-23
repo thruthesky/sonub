@@ -19,12 +19,12 @@ include ROOT_DIR . '/etc/boot/boot.functions.php';
     <script defer src="/js/alpinejs-3.15.0.min.js"></script>
     <script defer src="/js/jquery-4.0.0-rc.1.min.js"></script>
     <script defer src="/js/app.js"></script>
-    <?php include etc_folder('hot-reload') ?>
+    <?php include etc_folder('php-hot-reload-client') ?>
 </head>
 
 <body>
     <h1>Welcome to Sonub</h1>
-    <p>Your application is running!</p>
+    <p>Sonub -- application is running!</p>
 
 
 

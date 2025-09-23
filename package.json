@@ -10,7 +10,7 @@
   },
   "scripts": {
     "test:e2e:local": "npx playwright test",
-    "dev": "node ./etc/php-hot-reload.js",
+    "dev": "node ./etc/php-hot-reload-server.js",
     "dev:browser-sync-conf": "browser-sync start --config ./etc/browser-sync/browser-sync-config.js",
     "dev:hmr": "npm run dev:browser-sync-conf",
     "host": "browser-sync start --config ./etc/browser-sync/browser-sync-config.js"
@@ -23,6 +23,7 @@
     "@types/node": "^24.3.0",
     "@vitest/coverage-v8": "^3.2.4",
     "browser-sync": "^3.0.4",
+    "mkcert": "^3.2.0",
     "vitest": "^3.2.4"
   },
   "dependencies": {
