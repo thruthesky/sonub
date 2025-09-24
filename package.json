@@ -11,6 +11,7 @@
   "scripts": {
     "test:e2e:local": "npx playwright test",
     "dev": "node ./etc/php-hot-reload-server.js",
+    "dev:fred": "KEY='/../dev/ssl/sonub-fred-key.pem' CERT='/../dev/ssl/sonub-fred-cert.pem' DOMAIN='fred-local.sonub.com' node ./etc/php-hot-reload-server.js",
     "dev:browser-sync-conf": "browser-sync start --config ./etc/browser-sync/browser-sync-config.js",
     "dev:hmr": "npm run dev:browser-sync-conf",
     "host": "browser-sync start --config ./etc/browser-sync/browser-sync-config.js"

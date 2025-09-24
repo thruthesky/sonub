@@ -12,6 +12,9 @@ const DOMAIN = process.env.DOMAIN || 'local.sonub.com'; // Default to local.sonu
 const PORT = process.env.PORT || 3034;                  // Socket server port
 const USE_HTTPS = process.env.USE_HTTPS !== 'false';    // Default to HTTPS
 
+const KEY_URL = process.env.KEY || '/../dev/ssl/sonub-key.pem';
+const CERT_URL = process.env.CERT || '/../dev/ssl/sonub-cert.pem'; 
+
 const app = express();
 
 // Create server with or without SSL based on configuration
@@ -19,8 +22,8 @@ let server;
 if (USE_HTTPS) {
     try {
         // Use only local.sonub.com certificates
-        const keyPath = path.join(__dirname, '../etc/server-settings/nginx/ssl/sonub/local.sonub.com-key.pem');
-        const certPath = path.join(__dirname, '../etc/server-settings/nginx/ssl/sonub/local.sonub.com-cert.pem');
+        const keyPath = path.join(__dirname, KEY_URL);
+        const certPath = path.join(__dirname, CERT_URL);
 
         if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
             const key = fs.readFileSync(keyPath);

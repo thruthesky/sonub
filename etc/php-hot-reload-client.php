@@ -6,7 +6,9 @@
         // If accessing via local.sonub.com, connect to local.sonub.com:3034
         // Otherwise, connect to localhost:3034
         const currentHost = window.location.hostname;
-        const hotReloadHost = currentHost === 'local.sonub.com' ? 'local.sonub.com' : 'localhost';
+
+        // If accessing via any *.sonub.com subdomain, use that same host
+        const hotReloadHost = currentHost.endsWith('.sonub.com') ? currentHost : 'localhost';
         const hotReloadUrl = `https://${hotReloadHost}:3034`;
 
         console.log('[hotreload] Connecting to:', hotReloadUrl);
