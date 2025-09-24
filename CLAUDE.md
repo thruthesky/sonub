@@ -17,8 +17,9 @@ Sonub (sonub.com) Website Development Guidelines and Rules
   - [ ] Comments in PHP, JavaScript, CSS, and all other source code must be written in English.
   - [ ] Comments in code examples within markdown documents must also be written in English.
 - [ ] When designing, work must be done using Bootstrap.
-  - [ ] Both Dark Mode and Light Mode must be supported, with Dark Mode taking priority during development.
-  - [ ] Do not use custom colors, color HEX codes, or color word codes. Always use Bootstrap's default colors or Bootstrap's default color variables to support both Dark Mode and Light Mode.
+  - [ ] **Light Mode Only**: Sonub website supports Light Mode only. Never implement Dark Mode features.
+  - [ ] Always use Bootstrap's default colors or Bootstrap's default color variables as much as possible.
+  - [ ] Avoid using custom colors, color HEX codes, or color word codes unless absolutely necessary.
 - [ ] Develop using jQuery.
   - jQuery is already installed and loaded as deferred in the head section.
   - Use jQuery directly without installing or importing it.

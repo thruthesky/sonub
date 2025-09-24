@@ -11,6 +11,8 @@ include etc_folder('includes');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sonub Application</title>
     <link href="/etc/frameworks/bootstrap/bootstrap-5.3.8-dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/etc/frameworks/bootstrap/bootstrap-icons-1.13.1/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/css/app.css" rel="stylesheet">
     <script>
         /** Register function to execute when DOMContentLoaded event occurs. Since jQuery is loaded with defer, you can use jQuery with this code pattern. */
         function ready(fn) {
@@ -23,6 +25,8 @@ include etc_folder('includes');
     <script defer src="/js/app.js"></script>
     <script defer src="/etc/frameworks/bootstrap/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js"></script>
     <?php include etc_folder('php-hot-reload-client') ?>
+    <?php include_page_css() ?>
+    <?php include_page_js() ?>
 </head>
 
 <body>
@@ -31,9 +35,22 @@ include etc_folder('includes');
         <nav class="navbar navbar-expand-lg navbar-dark">
             <div class="container-fluid">
                 <a class="navbar-brand" href="/">Sonub</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
+
+                <!-- Mobile: User icon and toggler on the right -->
+                <div class="d-flex align-items-center ms-auto">
+                    <div class="me-2">
+                        <a show-on-login href="<?= href()->user->profile ?>">
+                            <i class="bi bi-person-circle" style="font-size: 1.5rem; color: white;"></i>
+                        </a>
+                        <a show-on-not-login href="<?= href()->user->login ?>">
+                            <i class="bi bi-box-arrow-in-right" style="font-size: 1.5rem; color: white;"></i>
+                        </a>
+                    </div>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                </div>
+
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav me-auto">
                         <li class="nav-item">
@@ -50,7 +67,10 @@ include etc_folder('includes');
                         </li>
                     </ul>
                     <ul class="navbar-nav">
-                        <li class="nav-item">
+                        <li class="nav-item" show-on-login>
+                            <button class="nav-link" onclick="firebase.auth().signOut()" type="button">Sign out</button>
+                        </li>
+                        <li class="nav-item" show-on-not-login>
                             <a class="nav-link" href="<?= href()->user->login ?>">Sign in</a>
                         </li>
                     </ul>
@@ -63,11 +83,13 @@ include etc_folder('includes');
     <div class="container-fluid mt-4">
         <div class="row">
             <!-- Left Sidebar -->
-            <aside class="col-12 col-md-3 col-lg-2 bg-light p-3 border-end">
+            <aside class="d-none d-lg-block col-12 col-md-3 col-lg-2 bg-light p-3 border-end">
                 <h5 class="mb-3">Left Sidebar</h5>
                 <nav class="nav flex-column">
-                    <a class="nav-link" href="#">Dashboard</a>
-                    <a class="nav-link" href="#">Profile</a>
+                    <a class="nav-link" show-on-not-login href="<?= href()->user->login ?>">Login</a>
+                    <a class="nav-link" show-on-login href="#">Dashboard</a>
+                    <a class="nav-link" show-on-login href="<?= href()->user->profile ?>">Profile</a>
+                    <button class="nav-link" show-on-login onclick="firebase.auth().signOut()">Logout</button>
                     <a class="nav-link" href="#">Settings</a>
                     <a class="nav-link" href="#">Messages</a>
                 </nav>
@@ -76,7 +98,7 @@ include etc_folder('includes');
                     <h6>Quick Links</h6>
                     <ul class="list-unstyled">
                         <li><a href="#" class="text-decoration-none">Documentation</a></li>
-                        <li><a href="#" class="text-decoration-none">Support</a></li>
+                        <li><a href="/support" class="text-decoration-none">Support</a></li>
                         <li><a href="#" class="text-decoration-none">Contact</a></li>
                     </ul>
                 </div>

@@ -1,0 +1,8 @@
+/** 로그인을 한 경우만 화면에 표시하는 유틸리티 */
+[show-on-login] {
+  display: none !important;
+}
+/** 로그아웃을 한 경우 또는 로그인을 하지 않은 경우만 보여주는 유틸리티 */
+[show-on-not-login] {
+  display: none !important;
+}

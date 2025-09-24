@@ -61,32 +61,41 @@
         });
     }
 
-    function login() {
+    ready(() => {
+        // Setup reCAPTCHA
+        setupRecaptcha();
+    });
+
+    function login_component() {
         return {
-            step: 'input-phone-number',
+            step: 'input-phone-number', // 'input-phone-number' or 'input-sms-code'
             loading: false,
             phoneNumber: '',
             smsCode: '',
             confirmationResult: null,
             error: '',
+            showResetButton: false,
 
             async sendSMSCode() {
                 this.loading = true;
                 this.error = '';
+                this.showResetButton = false;
 
                 try {
                     // Format phone number to international format
                     const formattedPhone = check_login_phone_number(this.phoneNumber);
 
                     console.log("Formatted Phone", formattedPhone);
-                    // Setup reCAPTCHA
-                    setupRecaptcha();
+
 
                     // Send SMS code
-                    // this.confirmationResult = await firebase.auth().signInWithPhoneNumber(formattedPhone, window.recaptchaVerifier);
+                    this.confirmationResult = await firebase.auth().signInWithPhoneNumber(formattedPhone, window.recaptchaVerifier);
 
                     this.step = 'input-sms-code';
                     console.log('SMS sent successfully');
+                    setTimeout(() => {
+                        this.showResetButton = true;
+                    }, 1000 * 15);
 
                 } catch (error) {
                     console.error('Error sending SMS:', error);
@@ -111,7 +120,7 @@
                     console.log('User signed in successfully:', user);
 
                     // Redirect to dashboard or handle successful login
-                    window.location.href = '';
+                    window.location.href = '<?= href()->home ?>';
 
                 } catch (error) {
                     console.error('Error verifying SMS code:', error);
@@ -152,9 +161,9 @@
 </script>
 
 
-<h1>Testing</h1>
+<h1>Login</h1>
 
-<form x-data="login()" id="login-form" action="#" class="align-content">
+<form x-data="login_component()" id="login-form" action="#" class="align-content">
     <!-- Error Display -->
     <div x-show="error" class="alert alert-danger mb-3" role="alert">
         <i class="fa-solid fa-exclamation-triangle me-2"></i>
@@ -223,29 +232,36 @@
             Enter the 6-digit code sent to your phone
         </small>
 
-        <nav>
-            <button
-                x-show="!loading"
-                @click="verifySMSCode()"
-                type="button"
-                class="btn btn-primary my-5 px-3 py-2 me-3"
-                :disabled="smsCode.length < 6">
-                Verify Code
-            </button>
-            <button
-                x-show="loading"
-                type="button"
-                class="btn btn-primary my-5 px-3 py-2 me-3"
-                disabled>
-                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                Verifying...
-            </button>
-            <button
-                @click="resetForm()"
-                type="button"
-                class="btn btn-secondary my-5 px-3 py-2">
-                Back to Phone Number
-            </button>
+        <nav class="d-flex justify-content-between">
+            <aside>
+                <button
+                    type="button"
+                    class="btn btn-secondary my-5 px-3 py-2 d-none"
+                    :class="{'d-none': !showResetButton}"
+                    @click="resetForm()">
+                    Input Phone Number Again
+                </button>
+            </aside>
+
+            <aside>
+                <button
+                    x-show="!loading"
+                    @click="verifySMSCode()"
+                    type="button"
+                    class="btn btn-primary my-5 px-3 py-2 me-3"
+                    :disabled="smsCode.length < 6">
+                    Verify Code
+                </button>
+                <button
+                    x-show="loading"
+                    type="button"
+                    class="btn btn-primary my-5 px-3 py-2 me-3"
+                    disabled>
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    Verifying...
+                </button>
+            </aside>
+
         </nav>
     </section>
 </form>
