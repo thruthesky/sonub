@@ -25,6 +25,7 @@
     - [부팅 절차에서 사용](#부팅-절차에서-사용)
   - [개발 시스템 시작](#개발-시스템-시작)
     - [빠른 시작 (필수 명령어)](#빠른-시작-필수-명령어)
+    - [데이터베이스 관리](#데이터베이스-관리)
     - [Docker Compose 사용](#docker-compose-사용)
     - [핫 리로드 개발 서버](#핫-리로드-개발-서버)
   - [레이아웃 파일 구조](#레이아웃-파일-구조)
@@ -564,6 +565,14 @@ npm run dev
 
 - `docker compose up`: 웹 서버 및 PHP 런타임 환경 제공
 - `npm run dev`: 파일 변경 시 브라우저 자동 새로고침
+
+### 데이터베이스 관리
+
+**phpMyAdmin 접속:**
+
+- URL: http://local.sonub.com/dev/phpMyAdmin/index.php
+- 로컬 개발 환경에서 MariaDB 데이터베이스를 관리할 수 있습니다
+- Docker 컨테이너가 실행 중일 때 사용 가능합니다
 
 ### Docker Compose 사용
 
