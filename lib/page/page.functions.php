@@ -38,7 +38,7 @@ function include_page_css()
     $script = page();
     $path = str_replace('.php', '.css', $script);
     $uri = str_replace(ROOT_DIR, '', $path); // Convert to relative path
-
+    $uri = $uri . '?v=' . APP_VERSION; // Cache busting with app version
     if (file_exists($path)) {
         echo '<link href="' . $uri . '" rel="stylesheet">';
     }

@@ -1,7 +1,7 @@
 <?php
 const ROOT_DIR = __DIR__;
-include ROOT_DIR . '/etc/boot/boot.functions.php';
-include etc_folder('includes');
+include_once ROOT_DIR . '/etc/includes.php';
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -11,39 +11,80 @@ include etc_folder('includes');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sonub Application</title>
     <link href="/etc/frameworks/bootstrap/bootstrap-5.3.8-dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/etc/frameworks/bootstrap/bootstrap-icons-1.13.1/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="/css/app.css" rel="stylesheet">
+    <link rel="stylesheet" href="/etc/frameworks/bootstrap/bootstrap-icons-1.13.1/bootstrap-icons.css">
+
+
+    <!-- Google Fonts - Noto Sans KR -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+
+
+
+    <!-- 기본 파비콘 -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/res/favicons/favicon-300.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/res/favicons/favicon-300.png">
+
+    <!-- 애플 터치 아이콘 -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/res/favicons/apple-touch-icon.png">
+
+    <!-- 안드로이드/크롬 -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/res/favicons/android-chrome-300.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/res/favicons/android-chrome-300.png">
+
+
     <script>
-        /** Register function to execute when DOMContentLoaded event occurs. Since jQuery is loaded with defer, you can use jQuery with this code pattern. */
+        /** DOMContentLoaded 이벤트가 발생했을 때 실행할 함수 등록. jQuery 가 defer 로드되므로, 이 코드를 활용해서 jQuery 를 쓰면 된다. */
         function ready(fn) {
             document.readyState !== "loading" ? fn() :
                 document.addEventListener("DOMContentLoaded", fn);
         }
     </script>
-    <script defer src="/js/alpinejs-3.15.0.min.js"></script>
-    <script defer src="/js/jquery-4.0.0-rc.1.min.js"></script>
-    <script defer src="/js/app.js"></script>
-    <script defer src="/etc/frameworks/bootstrap/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js"></script>
-    <?php include etc_folder('php-hot-reload-client') ?>
-    <?php include_page_css() ?>
-    <?php include_page_js() ?>
+
+
+
+
 </head>
 
 <body>
+
+
+    <?php include ROOT_DIR . '/etc/firebase/firebase-setup.php'; ?>
+    <script src="/js/vue.global.prod.js"></script>
+    <?php include_once ROOT_DIR . '/etc/php-hot-reload-client.php'; ?>
+
+    <?php include_page_css() ?>
+    <?php include_page_js() ?>
+
+
     <!-- Header Navigation -->
     <header class="bg-dark text-white">
         <nav class="navbar navbar-expand-lg navbar-dark">
             <div class="container-fluid">
-                <a class="navbar-brand" href="/">Sonub</a>
+                <!-- 모바일: [S] 표시, 데스크톱: Sonub 표시 -->
+                <a class="navbar-brand" href="/">
+                    <span class="d-md-none">[S]</span>
+                    <span class="d-none d-md-inline">Sonub</span>
+                </a>
 
-                <!-- Mobile: User icon and toggler on the right -->
+                <!-- Mobile: 채팅, 친구찾기, User icon and toggler on the right -->
                 <div class="d-flex align-items-center ms-auto">
-                    <div class="me-2">
-                        <a show-on-login href="<?= href()->user->profile ?>">
-                            <i class="bi bi-person-circle" style="font-size: 1.5rem; color: white;"></i>
+                    <!-- 모바일 전용: 채팅, 친구찾기 아이콘 -->
+                    <div class="d-md-none d-flex align-items-center">
+                        <a href="/chat" class="me-2">
+                            <i class="bi bi-chat-dots sonub-nav-icon"></i>
                         </a>
-                        <a show-on-not-login href="<?= href()->user->login ?>">
-                            <i class="bi bi-box-arrow-in-right" style="font-size: 1.5rem; color: white;"></i>
+                        <a href="/friends" class="me-2">
+                            <i class="bi bi-people sonub-nav-icon"></i>
+                        </a>
+                    </div>
+
+                    <div class="me-2">
+                        <a href="<?= href()->user->profile ?>">
+                            <i class="bi bi-person-circle sonub-nav-icon"></i>
+                        </a>
+                        <a href="<?= href()->user->login ?>">
+                            <i class="bi bi-box-arrow-in-right sonub-nav-icon"></i>
                         </a>
                     </div>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -67,10 +108,10 @@ include etc_folder('includes');
                         </li>
                     </ul>
                     <ul class="navbar-nav">
-                        <li class="nav-item" show-on-login>
+                        <li class="nav-item">
                             <button class="nav-link" onclick="firebase.auth().signOut()" type="button">Sign out</button>
                         </li>
-                        <li class="nav-item" show-on-not-login>
+                        <li class="nav-item">
                             <a class="nav-link" href="<?= href()->user->login ?>">Sign in</a>
                         </li>
                     </ul>
@@ -80,16 +121,16 @@ include etc_folder('includes');
     </header>
 
     <!-- Main Content Area with Sidebars -->
-    <div class="container-fluid mt-4">
+    <div class="sonub-container mt-4">
         <div class="row">
             <!-- Left Sidebar -->
             <aside class="d-none d-lg-block col-12 col-md-3 col-lg-2 bg-light p-3 border-end">
                 <h5 class="mb-3">Left Sidebar</h5>
                 <nav class="nav flex-column">
-                    <a class="nav-link" show-on-not-login href="<?= href()->user->login ?>">Login</a>
-                    <a class="nav-link" show-on-login href="#">Dashboard</a>
-                    <a class="nav-link" show-on-login href="<?= href()->user->profile ?>">Profile</a>
-                    <button class="nav-link" show-on-login onclick="firebase.auth().signOut()">Logout</button>
+                    <a class="nav-link" href="<?= href()->user->login ?>">Login</a>
+                    <a class="nav-link" href="#">Dashboard</a>
+                    <a class="nav-link" href="<?= href()->user->profile ?>">Profile</a>
+                    <button class="nav-link" onclick="firebase.auth().signOut()">Logout</button>
                     <a class="nav-link" href="#">Settings</a>
                     <a class="nav-link" href="#">Messages</a>
                 </nav>
@@ -152,7 +193,9 @@ include etc_folder('includes');
     </footer>
 
 
-    <?php include etc_folder('firebase/firebase-setup') ?>
+
+
+    <script src="/etc/frameworks/bootstrap/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

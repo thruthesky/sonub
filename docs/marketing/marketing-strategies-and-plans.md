@@ -1,3 +1,2 @@
 
-
-- pay to influencers to promote sonub service and join/create accont and post their contents in sonub.
+- 인플루언서들에게 비용을 지불하여 sonub 서비스를 홍보하고 계정을 생성하여 콘텐츠를 게시하도록 합니다.

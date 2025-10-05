@@ -1,113 +1,113 @@
-Nginx, PHP, MariaDB Setup Guide for Sonub Website Development:
-- This document provides guidance on installing and configuring Nginx, PHP, and MariaDB in Ubuntu Linux environment.
+Sonub 웹사이트 개발을 위한 Nginx, PHP, MariaDB 설치 가이드:
+- 이 문서는 Ubuntu Linux 환경에서 Nginx, PHP, MariaDB를 설치하고 구성하는 방법에 대한 지침을 제공합니다.
 
-## 1. System Update
+## 1. 시스템 업데이트
 ```bash
 sudo apt update
 sudo apt upgrade -y
 ```
-## 2. Nginx Installation
+## 2. Nginx 설치
 ```bash
 sudo apt install nginx -y
 sudo systemctl start nginx
 sudo systemctl enable nginx
 ```
-## 3. PHP Installation
+## 3. PHP 설치
 ```bash
 sudo apt install php-fpm php-mysql -y
 ```
-## 4. MariaDB Installation
+## 4. MariaDB 설치
 ```bash
 sudo apt install mariadb-server -y
 sudo systemctl start mariadb
 sudo systemctl enable mariadb
 ```
 
-## 5. Nginx Configuration - Routing All Requests to index.php
+## 5. Nginx 구성 - 모든 요청을 index.php로 라우팅
 
-### 5.1 Creating Nginx Configuration File
-Create the file `/etc/nginx/sites-available/sonub.com.conf` and include the project's configuration file.
+### 5.1 Nginx 구성 파일 생성
+`/etc/nginx/sites-available/sonub.com.conf` 파일을 생성하고 프로젝트의 구성 파일을 포함합니다.
 
 ```nginx
 # /etc/nginx/sites-available/sonub.com.conf
-# Main configuration file that includes the Sonub project's nginx configuration
+# Sonub 프로젝트의 nginx 구성을 포함하는 메인 구성 파일
 
-# Include the nginx configuration file from the project directory
-# Replace <sonub-project> with the actual project path
-# Examples: /home/user/sonub, /var/www/sonub, etc.
+# 프로젝트 디렉토리에서 nginx 구성 파일 포함
+# <sonub-project>를 실제 프로젝트 경로로 교체하세요
+# 예시: /home/user/sonub, /var/www/sonub 등
 include <sonub-project>/etc/nginx/sonub.com.conf;
 ```
 
-The actual Nginx configuration is maintained in your project repository at `<sonub-project>/etc/nginx/sonub.com.conf`:
+실제 Nginx 구성은 `<sonub-project>/etc/nginx/sonub.com.conf`의 프로젝트 저장소에서 관리됩니다:
 
 ```nginx
 # <sonub-project>/etc/nginx/sonub.com.conf
-# Actual Sonub server configuration file (managed in project repository)
+# 실제 Sonub 서버 구성 파일 (프로젝트 저장소에서 관리)
 
 server {
     listen 80;
     server_name sonub.com www.sonub.com;
-    root /var/www/app/public;  # Directory path where index.php is located
+    root /var/www/app/public;  # index.php가 위치한 디렉토리 경로
     index index.php;
 
-    # Process static files and directories, then route to index.php
+    # 정적 파일 및 디렉토리 처리 후 index.php로 라우팅
     location / {
-        # try_files operation order:
-        # 1. $uri - If request path is an actual file, serve that file (e.g., /style.css, /image.jpg)
-        # 2. $uri/ - If request path is an actual directory, serve the index file of that directory
-        # 3. /index.php?$query_string - If neither above cases apply, forward to index.php while preserving query string
+        # try_files 작업 순서:
+        # 1. $uri - 요청 경로가 실제 파일이면 해당 파일 제공 (예: /style.css, /image.jpg)
+        # 2. $uri/ - 요청 경로가 실제 디렉토리이면 해당 디렉토리의 인덱스 파일 제공
+        # 3. /index.php?$query_string - 위의 경우가 아니면 쿼리 문자열을 보존하면서 index.php로 전달
         try_files $uri $uri/ /index.php?$query_string;
     }
 
-    # PHP-FPM Configuration
+    # PHP-FPM 구성
     location ~ \.php$ {
         include fastcgi_params;
-        # SCRIPT_FILENAME: Actual script file path to pass to PHP-FPM
+        # SCRIPT_FILENAME: PHP-FPM에 전달할 실제 스크립트 파일 경로
         # $document_root = /var/www/app/public
         # $fastcgi_script_name = /index.php
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        fastcgi_param PATH_INFO $fastcgi_path_info;  # Use when needed for routing
-        fastcgi_pass unix:/run/php/php8.2-fpm.sock;  # Adjust according to PHP version
+        fastcgi_param PATH_INFO $fastcgi_path_info;  # 라우팅에 필요할 때 사용
+        fastcgi_pass unix:/run/php/php8.2-fpm.sock;  # PHP 버전에 따라 조정
         fastcgi_read_timeout 120s;
     }
 
-    # Security: Block hidden files (.git, .env, etc.)
+    # 보안: 숨김 파일 차단 (.git, .env 등)
     location ~ /\.(?!well-known) {
         deny all;
     }
 }
 ```
 
-**Benefits of this approach:**
-- Nginx configuration can be version-controlled with Git
-- Team members can easily share the same configuration
-- Configuration changes can be deployed through Git without direct server access
+**이 접근 방식의 이점:**
+- Nginx 구성을 Git으로 버전 관리할 수 있습니다
+- 팀 구성원이 동일한 구성을 쉽게 공유할 수 있습니다
+- 직접 서버 액세스 없이 Git을 통해 구성 변경을 배포할 수 있습니다
 
-### 5.2 Enabling Configuration
+### 5.2 구성 활성화
 ```bash
-# Create symbolic link
+# 심볼릭 링크 생성
 sudo ln -s /etc/nginx/sites-available/sonub.com.conf /etc/nginx/sites-enabled/
 
-# Test Nginx configuration
+# Nginx 구성 테스트
 sudo nginx -t
 
-# Reload Nginx
+# Nginx 리로드
 sudo systemctl reload nginx
 ```
 
-## 6. PHP Routing Implementation
+## 6. PHP 라우팅 구현
 
-### 6.1 index.php Example
-Since all requests are forwarded to index.php, routing must be handled in PHP.
+### 6.1 index.php 예제
+모든 요청이 index.php로 전달되므로 PHP에서 라우팅을 처리해야 합니다.
 
 ```php
 <?php
-// index.php - Entry point for all requests
+// index.php - 모든 요청의 진입점
 
-// Extract only the path portion from request URI (exclude query string)
+// 요청 URI에서 경로 부분만 추출 (쿼리 문자열 제외)
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-// Define routing table
+// 라우팅 테이블 정의
 $routes = [
     '/' => 'home.php',
     '/about' => 'about.php',
@@ -115,36 +115,36 @@ $routes = [
     '/post/list' => 'post/list.php',
 ];
 
-// Handle dynamic routing (e.g., /post/123)
+// 동적 라우팅 처리 (예: /post/123)
 if (preg_match('#^/post/(\d+)$#', $path, $matches)) {
     $postId = $matches[1];
     require_once 'post/view.php';
     exit;
 }
 
-// Handle static routing
+// 정적 라우팅 처리
 if (isset($routes[$path])) {
     require_once $routes[$path];
 } else {
-    // Handle 404 page
+    // 404 페이지 처리
     http_response_code(404);
     require_once '404.php';
 }
 ```
 
-### 6.2 Advanced Routing Example - MVC Pattern
+### 6.2 고급 라우팅 예제 - MVC 패턴
 ```php
 <?php
-// index.php - Routing using MVC pattern
+// index.php - MVC 패턴을 사용한 라우팅
 
-// Set up autoloader (when using Composer)
+// 오토로더 설정 (Composer 사용 시)
 require_once __DIR__ . '/../vendor/autoload.php';
 
-// Analyze request information
+// 요청 정보 분석
 $requestMethod = $_SERVER['REQUEST_METHOD'];
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-// Using Router class
+// Router 클래스 사용
 class Router {
     private $routes = [];
 
@@ -157,105 +157,105 @@ class Router {
     }
 
     public function dispatch($method, $uri) {
-        // Check for exact match
+        // 정확한 일치 확인
         if (isset($this->routes[$method][$uri])) {
             return call_user_func($this->routes[$method][$uri]);
         }
 
-        // Pattern matching (e.g., /post/{id})
+        // 패턴 매칭 (예: /post/{id})
         foreach ($this->routes[$method] as $pattern => $handler) {
             $pattern = str_replace('{id}', '(\d+)', $pattern);
             $pattern = '#^' . $pattern . '$#';
 
             if (preg_match($pattern, $uri, $matches)) {
-                array_shift($matches);  // Remove first element (full match)
+                array_shift($matches);  // 첫 번째 요소 제거 (전체 일치)
                 return call_user_func_array($handler, $matches);
             }
         }
 
-        // Handle 404
+        // 404 처리
         http_response_code(404);
-        echo "404 Page Not Found";
+        echo "404 페이지를 찾을 수 없습니다";
     }
 }
 
-// Create router instance and define routes
+// 라우터 인스턴스 생성 및 라우트 정의
 $router = new Router();
 
-// GET routes
+// GET 라우트
 $router->get('/', function() {
-    echo "Homepage";
+    echo "홈페이지";
 });
 
 $router->get('/about', function() {
-    echo "About Us";
+    echo "회사 소개";
 });
 
 $router->get('/post/{id}', function($id) {
-    echo "Viewing Post #" . $id;
+    echo "게시물 #" . $id . " 보기";
 });
 
-// POST routes
+// POST 라우트
 $router->post('/login', function() {
-    // Handle login
+    // 로그인 처리
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
-    // ... authentication logic
+    // ... 인증 로직
 });
 
-// Execute routing
+// 라우팅 실행
 $router->dispatch($requestMethod, $requestUri);
 ```
 
-### 6.3 Handling URL Parameters and Query Strings
+### 6.3 URL 매개변수 및 쿼리 문자열 처리
 ```php
 <?php
-// Query strings are automatically handled via $_GET
-// Example: /search?q=php&category=tutorial
+// 쿼리 문자열은 $_GET을 통해 자동으로 처리됩니다
+// 예: /search?q=php&category=tutorial
 
 $searchQuery = $_GET['q'] ?? '';
 $category = $_GET['category'] ?? '';
 
-// When using PATH_INFO
-// Example: /api/users/123/posts
-// Requires fastcgi_param PATH_INFO setting in Nginx
+// PATH_INFO 사용 시
+// 예: /api/users/123/posts
+// Nginx에서 fastcgi_param PATH_INFO 설정 필요
 $pathInfo = $_SERVER['PATH_INFO'] ?? '';
 $segments = explode('/', trim($pathInfo, '/'));
 ```
 
-## 7. Directory Structure Example
+## 7. 디렉토리 구조 예제
 ```
 /var/www/app/
-├── public/           # Web root (Nginx document root)
-│   ├── index.php    # Entry point for all requests
-│   ├── css/         # Static CSS files
-│   ├── js/          # Static JS files
-│   └── images/      # Static image files
-├── src/             # PHP source code
-│   ├── Controllers/ # Controllers
-│   ├── Models/      # Models
-│   └── Views/       # View templates
-├── vendor/          # Composer dependencies
-└── config/          # Configuration files
+├── public/           # 웹 루트 (Nginx document root)
+│   ├── index.php    # 모든 요청의 진입점
+│   ├── css/         # 정적 CSS 파일
+│   ├── js/          # 정적 JS 파일
+│   └── images/      # 정적 이미지 파일
+├── src/             # PHP 소스 코드
+│   ├── Controllers/ # 컨트롤러
+│   ├── Models/      # 모델
+│   └── Views/       # 뷰 템플릿
+├── vendor/          # Composer 의존성
+└── config/          # 구성 파일
 ```
 
-## 8. Important Notes
+## 8. 중요 사항
 
-1. **Static File Processing**: Static files like CSS, JS, and images are handled by the first option ($uri) in try_files and don't go through PHP.
+1. **정적 파일 처리**: CSS, JS, 이미지와 같은 정적 파일은 try_files의 첫 번째 옵션($uri)에서 처리되며 PHP를 거치지 않습니다.
 
-2. **Security Considerations**:
-   - Place sensitive files like `.env`, `.git` outside the web root or block them in Nginx
-   - Position PHP files outside the public directory to prevent direct access
-   - Validate user input and prevent SQL injection
+2. **보안 고려 사항**:
+   - `.env`, `.git`과 같은 민감한 파일은 웹 루트 외부에 배치하거나 Nginx에서 차단하세요
+   - 직접 액세스를 방지하기 위해 public 디렉토리 외부에 PHP 파일을 배치하세요
+   - 사용자 입력을 검증하고 SQL 인젝션을 방지하세요
 
-3. **Performance Optimization**:
-   - Static files are served directly by Nginx, making them fast
-   - Use PHP autoloader to load only necessary files
-   - Utilize static resource caching with caching headers
+3. **성능 최적화**:
+   - 정적 파일은 Nginx에서 직접 제공되므로 빠릅니다
+   - PHP 오토로더를 사용하여 필요한 파일만 로드하세요
+   - 캐싱 헤더를 사용하여 정적 리소스 캐싱을 활용하세요
 
-4. **Debugging Tips**:
+4. **디버깅 팁**:
    ```php
-   // Check request information
+   // 요청 정보 확인
    echo "REQUEST_URI: " . $_SERVER['REQUEST_URI'] . "<br>";
    echo "PATH: " . parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) . "<br>";
    echo "QUERY_STRING: " . $_SERVER['QUERY_STRING'] . "<br>";

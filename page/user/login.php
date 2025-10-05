@@ -60,39 +60,151 @@
             throw error;
         });
     }
+</script>
 
-    ready(() => {
-        // Setup reCAPTCHA
-        setupRecaptcha();
-    });
+<h1>Login</h1>
 
-    function login_component() {
-        return {
-            step: 'input-phone-number', // 'input-phone-number' or 'input-sms-code'
-            loading: false,
-            phoneNumber: '',
-            smsCode: '',
-            confirmationResult: null,
-            error: '',
-            showResetButton: false,
+<div id="login-app">
+    <form @submit.prevent id="login-form" class="align-content">
+        <!-- 에러 표시 -->
+        <div v-if="error" class="alert alert-danger mb-3" role="alert">
+            <i class="fa-solid fa-exclamation-triangle me-2"></i>
+            <span>{{ error }}</span>
+        </div>
 
+        <!-- 전화번호 입력 섹션 -->
+        <section v-show="step === 'input-phone-number'">
+            <div class="mb-3">
+                <label for="phone_number" class="form-label">Phone Number</label>
+                <input
+                    type="tel"
+                    v-model="phoneNumber"
+                    class="form-control p-2 xl"
+                    id="phone_number"
+                    name="phone_number"
+                    required
+                    placeholder="Please enter your phone number"
+                    autofocus
+                    @keyup.enter="sendSMSCode"
+                    maxlength="15">
+            </div>
+            <small class="d-block text-muted">
+                <i class="fa-solid fa-info-circle me-1"></i>
+                Format: 09XX-XXX-XXXX or +63-9XX-XXX-XXXX
+            </small>
+
+            <nav>
+                <button
+                    v-if="!loading"
+                    @click="sendSMSCode"
+                    id="sign-in-button"
+                    type="button"
+                    class="btn btn-primary my-5 px-3 py-2"
+                    :disabled="!phoneNumber.trim()">
+                    Send SMS Code
+                </button>
+                <button
+                    v-if="loading"
+                    type="button"
+                    class="btn btn-primary my-5 px-3 py-2"
+                    disabled>
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    Sending...
+                </button>
+            </nav>
+        </section>
+
+        <!-- SMS 코드 입력 섹션 -->
+        <section v-show="step === 'input-sms-code'">
+            <div class="mb-3">
+                <label for="sms_code" class="form-label">SMS Code</label>
+                <input
+                    type="text"
+                    v-model="smsCode"
+                    id="sms_code"
+                    class="form-control p-2 xl"
+                    required
+                    placeholder="Enter the 6-digit code"
+                    @keyup.enter="verifySMSCode"
+                    maxlength="6"
+                    autofocus>
+            </div>
+            <small class="d-block text-muted">
+                <i class="fa-solid fa-info-circle me-1"></i>
+                Enter the 6-digit code sent to your phone
+            </small>
+
+            <nav class="d-flex justify-content-between">
+                <aside>
+                    <button
+                        type="button"
+                        class="btn btn-secondary my-5 px-3 py-2"
+                        :class="{'d-none': !showResetButton}"
+                        @click="resetForm">
+                        Input Phone Number Again
+                    </button>
+                </aside>
+
+                <aside>
+                    <button
+                        v-if="!loading"
+                        @click="verifySMSCode"
+                        type="button"
+                        class="btn btn-primary my-5 px-3 py-2 me-3"
+                        :disabled="smsCode.length < 6">
+                        Verify Code
+                    </button>
+                    <button
+                        v-if="loading"
+                        type="button"
+                        class="btn btn-primary my-5 px-3 py-2 me-3"
+                        disabled>
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        Verifying...
+                    </button>
+                </aside>
+            </nav>
+        </section>
+    </form>
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        data() {
+            return {
+                step: 'input-phone-number', // 'input-phone-number' or 'input-sms-code'
+                loading: false,
+                phoneNumber: '',
+                smsCode: '',
+                confirmationResult: null,
+                error: '',
+                showResetButton: false
+            }
+        },
+        methods: {
             async sendSMSCode() {
                 this.loading = true;
                 this.error = '';
                 this.showResetButton = false;
 
                 try {
-                    // Format phone number to international format
+                    // 전화번호를 국제 형식으로 포맷
                     const formattedPhone = check_login_phone_number(this.phoneNumber);
 
                     console.log("Formatted Phone", formattedPhone);
 
-
-                    // Send SMS code
-                    this.confirmationResult = await firebase.auth().signInWithPhoneNumber(formattedPhone, window.recaptchaVerifier);
+                    // SMS 코드 전송
+                    this.confirmationResult = await firebase.auth().signInWithPhoneNumber(
+                        formattedPhone,
+                        window.recaptchaVerifier
+                    );
 
                     this.step = 'input-sms-code';
                     console.log('SMS sent successfully');
+
+                    // 15초 후 리셋 버튼 표시
                     setTimeout(() => {
                         this.showResetButton = true;
                     }, 1000 * 15);
@@ -119,7 +231,7 @@
 
                     console.log('User signed in successfully:', user);
 
-                    // Redirect to dashboard or handle successful login
+                    // 대시보드 또는 홈으로 리다이렉트
                     window.location.href = '<?= href()->home ?>';
 
                 } catch (error) {
@@ -129,7 +241,6 @@
                     this.loading = false;
                 }
             },
-
 
             getErrorMessage(error) {
                 switch (error.code) {
@@ -155,113 +266,12 @@
                 this.confirmationResult = null;
                 this.error = '';
                 this.loading = false;
+                this.showResetButton = false;
             }
+        },
+        mounted() {
+            // reCAPTCHA 설정
+            setupRecaptcha();
         }
-    }
+    }).mount('#login-app');
 </script>
-
-
-<h1>Login</h1>
-
-<form x-data="login_component()" id="login-form" action="#" class="align-content">
-    <!-- Error Display -->
-    <div x-show="error" class="alert alert-danger mb-3" role="alert">
-        <i class="fa-solid fa-exclamation-triangle me-2"></i>
-        <span x-text="error"></span>
-    </div>
-
-    <!-- Phone Number Input Section -->
-    <section x-show="step === 'input-phone-number'">
-        <div class="mb-3">
-            <label for="phone_number" class="form-label">Phone Number</label>
-            <input
-                type="tel"
-                x-model="phoneNumber"
-                class="form-control p-2 xl"
-                id="phone_number"
-                name="phone_number"
-                required
-                placeholder="Please enter your phone number"
-                autofocus
-                @keyup.enter="sendSMSCode()"
-                maxlength="15">
-        </div>
-        <small class="d-block text-muted">
-            <i class="fa-solid fa-info-circle me-1"></i>
-            Format: 09XX-XXX-XXXX or +63-9XX-XXX-XXXX
-        </small>
-
-        <nav>
-            <button
-                x-show="!loading"
-                @click="sendSMSCode()"
-                id="sign-in-button"
-                type="button"
-                class="btn btn-primary my-5 px-3 py-2"
-                :disabled="!phoneNumber.trim()">
-                Send SMS Code
-            </button>
-            <button
-                x-show="loading"
-                type="button"
-                class="btn btn-primary my-5 px-3 py-2"
-                disabled>
-                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                Sending...
-            </button>
-        </nav>
-    </section>
-
-    <!-- SMS Code Input Section -->
-    <section x-show="step === 'input-sms-code'">
-        <div class="mb-3">
-            <label for="sms_code" class="form-label">SMS Code</label>
-            <input
-                type="text"
-                x-model="smsCode"
-                id="sms_code"
-                class="form-control p-2 xl"
-                required
-                placeholder="Enter the 6-digit code"
-                @keyup.enter="verifySMSCode()"
-                maxlength="6"
-                autofocus>
-        </div>
-        <small class="d-block text-muted">
-            <i class="fa-solid fa-info-circle me-1"></i>
-            Enter the 6-digit code sent to your phone
-        </small>
-
-        <nav class="d-flex justify-content-between">
-            <aside>
-                <button
-                    type="button"
-                    class="btn btn-secondary my-5 px-3 py-2 d-none"
-                    :class="{'d-none': !showResetButton}"
-                    @click="resetForm()">
-                    Input Phone Number Again
-                </button>
-            </aside>
-
-            <aside>
-                <button
-                    x-show="!loading"
-                    @click="verifySMSCode()"
-                    type="button"
-                    class="btn btn-primary my-5 px-3 py-2 me-3"
-                    :disabled="smsCode.length < 6">
-                    Verify Code
-                </button>
-                <button
-                    x-show="loading"
-                    type="button"
-                    class="btn btn-primary my-5 px-3 py-2 me-3"
-                    disabled>
-                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                    Verifying...
-                </button>
-            </aside>
-
-        </nav>
-    </section>
-</form>

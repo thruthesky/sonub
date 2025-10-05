@@ -1,39 +1,54 @@
-Sonub (sonub.com) Website Development Guidelines and Rules
-- This document specifies the guidelines and rules that must be followed when developing the Sonub website.
-- All developers must familiarize themselves with and comply with this document.
-- The Standard Workflow must be followed without exception.
+Sonub (sonub.com) 웹사이트 개발 가이드라인 및 규칙
+- 이 문서는 Sonub 웹사이트 개발 시 반드시 준수해야 할 가이드라인과 규칙을 명시합니다.
+- 모든 개발자는 이 문서를 숙지하고 준수해야 합니다.
+- 표준 워크플로우는 예외 없이 반드시 따라야 합니다.
 
 
 
-# Standard Workflow
-- [ ] **MANDATORY DOCUMENTATION REVIEW**: When a developer requests any development work, the AI MUST:
-  - [ ] **IMMEDIATELY search and identify relevant documentation in docs/**/*.md**
-  - [ ] **PRESENT the list of relevant documentation files to the developer BEFORE starting any work**
-  - [ ] **READ and ANALYZE these documents to understand existing patterns, conventions, and requirements**
-  - [ ] **REFERENCE these documents while developing to ensure consistency**
-  - [ ] The AI is STRICTLY PROHIBITED from starting development without first reviewing and presenting relevant documentation
-- [ ] Issue Creation: Before starting any work, create an issue that follows git commit message conventions.
-- [ ] All documentation content and source code comments must be written in English.
-  - [ ] Comments in PHP, JavaScript, CSS, and all other source code must be written in English.
-  - [ ] Comments in code examples within markdown documents must also be written in English.
-- [ ] When designing, work must be done using Bootstrap.
-  - [ ] **Light Mode Only**: Sonub website supports Light Mode only. Never implement Dark Mode features.
-  - [ ] Always use Bootstrap's default colors or Bootstrap's default color variables as much as possible.
-  - [ ] Avoid using custom colors, color HEX codes, or color word codes unless absolutely necessary.
-- [ ] Develop using jQuery.
-  - jQuery is already installed and loaded as deferred in the head section.
-  - Use jQuery directly without installing or importing it.
-- [ ] Develop using Alpine.js.
-  - Alpine.js is located at `/js/alpinejs-3.15.0.min.js` and already loaded in head as deferred.
-  - Use Alpine.js directly without installing or importing it.
-- [ ] Documentation (*.md) and Table of Contents Management
-  - [ ] When editing any *.md file or docs/**/*.md file, a Table of Contents (ToC) must be added at the top of the document.
-  - [ ] The ToC must be updated whenever the document structure changes (adding, removing, or renaming sections).
-  - [ ] The ToC should reflect all main headings (##) and subheadings (###) in the document.
-  - [ ] Keep the ToC synchronized with the actual content at all times.
-- [ ] PHP Unit Testing Guidelines
-  - [ ] All PHP unit tests must be written in pure PHP without any external testing frameworks.
-  - [ ] Test files should be stored in the `tests` directory following the same structure as the source code.
-  - [ ] Test file names must end with `.test.php` (e.g., `db.test.php` for testing `db.php`).
-  - [ ] Each test file should be independently executable with direct PHP command: `php tests/db/db.test.php`
-  - [ ] Use simple assertions and clear output messages to indicate test results.
+# 표준 워크플로우
+- [ ] **필수 문서 검토**: 개발자가 개발 작업을 요청할 때, AI는 반드시:
+  - [ ] **즉시 docs/**/*.md 내의 관련 문서를 검색하고 식별**
+  - [ ] **작업을 시작하기 전에 관련 문서 파일 목록을 개발자에게 제시**
+  - [ ] **기존 패턴, 규칙 및 요구사항을 이해하기 위해 이 문서들을 읽고 분석**
+  - [ ] **일관성을 보장하기 위해 개발하는 동안 이 문서들을 참조**
+  - [ ] AI는 관련 문서를 검토하고 제시하지 않고 개발을 시작하는 것이 **엄격히 금지**됩니다
+- [ ] 이슈 생성: 작업을 시작하기 전에 git 커밋 메시지 규칙을 따르는 이슈를 생성합니다.
+- [ ] **언어 요구사항 - 한국어만 사용**:
+  - [ ] **모든 문서 내용(*.md 파일)은 반드시 한국어로 작성**
+  - [ ] **모든 소스 코드 주석은 반드시 한국어로 작성**
+    - [ ] PHP, JavaScript, CSS 및 기타 모든 소스 코드의 주석은 한국어로 작성
+    - [ ] 마크다운 문서 내 코드 예제의 주석도 한국어로 작성
+    - [ ] 함수/메서드 문서화(PHPDoc, JSDoc 등)는 한국어로 작성
+  - [ ] **모든 사용자 대면 텍스트 및 UI 요소는 한국어로 작성**
+  - [ ] **예외사항**: 코드 자체(변수명, 함수명, 클래스명), 기술 용어, 파일 경로, 라이브러리/프레임워크 코드는 영문 사용 가능
+  - [ ] **코드 예제**: 문서나 응답에서 코드 예제를 제공할 때 모든 주석과 설명 텍스트는 한국어로 작성
+- [ ] 디자인 작업 시 Bootstrap을 사용해야 합니다.
+  - [ ] **라이트 모드만 지원**: Sonub 웹사이트는 라이트 모드만 지원합니다. 다크 모드 기능을 절대 구현하지 마세요.
+  - [ ] 항상 Bootstrap의 기본 색상 또는 Bootstrap의 기본 색상 변수를 최대한 사용하세요.
+  - [ ] 꼭 필요한 경우가 아니면 커스텀 색상, HEX 코드, 색상 단어 코드 사용을 피하세요.
+- [ ] **JavaScript 프레임워크 - Vue.js 3.x**:
+  - [ ] Sonub는 PHP MPA(Multi-Page Application) 방식으로 Vue.js 3.x를 CDN을 통해 사용합니다
+  - [ ] Vue.js는 모든 페이지에 CDN을 통해 자동으로 로드됩니다 - 수동으로 추가하지 마세요
+  - [ ] 각 페이지에서 `const { createApp } = Vue;`를 사용하여 Vue 앱을 생성하세요
+  - [ ] **MPA 방식의 장점**: 페이지 이동 시 이벤트 리스너와 Vue 인스턴스가 자동으로 정리됩니다
+  - [ ] **정리 작업 불필요**: SPA와 달리 `beforeUnmount`에서 이벤트 리스너를 수동으로 해제할 필요가 없습니다
+  - [ ] 각 페이지의 Vue 인스턴스는 완전히 독립적입니다
+  - [ ] 복잡한 라우팅이나 상태 관리 라이브러리 없이 간단한 구조를 유지하세요
+- [ ] 문서(*.md) 및 목차 관리
+  - [ ] *.md 파일이나 docs/**/*.md 파일을 편집할 때 문서 상단에 목차(ToC)를 반드시 추가해야 합니다.
+  - [ ] 문서 구조가 변경될 때마다(섹션 추가, 제거, 이름 변경) 목차를 업데이트해야 합니다.
+  - [ ] 목차는 문서의 모든 주요 제목(##)과 부제목(###)을 반영해야 합니다.
+  - [ ] 목차를 실제 콘텐츠와 항상 동기화 상태로 유지하세요.
+- [ ] PHP 단위 테스트 가이드라인
+  - [ ] 모든 PHP 단위 테스트는 외부 테스트 프레임워크 없이 순수 PHP로 작성해야 합니다.
+  - [ ] 테스트 파일은 소스 코드와 동일한 구조로 `tests` 디렉토리에 저장해야 합니다.
+  - [ ] 테스트 파일 이름은 `.test.php`로 끝나야 합니다 (예: `db.php` 테스트를 위한 `db.test.php`).
+  - [ ] 각 테스트 파일은 PHP 명령어로 독립적으로 실행 가능해야 합니다: `php tests/db/db.test.php`
+  - [ ] 간단한 단언문과 명확한 출력 메시지를 사용하여 테스트 결과를 표시하세요.
+- [ ] **다국어 번역 개발 가이드라인 - 필수 준수**
+  - [ ] **언어 번역 관련 작업을 요청받으면 반드시 `docs/translation.md`의 Standard Workflow를 따라야 합니다**
+  - [ ] **절대 준수**: 모든 언어 번역은 각 PHP 파일 하단에 `inject_[php_file_name]_language()` 로컬 함수를 정의해야 합니다
+  - [ ] 함수 내부에서 `t()->inject(...)` 함수를 통해 다국어 번역 텍스트를 주입해야 합니다
+  - [ ] 예시: `index.php` 파일에서는 맨 아래에 `inject_index_language()` 함수를 정의하고, 파일 맨 위에서 이 함수를 호출하여 번역 텍스트를 주입합니다
+  - [ ] **위반 금지**: 이 워크플로우를 따르지 않는 번역 구현은 절대 금지됩니다
+  - [ ] 번역 관련 작업 시작 전 반드시 `docs/translation.md` 문서를 읽고 이해해야 합니다

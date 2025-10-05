@@ -1,8 +1,8 @@
 <?php
 if (is_dev_computer()) {
-    require_once etc_folder('config/db.dev.config');
+    require_once ROOT_DIR . '/etc/config/db.dev.config.php';
 } else {
-    require_once etc_folder('config/db.config');
+    require_once ROOT_DIR . '/etc/config/db.config.php';
 }
 
 /**

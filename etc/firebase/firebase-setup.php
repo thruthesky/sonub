@@ -5,45 +5,42 @@
 
 <script>
     // Your web app's Firebase configuration
-    <?php include etc_folder('config/firebase-web-config'); ?>
+    <?php include ROOT_DIR . '/etc/config/firebase-web-config.php'; ?>
     const firebaseConfig = <?php echo json_encode(firebaseConfig); ?>;
 
+    console.log('Firebase Config:', firebaseConfig);
     // Initialize Firebase
 
     firebase.initializeApp(firebaseConfig);
 
     console.log('Firebase initialized:', firebase.app().name);
 
-    ready(() => {
-        // Check if a user is already signed in
-        firebase.auth().onAuthStateChanged((user) => {
+    // Check if a user is already signed in
+    firebase.auth().onAuthStateChanged((user) => {
 
-            if (user) {
+        if (user) {
 
-                console.log('User is signed in:', user.uid);
+            // User is signed in.
+            console.log('User is signed in:', user);
 
-                // * 로그인 상태 유틸리티 표시
-                document.querySelectorAll('[show-on-login]').forEach(el => {
-                    el.style.setProperty('display', 'inline-block', 'important');
-                });
-                // * 로그아웃 요소를 없앤다
-                document.querySelectorAll('[show-on-not-login]').forEach(el => {
-                    el.style.setProperty('display', 'none', 'important');
-                });
+            // You can access user information here
+            const uid = user.uid;
+            const email = user.email;
+            const displayName = user.displayName;
 
-            } else {
-                // * 로그아웃 상태 유틸리티 표시
-                document.querySelectorAll('[show-on-not-login]').forEach(el => {
-                    el.style.setProperty('display', 'inline-block', 'important');
-                });
+            console.log('User ID:', uid);
+            console.log('Email:', email);
+            console.log('Display Name:', displayName);
 
-                // * 로그인 요소를 없앤다
-                document.querySelectorAll('[show-on-login]').forEach(el => {
-                    el.style.setProperty('display', 'none', 'important');
-                });
-            }
-        });
+            // You can also get the ID token if needed
+            user.getIdToken().then((idToken) => {
+                console.log('ID Token:', idToken);
+                // Send the ID token to your server for verification if needed
+            });
 
-
+        } else {
+            // No user is signed in.
+            console.log('No user is signed in.');
+        }
     });
 </script>

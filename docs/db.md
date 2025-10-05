@@ -1,36 +1,36 @@
-# Database Query Builder Documentation
+# 데이터베이스 쿼리 빌더 문서
 
-## Table of Contents
-- [Overview](#overview)
-- [Installation & Configuration](#installation--configuration)
-- [Basic Usage](#basic-usage)
-  - [INSERT Operations](#insert-operations)
-  - [SELECT Operations](#select-operations)
-  - [UPDATE Operations](#update-operations)
-  - [DELETE Operations](#delete-operations)
-  - [Raw Queries](#raw-queries)
-- [Advanced Features](#advanced-features)
-  - [WHERE Conditions](#where-conditions)
-  - [JOIN Operations](#join-operations)
+## 목차
+- [개요](#개요)
+- [설치 및 구성](#설치-및-구성)
+- [기본 사용법](#기본-사용법)
+  - [INSERT 작업](#insert-작업)
+  - [SELECT 작업](#select-작업)
+  - [UPDATE 작업](#update-작업)
+  - [DELETE 작업](#delete-작업)
+  - [원시 쿼리](#원시-쿼리)
+- [고급 기능](#고급-기능)
+  - [WHERE 조건](#where-조건)
+  - [JOIN 작업](#join-작업)
   - [ORDER BY](#order-by)
-  - [LIMIT & Pagination](#limit--pagination)
-  - [Transactions](#transactions)
-- [Entity System](#entity-system)
-  - [Entity Base Class](#entity-base-class)
-  - [Creating Entity Classes](#creating-entity-classes)
-  - [Entity CRUD Operations](#entity-crud-operations)
-  - [User Entity](#user-entity)
-  - [Post Entity](#post-entity)
-- [Method Reference](#method-reference)
-- [Examples](#examples)
+  - [LIMIT 및 페이지네이션](#limit-및-페이지네이션)
+  - [트랜잭션](#트랜잭션)
+- [엔티티 시스템](#엔티티-시스템)
+  - [엔티티 기본 클래스](#엔티티-기본-클래스)
+  - [엔티티 클래스 생성](#엔티티-클래스-생성)
+  - [엔티티 CRUD 작업](#엔티티-crud-작업)
+  - [사용자 엔티티](#사용자-엔티티)
+  - [게시물 엔티티](#게시물-엔티티)
+- [메서드 참조](#메서드-참조)
+- [예제](#예제)
 
-## Overview
+## 개요
 
-The Sonub Database Query Builder provides a fluent, chainable interface for building and executing database queries. It uses PDO internally and protects against SQL injection through prepared statements.
+Sonub 데이터베이스 쿼리 빌더는 데이터베이스 쿼리를 구축하고 실행하기 위한 유연하고 체인 가능한 인터페이스를 제공합니다. 내부적으로 PDO를 사용하며 prepared statement를 통해 SQL 인젝션으로부터 보호합니다.
 
-## Installation & Configuration
+## 설치 및 구성
 
-The database configuration is located in `/lib/db/db.php`. The connection parameters are:
+데이터베이스 구성은 `/lib/db/db.php`에 위치합니다. 연결 매개변수는 다음과 같습니다:
 
 ```php
 $host = 'sonub-mariadb';
@@ -40,27 +40,27 @@ $pass = 'asdf';
 $charset = 'utf8mb4';
 ```
 
-To use the database query builder, simply call the `db()` function:
+데이터베이스 쿼리 빌더를 사용하려면 `db()` 함수를 호출하기만 하면 됩니다:
 
 ```php
 require_once '/lib/db/db.php';
 
-// The db() function returns a singleton instance
+// db() 함수는 싱글톤 인스턴스를 반환합니다
 $result = db()->select('*')->from('users')->get();
 ```
 
-## Basic Usage
+## 기본 사용법
 
-### INSERT Operations
+### INSERT 작업
 
-Insert a new record and get the inserted ID:
+새 레코드를 삽입하고 삽입된 ID를 가져옵니다:
 
 ```php
-// Simple insert - returns the last insert ID
+// 단순 삽입 - 마지막 삽입 ID를 반환합니다
 $id = db()->insert(['display_name' => 'jaeho', 'email' => 'jaeho@example.com'])
     ->into('users');
 
-// Insert with multiple fields
+// 여러 필드로 삽입
 $id = db()->insert([
     'display_name' => 'John Doe',
     'email' => 'john@example.com',
@@ -68,70 +68,70 @@ $id = db()->insert([
 ])->into('users');
 ```
 
-### SELECT Operations
+### SELECT 작업
 
-#### Retrieve Multiple Records
+#### 여러 레코드 검색
 
 ```php
-// Select all columns
+// 모든 컬럼 선택
 $users = db()->select('*')->from('users')->get();
 
-// Select specific columns
+// 특정 컬럼 선택
 $users = db()->select('id, display_name, email')->from('users')->get();
 
-// With WHERE condition
+// WHERE 조건 사용
 $users = db()->select('*')
     ->from('users')
     ->where('id > 2')
     ->limit(5)
     ->get();
 
-// Using prepared statements with placeholders
+// 플레이스홀더를 사용한 prepared statement 사용
 $users = db()->select('*')
     ->from('users')
     ->where('status = ? AND created_at > ?', ['active', '2024-01-01'])
     ->get();
 ```
 
-#### Retrieve Single Record
+#### 단일 레코드 검색
 
 ```php
-// Get the first matching record
+// 첫 번째 일치하는 레코드 가져오기
 $user = db()->select('*')
     ->from('users')
     ->where('id = ?', [1])
     ->first();
 
-// Returns null if no record found
+// 레코드가 없으면 null 반환
 $user = db()->select('*')
     ->from('users')
     ->where('email = ?', ['nonexistent@example.com'])
     ->first();
 ```
 
-#### Count Records
+#### 레코드 수 세기
 
 ```php
-// Get the count of records
+// 레코드 수 가져오기
 $count = db()->select()->from('users')->count();
 
-// Count with conditions
+// 조건이 있는 수 세기
 $activeCount = db()->select()
     ->from('users')
     ->where('status = ?', ['active'])
     ->count();
 ```
 
-### UPDATE Operations
+### UPDATE 작업
 
 ```php
-// Update records - returns number of affected rows
+// 레코드 업데이트 - 영향을 받은 행 수를 반환합니다
 $affected = db()->update(['display_name' => 'song'])
     ->table('users')
     ->where("display_name = 'jaeho'")
     ->execute();
 
-// Update with multiple fields
+// 여러 필드로 업데이트
 $affected = db()->update([
     'display_name' => 'Updated Name',
     'updated_at' => date('Y-m-d H:i:s')
@@ -140,55 +140,55 @@ $affected = db()->update([
 ->where('id = ?', [5])
 ->execute();
 
-// Update without WHERE (updates all records - use with caution!)
+// WHERE 없이 업데이트 (모든 레코드 업데이트 - 주의해서 사용!)
 $affected = db()->update(['status' => 'inactive'])
     ->table('users')
     ->execute();
 ```
 
-### DELETE Operations
+### DELETE 작업
 
 ```php
-// Delete records - returns number of deleted rows
+// 레코드 삭제 - 삭제된 행 수를 반환합니다
 $deleted = db()->delete()
     ->from('users')
     ->where('id = ?', [5])
     ->execute();
 
-// Delete with multiple conditions
+// 여러 조건으로 삭제
 $deleted = db()->delete()
     ->from('users')
     ->where('status = ? AND created_at < ?', ['inactive', '2023-01-01'])
     ->execute();
 
-// Delete all records (use with caution!)
+// 모든 레코드 삭제 (주의해서 사용!)
 $deleted = db()->delete()->from('temp_table')->execute();
 ```
 
-### Raw Queries
+### 원시 쿼리
 
-For complex queries that don't fit the builder pattern:
+빌더 패턴에 맞지 않는 복잡한 쿼리의 경우:
 
 ```php
-// SELECT query
+// SELECT 쿼리
 $results = db()->query("SELECT * FROM users WHERE id = ?", [1]);
 
-// INSERT query - returns last insert ID
+// INSERT 쿼리 - 마지막 삽입 ID를 반환합니다
 $id = db()->query(
     "INSERT INTO users (display_name, email) VALUES (?, ?)",
     ['John', 'john@example.com']
 );
 
-// UPDATE query - returns affected rows
+// UPDATE 쿼리 - 영향을 받은 행을 반환합니다
 $affected = db()->query(
     "UPDATE users SET display_name = ? WHERE id = ?",
     ['New Name', 5]
 );
 
-// DELETE query - returns deleted rows
+// DELETE 쿼리 - 삭제된 행을 반환합니다
 $deleted = db()->query("DELETE FROM users WHERE id = ?", [10]);
 
-// Complex query with joins
+// JOIN이 있는 복잡한 쿼리
 $results = db()->query("
     SELECT u.*, COUNT(p.id) as post_count
     FROM users u
@@ -198,32 +198,32 @@ $results = db()->query("
 ", [5]);
 ```
 
-## Advanced Features
+## 고급 기능
 
-### WHERE Conditions
+### WHERE 조건
 
 ```php
-// Simple WHERE
+// 단순 WHERE
 $users = db()->select('*')
     ->from('users')
     ->where('age > 18')
     ->get();
 
-// Multiple AND conditions
+// 여러 AND 조건
 $users = db()->select('*')
     ->from('users')
     ->where('age > ?', [18])
     ->where('status = ?', ['active'])
     ->get();
 
-// OR conditions
+// OR 조건
 $users = db()->select('*')
     ->from('users')
     ->where('role = ?', ['admin'])
     ->orWhere('role = ?', ['moderator'])
     ->get();
 
-// Complex conditions
+// 복잡한 조건
 $users = db()->select('*')
     ->from('users')
     ->where('(age > ? AND status = ?)', [18, 'active'])
@@ -231,7 +231,7 @@ $users = db()->select('*')
     ->get();
 ```
 
-### JOIN Operations
+### JOIN 작업
 
 ```php
 // INNER JOIN
@@ -246,7 +246,7 @@ $results = db()->select('users.*, COUNT(posts.id) as post_count')
     ->join('posts', 'users.id = posts.user_id', 'LEFT')
     ->get();
 
-// Multiple JOINs
+// 여러 JOIN
 $results = db()->select('u.display_name, p.title, c.comment')
     ->from('users u')
     ->join('posts p', 'u.id = p.user_id')
@@ -258,20 +258,20 @@ $results = db()->select('u.display_name, p.title, c.comment')
 ### ORDER BY
 
 ```php
-// Single column ordering
+// 단일 컬럼 정렬
 $users = db()->select('*')
     ->from('users')
     ->orderBy('created_at', 'DESC')
     ->get();
 
-// Multiple column ordering
+// 여러 컬럼 정렬
 $users = db()->select('*')
     ->from('users')
     ->orderBy('status', 'ASC')
     ->orderBy('created_at', 'DESC')
     ->get();
 
-// Order with other clauses
+// 다른 절과 함께 정렬
 $users = db()->select('*')
     ->from('users')
     ->where('status = ?', ['active'])
@@ -280,16 +280,16 @@ $users = db()->select('*')
     ->get();
 ```
 
-### LIMIT & Pagination
+### LIMIT 및 페이지네이션
 
 ```php
-// Simple limit
+// 단순 limit
 $users = db()->select('*')
     ->from('users')
     ->limit(10)
     ->get();
 
-// Limit with offset for pagination
+// 페이지네이션을 위한 offset이 있는 limit
 $page = 2;
 $perPage = 10;
 $offset = ($page - 1) * $perPage;
@@ -299,98 +299,98 @@ $users = db()->select('*')
     ->limit($perPage, $offset)
     ->get();
 
-// Get total count for pagination
+// 페이지네이션을 위한 전체 수 가져오기
 $total = db()->select()->from('users')->count();
 $totalPages = ceil($total / $perPage);
 ```
 
-### Transactions
+### 트랜잭션
 
 ```php
 try {
     db()->beginTransaction();
 
-    // Insert user
+    // 사용자 삽입
     $userId = db()->insert([
         'display_name' => 'John Doe',
         'email' => 'john@example.com'
     ])->into('users');
 
-    // Insert related profile
+    // 관련 프로필 삽입
     db()->insert([
         'user_id' => $userId,
         'bio' => 'Software Developer'
     ])->into('profiles');
 
-    // Update statistics
+    // 통계 업데이트
     db()->update(['user_count' => db()->query("SELECT COUNT(*) FROM users")[0]['COUNT(*)']])
         ->table('stats')
         ->where('id = 1')
         ->execute();
 
     db()->commit();
-    echo "Transaction completed successfully";
+    echo "트랜잭션이 성공적으로 완료되었습니다";
 
 } catch (Exception $e) {
     db()->rollback();
-    echo "Transaction failed: " . $e->getMessage();
+    echo "트랜잭션 실패: " . $e->getMessage();
 }
 ```
 
-## Entity System
+## 엔티티 시스템
 
-The Entity System provides an object-oriented layer on top of the database query builder, allowing you to work with database records as objects. Each database table is represented by an Entity class that extends the base Entity class.
+엔티티 시스템은 데이터베이스 쿼리 빌더 위에 객체 지향 레이어를 제공하여 데이터베이스 레코드를 객체로 작업할 수 있게 합니다. 각 데이터베이스 테이블은 기본 Entity 클래스를 확장하는 Entity 클래스로 표현됩니다.
 
-### Entity Base Class
+### 엔티티 기본 클래스
 
-The `Entity` class (`/lib/db/entity.php`) provides the foundation for all entity classes:
+`Entity` 클래스 (`/lib/db/entity.php`)는 모든 엔티티 클래스의 기반을 제공합니다:
 
-#### Key Features
-- Automatic handling of `id`, `created_at`, and `updated_at` fields
-- **IMPORTANT**: All timestamp fields (`created_at`, `updated_at`, etc.) use Unix timestamps (integer values)
-- CRUD operations: `get()`, `create()`, `update()`, `delete()`
-- Data storage in `$data` array with magic getters/setters
-- Find methods for querying records
-- Built-in validation and business logic
+#### 주요 기능
+- `id`, `created_at`, `updated_at` 필드의 자동 처리
+- **중요**: 모든 타임스탬프 필드 (`created_at`, `updated_at` 등)는 Unix 타임스탬프(정수 값)를 사용합니다
+- CRUD 작업: `get()`, `create()`, `update()`, `delete()`
+- 매직 getter/setter가 있는 `$data` 배열에 데이터 저장
+- 레코드 쿼리를 위한 find 메서드
+- 내장 유효성 검사 및 비즈니스 로직
 
-#### Basic Entity Methods
+#### 기본 엔티티 메서드
 
 ```php
-// Get entity by ID
+// ID로 엔티티 가져오기
 $entity = EntityClass::get($id);
 
-// Create new entity
+// 새 엔티티 생성
 $entity = EntityClass::create(['field' => 'value']);
 
-// Update entity
+// 엔티티 업데이트
 $entity->update(['field' => 'new value']);
 
-// Delete entity
+// 엔티티 삭제
 $entity->delete();
 
-// Find entities
+// 엔티티 찾기
 $entities = EntityClass::find(['status' => 'active']);
 $entity = EntityClass::findFirst(['email' => 'user@example.com']);
 
-// Get all entities
+// 모든 엔티티 가져오기
 $all = EntityClass::all();
 
-// Count entities
+// 엔티티 수 세기
 $count = EntityClass::count(['status' => 'active']);
 
-// Check if entity exists
+// 엔티티 존재 여부 확인
 $exists = EntityClass::exists($id);
 ```
 
-### Creating Entity Classes
+### 엔티티 클래스 생성
 
-To create a new entity class, extend the base `Entity` class and define the table name:
+새 엔티티 클래스를 생성하려면 기본 `Entity` 클래스를 확장하고 테이블 이름을 정의하세요:
 
 ```php
 class Product extends Entity {
     protected static $table = 'products';
 
-    // Add custom methods specific to your entity
+    // 엔티티에 특정한 사용자 정의 메서드 추가
     public function getPrice() {
         return $this->getValue('price');
     }
@@ -401,47 +401,47 @@ class Product extends Entity {
 }
 ```
 
-### Entity CRUD Operations
+### 엔티티 CRUD 작업
 
-#### Create
+#### Create (생성)
 ```php
-// Create with validation
+// 유효성 검사와 함께 생성
 $user = User::create([
     'firebase_uid' => 'firebase_uid_abc123',
     'phone_number' => '+1234567890',
     'display_name' => 'John Doe'
 ]);
 
-// Access created entity data
-echo $user->getValue('id');           // Auto-generated ID
-echo $user->getValue('created_at');   // Unix timestamp (e.g., 1735030800)
+// 생성된 엔티티 데이터에 접근
+echo $user->getValue('id');           // 자동 생성된 ID
+echo $user->getValue('created_at');   // Unix 타임스탬프 (예: 1735030800)
 ```
 
-#### Read
+#### Read (읽기)
 ```php
-// Get by ID
+// ID로 가져오기
 $user = User::get(1);
 
-// Find methods
+// find 메서드
 $user = User::findByEmail('john@example.com');
-$users = User::find(['status' => 'active'], 10); // Limit 10
+$users = User::find(['status' => 'active'], 10); // 최대 10개
 $first = User::findFirst(['role' => 'admin']);
 
-// Magic getters
-echo $user->display_name;  // Same as getValue('display_name')
+// 매직 getter
+echo $user->display_name;  // getValue('display_name')와 동일
 echo $user->email;
 ```
 
-#### Update
+#### Update (업데이트)
 ```php
-// Update entity
+// 엔티티 업데이트
 $user->update(['display_name' => 'Jane Doe']);
 
-// Using magic setters
+// 매직 setter 사용
 $user->display_name = 'New Name';
 $user->save();
 
-// Bulk update
+// 대량 업데이트
 $user->setData([
     'display_name' => 'Updated Name',
     'email' => 'new@example.com'
@@ -449,210 +449,210 @@ $user->setData([
 $user->save();
 ```
 
-#### Delete
+#### Delete (삭제)
 ```php
-// Delete instance
+// 인스턴스 삭제
 $user->delete();
 
-// Static delete by ID
+// ID로 정적 삭제
 User::destroy($id);
 ```
 
-### User Entity
+### 사용자 엔티티
 
-The `User` class (`/lib/db/user.php`) extends Entity with user-specific functionality:
+`User` 클래스 (`/lib/db/user.php`)는 사용자별 기능으로 Entity를 확장합니다:
 
 ```php
-// Create user with Firebase Phone Authentication
+// Firebase 전화 인증으로 사용자 생성
 $user = User::create([
     'firebase_uid' => 'firebase_uid_123',
     'phone_number' => '+1234567890',
-    'display_name' => 'John Doe' // Optional, will use masked phone if not provided
+    'display_name' => 'John Doe' // 선택 사항, 제공되지 않으면 마스킹된 전화번호 사용
 ]);
 
-// Find users
+// 사용자 찾기
 $user = User::findByFirebaseUid('firebase_uid_123');
 $user = User::findByPhoneNumber('+1234567890');
 $user = User::findByDisplayName('John Doe');
 
-// Create or get user (useful for Firebase authentication flow)
+// 사용자 생성 또는 가져오기 (Firebase 인증 흐름에 유용)
 $user = User::createOrGetByFirebaseUid(
     'firebase_uid_123',
     '+1234567890',
-    ['display_name' => 'John Doe'] // Optional additional data
+    ['display_name' => 'John Doe'] // 선택적 추가 데이터
 );
 
-// Status management
+// 상태 관리
 if ($user->isActive()) {
     $user->deactivate();
 }
 $user->activate();
 
-// Get user's posts
-$posts = $user->getPosts(10); // Limit 10
+// 사용자의 게시물 가져오기
+$posts = $user->getPosts(10); // 최대 10개
 
-// Get active/inactive users
+// 활성/비활성 사용자 가져오기
 $activeUsers = User::getActiveUsers();
 $inactiveUsers = User::getInactiveUsers();
 ```
 
-### Post Entity
+### 게시물 엔티티
 
-The `Post` class (`/lib/db/post.php`) extends Entity with post/article functionality:
+`Post` 클래스 (`/lib/db/post.php`)는 게시물/기사 기능으로 Entity를 확장합니다:
 
 ```php
-// Create post
+// 게시물 생성
 $post = Post::create([
     'user_id' => 1,
     'title' => 'My First Post',
     'content' => 'Post content here...',
-    'status' => 'draft' // Optional, default is 'draft'
+    'status' => 'draft' // 선택 사항, 기본값은 'draft'
 ]);
 
-// Find posts
-$post = Post::findBySlug('my-first-post'); // Auto-generated slug
+// 게시물 찾기
+$post = Post::findBySlug('my-first-post'); // 자동 생성된 slug
 $posts = Post::getByUser($userId);
-$published = Post::getPublished(10); // Limit 10
+$published = Post::getPublished(10); // 최대 10개
 $drafts = Post::getDrafts();
 
-// Post management
-$post->publish();  // Set status to 'published'
-$post->unpublish(); // Set status to 'draft'
+// 게시물 관리
+$post->publish();  // 상태를 'published'로 설정
+$post->unpublish(); // 상태를 'draft'로 설정
 
-// View tracking
+// 조회수 추적
 $post->incrementViewCount();
 echo $post->getViewCount();
 
-// Get author
-$author = $post->getAuthor(); // Returns User entity
+// 작성자 가져오기
+$author = $post->getAuthor(); // User 엔티티 반환
 
-// Content helpers
+// 콘텐츠 헬퍼
 echo $post->getTitle();
-echo $post->getExcerpt(150); // First 150 characters
+echo $post->getExcerpt(150); // 첫 150자
 
-// Search posts
-$results = Post::search('keyword', 20); // Search with limit
+// 게시물 검색
+$results = Post::search('keyword', 20); // 제한과 함께 검색
 
-// Get recent posts
-$recent = Post::getRecent(5); // 5 most recent published posts
+// 최근 게시물 가져오기
+$recent = Post::getRecent(5); // 가장 최근 게시된 게시물 5개
 ```
 
-### Entity Magic Methods
+### 엔티티 매직 메서드
 
-All entities support magic methods for convenient property access:
+모든 엔티티는 편리한 속성 접근을 위한 매직 메서드를 지원합니다:
 
 ```php
 $user = User::get(1);
 
-// Magic getter
-echo $user->display_name;     // Same as getValue('display_name')
+// 매직 getter
+echo $user->display_name;     // getValue('display_name')와 동일
 
-// Magic setter
-$user->display_name = 'New Name'; // Same as setValue('display_name', 'New Name')
+// 매직 setter
+$user->display_name = 'New Name'; // setValue('display_name', 'New Name')와 동일
 
-// Magic isset
+// 매직 isset
 if (isset($user->email)) {
-    echo "Email is set";
+    echo "이메일이 설정되었습니다";
 }
 
-// Magic unset
+// 매직 unset
 unset($user->temporary_field);
 ```
 
-### Entity Utilities
+### 엔티티 유틸리티
 
 ```php
-// Convert to array
+// 배열로 변환
 $array = $user->toArray();
 
-// Convert to JSON
+// JSON으로 변환
 $json = $user->toJson();
 
-// Refresh from database
+// 데이터베이스에서 새로 고침
 $user->refresh();
 
-// Get all data
+// 모든 데이터 가져오기
 $data = $user->getData();
 
-// Check existence
+// 존재 여부 확인
 if (User::exists($id)) {
-    echo "User exists";
+    echo "사용자가 존재합니다";
 }
 
-// Count records
+// 레코드 수 세기
 $total = User::count();
 $active = User::count(['status' => 'active']);
 ```
 
-### Testing Entity System
+### 엔티티 시스템 테스트
 
-Run the entity system tests:
+엔티티 시스템 테스트 실행:
 
 ```bash
 php tests/db/entity.test.php
 ```
 
-The test suite covers:
-- Entity CRUD operations
-- User entity functionality
-- Post entity functionality
-- Magic methods
-- Relationships between entities
-- Validation and error handling
+테스트 스위트는 다음을 다룹니다:
+- 엔티티 CRUD 작업
+- 사용자 엔티티 기능
+- 게시물 엔티티 기능
+- 매직 메서드
+- 엔티티 간 관계
+- 유효성 검사 및 오류 처리
 
-## Method Reference
+## 메서드 참조
 
-### Query Building Methods
+### 쿼리 빌딩 메서드
 
-| Method | Description | Returns |
+| 메서드 | 설명 | 반환값 |
 |--------|-------------|---------|
-| `select($fields)` | Start a SELECT query | `$this` |
-| `insert($data)` | Start an INSERT query | `$this` |
-| `update($data)` | Start an UPDATE query | `$this` |
-| `delete()` | Start a DELETE query | `$this` |
-| `table($table)` | Set the table name | `$this` |
-| `from($table)` | Alias for `table()` | `$this` |
-| `into($table)` | Set table and execute INSERT | `int` (insert ID) or `$this` |
-| `where($condition, $params)` | Add WHERE condition | `$this` |
-| `orWhere($condition, $params)` | Add OR WHERE condition | `$this` |
-| `join($table, $on, $type)` | Add JOIN clause | `$this` |
-| `orderBy($field, $direction)` | Add ORDER BY | `$this` |
-| `limit($limit, $offset)` | Add LIMIT clause | `$this` |
+| `select($fields)` | SELECT 쿼리 시작 | `$this` |
+| `insert($data)` | INSERT 쿼리 시작 | `$this` |
+| `update($data)` | UPDATE 쿼리 시작 | `$this` |
+| `delete()` | DELETE 쿼리 시작 | `$this` |
+| `table($table)` | 테이블 이름 설정 | `$this` |
+| `from($table)` | `table()`의 별칭 | `$this` |
+| `into($table)` | 테이블 설정 및 INSERT 실행 | `int` (삽입 ID) 또는 `$this` |
+| `where($condition, $params)` | WHERE 조건 추가 | `$this` |
+| `orWhere($condition, $params)` | OR WHERE 조건 추가 | `$this` |
+| `join($table, $on, $type)` | JOIN 절 추가 | `$this` |
+| `orderBy($field, $direction)` | ORDER BY 추가 | `$this` |
+| `limit($limit, $offset)` | LIMIT 절 추가 | `$this` |
 
-### Execution Methods
+### 실행 메서드
 
-| Method | Description | Returns |
+| 메서드 | 설명 | 반환값 |
 |--------|-------------|---------|
-| `get()` | Execute SELECT and return all results | `array` |
-| `first()` | Execute SELECT and return first result | `array\|null` |
-| `count()` | Execute SELECT and return count | `int` |
-| `execute()` | Execute the built query | `mixed` |
-| `query($sql, $params)` | Execute raw SQL query | `mixed` |
+| `get()` | SELECT 실행 및 모든 결과 반환 | `array` |
+| `first()` | SELECT 실행 및 첫 번째 결과 반환 | `array\|null` |
+| `count()` | SELECT 실행 및 수 반환 | `int` |
+| `execute()` | 빌드된 쿼리 실행 | `mixed` |
+| `query($sql, $params)` | 원시 SQL 쿼리 실행 | `mixed` |
 
-### Transaction Methods
+### 트랜잭션 메서드
 
-| Method | Description | Returns |
+| 메서드 | 설명 | 반환값 |
 |--------|-------------|---------|
-| `beginTransaction()` | Start a transaction | `void` |
-| `commit()` | Commit the transaction | `void` |
-| `rollback()` | Rollback the transaction | `void` |
+| `beginTransaction()` | 트랜잭션 시작 | `void` |
+| `commit()` | 트랜잭션 커밋 | `void` |
+| `rollback()` | 트랜잭션 롤백 | `void` |
 
-## Examples
+## 예제
 
-### User Registration Example
+### 사용자 등록 예제
 
 ```php
-// Check if email exists
+// 이메일이 존재하는지 확인
 $existing = db()->select('id')
     ->from('users')
     ->where('email = ?', [$email])
     ->first();
 
 if ($existing) {
-    throw new Exception('Email already registered');
+    throw new Exception('이메일이 이미 등록되었습니다');
 }
 
-// Insert new user
+// 새 사용자 삽입
 $userId = db()->insert([
     'display_name' => $name,
     'email' => $email,
@@ -660,17 +660,17 @@ $userId = db()->insert([
     'created_at' => date('Y-m-d H:i:s')
 ])->into('users');
 
-// Create user profile
+// 사용자 프로필 생성
 db()->insert([
     'user_id' => $userId,
     'avatar' => '/default-avatar.png'
 ])->into('profiles');
 ```
 
-### Blog Post with Comments Example
+### 댓글이 있는 블로그 게시물 예제
 
 ```php
-// Get post with author and comment count
+// 작성자 및 댓글 수와 함께 게시물 가져오기
 $post = db()->query("
     SELECT
         p.*,
@@ -683,7 +683,7 @@ $post = db()->query("
     GROUP BY p.id
 ", [$postId])[0];
 
-// Get comments for the post
+// 게시물의 댓글 가져오기
 $comments = db()->select('c.*, u.display_name')
     ->from('comments c')
     ->join('users u', 'c.user_id = u.id')
@@ -693,19 +693,19 @@ $comments = db()->select('c.*, u.display_name')
     ->get();
 ```
 
-### Search with Pagination Example
+### 페이지네이션이 있는 검색 예제
 
 ```php
 function searchUsers($keyword, $page = 1, $perPage = 20) {
     $offset = ($page - 1) * $perPage;
 
-    // Get total count
+    // 전체 수 가져오기
     $total = db()->select()
         ->from('users')
         ->where('display_name LIKE ? OR email LIKE ?', ["%$keyword%", "%$keyword%"])
         ->count();
 
-    // Get paginated results
+    // 페이지네이션된 결과 가져오기
     $users = db()->select('*')
         ->from('users')
         ->where('display_name LIKE ? OR email LIKE ?', ["%$keyword%", "%$keyword%"])
@@ -722,12 +722,12 @@ function searchUsers($keyword, $page = 1, $perPage = 20) {
 }
 ```
 
-## Best Practices
+## 모범 사례
 
-1. **Always use prepared statements** - Use placeholders (?) for user input to prevent SQL injection
-2. **Use transactions** for related operations that should succeed or fail together
-3. **Limit SELECT fields** - Only select the columns you need instead of using `*`
-4. **Add indexes** to columns used in WHERE, ORDER BY, and JOIN clauses
-5. **Use `first()` instead of `get()[0]` when expecting a single result
-6. **Check return values** - INSERT returns ID, UPDATE/DELETE return affected rows
-7. **Close connections** - Call `db_close()` when done with database operations in long-running scripts
+1. **항상 prepared statement 사용** - SQL 인젝션을 방지하기 위해 사용자 입력에 플레이스홀더(?)를 사용하세요
+2. **관련 작업에는 트랜잭션 사용** - 함께 성공하거나 실패해야 하는 작업
+3. **SELECT 필드 제한** - `*` 대신 필요한 컬럼만 선택하세요
+4. **인덱스 추가** - WHERE, ORDER BY 및 JOIN 절에 사용되는 컬럼에
+5. **단일 결과를 예상할 때는 `first()` 사용** - `get()[0]` 대신
+6. **반환 값 확인** - INSERT는 ID를 반환하고, UPDATE/DELETE는 영향을 받은 행을 반환합니다
+7. **연결 닫기** - 장기 실행 스크립트에서 데이터베이스 작업이 완료되면 `db_close()`를 호출하세요

@@ -1,225 +1,225 @@
-# Test Documentation
+# 테스트 문서
 
-## Table of Contents
-- [Overview](#overview)
-- [Test File Structure](#test-file-structure)
-- [Required Bootstrap](#required-bootstrap)
-- [Writing Tests](#writing-tests)
-- [Running Tests](#running-tests)
-- [Test Examples](#test-examples)
+## 목차
+- [개요](#개요)
+- [테스트 파일 구조](#테스트-파일-구조)
+- [필수 부트스트랩](#필수-부트스트랩)
+- [테스트 작성하기](#테스트-작성하기)
+- [테스트 실행하기](#테스트-실행하기)
+- [테스트 예제](#테스트-예제)
 
-## Overview
+## 개요
 
-This document describes the testing guidelines and conventions for the SONUB project. All tests are written in pure PHP without external testing frameworks, following the project's standard workflow.
+이 문서는 SONUB 프로젝트의 테스트 가이드라인과 규칙을 설명합니다. 모든 테스트는 프로젝트의 표준 워크플로우를 따라 외부 테스트 프레임워크 없이 순수 PHP로 작성됩니다.
 
-## Test File Structure
+## 테스트 파일 구조
 
-- Test files are stored in the `tests/` directory
-- Test file names must end with `.test.php`
-- Directory structure should mirror the source code structure
-- Each test file should be independently executable
+- 테스트 파일은 `tests/` 디렉토리에 저장됩니다
+- 테스트 파일 이름은 반드시 `.test.php`로 끝나야 합니다
+- 디렉토리 구조는 소스 코드 구조를 반영해야 합니다
+- 각 테스트 파일은 독립적으로 실행 가능해야 합니다
 
-Example:
+예제:
 ```
 tests/
 ├── db/
-│   └── db.test.php          # Tests for lib/db/db.php
-├── db.connection.test.php   # Database connection tests
+│   └── db.test.php          # lib/db/db.php를 위한 테스트
+├── db.connection.test.php   # 데이터베이스 연결 테스트
 └── user/
-    └── user.test.php        # Tests for user functionality
+    └── user.test.php        # 사용자 기능 테스트
 ```
 
-## Required Bootstrap
+## 필수 부트스트랩
 
-**IMPORTANT:** All test files must load the bootstrap files in the following order to ensure all dependencies and functions are available:
+**중요:** 모든 테스트 파일은 모든 의존성과 함수를 사용할 수 있도록 다음 순서로 부트스트랩 파일을 로드해야 합니다:
 
 ```php
 <?php
-// Load bootstrap functions first
+// 부트스트랩 함수를 먼저 로드
 require_once __DIR__ . '/../../etc/boot/boot.functions.php';
 
-// Load all necessary includes
+// 필요한 모든 includes 로드
 require_once etc_folder('includes');
 ```
 
-This loading sequence ensures:
-1. Core utility functions are available (like `etc_folder()`, `is_dev_computer()`, etc.)
-2. All required configuration files are loaded
-3. Database connections and other dependencies are properly initialized
+이 로딩 순서는 다음을 보장합니다:
+1. 핵심 유틸리티 함수를 사용할 수 있음 (`etc_folder()`, `is_dev_computer()` 등)
+2. 필요한 모든 설정 파일이 로드됨
+3. 데이터베이스 연결 및 기타 의존성이 올바르게 초기화됨
 
-## Writing Tests
+## 테스트 작성하기
 
-### Basic Test Structure
+### 기본 테스트 구조
 
 ```php
 <?php
-// Required bootstrap
+// 필수 부트스트랩
 require_once __DIR__ . '/../../etc/boot/boot.functions.php';
 require_once etc_folder('includes');
 
-echo "=== Test Name ===\n\n";
+echo "=== 테스트 이름 ===\n\n";
 
 try {
-    // Test 1
-    echo "Test 1: Description...\n";
-    // Test logic here
-    echo "✅ Test 1 passed\n\n";
+    // 테스트 1
+    echo "테스트 1: 설명...\n";
+    // 테스트 로직
+    echo "✅ 테스트 1 통과\n\n";
 
-    // Test 2
-    echo "Test 2: Description...\n";
-    // Test logic here
-    echo "✅ Test 2 passed\n\n";
+    // 테스트 2
+    echo "테스트 2: 설명...\n";
+    // 테스트 로직
+    echo "✅ 테스트 2 통과\n\n";
 
     echo "=============================\n";
-    echo "✅ All tests passed successfully!\n";
+    echo "✅ 모든 테스트가 성공적으로 통과했습니다!\n";
     echo "=============================\n";
 
 } catch (Exception $e) {
-    echo "\n❌ Test failed: " . $e->getMessage() . "\n";
+    echo "\n❌ 테스트 실패: " . $e->getMessage() . "\n";
     exit(1);
 }
 ```
 
-### Assertion Examples
+### 단언(Assertion) 예제
 
-Since we don't use external testing frameworks, use simple assertions:
+외부 테스트 프레임워크를 사용하지 않으므로 간단한 단언을 사용합니다:
 
 ```php
-// Simple assertion
+// 간단한 단언
 if ($result !== $expected) {
-    throw new Exception("Expected $expected but got $result");
+    throw new Exception("예상값 $expected 이지만 실제값은 $result 입니다");
 }
 
-// Boolean assertion
+// 불리언 단언
 if (!$condition) {
-    throw new Exception("Condition failed: description of what failed");
+    throw new Exception("조건 실패: 실패한 내용에 대한 설명");
 }
 
-// Array/Object comparison
+// 배열/객체 비교
 if ($array1 != $array2) {
-    throw new Exception("Arrays do not match");
+    throw new Exception("배열이 일치하지 않습니다");
 }
 ```
 
-## Running Tests
+## 테스트 실행하기
 
-Tests can be run directly using PHP CLI:
+테스트는 PHP CLI를 사용하여 직접 실행할 수 있습니다:
 
 ```bash
-# Run a specific test
+# 특정 테스트 실행
 php tests/db/db.test.php
 
-# Run database connection test
+# 데이터베이스 연결 테스트 실행
 php tests/db.connection.test.php
 
-# Run all tests in a directory (using shell script)
+# 디렉토리의 모든 테스트 실행 (쉘 스크립트 사용)
 for test in tests/**/*.test.php; do
     echo "Running $test..."
     php "$test"
 done
 ```
 
-## Test Examples
+## 테스트 예제
 
-### Database Connection Test
+### 데이터베이스 연결 테스트
 
 ```php
 <?php
-// Required bootstrap
+// 필수 부트스트랩
 require_once __DIR__ . '/../../etc/boot/boot.functions.php';
 require_once etc_folder('includes');
 
-echo "=== Database Connection Test ===\n\n";
+echo "=== 데이터베이스 연결 테스트 ===\n\n";
 
 try {
     $connection = db_connection();
 
     if ($connection instanceof PDO) {
-        echo "✅ Successfully connected to database\n";
+        echo "✅ 데이터베이스에 성공적으로 연결되었습니다\n";
     } else {
-        throw new Exception("Connection is not a valid PDO instance");
+        throw new Exception("연결이 유효한 PDO 인스턴스가 아닙니다");
     }
 
 } catch (PDOException $e) {
-    echo "\n❌ Database connection error: " . $e->getMessage() . "\n";
+    echo "\n❌ 데이터베이스 연결 오류: " . $e->getMessage() . "\n";
     exit(1);
 }
 ```
 
-### Query Builder Test
+### 쿼리 빌더 테스트
 
 ```php
 <?php
-// Required bootstrap
+// 필수 부트스트랩
 require_once __DIR__ . '/../../etc/boot/boot.functions.php';
 require_once etc_folder('includes');
 
-echo "=== Query Builder Test ===\n\n";
+echo "=== 쿼리 빌더 테스트 ===\n\n";
 
 try {
-    // Test INSERT
+    // INSERT 테스트
     $id = db()->insert(['name' => 'Test'])->into('users');
-    echo "✅ Insert successful, ID: $id\n";
+    echo "✅ 삽입 성공, ID: $id\n";
 
-    // Test SELECT
+    // SELECT 테스트
     $result = db()->select('*')->from('users')->where('id = ?', [$id])->first();
     if ($result['name'] === 'Test') {
-        echo "✅ Select successful\n";
+        echo "✅ 조회 성공\n";
     }
 
-    // Test DELETE
+    // DELETE 테스트
     $affected = db()->delete()->from('users')->where('id = ?', [$id])->execute();
-    echo "✅ Delete successful, rows affected: $affected\n";
+    echo "✅ 삭제 성공, 영향받은 행: $affected\n";
 
 } catch (Exception $e) {
-    echo "\n❌ Query builder test failed: " . $e->getMessage() . "\n";
+    echo "\n❌ 쿼리 빌더 테스트 실패: " . $e->getMessage() . "\n";
     exit(1);
 }
 ```
 
-### Unit Test Example
+### 단위 테스트 예제
 
 ```php
 <?php
-// Required bootstrap
+// 필수 부트스트랩
 require_once __DIR__ . '/../../etc/boot/boot.functions.php';
 require_once etc_folder('includes');
 
-echo "=== User Validation Test ===\n\n";
+echo "=== 사용자 유효성 검사 테스트 ===\n\n";
 
 try {
-    // Test email validation
-    echo "Test 1: Email validation...\n";
+    // 이메일 유효성 검사 테스트
+    echo "테스트 1: 이메일 유효성 검사...\n";
 
     $validEmail = "user@example.com";
     $invalidEmail = "invalid-email";
 
     if (filter_var($validEmail, FILTER_VALIDATE_EMAIL)) {
-        echo "✅ Valid email accepted\n";
+        echo "✅ 유효한 이메일이 허용되었습니다\n";
     } else {
-        throw new Exception("Valid email rejected");
+        throw new Exception("유효한 이메일이 거부되었습니다");
     }
 
     if (!filter_var($invalidEmail, FILTER_VALIDATE_EMAIL)) {
-        echo "✅ Invalid email rejected\n";
+        echo "✅ 유효하지 않은 이메일이 거부되었습니다\n";
     } else {
-        throw new Exception("Invalid email accepted");
+        throw new Exception("유효하지 않은 이메일이 허용되었습니다");
     }
 
-    echo "\n✅ All validation tests passed!\n";
+    echo "\n✅ 모든 유효성 검사 테스트가 통과했습니다!\n";
 
 } catch (Exception $e) {
-    echo "\n❌ Validation test failed: " . $e->getMessage() . "\n";
+    echo "\n❌ 유효성 검사 테스트 실패: " . $e->getMessage() . "\n";
     exit(1);
 }
 ```
 
-## Best Practices
+## 모범 사례
 
-1. **Always use the bootstrap sequence** - Never skip loading `boot.functions.php` and `includes`
-2. **Keep tests independent** - Each test file should be runnable on its own
-3. **Use clear output** - Use emojis (✅ ❌) and formatting to make results easy to read
-4. **Handle errors gracefully** - Use try-catch blocks and provide helpful error messages
-5. **Exit with proper codes** - Use `exit(1)` for failures, normal exit for success
-6. **Test both success and failure cases** - Ensure your tests cover edge cases
-7. **Clean up after tests** - If your test creates data, clean it up when done
+1. **항상 부트스트랩 순서를 사용하세요** - `boot.functions.php`와 `includes` 로딩을 건너뛰지 마세요
+2. **테스트를 독립적으로 유지하세요** - 각 테스트 파일은 단독으로 실행 가능해야 합니다
+3. **명확한 출력을 사용하세요** - 이모지(✅ ❌)와 서식을 사용하여 결과를 읽기 쉽게 만드세요
+4. **오류를 우아하게 처리하세요** - try-catch 블록을 사용하고 도움이 되는 오류 메시지를 제공하세요
+5. **적절한 종료 코드로 종료하세요** - 실패 시 `exit(1)` 사용, 성공 시 정상 종료
+6. **성공과 실패 케이스를 모두 테스트하세요** - 테스트가 엣지 케이스를 다루는지 확인하세요
+7. **테스트 후 정리하세요** - 테스트가 데이터를 생성하면 완료 후 정리하세요
