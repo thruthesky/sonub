@@ -202,7 +202,7 @@ class UserHref
 
     public string $login = '/user/login';
     public string $login_success = '/user/login-success';
-    public string $logout = '/user/logout';
+    public string $logout_submit = '/user/logout-submit';
 
 
     // TODO: implement this in the future

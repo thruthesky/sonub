@@ -108,6 +108,17 @@ function is_index_page(): bool
     return false;
 }
 
+function is_logout_page(): bool
+{
+    $uri = $_SERVER['REQUEST_URI'];
+    $uri = strtok($uri, '?'); // Remove query string
+    $uri = rtrim($uri, '/'); // Remove trailing slash
+    if ($uri === '/user/logout-submit') {
+        return true;
+    }
+    return false;
+}
+
 
 
 /**
@@ -148,6 +159,16 @@ function set_session_cookie(array $user)
         SESSION_ID,
         $session_id,
         time() + (365 * 24 * 60 * 60),
+        path: '/',
+    );
+}
+
+function clear_session_cookie()
+{
+    setcookie(
+        SESSION_ID,
+        '',
+        time() - 3600,
         path: '/',
     );
 }

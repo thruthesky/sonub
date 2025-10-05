@@ -171,6 +171,23 @@ class Db
         return $this;
     }
 
+
+    /**
+     * table('users') 메서드의 별칭 (SELECT, DELETE, UPDATE 쿼리에서 주로 사용)
+     */
+    public function userTable()
+    {
+        return $this->table('users');
+    }
+    /**
+     * table('posts') 메서드의 별칭 (SELECT, DELETE, UPDATE 쿼리에서 주로 사용)
+     */
+    public function postTable()
+    {
+        return $this->table('posts');
+    }
+
+
     /**
      * table() 메서드의 별칭 (SELECT, DELETE 쿼리에서 주로 사용)
      *
@@ -189,6 +206,15 @@ class Db
     public function from($table)
     {
         return $this->table($table);
+    }
+
+    public function fromUsers()
+    {
+        return $this->from('users');
+    }
+    public function fromPosts()
+    {
+        return $this->from('posts');
     }
 
     /**
@@ -260,6 +286,11 @@ class Db
     public function intoUsers()
     {
         return $this->into('users');
+    }
+
+    public function intoPosts()
+    {
+        return $this->into('posts');
     }
 
     /**

@@ -101,3 +101,82 @@ function get_user(array $input): array
     }
     return error('user-not-found', '사용자를 찾을 수 없습니다.', ['id' => $id]);
 }
+
+
+/**
+ * 사용자 프로필 업데이트
+ *
+ * @param array $input HTTP 입력 파라미터
+ * - $input['display_name']: (선택) 사용자 표시 이름
+ * - $input['birthday']: (선택) 생년월일 (Unix timestamp)
+ * - $input['gender']: (선택) 성별 ('M' 또는 'F')
+ * @return array 업데이트된 사용자 정보 배열 또는 에러 배열
+ *
+ * @example API 호출
+ * POST /api.php
+ * {
+ *   "func": "update_user_profile",
+ *   "display_name": "홍길동",
+ *   "birthday": 631152000,
+ *   "gender": "M"
+ * }
+ * 응답: {"id":1,"firebase_uid":"abc123xyz","display_name":"홍길동",...,"func":"update_user_profile"}
+ *
+ * @example 직접 호출
+ * $user = update_user_profile(['display_name' => '홍길동', 'gender' => 'M']);
+ * echo $user['display_name']; // 홍길동
+ */
+function update_user_profile(array $input): array
+{
+    // 로그인 확인
+    $currentUser = login();
+    if (!$currentUser) {
+        return error('user-not-logged-in', '로그인이 필요합니다.');
+    }
+
+    // 업데이트할 데이터 준비
+    $data = [
+        'updated_at' => time(),
+    ];
+
+    // display_name이 제공된 경우
+    if (isset($input['display_name']) && !empty($input['display_name'])) {
+        $displayName = trim($input['display_name']);
+
+        // display_name 중복 확인 (자기 자신은 제외)
+        $existing = db()->select('id')
+            ->from('users')
+            ->where('display_name = ? AND id != ?', [$displayName, $currentUser->id])
+            ->first();
+
+        if ($existing) {
+            return error('display-name-already-exists', '이미 사용 중인 표시 이름입니다.', ['display_name' => $displayName]);
+        }
+
+        $data['display_name'] = $displayName;
+    }
+
+    // birthday가 제공된 경우
+    if (isset($input['birthday'])) {
+        $data['birthday'] = (int)$input['birthday'];
+    }
+
+    // gender가 제공된 경우
+    if (isset($input['gender'])) {
+        $data['gender'] = $input['gender'];
+    }
+
+    // 데이터베이스 업데이트
+    $affected = db()->update($data)
+        ->userTable()
+        ->where('id = ?', [$currentUser->id])
+        ->execute();
+
+    // 업데이트된 사용자 정보 반환
+    $user = db()->select('*')
+        ->fromUsers()
+        ->where('id = ?', [$currentUser->id])
+        ->first();
+
+    return $user;
+}

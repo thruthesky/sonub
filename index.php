@@ -1,6 +1,15 @@
 <?php
 include_once './init.php';
 
+if (is_logout_page()) {
+    if (login() != null) {
+        // If the user is logged in, clear the session cookie
+        clear_session_cookie();
+    }
+}
+
+
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -92,9 +101,6 @@ include_once './init.php';
                         <a href="<?= href()->user->profile ?>">
                             <i class="bi bi-person-circle sonub-nav-icon"></i>
                         </a>
-                        <a href="<?= href()->user->login ?>">
-                            <i class="bi bi-box-arrow-in-right sonub-nav-icon"></i>
-                        </a>
                     </div>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                         <span class="navbar-toggler-icon"></span>
@@ -117,12 +123,15 @@ include_once './init.php';
                         </li>
                     </ul>
                     <ul class="navbar-nav">
-                        <li class="nav-item">
-                            <button class="nav-link" onclick="firebase.auth().signOut()" type="button">Sign out</button>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="<?= href()->user->login ?>">Sign in</a>
-                        </li>
+                        <?php if (login() == null) { ?>
+                            <li class="nav-item">
+                                <a class="nav-link" href="<?= href()->user->login ?>">Sign in</a>
+                            </li>
+                        <?php } else { ?>
+                            <li class="nav-item">
+                                <a class="nav-link" href="<?= href()->user->logout_submit ?>">Sign out</a>
+                            </li>
+                        <?php } ?>
                     </ul>
                 </div>
             </div>
@@ -139,7 +148,6 @@ include_once './init.php';
                     <a class="nav-link" href="<?= href()->user->login ?>">Login</a>
                     <a class="nav-link" href="#">Dashboard</a>
                     <a class="nav-link" href="<?= href()->user->profile ?>">Profile</a>
-                    <button class="nav-link" onclick="firebase.auth().signOut()">Logout</button>
                     <a class="nav-link" href="#">Settings</a>
                     <a class="nav-link" href="#">Messages</a>
                 </nav>

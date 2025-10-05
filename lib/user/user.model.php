@@ -20,4 +20,22 @@ class UserModel
         $this->birthday = $data['birthday'] ?? 0;
         $this->gender = $data['gender'] ?? '';
     }
+
+    /**
+     * UserModel 객체를 배열로 변환
+     *
+     * @return array 사용자 정보 배열
+     */
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'firebase_uid' => $this->firebase_uid,
+            'display_name' => $this->display_name,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            'birthday' => $this->birthday,
+            'gender' => $this->gender,
+        ];
+    }
 }

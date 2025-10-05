@@ -7,6 +7,10 @@ inject_index_language();
     <?php echo tr('This is a sample application using Firebase Phone Authentication and a MySQL database.'); ?>
 </div>
 
+<p>
+    Nickname: <?php echo login()->display_name ?? 'Guest'; ?><br>
+</p>
+
 <div class="card mt-4">
     <div class="card-body">
         <h5 class="card-title"><?php echo tr('Getting Started'); ?></h5>
