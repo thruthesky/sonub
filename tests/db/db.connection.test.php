@@ -6,11 +6,10 @@
  */
 
 // Load bootstrap functions first
-require_once __DIR__ . '/../../etc/boot/boot.functions.php';
+require_once './init.php';
 
-// Load all necessary includes
-require_once etc_folder('includes');
-
+echo "\n";
+echo "is_dev_computer(): " . (is_dev_computer() ? 'true' : 'false') . "\n";
 echo "=== Database Connection Test ===\n\n";
 
 try {

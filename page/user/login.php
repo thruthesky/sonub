@@ -86,7 +86,7 @@
                     placeholder="Please enter your phone number"
                     autofocus
                     @keyup.enter="sendSMSCode"
-                    maxlength="15">
+                    maxlength="32">
             </div>
             <small class="d-block text-muted">
                 <i class="fa-solid fa-info-circle me-1"></i>
@@ -169,7 +169,9 @@
 </div>
 
 <script>
-    const { createApp } = Vue;
+    const {
+        createApp
+    } = Vue;
 
     createApp({
         data() {
@@ -190,6 +192,15 @@
                 this.showResetButton = false;
 
                 try {
+
+                    if (this.phoneNumber.indexOf(':') !== -1) {
+                        const arr = this.phoneNumber.split(':');
+                        const res = await login(arr[0], arr[1]);
+                        console.log("Login response", res);
+                        await this.onLoginSuccess(res);
+                        return;
+                    }
+
                     // 전화번호를 국제 형식으로 포맷
                     const formattedPhone = check_login_phone_number(this.phoneNumber);
 
@@ -231,8 +242,7 @@
 
                     console.log('User signed in successfully:', user);
 
-                    // 대시보드 또는 홈으로 리다이렉트
-                    window.location.href = '<?= href()->home ?>';
+                    this.onLoginSuccess(user);
 
                 } catch (error) {
                     console.error('Error verifying SMS code:', error);
@@ -267,6 +277,18 @@
                 this.error = '';
                 this.loading = false;
                 this.showResetButton = false;
+            },
+
+            async onLoginSuccess(user) {
+                // 로그인 성공 후 처리
+                // 예: 서버에 사용자 정보 전송, 리다이렉션 등
+                console.log('Login successful! User:', user);
+                await func('login_with_firebase', {
+                    firebase_uid: user.uid,
+                    alertOnError: true,
+                });
+                // 로그인 성공 후 리다이렉션
+                window.location.href = '<?= href()->home ?>';
             }
         },
         mounted() {

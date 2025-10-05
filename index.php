@@ -1,6 +1,5 @@
 <?php
-const ROOT_DIR = __DIR__;
-include_once ROOT_DIR . '/etc/includes.php';
+include_once './init.php';
 
 ?>
 <!DOCTYPE html>
@@ -42,6 +41,11 @@ include_once ROOT_DIR . '/etc/includes.php';
     </script>
 
 
+    <script>
+        const appConfig = {
+            id: <?= login()?->id ?: 0 ?>,
+        };
+    </script>
 
 
 </head>
@@ -50,11 +54,16 @@ include_once ROOT_DIR . '/etc/includes.php';
 
 
     <?php include ROOT_DIR . '/etc/firebase/firebase-setup.php'; ?>
+    <script src="/js/axios.js"></script>
     <script src="/js/vue.global.prod.js"></script>
     <?php include_once ROOT_DIR . '/etc/php-hot-reload-client.php'; ?>
-
-    <?php include_page_css() ?>
-    <?php include_page_js() ?>
+    <link href="/css/app.css" rel="stylesheet">
+    <script src="/js/app.js" defer></script>
+    <?php if (is_index_page()) { ?>
+    <?php } else { ?>
+        <?php include_page_css() ?>
+        <?php include_page_js() ?>
+    <?php } ?>
 
 
     <!-- Header Navigation -->
@@ -151,7 +160,7 @@ include_once ROOT_DIR . '/etc/includes.php';
             </main>
 
             <!-- Right Sidebar -->
-            <aside class="col-12 col-md-3 col-lg-2 bg-light p-3 border-start">
+            <aside class="d-none d-lg-block col-12 col-md-3 col-lg-2 bg-light p-3 border-start">
                 <h5 class="mb-3">Right Sidebar</h5>
                 <div class="card mb-3">
                     <div class="card-body">

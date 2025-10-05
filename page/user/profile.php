@@ -2,6 +2,7 @@
 inject_user_profile_language();
 ?>
 <h1><?php echo tr('Update Profile'); ?></h1>
+<a href="<?= href()->user->profile_edit ?>">Edit My Profile</a>
 <?php
 function inject_user_profile_language()
 {

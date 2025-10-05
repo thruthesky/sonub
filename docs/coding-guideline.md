@@ -5,12 +5,32 @@
 - [Sonub 코딩 가이드라인](#sonub-코딩-가이드라인)
   - [목차](#목차)
   - [개요](#개요)
+    - [명칭](#명칭)
   - [일반 코딩 표준](#일반-코딩-표준)
+    - [에러 처리 표준](#에러-처리-표준)
+      - [error() 함수 시그니처](#error-함수-시그니처)
+      - [에러 응답 형식](#에러-응답-형식)
+      - [올바른 에러 처리 예제](#올바른-에러-처리-예제)
+      - [에러 체크 예제](#에러-체크-예제)
+      - [잘못된 에러 처리 예제 (절대 금지)](#잘못된-에러-처리-예제-절대-금지)
+      - [일반적인 에러 코드 규칙](#일반적인-에러-코드-규칙)
+      - [HTTP 응답 코드 가이드](#http-응답-코드-가이드)
+      - [위반 시 결과](#위반-시-결과)
   - [디자인 및 스타일링 표준](#디자인-및-스타일링-표준)
   - [JavaScript 프레임워크 - Vue.js 3.x](#javascript-프레임워크---vuejs-3x)
     - [Vue.js 사용 방식](#vuejs-사용-방식)
     - [MPA 방식의 장점](#mpa-방식의-장점)
+    - [자동 리소스 로딩](#자동-리소스-로딩)
+      - [자동 로딩 규칙](#자동-로딩-규칙)
+      - [JavaScript에서 즉시 사용 가능한 객체](#javascript에서-즉시-사용-가능한-객체)
+      - [자동 로딩 활용 가이드](#자동-로딩-활용-가이드)
+      - [주의사항](#주의사항)
     - [Vue.js 기본 사용법](#vuejs-기본-사용법)
+      - [기본 Vue 앱 생성](#기본-vue-앱-생성)
+      - [HTML에서 Vue 사용](#html에서-vue-사용)
+      - [컴포넌트 정의 및 사용](#컴포넌트-정의-및-사용)
+      - [Firebase와 함께 사용](#firebase와-함께-사용)
+      - [중요 사항](#중요-사항)
   - [프레임워크 및 라이브러리 저장 가이드라인](#프레임워크-및-라이브러리-저장-가이드라인)
     - [완전한 프레임워크 패키지](#완전한-프레임워크-패키지)
     - [단일 JavaScript 라이브러리](#단일-javascript-라이브러리)
@@ -18,20 +38,67 @@
     - [개요](#개요-1)
     - [작동 방식](#작동-방식)
     - [사용 가이드라인](#사용-가이드라인)
+      - [자동 포함](#자동-포함)
+      - [파일 명명 규칙](#파일-명명-규칙)
+      - [사용 시기](#사용-시기)
     - [예제](#예제)
+      - [예제 1: 지원 페이지 만들기](#예제-1-지원-페이지-만들기)
+      - [예제 2: 사용자 로그인 페이지](#예제-2-사용자-로그인-페이지)
+      - [출력 예제](#출력-예제)
   - [Firebase 통합 가이드라인](#firebase-통합-가이드라인)
     - [로딩 동작](#로딩-동작)
     - [JavaScript에서 사용](#javascript에서-사용)
-    - [부팅 절차에서 사용](#부팅-절차에서-사용)
+    - [Vue.js에서 Firebase 실시간 업데이트](#vuejs에서-firebase-실시간-업데이트)
   - [개발 시스템 시작](#개발-시스템-시작)
     - [빠른 시작 (필수 명령어)](#빠른-시작-필수-명령어)
     - [데이터베이스 관리](#데이터베이스-관리)
     - [Docker Compose 사용](#docker-compose-사용)
+      - [사전 요구 사항](#사전-요구-사항)
+      - [빠른 시작 명령어](#빠른-시작-명령어)
+      - [로컬 개발 도메인 설정](#로컬-개발-도메인-설정)
+      - [기본 구성](#기본-구성)
+      - [디렉토리 구조](#디렉토리-구조)
+      - [주요 기능](#주요-기능)
+      - [문제 해결](#문제-해결)
     - [핫 리로드 개발 서버](#핫-리로드-개발-서버)
+      - [기능](#기능)
+      - [설정 및 사용](#설정-및-사용)
+      - [구성](#구성)
+      - [SSL 인증서](#ssl-인증서)
   - [레이아웃 파일 구조](#레이아웃-파일-구조)
+    - [Sonub 메인 레이아웃 파일](#sonub-메인-레이아웃-파일)
+    - [파일 구조 설명](#파일-구조-설명)
+    - [레이아웃 작업 시 필수 규칙](#레이아웃-작업-시-필수-규칙)
+    - [작업 예시](#작업-예시)
   - [URL 및 페이지 링크 관리 규칙](#url-및-페이지-링크-관리-규칙)
+    - [URL 함수 필수 사용 규칙](#url-함수-필수-사용-규칙)
+    - [제공되는 URL 함수 목록](#제공되는-url-함수-목록)
+    - [올바른 URL 사용 예제](#올바른-url-사용-예제)
+    - [잘못된 URL 사용 예제 (절대 금지)](#잘못된-url-사용-예제-절대-금지)
+    - [위반 시 결과](#위반-시-결과-1)
+    - [새로운 페이지 추가 시 절차](#새로운-페이지-추가-시-절차)
   - [CSS 및 디자인 규칙](#css-및-디자인-규칙)
+    - [Sonub 기본 CSS 파일](#sonub-기본-css-파일)
+    - [디자인 작업 시 필수 규칙](#디자인-작업-시-필수-규칙)
+      - [1️⃣ 레이아웃 포지션 관련 (인라인 클래스 사용)](#1️⃣-레이아웃-포지션-관련-인라인-클래스-사용)
+      - [2️⃣ 스타일 관련 (CSS 파일 사용)](#2️⃣-스타일-관련-css-파일-사용)
+    - [올바른 CSS 사용 예제](#올바른-css-사용-예제)
+    - [잘못된 CSS 사용 예제 (절대 금지)](#잘못된-css-사용-예제-절대-금지)
+    - [위반 시 결과](#위반-시-결과-2)
+    - [작업 체크리스트](#작업-체크리스트)
+  - [Firebase 테스트 계정](#firebase-테스트-계정)
+    - [테스트 계정 개요](#테스트-계정-개요)
+    - [테스트 계정 특징](#테스트-계정-특징)
+    - [테스트 계정 목록](#테스트-계정-목록)
+    - [사용 예시](#사용-예시)
+    - [주의사항](#주의사항-1)
+    - [활용 시나리오](#활용-시나리오)
   - [필수 언어 사용 규칙](#필수-언어-사용-규칙)
+    - [주석 및 텍스트 작성 규칙](#주석-및-텍스트-작성-규칙)
+    - [예외 사항](#예외-사항)
+    - [올바른 예제](#올바른-예제)
+    - [잘못된 예제 (절대 금지)](#잘못된-예제-절대-금지)
+    - [위반 시 결과](#위반-시-결과-3)
 
 ---
 
@@ -57,6 +124,223 @@
 - BOM 없는 UTF-8 인코딩을 사용합니다.
 - 복잡한 로직에는 주석과 문서화를 작성합니다.
 - 모든 주석과 문서는 **반드시 한국어**로 작성합니다.
+
+### 에러 처리 표준
+
+**🔥🔥🔥 최강력 규칙: 모든 에러는 반드시 `error()` 함수를 사용하여 처리해야 합니다 🔥🔥🔥**
+
+- **✅ 필수**: 모든 함수에서 에러가 발생하면 **반드시** `error()` 함수를 사용하여 에러 응답을 리턴
+- **✅ 필수**: `error()` 함수는 `lib/functions.php`에 정의되어 있음
+- **✅ 필수**: 모든 API 응답과 내부 함수 호출에서 일관된 에러 형식 사용
+- **❌ 금지**: 에러 발생 시 직접 배열을 만들어 리턴하는 것 금지
+- **❌ 금지**: 예외를 던지거나(throw) 직접 처리하는 방식 금지 (특별한 경우 제외)
+
+#### error() 함수 시그니처
+
+```php
+/**
+ * 모든 에러 응답을 이 함수를 통해서 리턴한다.
+ * @param string $code 에러 코드 (예: 'user-not-found', 'invalid-input')
+ * @param string $message 에러 메시지 (사용자에게 표시될 메시지)
+ * @param array $data 추가 에러 데이터 (선택사항)
+ * @param int $response_code HTTP 응답 코드 (기본값: 400)
+ * @return array 에러 배열
+ */
+function error(string $code = 'unknown', string $message = '', array $data = [], int $response_code = 400): array
+```
+
+#### 에러 응답 형식
+
+`error()` 함수는 다음과 같은 형식의 배열을 리턴합니다:
+
+```php
+[
+    'error_code' => 'user-not-found',
+    'error_message' => '사용자를 찾을 수 없습니다',
+    'error_data' => [],
+    'error_response_code' => 404,
+]
+```
+
+#### 올바른 에러 처리 예제
+
+```php
+<?php
+/**
+ * 사용자 정보를 조회하는 함수
+ *
+ * @param int $user_id 사용자 ID
+ * @return array 성공 시 사용자 정보, 실패 시 에러 배열
+ */
+function getUserInfo($user_id) {
+    // 입력값 검증
+    if (empty($user_id)) {
+        return error('invalid-user-id', '사용자 ID가 유효하지 않습니다');
+    }
+
+    // 데이터베이스에서 사용자 조회
+    $user = db()->get('users', $user_id);
+
+    // 사용자가 없으면 에러 리턴
+    if (!$user) {
+        return error('user-not-found', '사용자를 찾을 수 없습니다', ['user_id' => $user_id], 404);
+    }
+
+    // 성공 시 사용자 정보 리턴
+    return $user;
+}
+
+/**
+ * 게시글을 작성하는 함수
+ *
+ * @param string $title 제목
+ * @param string $content 내용
+ * @return array 성공 시 게시글 정보, 실패 시 에러 배열
+ */
+function createPost($title, $content) {
+    // 입력값 검증
+    if (empty($title)) {
+        return error('missing-title', '제목을 입력해주세요');
+    }
+
+    if (empty($content)) {
+        return error('missing-content', '내용을 입력해주세요');
+    }
+
+    // 제목 길이 검증
+    if (strlen($title) > 100) {
+        return error('title-too-long', '제목은 100자를 초과할 수 없습니다', ['max_length' => 100]);
+    }
+
+    // 게시글 작성
+    $post_id = db()->insert('posts', [
+        'title' => $title,
+        'content' => $content,
+        'created_at' => time(),
+    ]);
+
+    if (!$post_id) {
+        return error('create-failed', '게시글 작성에 실패했습니다', [], 500);
+    }
+
+    // 성공 시 게시글 정보 리턴
+    return [
+        'post_id' => $post_id,
+        'title' => $title,
+        'content' => $content,
+    ];
+}
+?>
+```
+
+#### 에러 체크 예제
+
+함수를 호출한 후 에러를 확인하는 방법:
+
+```php
+<?php
+// 사용자 정보 조회
+$user = getUserInfo(123);
+
+// 에러 체크
+if (isset($user['error_code'])) {
+    // 에러 처리
+    echo "에러 발생: " . $user['error_message'];
+    // 또는 에러를 상위로 전파
+    return $user;
+}
+
+// 성공 시 처리
+echo "사용자 이름: " . $user['name'];
+
+// 게시글 작성
+$result = createPost('제목', '내용');
+
+// 에러 체크
+if (isset($result['error_code'])) {
+    // 에러 처리
+    echo "에러 발생: " . $result['error_message'];
+    return $result;
+}
+
+// 성공 시 처리
+echo "게시글 작성 완료: " . $result['post_id'];
+?>
+```
+
+#### 잘못된 에러 처리 예제 (절대 금지)
+
+```php
+<?php
+// ❌ 절대 금지: 직접 배열을 만들어 에러 리턴
+function getUserInfo($user_id) {
+    if (!$user_id) {
+        return [
+            'error' => true,
+            'message' => '사용자 ID가 없습니다'
+        ];
+    }
+}
+
+// ❌ 절대 금지: 예외를 던지는 방식 (특별한 경우 제외)
+function getUserInfo($user_id) {
+    if (!$user_id) {
+        throw new Exception('사용자 ID가 없습니다');
+    }
+}
+
+// ❌ 절대 금지: null이나 false만 리턴
+function getUserInfo($user_id) {
+    if (!$user_id) {
+        return null; // 에러 정보가 없음
+    }
+}
+
+// ❌ 절대 금지: die()나 exit() 사용
+function getUserInfo($user_id) {
+    if (!$user_id) {
+        die('사용자 ID가 없습니다'); // 실행 중단
+    }
+}
+?>
+```
+
+#### 일반적인 에러 코드 규칙
+
+에러 코드는 다음 규칙을 따릅니다:
+
+- **형식**: `kebab-case` (소문자와 하이픈 사용)
+- **명확성**: 에러의 원인을 명확하게 표현
+- **일관성**: 유사한 에러는 유사한 코드 사용
+
+**일반적인 에러 코드 예시:**
+
+- `invalid-input`: 잘못된 입력값
+- `missing-parameter`: 필수 매개변수 누락
+- `user-not-found`: 사용자를 찾을 수 없음
+- `permission-denied`: 권한 부족
+- `already-exists`: 이미 존재함
+- `database-error`: 데이터베이스 오류
+- `authentication-failed`: 인증 실패
+- `session-expired`: 세션 만료
+
+#### HTTP 응답 코드 가이드
+
+`error()` 함수의 네 번째 매개변수는 HTTP 응답 코드입니다:
+
+- `400`: Bad Request (잘못된 요청 - 기본값)
+- `401`: Unauthorized (인증 실패)
+- `403`: Forbidden (권한 부족)
+- `404`: Not Found (리소스를 찾을 수 없음)
+- `409`: Conflict (충돌 - 이미 존재함)
+- `500`: Internal Server Error (서버 내부 오류)
+
+#### 위반 시 결과
+
+- 에러 형식이 일관되지 않아 처리가 어려움
+- API 응답이 표준화되지 않음
+- 에러 추적 및 디버깅이 어려움
+- 클라이언트에서 에러 처리 로직이 복잡해짐
 
 ---
 
@@ -87,6 +371,568 @@ PHP MPA 방식으로 동작하므로 다음과 같은 특징이 있습니다:
 - **메모리 누수 방지**: 페이지 전환 시 브라우저가 자동으로 메모리를 정리합니다
 - **단순한 상태 관리**: 각 페이지가 독립적이므로 복잡한 전역 상태 관리가 필요 없습니다
 
+### 자동 리소스 로딩
+
+**🔥🔥🔥 최강력 규칙: 페이지별 CSS/JS 파일은 자동으로 로드됩니다 🔥🔥🔥**
+
+#### 자동 로딩 규칙
+
+Sonub는 PHP 페이지 파일과 같은 폴더에 있는 CSS와 JavaScript 파일을 자동으로 로드합니다.
+
+**로딩 위치:**
+
+- **CSS 파일**: `<head>` 태그 안에 자동 포함
+- **JavaScript 파일**: `<body>` 태그 시작 부분에 자동 포함 (`defer` 속성 사용)
+
+**파일 명명 규칙:**
+
+```
+page/user/profile.php   ← PHP 페이지 파일
+page/user/profile.css   ← 자동으로 로드됨 (같은 폴더, 같은 이름)
+page/user/profile.js    ← 자동으로 로드됨 (같은 폴더, 같은 이름)
+```
+
+**예제:**
+
+```
+page/
+├── index.php           ← 메인 페이지
+├── index.css           ← 자동 로드
+├── index.js            ← 자동 로드
+├── user/
+│   ├── login.php       ← 로그인 페이지
+│   ├── login.css       ← 자동 로드
+│   ├── login.js        ← 자동 로드
+│   ├── profile.php     ← 프로필 페이지
+│   ├── profile.css     ← 자동 로드
+│   └── profile.js      ← 자동 로드
+```
+
+**생성되는 HTML:**
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- 페이지별 CSS 자동 로드 -->
+    <link href="/page/user/profile.css" rel="stylesheet" />
+  </head>
+  <body>
+    <!-- Firebase SDK 로드 (최우선) -->
+    <script src="https://www.gstatic.com/.../firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/.../firebase-auth-compat.js"></script>
+
+    <!-- Firebase 초기화 -->
+    <script>
+      firebase.initializeApp({
+        /* config */
+      });
+    </script>
+
+    <!-- Axios.js 로드 (Firebase 다음) -->
+    <script src="/js/axios.min.js"></script>
+
+    <!-- Vue.js 로드 -->
+    <script src="/js/vue.global.prod.js"></script>
+
+    <!-- 페이지별 JavaScript 자동 로드 -->
+    <script defer src="/page/user/profile.js"></script>
+
+    <!-- 페이지 콘텐츠 -->
+    <?php include page() ?>
+  </body>
+</html>
+```
+
+#### JavaScript에서 즉시 사용 가능한 객체
+
+**⚠️⚠️⚠️ 중요: Firebase, Axios, Vue.js는 즉시 사용 가능합니다 ⚠️⚠️⚠️**
+
+페이지별 JavaScript 파일(`profile.js`)에서 다음 객체들을 **즉시** 사용할 수 있습니다:
+
+1. **Firebase**: 전역 객체로 즉시 사용 가능
+2. **axios**: 전역 객체로 즉시 사용 가능
+3. **Vue**: 전역 객체로 즉시 사용 가능
+
+**로딩 순서:**
+
+```
+1. Firebase SDK 로드
+2. Firebase 초기화
+3. Axios.js 로드       ← Firebase 다음, Vue.js 이전
+4. Vue.js 로드
+5. 페이지별 JavaScript 로드 (defer)
+```
+
+**이유:**
+
+- Firebase SDK, Axios.js, Vue.js는 `<body>` 태그 시작 부분에 **동기적으로** 로드됨
+- 페이지별 JavaScript는 `defer` 속성으로 로드되어 DOM이 준비된 후 실행됨
+- 따라서 별도의 대기 시간이나 초기화 체크가 **불필요**함
+
+**Axios.js란?**
+
+- HTTP 요청을 쉽게 만들 수 있는 Promise 기반 HTTP 클라이언트
+- RESTful API 호출에 사용
+- Sonub API (`api.php`)와 통신할 때 사용 가능
+
+**예제 1: Firebase와 Vue.js 사용**
+
+```javascript
+// page/user/profile.js
+
+// ✅ Firebase와 Vue.js를 즉시 사용 가능 - 별도의 초기화 체크 불필요!
+
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      user: null,
+      posts: [],
+    };
+  },
+  methods: {
+    async loadUserProfile() {
+      // Firebase를 즉시 사용 가능
+      const uid = firebase.auth().currentUser?.uid;
+      if (!uid) {
+        console.log("로그인이 필요합니다");
+        return;
+      }
+
+      // Firestore에서 사용자 프로필 로드
+      const doc = await firebase.firestore().collection("users").doc(uid).get();
+
+      this.user = doc.data();
+    },
+
+    async loadUserPosts() {
+      // Firestore에서 사용자 게시글 로드
+      const snapshot = await firebase
+        .firestore()
+        .collection("posts")
+        .where("uid", "==", this.user.uid)
+        .orderBy("createdAt", "desc")
+        .limit(10)
+        .get();
+
+      this.posts = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+    },
+  },
+  mounted() {
+    // Firebase 인증 상태 확인
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        console.log("사용자 로그인:", user.uid);
+        this.loadUserProfile();
+        this.loadUserPosts();
+      } else {
+        console.log("로그인 필요");
+        window.location.href = "/login";
+      }
+    });
+  },
+}).mount("#app");
+```
+
+**예제 2: Axios로 API 호출**
+
+```javascript
+// page/user/settings.js
+
+// ✅ axios를 즉시 사용 가능 - 별도의 초기화 체크 불필요!
+
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      user: null,
+      loading: false,
+      error: null,
+    };
+  },
+  methods: {
+    async loadUserData() {
+      try {
+        this.loading = true;
+        this.error = null;
+
+        // Axios로 Sonub API 호출
+        const response = await axios.get("/api.php", {
+          params: {
+            f: "getUserInfo",
+            user_id: 123,
+          },
+        });
+
+        // 에러 체크
+        if (response.data.error_code) {
+          this.error = response.data.error_message;
+          return;
+        }
+
+        // 성공 시 데이터 저장
+        this.user = response.data;
+        console.log("함수:", response.data.func);
+      } catch (err) {
+        this.error = "사용자 정보 로드 실패: " + err.message;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async updateUserProfile(name, bio) {
+      try {
+        this.loading = true;
+        this.error = null;
+
+        // Axios로 POST 요청
+        const response = await axios.post("/api.php?f=updateUserProfile", {
+          user_id: this.user.user_id,
+          name: name,
+          bio: bio,
+        });
+
+        // 에러 체크
+        if (response.data.error_code) {
+          this.error = response.data.error_message;
+          return;
+        }
+
+        // 성공
+        console.log("프로필 업데이트 성공");
+        this.user = response.data;
+      } catch (err) {
+        this.error = "프로필 업데이트 실패: " + err.message;
+      } finally {
+        this.loading = false;
+      }
+    },
+  },
+  mounted() {
+    this.loadUserData();
+  },
+}).mount("#settings-app");
+```
+
+**예제 3: Firebase + Axios 함께 사용**
+
+```javascript
+// page/user/dashboard.js
+
+// ✅ Firebase, axios, Vue.js 모두 즉시 사용 가능!
+
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      firebaseUser: null,
+      userData: null,
+      stats: null,
+      loading: true,
+    };
+  },
+  methods: {
+    async loadUserData(uid) {
+      try {
+        // Axios로 사용자 통계 가져오기
+        const statsResponse = await axios.get("/api.php", {
+          params: {
+            f: "getUserStats",
+            user_id: uid,
+          },
+        });
+
+        if (!statsResponse.data.error_code) {
+          this.stats = statsResponse.data;
+        }
+
+        // Firebase Firestore에서 사용자 정보 가져오기
+        const doc = await firebase
+          .firestore()
+          .collection("users")
+          .doc(uid)
+          .get();
+
+        this.userData = doc.data();
+      } catch (err) {
+        console.error("데이터 로드 실패:", err);
+      } finally {
+        this.loading = false;
+      }
+    },
+  },
+  mounted() {
+    // Firebase 인증 상태 확인
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        this.firebaseUser = user;
+        this.loadUserData(user.uid);
+      } else {
+        window.location.href = "/login";
+      }
+    });
+  },
+}).mount("#dashboard-app");
+```
+
+**Axios 주요 메서드:**
+
+```javascript
+// GET 요청
+axios.get("/api.php?f=getUserInfo&user_id=123");
+axios.get("/api.php", { params: { f: "getUserInfo", user_id: 123 } });
+
+// POST 요청
+axios.post("/api.php?f=createPost", {
+  title: "제목",
+  content: "내용",
+});
+
+// PUT 요청
+axios.put("/api.php?f=updatePost", {
+  post_id: 456,
+  title: "수정된 제목",
+});
+
+// DELETE 요청
+axios.delete("/api.php?f=deletePost&post_id=456");
+
+// 헤더 설정
+axios.get("/api.php?f=getData", {
+  headers: {
+    Authorization: "Bearer token123",
+  },
+});
+
+// 타임아웃 설정
+axios.get("/api.php?f=getData", {
+  timeout: 5000, // 5초
+});
+```
+
+**잘못된 예제 (불필요한 초기화 체크):**
+
+```javascript
+// ❌ 불필요한 코드 - Firebase, Axios, Vue.js는 이미 로드되어 있음!
+
+// 불필요: Firebase 로드 대기
+if (typeof firebase === "undefined") {
+  console.error("Firebase가 로드되지 않았습니다");
+}
+
+// 불필요: Axios 로드 대기
+if (typeof axios === "undefined") {
+  console.error("Axios가 로드되지 않았습니다");
+}
+
+// 불필요: Vue 로드 대기
+if (typeof Vue === "undefined") {
+  console.error("Vue가 로드되지 않았습니다");
+}
+
+// 불필요: window.onload 이벤트
+window.addEventListener("load", function () {
+  // defer 속성으로 이미 DOM이 준비된 후 실행됨
+  const { createApp } = Vue;
+  // ...
+});
+```
+
+#### 자동 로딩 활용 가이드
+
+**1. 페이지별 스타일이 필요한 경우:**
+
+```css
+/* page/user/profile.css */
+
+/* 프로필 페이지 전용 스타일 */
+.profile-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.profile-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-info h1 {
+  margin: 0;
+  font-size: 24px;
+  color: var(--bs-emphasis-color);
+}
+```
+
+**2. 페이지별 로직이 필요한 경우:**
+
+```javascript
+// page/user/profile.js
+
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      user: null,
+      loading: true,
+      error: null,
+    };
+  },
+  methods: {
+    async loadProfile() {
+      try {
+        this.loading = true;
+        const user = firebase.auth().currentUser;
+
+        if (!user) {
+          this.error = "로그인이 필요합니다";
+          return;
+        }
+
+        const doc = await firebase
+          .firestore()
+          .collection("users")
+          .doc(user.uid)
+          .get();
+
+        if (!doc.exists) {
+          this.error = "사용자 프로필을 찾을 수 없습니다";
+          return;
+        }
+
+        this.user = doc.data();
+      } catch (err) {
+        this.error = "프로필 로드 실패: " + err.message;
+      } finally {
+        this.loading = false;
+      }
+    },
+  },
+  mounted() {
+    this.loadProfile();
+  },
+}).mount("#profile-app");
+```
+
+**3. 해당 페이지 PHP 파일:**
+
+```php
+<!-- page/user/profile.php -->
+
+<div id="profile-app">
+  <!-- 로딩 상태 -->
+  <div v-if="loading" class="text-center">
+    <div class="spinner-border" role="status">
+      <span class="visually-hidden">로딩중...</span>
+    </div>
+  </div>
+
+  <!-- 에러 상태 -->
+  <div v-else-if="error" class="alert alert-danger">
+    {{ error }}
+  </div>
+
+  <!-- 프로필 표시 -->
+  <div v-else-if="user" class="profile-container">
+    <div class="profile-header">
+      <img :src="user.photoURL" alt="프로필 사진" class="profile-avatar">
+      <div class="profile-info">
+        <h1>{{ user.displayName }}</h1>
+        <p class="text-muted">{{ user.email }}</p>
+      </div>
+    </div>
+
+    <div class="profile-bio">
+      <h3>자기소개</h3>
+      <p>{{ user.bio || '자기소개가 없습니다' }}</p>
+    </div>
+  </div>
+</div>
+```
+
+**자동으로 생성되는 HTML:**
+
+페이지 접속 시 Sonub는 자동으로 다음을 생성합니다:
+
+```html
+<head>
+  <!-- 페이지별 CSS 자동 추가 -->
+  <link href="/page/user/profile.css" rel="stylesheet" />
+</head>
+<body>
+  <!-- 1. Firebase SDK 자동 로드 (최우선) -->
+  <script src="...firebase-app-compat.js"></script>
+  <script src="...firebase-auth-compat.js"></script>
+  <script src="...firebase-firestore-compat.js"></script>
+
+  <!-- 2. Firebase 초기화 -->
+  <script>
+    firebase.initializeApp({...});
+  </script>
+
+  <!-- 3. Axios.js 자동 로드 -->
+  <script src="/js/axios.min.js"></script>
+
+  <!-- 4. Vue.js 자동 로드 -->
+  <script src="/js/vue.global.prod.js"></script>
+
+  <!-- 5. 페이지별 JavaScript 자동 추가 (defer) -->
+  <script defer src="/page/user/profile.js"></script>
+
+  <!-- 페이지 콘텐츠 -->
+  <?php include page() ?>
+</body>
+```
+
+#### 주의사항
+
+**✅ 올바른 사용:**
+
+- 파일명을 PHP 파일과 동일하게 유지
+- **Firebase, Axios, Vue.js를 즉시 사용** - 별도의 초기화 체크 불필요
+- `mounted()` 훅에서 Firebase/Axios 로직 작성
+- Axios로 Sonub API (`api.php`) 호출 시 에러 체크 포함
+
+**❌ 잘못된 사용:**
+
+- 다른 이름의 CSS/JS 파일 생성 (자동 로드 안 됨)
+- Firebase, Axios, Vue.js 초기화 대기 코드 작성 (불필요)
+- 페이지별 JS 파일에서 다른 페이지의 DOM 접근 시도
+- `window.onload` 또는 `DOMContentLoaded` 이벤트 사용 (불필요 - `defer` 속성으로 이미 처리됨)
+
+**로딩 순서 요약:**
+
+```
+1. CSS 파일           → <head>에 로드
+2. Firebase SDK       → <body> 시작 부분 (동기)
+3. Firebase 초기화    → <body> 시작 부분 (동기)
+4. Axios.js           → <body> 시작 부분 (동기)
+5. Vue.js             → <body> 시작 부분 (동기)
+6. 페이지별 JS        → <body> 시작 부분 (defer - DOM 준비 후 실행)
+7. 페이지 콘텐츠      → include page()
+```
+
+따라서 **페이지별 JavaScript 파일에서 Firebase, axios, Vue 모두 즉시 사용 가능**합니다.
+
+---
+
 ### Vue.js 기본 사용법
 
 #### 기본 Vue 앱 생성
@@ -98,19 +944,19 @@ const { createApp } = Vue;
 createApp({
   data() {
     return {
-      message: '안녕하세요, Sonub!',
-      count: 0
-    }
+      message: "안녕하세요, Sonub!",
+      count: 0,
+    };
   },
   methods: {
     increment() {
       this.count++;
-    }
+    },
   },
   mounted() {
-    console.log('Vue 앱이 마운트되었습니다');
-  }
-}).mount('#app');
+    console.log("Vue 앱이 마운트되었습니다");
+  },
+}).mount("#app");
 ```
 
 #### HTML에서 Vue 사용
@@ -130,7 +976,7 @@ const { createApp } = Vue;
 
 // 컴포넌트 정의
 const UserCard = {
-  props: ['user'],
+  props: ["user"],
   template: `
     <div class="card">
       <div class="card-body">
@@ -138,23 +984,23 @@ const UserCard = {
         <p class="card-text">{{ user.email }}</p>
       </div>
     </div>
-  `
+  `,
 };
 
 // 앱 생성 및 컴포넌트 등록
 createApp({
   components: {
-    UserCard
+    UserCard,
   },
   data() {
     return {
       users: [
-        { name: '홍길동', email: 'hong@example.com' },
-        { name: '김철수', email: 'kim@example.com' }
-      ]
-    }
-  }
-}).mount('#app');
+        { name: "홍길동", email: "hong@example.com" },
+        { name: "김철수", email: "kim@example.com" },
+      ],
+    };
+  },
+}).mount("#app");
 ```
 
 #### Firebase와 함께 사용
@@ -166,34 +1012,35 @@ createApp({
   data() {
     return {
       user: null,
-      posts: []
-    }
+      posts: [],
+    };
   },
   methods: {
     async loadPosts() {
       // Firebase Firestore에서 게시글 로드
-      const snapshot = await firebase.firestore()
-        .collection('posts')
-        .orderBy('createdAt', 'desc')
+      const snapshot = await firebase
+        .firestore()
+        .collection("posts")
+        .orderBy("createdAt", "desc")
         .limit(10)
         .get();
 
-      this.posts = snapshot.docs.map(doc => ({
+      this.posts = snapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
-    }
+    },
   },
   mounted() {
     // 인증 상태 확인
-    firebase.auth().onAuthStateChanged(user => {
+    firebase.auth().onAuthStateChanged((user) => {
       this.user = user;
       if (user) {
         this.loadPosts();
       }
     });
-  }
-}).mount('#app');
+  },
+}).mount("#app");
 ```
 
 #### 중요 사항
@@ -257,11 +1104,13 @@ Sonub는 `lib/page/page.functions.php`에 정의된 두 개의 헬퍼 함수를 
 자동 로딩이 작동하려면 다음 명명 패턴을 따르세요:
 
 **기본 페이지:**
+
 - PHP 페이지: `/page/about.php`
 - CSS 파일: `/page/about.css` (존재하면 자동 로드)
 - JS 파일: `/page/about.js` (존재하면 defer 속성과 함께 자동 로드)
 
 **중첩된 페이지:**
+
 - PHP 페이지: `/page/user/login.php`
 - CSS 파일: `/page/user/login.css`
 - JS 파일: `/page/user/login.js`
@@ -313,21 +1162,21 @@ const { createApp } = Vue;
 createApp({
   data() {
     return {
-      message: '지원 페이지에 오신 것을 환영합니다',
-      tickets: []
-    }
+      message: "지원 페이지에 오신 것을 환영합니다",
+      tickets: [],
+    };
   },
   methods: {
     async loadTickets() {
       // 지원 티켓 로드
-      console.log('지원 티켓을 로드합니다');
-    }
+      console.log("지원 티켓을 로드합니다");
+    },
   },
   mounted() {
-    console.log('지원 페이지 로드됨');
+    console.log("지원 페이지 로드됨");
     this.loadTickets();
-  }
-}).mount('#support-app');
+  },
+}).mount("#support-app");
 ```
 
 이 파일들은 `/support` 접속 시 자동으로 포함됩니다.
@@ -371,27 +1220,26 @@ const { createApp } = Vue;
 createApp({
   data() {
     return {
-      email: '',
-      password: '',
-      error: null
-    }
+      email: "",
+      password: "",
+      error: null,
+    };
   },
   methods: {
     async handleLogin() {
       try {
         // Firebase 인증
-        await firebase.auth().signInWithEmailAndPassword(
-          this.email,
-          this.password
-        );
+        await firebase
+          .auth()
+          .signInWithEmailAndPassword(this.email, this.password);
         // 로그인 성공 시 리다이렉트
-        window.location.href = '/dashboard';
+        window.location.href = "/dashboard";
       } catch (err) {
-        this.error = '로그인에 실패했습니다: ' + err.message;
+        this.error = "로그인에 실패했습니다: " + err.message;
       }
-    }
-  }
-}).mount('#login-app');
+    },
+  },
+}).mount("#login-app");
 ```
 
 #### 출력 예제
@@ -431,22 +1279,24 @@ Firebase JavaScript SDK와 Vue.js는 페이지의 `<body>` 태그 상단에서 �
 
 ```html
 <body>
-    <!-- 1. Firebase SDK 로드 (최우선) -->
-    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-firestore-compat.js"></script>
+  <!-- 1. Firebase SDK 로드 (최우선) -->
+  <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-firestore-compat.js"></script>
 
-    <!-- 2. Firebase 초기화 -->
-    <script>
-        firebase.initializeApp({ /* config */ });
-    </script>
+  <!-- 2. Firebase 초기화 -->
+  <script>
+    firebase.initializeApp({
+      /* config */
+    });
+  </script>
 
-    <!-- 3. Vue.js 로드 -->
-    <script src="/js/vue.global.prod.js"></script>
+  <!-- 3. Vue.js 로드 -->
+  <script src="/js/vue.global.prod.js"></script>
 
-    <!-- 이제 Firebase와 Vue.js 모두 즉시 사용 가능 -->
-    <!-- 페이지 콘텐츠 -->
-    <?php include page() ?>
+  <!-- 이제 Firebase와 Vue.js 모두 즉시 사용 가능 -->
+  <!-- 페이지 콘텐츠 -->
+  <?php include page() ?>
 </body>
 ```
 
@@ -461,35 +1311,33 @@ createApp({
   data() {
     return {
       user: null,
-      users: []
-    }
+      users: [],
+    };
   },
   methods: {
     async loadUsers() {
       // Firestore에서 사용자 목록 로드
-      const snapshot = await firebase.firestore()
-        .collection('users')
-        .get();
+      const snapshot = await firebase.firestore().collection("users").get();
 
-      this.users = snapshot.docs.map(doc => ({
+      this.users = snapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
-    }
+    },
   },
   mounted() {
     // Firebase 인증 상태 감지
-    firebase.auth().onAuthStateChanged(user => {
+    firebase.auth().onAuthStateChanged((user) => {
       this.user = user;
       if (user) {
-        console.log('사용자 로그인:', user.uid);
+        console.log("사용자 로그인:", user.uid);
         this.loadUsers();
       } else {
-        console.log('사용자 로그아웃');
+        console.log("사용자 로그아웃");
       }
     });
-  }
-}).mount('#app');
+  },
+}).mount("#app");
 ```
 
 ### Vue.js에서 Firebase 실시간 업데이트
@@ -501,26 +1349,27 @@ createApp({
   data() {
     return {
       notifications: [],
-      unsubscribe: null
-    }
+      unsubscribe: null,
+    };
   },
   methods: {
     setupRealtimeListener() {
       // Firestore 실시간 리스너 설정
-      this.unsubscribe = firebase.firestore()
-        .collection('notifications')
-        .where('userId', '==', this.user.uid)
-        .orderBy('createdAt', 'desc')
-        .onSnapshot(snapshot => {
-          this.notifications = snapshot.docs.map(doc => ({
+      this.unsubscribe = firebase
+        .firestore()
+        .collection("notifications")
+        .where("userId", "==", this.user.uid)
+        .orderBy("createdAt", "desc")
+        .onSnapshot((snapshot) => {
+          this.notifications = snapshot.docs.map((doc) => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
           }));
         });
-    }
+    },
   },
   mounted() {
-    firebase.auth().onAuthStateChanged(user => {
+    firebase.auth().onAuthStateChanged((user) => {
       if (user) {
         this.user = user;
         this.setupRealtimeListener();
@@ -532,8 +1381,8 @@ createApp({
     if (this.unsubscribe) {
       this.unsubscribe();
     }
-  }
-}).mount('#app');
+  },
+}).mount("#app");
 ```
 
 **중요 참고 사항:**
@@ -750,6 +1599,7 @@ npm run dev
 2. **✅ 페이지 콘텐츠 수정 시**: 실제 페이지 콘텐츠는 `/apps/sonub/` 폴더 아래의 개별 파일 수정
 
 3. **✅ 레이아웃 포함 사항**:
+
    - 상단 네비게이션 (Header Navigation)
    - 좌측 사이드바 (Left Sidebar) - 로그인, 대시보드, 프로필 등
    - 우측 사이드바 (Right Sidebar) - 활동, 통계 등
@@ -1010,19 +1860,115 @@ function sonub_messages_page()
 ### 작업 체크리스트
 
 **1. 레이아웃 작업 시:**
+
 - [ ] Bootstrap 5.3.8 유틸리티 클래스 사용 확인
 - [ ] HTML `class` 속성에 직접 작성 확인
 - [ ] 반응형 클래스 활용 확인 (예: `d-md-flex`, `col-lg-6`)
 
 **2. 스타일 작업 시:**
+
 - [ ] `apps/sonub/sonub.css` 파일에 클래스 정의 확인
 - [ ] 재사용 가능한 클래스명 사용 확인
 - [ ] Bootstrap CSS 변수 사용 확인 (`var(--bs-body-color)` 등)
 
 **3. 디자인 완료 후:**
+
 - [ ] 인라인 `style` 속성이 없는지 확인
 - [ ] 레이아웃이 Bootstrap 클래스로 구성되었는지 확인
 - [ ] 스타일이 CSS 파일에 정의되었는지 확인
+
+---
+
+## Firebase 테스트 계정
+
+**⚠️⚠️⚠️ 개발 및 테스트용 Firebase 계정 정보 ⚠️⚠️⚠️**
+
+### 테스트 계정 개요
+
+Sonub 개발 환경에서는 Firebase 인증 테스트를 위한 사전 설정된 테스트 계정이 제공됩니다.
+
+### 테스트 계정 특징
+
+- **커스텀 UID**: 각 테스트 계정의 Firebase UID는 과일 이름으로 커스텀 설정되어 있습니다
+- **공통 비밀번호**: 모든 테스트 계정의 비밀번호는 `12345a,*`로 동일합니다
+- **이메일 로그인**: 이메일과 비밀번호로 로그인 가능합니다
+
+### 테스트 계정 목록
+
+| UID        | 이메일              | 전화번호     | 비밀번호   |
+| ---------- | ------------------- | ------------ | ---------- |
+| apple      | apple@test.com      | +11234567890 | `12345a,*` |
+| banana     | banana@test.com     | +11234567891 | `12345a,*` |
+| cherry     | cherry@test.com     | +11234567892 | `12345a,*` |
+| durian     | durian@test.com     | +11234567893 | `12345a,*` |
+| elderberry | elderberry@test.com | +11234567894 | `12345a,*` |
+| fig        | fig@test.com        | +11234567895 | `12345a,*` |
+| grape      | grape@test.com      | +11234567896 | `12345a,*` |
+| honeydew   | honeydew@test.com   | +11234567897 | `12345a,*` |
+| jackfruit  | jackfruit@test.com  | +11234567898 | `12345a,*` |
+| kiwi       | kiwi@test.com       | +11234567899 | `12345a,*` |
+| lemon      | lemon@test.com      | +11234567900 | `12345a,*` |
+| mango      | mango@test.com      | +11234567901 | `12345a,*` |
+
+### 사용 예시
+
+**로그인 테스트:**
+
+```javascript
+// banana 계정으로 로그인
+firebase
+  .auth()
+  .signInWithEmailAndPassword("banana@test.com", "12345a,*")
+  .then((userCredential) => {
+    console.log("로그인 성공:", userCredential.user.uid); // "banana"
+  })
+  .catch((error) => {
+    console.error("로그인 실패:", error.message);
+  });
+```
+
+**Vue.js에서 사용:**
+
+```javascript
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      email: "apple@test.com",
+      password: "12345a,*",
+      error: null,
+    };
+  },
+  methods: {
+    async testLogin() {
+      try {
+        const result = await firebase
+          .auth()
+          .signInWithEmailAndPassword(this.email, this.password);
+        console.log("테스트 계정 로그인 성공:", result.user.uid);
+      } catch (err) {
+        this.error = "로그인 실패: " + err.message;
+      }
+    },
+  },
+}).mount("#app");
+```
+
+### 주의사항
+
+- **개발 환경 전용**: 이 계정들은 개발 및 테스트 목적으로만 사용해야 합니다
+- **운영 환경 금지**: 운영 환경에서는 절대 사용하지 마세요
+- **비밀번호 변경 금지**: 테스트 계정의 비밀번호를 변경하지 마세요
+- **UID 일관성**: Firebase UID가 과일 이름으로 고정되어 있어 테스트 데이터 생성 시 유용합니다
+
+### 활용 시나리오
+
+1. **사용자 인증 테스트**: 로그인/로그아웃 기능 테스트
+2. **권한 관리 테스트**: 여러 사용자 계정으로 권한 확인
+3. **소셜 기능 테스트**: 친구 추가, 팔로우 등 테스트
+4. **알림 기능 테스트**: 사용자 간 알림 전송 테스트
+5. **채팅 기능 테스트**: 다중 사용자 채팅 테스트
 
 ---
 
@@ -1129,11 +2075,12 @@ function getUserInfo($user_id) {
 ```
 
 ```html
-<!-- User profile card --> ❌ 영어 주석 금지
+<!-- User profile card -->
+❌ 영어 주석 금지
 <div class="card">
   <div class="card-body">
-    <h5>Welcome</h5> ❌ 영어 UI 텍스트 금지
-    <button>Click here</button> ❌ 영어 버튼 텍스트 금지
+    <h5>Welcome</h5>
+    ❌ 영어 UI 텍스트 금지 <button>Click here</button> ❌ 영어 버튼 텍스트 금지
   </div>
 </div>
 ```

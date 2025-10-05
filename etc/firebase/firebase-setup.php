@@ -28,15 +28,15 @@
             const email = user.email;
             const displayName = user.displayName;
 
-            console.log('User ID:', uid);
-            console.log('Email:', email);
-            console.log('Display Name:', displayName);
+            console.log('User UID:', uid);
+            // console.log('Email:', email);
+            // console.log('Display Name:', displayName);
 
-            // You can also get the ID token if needed
-            user.getIdToken().then((idToken) => {
-                console.log('ID Token:', idToken);
-                // Send the ID token to your server for verification if needed
-            });
+            // // You can also get the ID token if needed
+            // user.getIdToken().then((idToken) => {
+            //     console.log('ID Token:', idToken);
+            //     // Send the ID token to your server for verification if needed
+            // });
 
         } else {
             // No user is signed in.

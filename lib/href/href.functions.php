@@ -193,6 +193,7 @@ class UserHref
 {
     public string $account_delete = '/page/help/account_removal';
     public string $profile = '/user/profile';
+    public string $profile_edit = '/user/profile-edit';
     public string $profile_edit_submit = '/user/profile-edit-submit';
 
     public string $settings = '/user/settings';
