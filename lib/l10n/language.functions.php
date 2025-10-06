@@ -153,3 +153,40 @@ function langfy(string $text): ?array
 
     return $translations;
 }
+
+/**
+ * Get the browser language code from HTTP_ACCEPT_LANGUAGE header
+ *
+ * This function parses the HTTP_ACCEPT_LANGUAGE header to extract the primary
+ * language code sent by the browser. This is useful for debugging and development
+ * to understand what language code the browser is using.
+ *
+ * @return string The browser language code (e.g., "en-US", "ko", "ja", "zh-CN")
+ */
+function get_browser_language(): string
+{
+    // Check if HTTP_ACCEPT_LANGUAGE header exists
+    if (!isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+        return 'Not detected';
+    }
+
+    $acceptLanguage = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
+
+    // Parse the accept language header
+    // Format: en-US,en;q=0.9,ko;q=0.8,ja;q=0.7
+    $languages = explode(',', $acceptLanguage);
+
+    if (empty($languages)) {
+        return 'Not detected';
+    }
+
+    // Get the first (preferred) language
+    $firstLanguage = trim($languages[0]);
+
+    // Remove quality value if present (e.g., "en;q=0.9")
+    if (strpos($firstLanguage, ';') !== false) {
+        $firstLanguage = explode(';', $firstLanguage)[0];
+    }
+
+    return $firstLanguage;
+}
