@@ -203,6 +203,20 @@ if (is_logout_page()) {
         <div class="container-fluid">
             <div class="row">
                 <div class="col-12 text-center">
+                    <!-- Language Selector -->
+                    <div class="mb-2">
+                        <div class="dropdown d-inline-block">
+                            <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-globe"></i> <span id="currentLanguage"><?php echo get_user_lang(); ?></span>
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="languageDropdown">
+                                <li><a class="dropdown-item language-option" href="#" data-lang="en">English</a></li>
+                                <li><a class="dropdown-item language-option" href="#" data-lang="ko">한국어</a></li>
+                                <li><a class="dropdown-item language-option" href="#" data-lang="ja">日本語</a></li>
+                                <li><a class="dropdown-item language-option" href="#" data-lang="zh">中文</a></li>
+                            </ul>
+                        </div>
+                    </div>
                     <p class="mb-0">&copy; 2024 Sonub Application. All rights reserved.</p>
                 </div>
             </div>

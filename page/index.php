@@ -1,16 +1,16 @@
 <?php
 inject_index_language();
 ?>
-<h1 class="display-4"><?php echo tr('Welcome to Sonub'); ?></h1>
-<p class="lead"><?php echo tr('Sonub application is running!'); ?></p>
+<h1 class="display-4"><?php echo t()->{'Welcome to Sonub'}; ?></h1>
+<p class="lead"><?php echo t()->{'Sonub application is running!'}; ?></p>
 
 <!-- Browser Language Display -->
 <div class="alert alert-secondary" role="alert">
-    <strong><?php echo tr('Browser Language'); ?>:</strong> <?php echo get_browser_language(); ?>
+    <strong><?php echo t()->{'Browser Language'}; ?>:</strong> <?php echo get_browser_language(); ?>
 </div>
 
 <div class="alert alert-info" role="alert">
-    <?php echo tr('This is a sample application using Firebase Phone Authentication and a MySQL database.'); ?>
+    <?php echo t()->{'This is a sample application using Firebase Phone Authentication and a MySQL database.'}; ?>
 </div>
 
 <p>
@@ -19,9 +19,9 @@ inject_index_language();
 
 <div class="card mt-4">
     <div class="card-body">
-        <h5 class="card-title"><?php echo tr('Getting Started'); ?></h5>
-        <p class="card-text"><?php echo tr('Start building your application with our powerful features.'); ?></p>
-        <a href="#" class="btn btn-primary"><?php echo tr('Learn More'); ?></a>
+        <h5 class="card-title"><?php echo t()->{'Getting Started'}; ?></h5>
+        <p class="card-text"><?php echo t()->{'Start building your application with our powerful features.'}; ?></p>
+        <a href="#" class="btn btn-primary"><?php echo t()->{'Learn More'}; ?></a>
     </div>
 </div>
 

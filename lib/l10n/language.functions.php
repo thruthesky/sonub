@@ -45,35 +45,45 @@ function tr(array|string $texts, array $replaces = [])
 
 
 /**
- * 사용자가 설정을 하지 않으면 무조건 한국어로 보인다. 즉, 영어 웹브라우저라도 한국어로 보이도록 한다.
- * 
- * 로직:
- * 1) HTTP 파라메타로 ?lang=en 과 같이 언어 정보가 넘어오면, 해당 언어로 설정. (참고: etc/boot.php 에서 쿠키에 저장한다)
- * 2) 쿠키에 lang 이 있으면, 해당 언어로 설정
- * 3) HTTP 파라메타 ?lang=xx 이 없고, 쿠키에도 언어 설정이 없으면, 브라우저 언어는 무시하고, 무조건 한국어로 설정
- * @return string 
+ * 사용자 언어 설정을 가져온다. 우선순위는 다음과 같다:
+ * 1) HTTP 파라메타로 ?lang=en 과 같이 언어 정보가 넘어오면, 해당 언어로 설정
+ * 2) 쿠키에 language_code 가 있으면, 해당 언어로 설정
+ * 3) 쿠키에 lang 이 있으면, 해당 언어로 설정 (이전 버전 호환성)
+ * 4) 브라우저 언어를 사용
+ * 5) 위 모든 경우에 해당하지 않으면 영어를 기본값으로 사용
+ * @return string
  */
 function get_user_lang(): string
 {
-
     // Supported languages
     $supportedLanguages = ['en', 'ko', 'ja', 'zh'];
 
-    // 'lang' 에 HTTP GET 파라메타가 있으면, 해당 값을 우선으로 사용
+    // 1) 'lang' 에 HTTP GET 파라메타가 있으면, 해당 값을 우선으로 사용
     $lang = isset($_GET['lang']) ? $_GET['lang'] : '';
     if (!empty($lang) && in_array($lang, $supportedLanguages)) {
         return $lang;
     }
 
-    // 그렇지 않으면, 쿠키에 저장된 언어 설정을 사용
+    // 2) 쿠키에 language_code 가 있으면, 해당 언어를 사용
+    $lang = isset($_COOKIE['language_code']) ? $_COOKIE['language_code'] : '';
+    if (!empty($lang) && in_array($lang, $supportedLanguages)) {
+        return $lang;
+    }
+
+    // 3) 쿠키에 lang 이 있으면, 해당 언어를 사용 (이전 버전 호환성)
     $lang = isset($_COOKIE['lang']) ? $_COOKIE['lang'] : '';
     if (!empty($lang) && in_array($lang, $supportedLanguages)) {
         return $lang;
     }
 
-    // 그렇지 않으면, 쿠키에 저장된 언어 설정을 사용
+    // 4) 브라우저 언어를 사용
+    $lang = get_browser_language();
+    if (!empty($lang) && in_array($lang, $supportedLanguages)) {
+        return $lang;
+    }
 
-    return 'ko'; // Default to Korean if no valid language is set
+    // 5) 위 모든 경우에 해당하지 않으면 영어를 기본값으로 사용
+    return 'en';
 }
 
 
@@ -158,16 +168,19 @@ function langfy(string $text): ?array
  * Get the browser language code from HTTP_ACCEPT_LANGUAGE header
  *
  * This function parses the HTTP_ACCEPT_LANGUAGE header to extract the primary
- * language code sent by the browser. This is useful for debugging and development
- * to understand what language code the browser is using.
+ * two-letter language code sent by the browser. It only returns supported languages
+ * (ko, en, ja, zh) and defaults to 'en' for unsupported languages.
  *
- * @return string The browser language code (e.g., "en-US", "ko", "ja", "zh-CN")
+ * @return string Two-letter language code (ko, en, ja, or zh)
  */
 function get_browser_language(): string
 {
+    // Supported languages in sonub
+    $supportedLanguages = ['ko', 'en', 'ja', 'zh'];
+
     // Check if HTTP_ACCEPT_LANGUAGE header exists
     if (!isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-        return 'Not detected';
+        return 'en'; // Default to English if no language header
     }
 
     $acceptLanguage = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
@@ -177,7 +190,7 @@ function get_browser_language(): string
     $languages = explode(',', $acceptLanguage);
 
     if (empty($languages)) {
-        return 'Not detected';
+        return 'en'; // Default to English if parsing fails
     }
 
     // Get the first (preferred) language
@@ -188,5 +201,71 @@ function get_browser_language(): string
         $firstLanguage = explode(';', $firstLanguage)[0];
     }
 
-    return $firstLanguage;
+    // Extract only the two-letter language code (e.g., "en-US" -> "en")
+    if (strlen($firstLanguage) > 2 && strpos($firstLanguage, '-') !== false) {
+        $firstLanguage = explode('-', $firstLanguage)[0];
+    }
+
+    // Ensure we have exactly two characters
+    $firstLanguage = substr($firstLanguage, 0, 2);
+
+    // Check if the language is supported, otherwise default to English
+    if (in_array($firstLanguage, $supportedLanguages)) {
+        return $firstLanguage;
+    }
+
+    return 'en'; // Default to English for unsupported languages
+}
+
+/**
+ * 사용자가 선택한 언어를 쿠키에 저장하는 API 함수
+ *
+ * @param array $params - API 파라미터, 'language_code' 키를 포함해야 함
+ * @return array - 성공 또는 실패 응답
+ */
+function select_language(array $params): array
+{
+    // Supported languages
+    $supportedLanguages = ['en', 'ko', 'ja', 'zh'];
+
+    // 언어 코드 파라미터 확인
+    if (!isset($params['language_code'])) {
+        return error('missing-language-code', 'Language code is required');
+    }
+
+    $languageCode = $params['language_code'];
+
+    // 지원하는 언어인지 확인
+    if (!in_array($languageCode, $supportedLanguages)) {
+        return error('unsupported-language', 'Language code is not supported');
+    }
+
+    // 쿠키 설정 (1년간 유효)
+    $expiry = time() + (365 * 24 * 60 * 60); // 1년
+    $path = '/';
+    $domain = ''; // 현재 도메인
+    $secure = false; // HTTPS인 경우만 true
+    $httponly = true; // HTTP 통신에서만 접근 가능
+
+    $result = setcookie('language_code', $languageCode, [
+        'expires' => $expiry,
+        'path' => $path,
+        'domain' => $domain,
+        'secure' => $secure,
+        'httponly' => $httponly,
+        'samesite' => 'Lax'
+    ]);
+
+    if (!$result) {
+        return error('cookie-set-failed', 'Failed to set language cookie');
+    }
+
+    // 즉시 반영을 위해 $_COOKIE 변수도 설정
+    $_COOKIE['language_code'] = $languageCode;
+
+    return [
+        'success' => true,
+        'message' => 'Language saved successfully',
+        'language_code' => $languageCode
+    ];
 }
