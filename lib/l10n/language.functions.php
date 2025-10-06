@@ -223,7 +223,7 @@ function get_browser_language(): string
  * @param array $params - API 파라미터, 'language_code' 키를 포함해야 함
  * @return array - 성공 또는 실패 응답
  */
-function select_language(array $params): array
+function set_language(array $params): array
 {
     // Supported languages
     $supportedLanguages = ['en', 'ko', 'ja', 'zh'];

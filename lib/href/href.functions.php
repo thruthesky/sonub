@@ -201,6 +201,7 @@ class UserHref
     public string $merge_account_submit = '/user/merge-account-submit';
 
     public string $login = '/user/login';
+    public string $register = '/user/login';
     public string $login_success = '/user/login-success';
     public string $logout_submit = '/user/logout-submit';
 

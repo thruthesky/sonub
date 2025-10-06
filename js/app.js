@@ -13,10 +13,6 @@
     //     }
     // });
 
-    // 언어 선택 기능 초기화
-    ready(() => {
-        initLanguageSelector();
-    });
 })();
 
 
@@ -92,42 +88,4 @@ async function login(id, pw) {
     return user;
 
 
-}
-/**
- * 언어 선택 기능 초기화
- */
-function initLanguageSelector() {
-    // 언어 선택 옵션에 클릭 이벤트 리스너 추가
-    const languageOptions = document.querySelectorAll('.language-option');
-    languageOptions.forEach(option => {
-        option.addEventListener('click', async (event) => {
-            event.preventDefault();
-            const selectedLang = event.target.getAttribute('data-lang');
-            await selectLanguage(selectedLang);
-        });
-    });
-}
-
-/**
- * 언어 선택 및 저장
- * @param {string} languageCode - 선택된 언어 코드 (en, ko, ja, zh)
- */
-async function selectLanguage(languageCode) {
-    try {
-        // API 호출하여 언어 선택 저장
-        const response = await func('select_language', {
-            language_code: languageCode,
-            alertOnError: true
-        });
-
-        if (response.success) {
-            // 현재 언어 표시 업데이트
-            document.getElementById('currentLanguage').textContent = languageCode;
-
-            // 페이지 새로고침하여 언어 변경 적용
-            window.location.reload();
-        }
-    } catch (error) {
-        console.error('언어 선택 중 오류 발생:', error);
-    }
 }

@@ -2,8 +2,8 @@
 // 페이지 고유 로직: 로그인 확인
 $user = login();
 if (!$user) {
-    header('Location: /page/user/login.php');
-    exit;
+    include_once ROOT_DIR . '/widgets/login/login-first.php';
+    return;
 }
 ?>
 
@@ -125,135 +125,141 @@ if (!$user) {
 
 <!-- 페이지 고유 Vue.js 앱 -->
 <script>
-const { createApp } = Vue;
+    const {
+        createApp
+    } = Vue;
 
-createApp({
-    data() {
-        return {
-            form: {
-                displayName: '',
-                gender: '',
-            },
-            birthdayYear: '',
-            birthdayMonth: '',
-            birthdayDay: '',
-            years: [],
-            availableDays: [],
-            loading: false,
-            errorMessage: ''
-        };
-    },
-    mounted() {
-        this.initializeYears();
-        this.loadUserProfile();
-    },
-    methods: {
-        /**
-         * 년도 선택 옵션 초기화
-         * 60년 전부터 18년 전까지
-         */
-        initializeYears() {
-            const currentYear = new Date().getFullYear();
-            const startYear = currentYear - 60;
-            const endYear = currentYear - 18;
-
-            for (let year = endYear; year >= startYear; year--) {
-                this.years.push(year);
-            }
+    createApp({
+        data() {
+            return {
+                form: {
+                    displayName: '',
+                    gender: '',
+                },
+                birthdayYear: '',
+                birthdayMonth: '',
+                birthdayDay: '',
+                years: [],
+                availableDays: [],
+                loading: false,
+                errorMessage: ''
+            };
         },
-
-        /**
-         * 선택된 년도와 월에 따라 일 수 업데이트
-         */
-        updateDays() {
-            if (!this.birthdayYear || !this.birthdayMonth) {
-                this.availableDays = Array.from({ length: 31 }, (_, i) => i + 1);
-                return;
-            }
-
-            const year = parseInt(this.birthdayYear);
-            const month = parseInt(this.birthdayMonth);
-            const daysInMonth = new Date(year, month, 0).getDate();
-
-            this.availableDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
-            // 현재 선택된 일이 새로운 월의 일 수보다 크면 초기화
-            if (this.birthdayDay && parseInt(this.birthdayDay) > daysInMonth) {
-                this.birthdayDay = '';
-            }
+        mounted() {
+            this.initializeYears();
+            this.loadUserProfile();
         },
+        methods: {
+            /**
+             * 년도 선택 옵션 초기화
+             * 60년 전부터 18년 전까지
+             */
+            initializeYears() {
+                const currentYear = new Date().getFullYear();
+                const startYear = currentYear - 60;
+                const endYear = currentYear - 18;
 
-        /**
-         * 사용자 프로필 로드
-         */
-        async loadUserProfile() {
-            try {
-                // PHP에서 전달받은 사용자 정보
-                const user = <?= json_encode($user->toArray()) ?>;
-
-                this.form.displayName = user.display_name || '';
-                this.form.gender = user.gender || '';
-
-                // 생년월일 파싱 (Unix timestamp)
-                if (user.birthday && user.birthday > 0) {
-                    const birthday = new Date(user.birthday * 1000);
-                    this.birthdayYear = birthday.getFullYear();
-                    this.birthdayMonth = birthday.getMonth() + 1;
-                    this.birthdayDay = birthday.getDate();
-                    this.updateDays();
-                } else {
-                    this.updateDays();
+                for (let year = endYear; year >= startYear; year--) {
+                    this.years.push(year);
                 }
-            } catch (error) {
-                console.error('프로필 로드 오류:', error);
-                this.errorMessage = '프로필 정보를 불러오는 중 오류가 발생했습니다.';
-            }
-        },
+            },
 
-        /**
-         * 프로필 업데이트 제출
-         */
-        async updateProfile() {
-            this.errorMessage = '';
+            /**
+             * 선택된 년도와 월에 따라 일 수 업데이트
+             */
+            updateDays() {
+                if (!this.birthdayYear || !this.birthdayMonth) {
+                    this.availableDays = Array.from({
+                        length: 31
+                    }, (_, i) => i + 1);
+                    return;
+                }
 
-            // 유효성 검사
-            if (!this.form.displayName.trim()) {
-                this.errorMessage = '표시 이름을 입력해주세요.';
-                return;
-            }
+                const year = parseInt(this.birthdayYear);
+                const month = parseInt(this.birthdayMonth);
+                const daysInMonth = new Date(year, month, 0).getDate();
 
-            // 생년월일을 Unix timestamp로 변환
-            let birthday = 0;
-            if (this.birthdayYear && this.birthdayMonth && this.birthdayDay) {
-                const birthDate = new Date(
-                    parseInt(this.birthdayYear),
-                    parseInt(this.birthdayMonth) - 1,
-                    parseInt(this.birthdayDay)
-                );
-                birthday = Math.floor(birthDate.getTime() / 1000);
-            }
+                this.availableDays = Array.from({
+                    length: daysInMonth
+                }, (_, i) => i + 1);
 
-            this.loading = true;
+                // 현재 선택된 일이 새로운 월의 일 수보다 크면 초기화
+                if (this.birthdayDay && parseInt(this.birthdayDay) > daysInMonth) {
+                    this.birthdayDay = '';
+                }
+            },
 
-            try {
-                const result = await func('update_user_profile', {
-                    display_name: this.form.displayName.trim(),
-                    gender: this.form.gender,
-                    birthday: birthday
-                });
+            /**
+             * 사용자 프로필 로드
+             */
+            async loadUserProfile() {
+                try {
+                    // PHP에서 전달받은 사용자 정보
+                    const user = <?= json_encode($user->toArray()) ?>;
 
-                // Bootstrap Toast 표시
-                const toastElement = document.getElementById('successToast');
-                const toast = new bootstrap.Toast(toastElement);
-                toast.show();
+                    this.form.displayName = user.display_name || '';
+                    this.form.gender = user.gender || '';
 
-            } catch (error) {
-                console.error('프로필 업데이트 오류:', error);
-                this.errorMessage = error.message || '프로필 업데이트 중 오류가 발생했습니다.';
-            } finally {
-                this.loading = false;
+                    // 생년월일 파싱 (Unix timestamp)
+                    if (user.birthday && user.birthday > 0) {
+                        const birthday = new Date(user.birthday * 1000);
+                        this.birthdayYear = birthday.getFullYear();
+                        this.birthdayMonth = birthday.getMonth() + 1;
+                        this.birthdayDay = birthday.getDate();
+                        this.updateDays();
+                    } else {
+                        this.updateDays();
+                    }
+                } catch (error) {
+                    console.error('프로필 로드 오류:', error);
+                    this.errorMessage = '프로필 정보를 불러오는 중 오류가 발생했습니다.';
+                }
+            },
+
+            /**
+             * 프로필 업데이트 제출
+             */
+            async updateProfile() {
+                this.errorMessage = '';
+
+                // 유효성 검사
+                if (!this.form.displayName.trim()) {
+                    this.errorMessage = '표시 이름을 입력해주세요.';
+                    return;
+                }
+
+                // 생년월일을 Unix timestamp로 변환
+                let birthday = 0;
+                if (this.birthdayYear && this.birthdayMonth && this.birthdayDay) {
+                    const birthDate = new Date(
+                        parseInt(this.birthdayYear),
+                        parseInt(this.birthdayMonth) - 1,
+                        parseInt(this.birthdayDay)
+                    );
+                    birthday = Math.floor(birthDate.getTime() / 1000);
+                }
+
+                this.loading = true;
+
+                try {
+                    const result = await func('update_user_profile', {
+                        display_name: this.form.displayName.trim(),
+                        gender: this.form.gender,
+                        birthday: birthday
+                    });
+
+                    // Bootstrap Toast 표시
+                    const toastElement = document.getElementById('successToast');
+                    const toast = new bootstrap.Toast(toastElement);
+                    toast.show();
+
+                } catch (error) {
+                    console.error('프로필 업데이트 오류:', error);
+                    this.errorMessage = error.message || '프로필 업데이트 중 오류가 발생했습니다.';
+                } finally {
+                    this.loading = false;
+                }
             }
         }
-    }
-}).mount('#app');
+    }).mount('#app');
 </script>
