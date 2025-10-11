@@ -17,6 +17,7 @@ if (is_dev_computer()) {
 } else {
     include_once ROOT_DIR . '/etc/config/db.config.php';
 }
+
 include_once ROOT_DIR . '/lib/db/db.php';
 include_once ROOT_DIR . '/lib/db/entity.php';
 include_once ROOT_DIR . '/lib/href/href.functions.php';
@@ -29,3 +30,5 @@ include_once ROOT_DIR . '/lib/file/file.upload.php';
 include_once ROOT_DIR . '/lib/file/file.delete.php';
 
 include_once ROOT_DIR . '/etc/config/app.config.php';
+include_once ROOT_DIR . '/lib/pagination/basic.pagination.php';
+include_once ROOT_DIR . '/etc/config/category.config.php';

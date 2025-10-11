@@ -27,6 +27,7 @@ class Db
     protected $orderBy = '';
     protected $limitClause = '';
     protected $joinClause = '';
+    protected $groupByClause = '';
 
     public function __construct()
     {
@@ -47,6 +48,7 @@ class Db
         $this->orderBy = '';
         $this->limitClause = '';
         $this->joinClause = '';
+        $this->groupByClause = '';
     }
 
     /**
@@ -473,6 +475,137 @@ class Db
     }
 
     /**
+     * OFFSET 절 추가
+     *
+     * limit()과 함께 사용하여 페이지네이션을 구현합니다.
+     * limit($limit, $offset) 대신 limit()->offset() 체이닝 방식으로 사용할 수 있습니다.
+     *
+     * @param int $offset 건너뛸 레코드 수
+     * @return $this
+     *
+     * @example 기본 사용 - 10개 건너뛰고 10개 조회
+     * $users = db()->select('*')
+     *     ->from('users')
+     *     ->limit(10)
+     *     ->offset(10)
+     *     ->get();
+     *
+     * @example 페이지네이션 (1페이지: 0-9)
+     * $page1 = db()->select('*')
+     *     ->from('posts')
+     *     ->orderBy('created_at', 'DESC')
+     *     ->limit(10)
+     *     ->offset(0)
+     *     ->get();
+     *
+     * @example 페이지네이션 (2페이지: 10-19)
+     * $page2 = db()->select('*')
+     *     ->from('posts')
+     *     ->orderBy('created_at', 'DESC')
+     *     ->limit(10)
+     *     ->offset(10)
+     *     ->get();
+     *
+     * @example 페이지네이션 헬퍼 함수
+     * function getPaginatedUsers($page, $perPage = 10) {
+     *     $offset = ($page - 1) * $perPage;
+     *     return db()->select('*')
+     *         ->from('users')
+     *         ->orderBy('id', 'DESC')
+     *         ->limit($perPage)
+     *         ->offset($offset)
+     *         ->get();
+     * }
+     */
+    public function offset($offset)
+    {
+        // limit이 이미 설정되어 있는지 확인
+        if (empty($this->limitClause)) {
+            // limit이 없으면 offset만 설정할 수 없음
+            throw new Exception("offset()을 사용하려면 먼저 limit()을 호출해야 합니다");
+        }
+
+        // 기존 LIMIT 절을 파싱하여 오프셋 추가
+        if (preg_match('/LIMIT (\d+)/', $this->limitClause, $matches)) {
+            $limit = $matches[1];
+            if ($offset > 0) {
+                $this->limitClause = "LIMIT $offset, $limit";
+            }
+            // offset이 0이면 기존 LIMIT만 유지
+        }
+
+        return $this;
+    }
+
+    /**
+     * GROUP BY 절 추가
+     *
+     * 집계 함수(COUNT, SUM, AVG, MAX, MIN)와 함께 사용하여 데이터를 그룹화합니다.
+     *
+     * @param string $columns 그룹화할 컬럼(들). 쉼표로 구분하여 여러 컬럼 지정 가능
+     * @return $this
+     *
+     * @example 기본 사용 - 성별별 사용자 수
+     * $results = db()->select('gender, COUNT(*) as count')
+     *     ->from('users')
+     *     ->groupBy('gender')
+     *     ->get();
+     * // 결과: [['gender' => 'M', 'count' => 50], ['gender' => 'F', 'count' => 45]]
+     *
+     * @example 여러 컬럼으로 그룹화 - 연도별, 월별 게시글 수
+     * $results = db()->select('YEAR(created_at) as year, MONTH(created_at) as month, COUNT(*) as count')
+     *     ->from('posts')
+     *     ->groupBy('YEAR(created_at), MONTH(created_at)')
+     *     ->orderBy('year DESC, month DESC')
+     *     ->get();
+     *
+     * @example 집계 함수 사용 - 사용자별 게시글 수
+     * $results = db()->select('user_id, COUNT(*) as post_count')
+     *     ->from('posts')
+     *     ->groupBy('user_id')
+     *     ->orderBy('post_count', 'DESC')
+     *     ->limit(10)
+     *     ->get();
+     *
+     * @example HAVING 절과 함께 사용 (query() 메서드 필요)
+     * $results = db()->query("
+     *     SELECT user_id, COUNT(*) as post_count
+     *     FROM posts
+     *     GROUP BY user_id
+     *     HAVING post_count > ?
+     *     ORDER BY post_count DESC
+     * ", [10]);
+     *
+     * @example JOIN과 GROUP BY - 사용자별 게시글 수와 이름
+     * $results = db()->select('users.display_name, COUNT(posts.id) as post_count')
+     *     ->from('users')
+     *     ->join('posts', 'users.id = posts.user_id', 'LEFT')
+     *     ->groupBy('users.id, users.display_name')
+     *     ->orderBy('post_count', 'DESC')
+     *     ->get();
+     *
+     * @example 통계 - 성별별 평균 나이
+     * $results = db()->select('gender, AVG(YEAR(CURDATE()) - YEAR(FROM_UNIXTIME(birthday))) as avg_age')
+     *     ->from('users')
+     *     ->where('birthday > ?', [0])
+     *     ->groupBy('gender')
+     *     ->get();
+     *
+     * @example 날짜별 집계 - 일별 가입자 수
+     * $results = db()->select('DATE(FROM_UNIXTIME(created_at)) as date, COUNT(*) as count')
+     *     ->from('users')
+     *     ->groupBy('DATE(FROM_UNIXTIME(created_at))')
+     *     ->orderBy('date', 'DESC')
+     *     ->limit(30)
+     *     ->get();
+     */
+    public function groupBy($columns)
+    {
+        $this->groupByClause = "GROUP BY $columns";
+        return $this;
+    }
+
+    /**
      * JOIN 절 추가
      *
      * @param string $table 조인할 테이블
@@ -816,6 +949,10 @@ class Db
 
         if ($this->whereClause) {
             $sql .= " WHERE {$this->whereClause}";
+        }
+
+        if ($this->groupByClause) {
+            $sql .= " {$this->groupByClause}";
         }
 
         if ($this->orderBy) {

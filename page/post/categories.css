@@ -1,0 +1,93 @@
+/**
+ * 카테고리 페이지 스타일
+ *
+ * Bootstrap 5 기본 스타일을 확장합니다.
+ */
+
+/* 카드 호버 효과 */
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* 카드 헤더 스타일 */
+.card-header {
+    border-bottom: none;
+}
+
+/* 리스트 아이템 호버 효과 */
+.list-group-item-action {
+    transition: background-color 0.15s ease-in-out, padding-left 0.15s ease-in-out;
+}
+
+.list-group-item-action:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+    padding-left: 1.25rem !important;
+}
+
+/* 아이콘 애니메이션 */
+.list-group-item-action:hover .bi-chevron-right {
+    transform: translateX(5px);
+    transition: transform 0.2s ease-in-out;
+}
+
+.bi-chevron-right {
+    transition: transform 0.2s ease-in-out;
+}
+
+/* 통계 섹션 애니메이션 */
+.text-center .p-3:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s ease-in-out;
+}
+
+.text-center .p-3 {
+    transition: transform 0.2s ease-in-out;
+}
+
+/* 페이지 헤더 스타일 */
+.display-5 {
+    letter-spacing: -0.02em;
+}
+
+/* 카드 푸터 스타일 */
+.card-footer {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+
+/* 반응형: 모바일에서 카드 간격 조정 */
+@media (max-width: 767.98px) {
+    .card {
+        margin-bottom: 1rem;
+    }
+}
+
+/* 리스트 그룹 스크롤 (카테고리가 많을 경우) */
+.list-group-flush {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* 스크롤바 스타일링 (WebKit 브라우저) */
+.list-group-flush::-webkit-scrollbar {
+    width: 6px;
+}
+
+.list-group-flush::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.list-group-flush::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.list-group-flush::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}

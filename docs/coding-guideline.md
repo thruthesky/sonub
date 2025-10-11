@@ -16,6 +16,9 @@
       - [일반적인 에러 코드 규칙](#일반적인-에러-코드-규칙)
       - [HTTP 응답 코드 가이드](#http-응답-코드-가이드)
       - [위반 시 결과](#위반-시-결과)
+  - [사용자 관리 및 검색](#사용자-관리-및-검색)
+    - [개요](#개요-1)
+    - [list_users() 함수](#list_users-함수)
   - [디자인 및 스타일링 표준](#디자인-및-스타일링-표준)
   - [JavaScript 프레임워크 - Vue.js 3.x](#javascript-프레임워크---vuejs-3x)
     - [Vue.js 사용 방식](#vuejs-사용-방식)
@@ -355,6 +358,90 @@ function getUserInfo($user_id) {
 - API 응답이 표준화되지 않음
 - 에러 추적 및 디버깅이 어려움
 - 클라이언트에서 에러 처리 로직이 복잡해짐
+
+---
+
+## 사용자 관리 및 검색
+
+### 개요
+
+사용자 관리 및 검색 기능은 `lib/user/user.crud.php`의 `list_users()` 함수를 통해 제공됩니다.
+
+### list_users() 함수
+
+사용자 목록을 조회하고 다양한 조건으로 필터링할 수 있는 함수입니다.
+
+**기본 사용법:**
+
+```php
+// $_GET을 직접 전달하여 사용 (권장)
+$result = list_users(array_merge($_GET, ['per_page' => 10]));
+
+// 수동으로 파라미터 지정
+$result = list_users([
+    'gender' => 'M',           // 성별 필터 (M/F)
+    'age_start' => 25,         // 시작 나이
+    'age_end' => 35,           // 끝 나이
+    'name' => '김',            // 이름 검색 (LIKE '김%')
+    'page' => 1,               // 페이지 번호
+    'per_page' => 10           // 페이지당 항목 수
+]);
+```
+
+**반환값:**
+
+```php
+[
+    'page' => 1,                    // 현재 페이지
+    'per_page' => 10,               // 페이지당 항목 수
+    'total' => 150,                 // 전체 사용자 수
+    'total_pages' => 15,            // 전체 페이지 수
+    'users' => [...]                // 사용자 배열
+]
+```
+
+**필터링 옵션:**
+
+1. **성별 필터**: `gender` - 'M' 또는 'F'
+2. **나이 범위**: `age_start`, `age_end` - 만 나이 기준
+3. **이름 검색**: `name` - 접두사 검색 (LIKE 'name%')
+4. **페이지네이션**: `page`, `per_page` - 기본값: page=1, per_page=10
+
+**상세 문서:**
+
+- 자세한 사용법과 예제는 [docs/user.md](user.md)의 `list_users` 섹션을 참조하세요.
+- 테스트 코드: `tests/user/list_users.test.php`
+
+**예제 - 친구 찾기 페이지:**
+
+```php
+<?php
+// $_GET을 직접 전달 - 매우 간편!
+$result = list_users(array_merge($_GET, ['per_page' => 10]));
+
+$users = $result['users'];
+$total_count = $result['total'];
+?>
+
+<form method="get">
+    <select name="gender">
+        <option value="">전체</option>
+        <option value="M">남성</option>
+        <option value="F">여성</option>
+    </select>
+
+    <input type="number" name="age_start" placeholder="시작 나이">
+    <input type="number" name="age_end" placeholder="끝 나이">
+    <input type="text" name="name" placeholder="이름">
+
+    <button type="submit">검색</button>
+</form>
+
+<!-- 사용자 목록 표시 -->
+<?php foreach ($users as $user): ?>
+    <div><?= htmlspecialchars($user['display_name']) ?></div>
+<?php endforeach; ?>
+```
 
 ---
 

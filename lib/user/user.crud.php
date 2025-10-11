@@ -191,3 +191,137 @@ function update_my_profile(array $input): array
 {
     return update_user_profile($input);
 }
+
+
+
+
+/**
+ * 사용자 목록 조회 (페이징 및 필터링)
+ *
+ * @param array $input
+ * - $input['page'] - 페이지 번호 (기본값: 1)
+ * - $input['per_page'] - 페이지당 항목 수 (기본값: 10, 최대값: 100)
+ * - $input['gender'] - (선택) 성별 필터 ('M' 또는 'F')
+ * - $input['age_start'] - (선택) 시작 나이 (예: 24)
+ * - $input['age_end'] - (선택) 끝 나이 (예: 32)
+ * - $input['name'] - (선택) 이름 검색 (LIKE 'name%')
+ *
+ * @return array
+ * - 'page' - 현재 페이지 번호
+ * - 'per_page' - 페이지당 항목 수
+ * - 'total' - 전체 사용자 수
+ * - 'total_pages' - 전체 페이지 수
+ * - 'users' - 사용자 배열
+ *
+ * @example 기본 목록 조회
+ * $result = list_users(['page' => 1, 'per_page' => 10]);
+ *
+ * @example 성별 필터링
+ * $result = list_users(['gender' => 'F', 'page' => 1]);
+ *
+ * @example 나이 범위 필터링
+ * $result = list_users(['age_start' => 24, 'age_end' => 32, 'page' => 1]);
+ *
+ * @example 이름 검색
+ * $result = list_users(['name' => '홍', 'page' => 1]);
+ *
+ * @example 복합 검색
+ * $result = list_users([
+ *     'gender' => 'F',
+ *     'age_start' => 24,
+ *     'age_end' => 32,
+ *     'name' => '김',
+ *     'page' => 1
+ * ]);
+ */
+function list_users(array $input): array
+{
+    // 페이징 파라미터 처리 및 초기화
+    $page = isset($input['page']) && is_numeric($input['page']) ? max(1, (int)$input['page']) : 1;
+    $per_page = isset($input['per_page']) && is_numeric($input['per_page']) ? (int)$input['per_page'] : 10;
+
+    if ($per_page < 1 || $per_page > 100) {
+        $per_page = 10;
+    }
+    $offset = ($page - 1) * $per_page;
+
+    // 필터링 파라미터 처리 및 초기화
+    // 빈 문자열('')도 빈 값으로 처리
+    $gender = isset($input['gender']) && $input['gender'] !== '' ? $input['gender'] : '';
+    $age_start = isset($input['age_start']) && $input['age_start'] !== '' ? (int)$input['age_start'] : null;
+    $age_end = isset($input['age_end']) && $input['age_end'] !== '' ? (int)$input['age_end'] : null;
+    $name = isset($input['name']) && $input['name'] !== '' ? $input['name'] : '';
+
+    // WHERE 조건 빌드
+    $conditions = [];
+    $params = [];
+
+    // 성별 필터
+    if ($gender !== '' && in_array($gender, ['M', 'F'])) {
+        $conditions[] = 'gender = ?';
+        $params[] = $gender;
+    }
+
+    // 이름 검색 (LIKE 'name%')
+    if ($name !== '') {
+        $conditions[] = 'display_name LIKE ?';
+        $params[] = $name . '%';
+    }
+
+    // 나이 필터 (birthday 기반)
+    if ($age_start !== null || $age_end !== null) {
+        $current_year = (int)date('Y');
+
+        if ($age_start !== null && $age_end !== null) {
+            // 시작 나이와 끝 나이 모두 지정
+            $birth_year_end = $current_year - $age_start;
+            $birth_year_start = $current_year - $age_end;
+
+            $conditions[] = 'YEAR(FROM_UNIXTIME(birthday)) BETWEEN ? AND ?';
+            $params[] = $birth_year_start;
+            $params[] = $birth_year_end;
+        } elseif ($age_start !== null) {
+            // 시작 나이만 지정 (이상)
+            $birth_year_end = $current_year - $age_start;
+            $conditions[] = 'YEAR(FROM_UNIXTIME(birthday)) <= ?';
+            $params[] = $birth_year_end;
+        } elseif ($age_end !== null) {
+            // 끝 나이만 지정 (이하)
+            $birth_year_start = $current_year - $age_end;
+            $conditions[] = 'YEAR(FROM_UNIXTIME(birthday)) >= ?';
+            $params[] = $birth_year_start;
+        }
+    }
+
+    // 전체 사용자 수 계산
+    $total_query = db()->select('COUNT(*) as count')->from('users');
+    if (!empty($conditions)) {
+        $total_query->where(implode(' AND ', $conditions), $params);
+    }
+    $total_count = $total_query->first()['count'];
+
+    // 사용자 목록 조회
+    $query = db()->select('*')->from('users');
+    if (!empty($conditions)) {
+        $query->where(implode(' AND ', $conditions), $params);
+    }
+    $results = $query
+        ->orderBy('id', 'DESC')
+        ->limit($per_page)
+        ->offset($offset)
+        ->get();
+
+    return [
+        'page' => $page,
+        'per_page' => $per_page,
+        'total' => $total_count,
+        'total_pages' => ceil($total_count / $per_page),
+        'users' => $results,
+    ];
+}
+
+
+function search_users(array $input): array
+{
+    return list_users($input);
+}

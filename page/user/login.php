@@ -192,7 +192,7 @@
 
                         if (this.phoneNumber.indexOf(':') !== -1) {
                             const arr = this.phoneNumber.split(':');
-                            const res = await login(arr[0], arr[1]);
+                            const res = await login_email_password(arr[0], arr[1]);
                             console.log("Login response", res);
                             await this.onLoginSuccess(res);
                             return;

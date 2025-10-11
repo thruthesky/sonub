@@ -98,8 +98,8 @@ async function update_my_profile(data) {
 /**
  * 로그인 함수: 이 함수로는 지정된 몇 명의 사용자만 로그인을 할 수 있다.
  */
-async function login(id, pw) {
-    const userCredential = await firebase.auth().signInWithEmailAndPassword(id, pw);
+async function login_email_password(email, pw) {
+    const userCredential = await firebase.auth().signInWithEmailAndPassword(email, pw);
 
     // Signed in
     const user = userCredential.user;

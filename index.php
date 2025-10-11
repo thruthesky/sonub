@@ -102,8 +102,11 @@ if (file_exists($module_path)) {
                         </a>
 
 
-                        <a href="/chat" class="me-3 text-dark">
+                        <a href="<?= href()->chat->rooms ?>" class="me-3 text-dark">
                             <i class="bi bi-chat-dots fs-5"></i>
+                        </a>
+                        <a href="<?= href()->post->categories ?>" class="me-3 text-dark">
+                            <i class="bi bi-grid fs-5"></i>
                         </a>
                     </div>
 
@@ -227,7 +230,30 @@ if (file_exists($module_path)) {
         </div>
 
         <?php if (is_dev_computer()) { ?>
-            A B C D E F G H J K L M
+            <button onclick="login_as('apple')">A</button>
+            <button onclick="login_as('banana')">B</button>
+            <button onclick="login_as('cherry')">C</button>
+            <button onclick="login_as('date')">D</button>
+            <button onclick="login_as('elderberry')">E</button>
+            <button onclick="login_as('fig')">F</button>
+            <button onclick="login_as('grape')">G</button>
+            <button onclick="login_as('honeydew')">H</button>
+            <button onclick="login_as('jackfruit')">J</button>
+            <button onclick="login_as('kiwi')">K</button>
+            <button onclick="login_as('lemon')">L</button>
+            <button onclick="login_as('mango')">M</button>
+
+            <script>
+                async function login_as(user_id) {
+                    const user = await login_email_password(user_id + '@test.com', '12345a,*');
+                    await func('login_with_firebase', {
+                        firebase_uid: user.uid,
+                        alertOnError: true,
+                    });
+                    // 로그인 성공 후 리다이렉션
+                    window.location.href = '<?= href()->home ?>';
+                }
+            </script>
         <?php } ?>
     </footer>
 

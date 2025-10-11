@@ -114,10 +114,26 @@ class PostHref
 {
     public PostListHref $list;
 
+    public string $categories = "/post/categories";
+
+    public string $create = "/post/create";
+    public string $create_submit = "/post/create-submit";
+
+    public string $update_submit = "/post/update-submit";
+
 
     public function __construct()
     {
         $this->list = new PostListHref();
+    }
+
+    public function list(int $page = 1, string $category = ''): string
+    {
+        $url = "/post/list?page=$page";
+        if ($category) {
+            $url .= "&category=" . urlencode($category);
+        }
+        return $url;
     }
 
     public function search(string $query, int $page = 1)

@@ -46,3 +46,8 @@ function http_params(string $name = ''): mixed
         return $__in[$name] ?? null;
     }
 }
+
+function http_param(string $name = '', mixed $default_value = null): mixed
+{
+    return http_params($name) ?? $default_value;
+}
