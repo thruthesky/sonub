@@ -16,21 +16,6 @@ inject_index_language();
 </p>
 
 
-<ul>
-    TODO LIST:
-
-    <li>사진, 동영상, 파일 업로드: file/file.upload.php, file.delete.php, file.multi-upload.php</li>
-    <li>프로필 사진 변경</li>
-    <li>게시글: 설정 테이블없이 그냥, PostConfig() 모델을 만들고, post.config.php 에서 필요한 만큼 직접 소스 코드로 지정을 한다. post/list.php, create.php, view.php, update.php, delete.php.</li>
-    <li>댓글: comment/list.php, create.php, update.php, delete.php</li>
-    <li>글/댓글 기능을 바탕으로, Facebook wall 기능, 인스타 기능</li>
-    <li>친구 맺기, 친구 목록, 친구에게만 자신의 글이 전달되도록.</li>
-    <li>1:1 채팅, 그룹 채팅</li>
-    <li>지역 기반 모임 서비스</li>
-    <li>실시간 알림 서비스</li>
-    <li>좋아요, 싫어요 기능</li>
-</ul>
-
 <div class="card mt-4">
     <div class="card-body">
         <h5 class="card-title"><?php echo t()->{'Getting Started'}; ?></h5>

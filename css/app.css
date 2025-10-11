@@ -4,3 +4,20 @@
     margin: 0 auto;     /* 가운데 정렬 */
     padding: 0 15px;    /* 좌우 여백 15px */
 }
+
+/* Header Top Bar 스타일 */
+.top-bar {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);  /* 하단 그림자 효과 */
+}
+
+/* 네비게이션 링크 호버 효과 */
+.navbar-light .navbar-nav .nav-link:hover {
+    color: var(--bs-primary) !important;  /* 호버 시 primary 색상 */
+    transition: color 0.2s ease;  /* 부드러운 색상 전환 */
+}
+
+/* 아이콘 링크 호버 효과 */
+.top-bar a:hover i {
+    color: var(--bs-primary) !important;  /* 호버 시 primary 색상 */
+    transition: color 0.2s ease;  /* 부드러운 색상 전환 */
+}

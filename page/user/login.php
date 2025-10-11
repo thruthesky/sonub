@@ -169,131 +169,129 @@
 </div>
 
 <script>
-    const {
-        createApp
-    } = Vue;
+    firebase_ready(() => {
+        Vue.createApp({
+            data() {
+                return {
+                    step: 'input-phone-number', // 'input-phone-number' or 'input-sms-code'
+                    loading: false,
+                    phoneNumber: '',
+                    smsCode: '',
+                    confirmationResult: null,
+                    error: '',
+                    showResetButton: false
+                }
+            },
+            methods: {
+                async sendSMSCode() {
+                    this.loading = true;
+                    this.error = '';
+                    this.showResetButton = false;
 
-    createApp({
-        data() {
-            return {
-                step: 'input-phone-number', // 'input-phone-number' or 'input-sms-code'
-                loading: false,
-                phoneNumber: '',
-                smsCode: '',
-                confirmationResult: null,
-                error: '',
-                showResetButton: false
-            }
-        },
-        methods: {
-            async sendSMSCode() {
-                this.loading = true;
-                this.error = '';
-                this.showResetButton = false;
+                    try {
 
-                try {
+                        if (this.phoneNumber.indexOf(':') !== -1) {
+                            const arr = this.phoneNumber.split(':');
+                            const res = await login(arr[0], arr[1]);
+                            console.log("Login response", res);
+                            await this.onLoginSuccess(res);
+                            return;
+                        }
 
-                    if (this.phoneNumber.indexOf(':') !== -1) {
-                        const arr = this.phoneNumber.split(':');
-                        const res = await login(arr[0], arr[1]);
-                        console.log("Login response", res);
-                        await this.onLoginSuccess(res);
-                        return;
+                        // 전화번호를 국제 형식으로 포맷
+                        const formattedPhone = check_login_phone_number(this.phoneNumber);
+
+                        console.log("Formatted Phone", formattedPhone);
+
+                        // SMS 코드 전송
+                        this.confirmationResult = await firebase.auth().signInWithPhoneNumber(
+                            formattedPhone,
+                            window.recaptchaVerifier
+                        );
+
+                        this.step = 'input-sms-code';
+                        console.log('SMS sent successfully');
+
+                        // 15초 후 리셋 버튼 표시
+                        setTimeout(() => {
+                            this.showResetButton = true;
+                        }, 1000 * 15);
+
+                    } catch (error) {
+                        console.error('Error sending SMS:', error);
+                        this.error = this.getErrorMessage(error);
+                    } finally {
+                        this.loading = false;
                     }
+                },
 
-                    // 전화번호를 국제 형식으로 포맷
-                    const formattedPhone = check_login_phone_number(this.phoneNumber);
+                async verifySMSCode() {
+                    this.loading = true;
+                    this.error = '';
 
-                    console.log("Formatted Phone", formattedPhone);
+                    try {
+                        if (!this.confirmationResult) {
+                            throw new Error('No confirmation result available. Please resend SMS code.');
+                        }
 
-                    // SMS 코드 전송
-                    this.confirmationResult = await firebase.auth().signInWithPhoneNumber(
-                        formattedPhone,
-                        window.recaptchaVerifier
-                    );
+                        const result = await this.confirmationResult.confirm(this.smsCode);
+                        const user = result.user;
 
-                    this.step = 'input-sms-code';
-                    console.log('SMS sent successfully');
+                        console.log('User signed in successfully:', user);
 
-                    // 15초 후 리셋 버튼 표시
-                    setTimeout(() => {
-                        this.showResetButton = true;
-                    }, 1000 * 15);
+                        this.onLoginSuccess(user);
 
-                } catch (error) {
-                    console.error('Error sending SMS:', error);
-                    this.error = this.getErrorMessage(error);
-                } finally {
-                    this.loading = false;
-                }
-            },
-
-            async verifySMSCode() {
-                this.loading = true;
-                this.error = '';
-
-                try {
-                    if (!this.confirmationResult) {
-                        throw new Error('No confirmation result available. Please resend SMS code.');
+                    } catch (error) {
+                        console.error('Error verifying SMS code:', error);
+                        this.error = this.getErrorMessage(error);
+                    } finally {
+                        this.loading = false;
                     }
+                },
 
-                    const result = await this.confirmationResult.confirm(this.smsCode);
-                    const user = result.user;
+                getErrorMessage(error) {
+                    switch (error.code) {
+                        case 'auth/invalid-phone-number':
+                            return 'Invalid phone number format';
+                        case 'auth/too-many-requests':
+                            return 'Too many requests. Please try again later.';
+                        case 'auth/invalid-verification-code':
+                            return 'Invalid SMS code. Please check and try again.';
+                        case 'auth/code-expired':
+                            return 'SMS code has expired. Please request a new code.';
+                        case 'auth/captcha-check-failed':
+                            return 'reCAPTCHA verification failed. Please try again.';
+                        default:
+                            return error.message || 'An error occurred. Please try again.';
+                    }
+                },
 
-                    console.log('User signed in successfully:', user);
-
-                    this.onLoginSuccess(user);
-
-                } catch (error) {
-                    console.error('Error verifying SMS code:', error);
-                    this.error = this.getErrorMessage(error);
-                } finally {
+                resetForm() {
+                    this.step = 'input-phone-number';
+                    this.phoneNumber = '';
+                    this.smsCode = '';
+                    this.confirmationResult = null;
+                    this.error = '';
                     this.loading = false;
+                    this.showResetButton = false;
+                },
+
+                async onLoginSuccess(user) {
+                    // 로그인 성공 후 처리
+                    // 예: 서버에 사용자 정보 전송, 리다이렉션 등
+                    console.log('Login successful! User:', user);
+                    await func('login_with_firebase', {
+                        firebase_uid: user.uid,
+                        alertOnError: true,
+                    });
+                    // 로그인 성공 후 리다이렉션
+                    window.location.href = '<?= href()->home ?>';
                 }
             },
-
-            getErrorMessage(error) {
-                switch (error.code) {
-                    case 'auth/invalid-phone-number':
-                        return 'Invalid phone number format';
-                    case 'auth/too-many-requests':
-                        return 'Too many requests. Please try again later.';
-                    case 'auth/invalid-verification-code':
-                        return 'Invalid SMS code. Please check and try again.';
-                    case 'auth/code-expired':
-                        return 'SMS code has expired. Please request a new code.';
-                    case 'auth/captcha-check-failed':
-                        return 'reCAPTCHA verification failed. Please try again.';
-                    default:
-                        return error.message || 'An error occurred. Please try again.';
-                }
-            },
-
-            resetForm() {
-                this.step = 'input-phone-number';
-                this.phoneNumber = '';
-                this.smsCode = '';
-                this.confirmationResult = null;
-                this.error = '';
-                this.loading = false;
-                this.showResetButton = false;
-            },
-
-            async onLoginSuccess(user) {
-                // 로그인 성공 후 처리
-                // 예: 서버에 사용자 정보 전송, 리다이렉션 등
-                console.log('Login successful! User:', user);
-                await func('login_with_firebase', {
-                    firebase_uid: user.uid,
-                    alertOnError: true,
-                });
-                // 로그인 성공 후 리다이렉션
-                window.location.href = '<?= href()->home ?>';
+            mounted() {
+                // reCAPTCHA 설정
+                setupRecaptcha();
             }
-        },
-        mounted() {
-            // reCAPTCHA 설정
-            setupRecaptcha();
-        }
-    }).mount('#login-app');
+        }).mount('#login-app');
+    })
 </script>

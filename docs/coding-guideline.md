@@ -99,6 +99,20 @@
     - [올바른 예제](#올바른-예제)
     - [잘못된 예제 (절대 금지)](#잘못된-예제-절대-금지)
     - [위반 시 결과](#위반-시-결과-3)
+  - [모듈 로딩](#모듈-로딩)
+    - [모듈이란?](#모듈이란)
+    - [모듈 파일 명명 규칙](#모듈-파일-명명-규칙)
+    - [파일 구조 예시](#파일-구조-예시)
+    - [모듈 로딩 동작 방식](#모듈-로딩-동작-방식)
+    - [모듈 사용 예제](#모듈-사용-예제)
+      - [예제 1: 로그인 확인 모듈](#예제-1-로그인-확인-모듈)
+      - [예제 2: 로그아웃 처리 모듈](#예제-2-로그아웃-처리-모듈)
+      - [예제 3: 관리자 권한 확인 모듈](#예제-3-관리자-권한-확인-모듈)
+      - [예제 4: 쿠키 및 헤더 설정 모듈](#예제-4-쿠키-및-헤더-설정-모듈)
+      - [예제 5: JSON 응답 후 즉시 종료](#예제-5-json-응답-후-즉시-종료)
+    - [모듈 사용 시 주의사항](#모듈-사용-시-주의사항)
+    - [모듈이 필요한 경우](#모듈이-필요한-경우)
+    - [모듈이 불필요한 경우](#모듈이-불필요한-경우)
 
 ---
 
@@ -2091,3 +2105,403 @@ function getUserInfo($user_id) {
 - 팀 내 일관성 파괴
 - 유지보수 어려움
 - 협업 효율성 감소
+
+---
+
+## 모듈 로딩
+
+**⚠️⚠️⚠️ 중요: 페이지별 전처리 작업을 위한 모듈 시스템 ⚠️⚠️⚠️**
+
+### 모듈이란?
+
+- **정의**: 각 페이지 스크립트가 실행되기 이전에 실행되는 코드 파일
+- **용도**: PHP 헤더 설정, 쿠키 처리, 인증 확인 등 각종 전처리 작업 수행
+- **실행 시점**: 페이지 콘텐츠가 로드되기 **이전**에 시작 스크립트(`index.php`)에서 자동으로 로드됨
+
+### 모듈 파일 명명 규칙
+
+- **파일명 패턴**: `*.module.php`
+- **파일 위치**: 페이지 스크립트 파일과 동일한 폴더
+- **자동 로딩**: `index.php`가 페이지 경로를 기반으로 모듈 파일을 자동으로 검색하고 include
+
+### 파일 구조 예시
+
+```
+page/
+├── user/
+│   ├── profile.php          ← 페이지 파일
+│   ├── profile.module.php   ← 모듈 파일 (페이지 실행 전 자동 로드)
+│   ├── profile.css
+│   ├── profile.js
+│   ├── login.php
+│   ├── login.module.php     ← 로그인 페이지 모듈
+│   └── logout-submit.php
+└── admin/
+    ├── dashboard.php
+    └── dashboard.module.php ← 관리자 페이지 모듈
+```
+
+### 모듈 로딩 동작 방식
+
+1. **모듈 파일이 존재하는 경우**:
+   - `index.php`가 페이지 경로에서 모듈 파일을 검색
+   - 모듈 파일(`*.module.php`)을 먼저 `include`
+   - 모듈 코드 실행 (헤더 설정, 쿠키 처리 등)
+   - 이후 실제 페이지 파일을 로드하여 화면에 표시
+
+2. **모듈 파일이 없는 경우**:
+   - 모듈 로딩 단계를 건너뜀
+   - 바로 페이지 파일을 로드하여 화면에 표시
+
+### 모듈 사용 예제
+
+#### 예제 1: 로그인 확인 모듈
+
+```php
+<?php
+// page/user/profile.module.php
+
+/**
+ * 프로필 페이지 모듈
+ *
+ * 페이지 접근 전 로그인 상태를 확인하고,
+ * 로그인하지 않은 경우 로그인 페이지로 리다이렉트
+ */
+
+// 로그인 확인
+$user = login();
+
+if (!$user) {
+    // 로그인하지 않은 경우 로그인 페이지로 리다이렉트
+    header('Location: /user/login');
+    exit;
+}
+
+// 로그인한 사용자 정보를 페이지에서 사용할 수 있도록 설정
+$profile_user = $user;
+```
+
+```php
+<?php
+// page/user/profile.php
+
+/**
+ * 프로필 페이지
+ *
+ * profile.module.php에서 로그인을 확인했으므로
+ * 이 파일에서는 $profile_user를 안전하게 사용 가능
+ */
+?>
+
+<div class="container">
+    <h1><?= $profile_user->display_name ?>님의 프로필</h1>
+    <p>이메일: <?= $profile_user->email ?></p>
+</div>
+```
+
+#### 예제 2: 로그아웃 처리 모듈
+
+```php
+<?php
+// page/user/logout-submit.module.php
+
+/**
+ * 로그아웃 처리 모듈
+ *
+ * 페이지가 로드되기 전에 세션을 정리하고 쿠키를 삭제
+ */
+
+// 로그인 확인
+$user = login();
+
+if ($user) {
+    // 세션 쿠키 삭제
+    clear_session_cookie();
+}
+
+// 메인 페이지로 리다이렉트
+header('Location: /');
+exit;
+```
+
+```php
+<?php
+// page/user/logout-submit.php
+
+/**
+ * 로그아웃 완료 페이지
+ *
+ * 실제로는 module에서 리다이렉트되므로 이 파일은 실행되지 않음
+ * 하지만 페이지 파일은 존재해야 함
+ */
+
+echo '로그아웃 처리 중...';
+```
+
+#### 예제 3: 관리자 권한 확인 모듈
+
+```php
+<?php
+// page/admin/dashboard.module.php
+
+/**
+ * 관리자 대시보드 모듈
+ *
+ * 관리자 권한 확인 및 권한 없는 경우 접근 차단
+ */
+
+// 로그인 확인
+$user = login();
+
+if (!$user) {
+    // 로그인하지 않은 경우
+    header('Location: /user/login');
+    exit;
+}
+
+// 관리자 권한 확인
+if (!is_admin($user)) {
+    // 관리자가 아닌 경우 403 에러
+    http_response_code(403);
+    echo '접근 권한이 없습니다.';
+    exit;
+}
+
+// 관리자 통계 데이터 사전 로드
+$admin_stats = [
+    'total_users' => db()->select('COUNT(*) as count')->from('users')->first()['count'],
+    'total_posts' => db()->select('COUNT(*) as count')->from('posts')->first()['count'],
+    'today_signups' => db()->select('COUNT(*) as count')
+        ->from('users')
+        ->where('created_at > ?', [strtotime('today')])
+        ->first()['count'],
+];
+```
+
+```php
+<?php
+// page/admin/dashboard.php
+
+/**
+ * 관리자 대시보드 페이지
+ *
+ * dashboard.module.php에서 권한을 확인했으므로
+ * 이 파일에서는 $admin_stats를 안전하게 사용 가능
+ */
+?>
+
+<div class="container">
+    <h1>관리자 대시보드</h1>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5>총 사용자</h5>
+                    <p class="h2"><?= number_format($admin_stats['total_users']) ?></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5>총 게시글</h5>
+                    <p class="h2"><?= number_format($admin_stats['total_posts']) ?></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5>오늘 가입자</h5>
+                    <p class="h2"><?= number_format($admin_stats['today_signups']) ?></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+#### 예제 4: 쿠키 및 헤더 설정 모듈
+
+```php
+<?php
+// page/api/data.module.php
+
+/**
+ * API 데이터 페이지 모듈
+ *
+ * JSON 응답을 위한 헤더 설정 및 CORS 처리
+ */
+
+// JSON 응답 헤더 설정
+header('Content-Type: application/json; charset=utf-8');
+
+// CORS 헤더 설정
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+// OPTIONS 요청 처리 (preflight)
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
+// API 키 검증
+$api_key = $_SERVER['HTTP_X_API_KEY'] ?? '';
+
+if (empty($api_key)) {
+    http_response_code(401);
+    echo json_encode([
+        'error' => 'API 키가 필요합니다',
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// API 키 유효성 검증
+$valid_key = verify_api_key($api_key);
+
+if (!$valid_key) {
+    http_response_code(403);
+    echo json_encode([
+        'error' => '유효하지 않은 API 키입니다',
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+```
+
+#### 예제 5: JSON 응답 후 즉시 종료
+
+```php
+<?php
+// page/api/user-status.module.php
+
+/**
+ * 사용자 상태 API 모듈
+ *
+ * 사용자 상태를 JSON으로 반환하고 즉시 종료
+ */
+
+// JSON 응답 헤더 설정
+header('Content-Type: application/json; charset=utf-8');
+
+// 로그인 확인
+$user = login();
+
+if (!$user) {
+    // 로그인하지 않은 경우 JSON 응답 후 즉시 종료
+    http_response_code(401);
+    echo json_encode([
+        'error' => 'unauthorized',
+        'message' => '로그인이 필요합니다',
+        'logged_in' => false,
+    ], JSON_UNESCAPED_UNICODE);
+    exit(); // 프로세스 즉시 종료 - 페이지 파일은 실행되지 않음
+}
+
+// 사용자 통계 정보 조회
+$stats = db()->select('post_count, comment_count, follower_count')
+    ->from('user_stats')
+    ->where('user_id = ?', [$user->id])
+    ->first();
+
+// 성공 응답 후 즉시 종료
+http_response_code(200);
+echo json_encode([
+    'success' => true,
+    'logged_in' => true,
+    'user' => [
+        'id' => $user->id,
+        'display_name' => $user->display_name,
+        'email' => $user->email,
+    ],
+    'stats' => $stats,
+], JSON_UNESCAPED_UNICODE);
+exit(); // 프로세스 즉시 종료 - 페이지 파일은 실행되지 않음
+```
+
+```php
+<?php
+// page/api/user-status.php
+
+/**
+ * 이 파일은 실행되지 않습니다
+ *
+ * module 파일에서 exit()를 호출했으므로
+ * 이 페이지 파일은 절대 실행되지 않습니다.
+ * 그러나 페이지 파일은 반드시 존재해야 합니다.
+ */
+
+echo '이 메시지는 절대 표시되지 않습니다';
+```
+
+**사용 예제 (클라이언트):**
+
+```javascript
+// JavaScript에서 API 호출
+fetch('/api/user-status')
+    .then(response => response.json())
+    .then(data => {
+        if (data.logged_in) {
+            console.log('사용자:', data.user.display_name);
+            console.log('게시글 수:', data.stats.post_count);
+        } else {
+            console.log('로그인 필요:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('API 호출 실패:', error);
+    });
+```
+
+### 모듈 사용 시 주의사항
+
+**✅ 모듈에서 할 수 있는 작업:**
+
+- HTTP 헤더 설정 (`header()` 함수)
+- 쿠키 설정/삭제 (`setcookie()` 함수)
+- 인증 확인 및 리다이렉트
+- 권한 검증
+- 페이지에서 사용할 데이터 사전 로드
+- 세션 초기화 또는 정리
+- 에러 핸들링 및 종료 (`exit`, `die`)
+
+**❌ 모듈에서 하지 말아야 할 작업:**
+
+- HTML 출력 (헤더 전송 후 출력 불가)
+- `echo`, `print` 등 출력 함수 사용 (에러 메시지 제외)
+- 페이지 레이아웃 관련 작업
+- JavaScript나 CSS 코드 삽입
+
+**중요 규칙:**
+
+1. **헤더 전송 순서**: 모듈에서 `header()` 함수를 사용하는 경우, 어떤 출력도 먼저 발생하면 안 됨
+2. **조기 종료**: 모듈에서 `exit`나 `die`를 호출하면 페이지 파일은 실행되지 않음
+3. **변수 공유**: 모듈에서 설정한 변수는 페이지 파일에서 사용 가능
+4. **파일명 일치**: 모듈 파일명의 기본 부분은 페이지 파일명과 일치해야 함 (예: `profile.module.php` ↔ `profile.php`)
+5. **JSON 응답 및 즉시 종료**: 모듈에서 필요하다면 JSON 등으로 데이터를 클라이언트에 보내고, `exit()`를 호출해서 프로세스를 즉시 종료할 수 있음
+
+### 모듈이 필요한 경우
+
+**다음과 같은 상황에서 모듈 파일을 생성하세요:**
+
+- 페이지 접근 전 로그인 확인이 필요한 경우
+- 관리자 권한 등 특정 권한 검증이 필요한 경우
+- 페이지 로드 전 리다이렉트가 필요한 경우
+- HTTP 헤더나 쿠키 설정이 필요한 경우
+- 페이지에서 사용할 데이터를 사전에 로드해야 하는 경우
+- API 엔드포인트에서 인증 처리가 필요한 경우
+
+### 모듈이 불필요한 경우
+
+**다음과 같은 상황에서는 모듈 파일을 생성하지 마세요:**
+
+- 단순히 HTML을 표시하는 페이지
+- 전처리 작업이 필요 없는 정적 페이지
+- Vue.js에서 클라이언트 사이드 인증을 처리하는 페이지
+- 이미 다른 방식으로 인증이 처리되는 페이지
+
+---

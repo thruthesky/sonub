@@ -9,6 +9,7 @@ class UserModel
     public string $updated_at;
     public int $birthday;
     public string $gender;
+    public string $photo_url;
 
     public function __construct(array $data)
     {
@@ -19,6 +20,7 @@ class UserModel
         $this->updated_at = $data['updated_at'] ?? '';
         $this->birthday = $data['birthday'] ?? 0;
         $this->gender = $data['gender'] ?? '';
+        $this->photo_url = $data['photo_url'] ?? '';
     }
 
     /**
@@ -36,6 +38,12 @@ class UserModel
             'updated_at' => $this->updated_at,
             'birthday' => $this->birthday,
             'gender' => $this->gender,
+            'photo_url' => $this->photo_url,
         ];
+    }
+
+    public function data(): array
+    {
+        return $this->toArray();
     }
 }

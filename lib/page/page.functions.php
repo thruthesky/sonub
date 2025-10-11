@@ -25,6 +25,13 @@ function page()
     }
 }
 
+
+function get_module_path()
+{
+    $page = page();
+    return str_replace(".php", '.module.php', $page);
+}
+
 /**
  * Returns the HTML link tag for a CSS file in the page folder based on the current URL, if it exists.
  * @return string

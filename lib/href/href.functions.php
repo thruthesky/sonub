@@ -171,20 +171,9 @@ class PointHref
     }
 }
 
-class SocialHref
+class FriendHref
 {
-    public string $help = '/social/help';
-    public string $settings = '/social/settings';
-
-
-    public function view(int $idx): string
-    {
-        return "/social/view?idx=$idx";
-    }
-    public function my(): string
-    {
-        return "/social/my";
-    }
+    public string $find_friend = '/friend/find-friend';
 }
 
 
@@ -203,7 +192,7 @@ class UserHref
     public string $login = '/user/login';
     public string $register = '/user/login';
     public string $login_success = '/user/login-success';
-    public string $logout_submit = '/user/logout-submit';
+    public string $logout_submit = '/user/logout-submit?module=y';
 
 
     // TODO: implement this in the future
@@ -314,7 +303,7 @@ class Href
     // @deprecated use href()->user()->login_success
     // public string $login_success = '/user/login_success';
     // @deprecated use href()->user()->logout
-    public string $logout = '/user/logout';
+    // public string $logout = '/user/logout';
 
     public string $search = '/post/search';
 
@@ -327,7 +316,7 @@ class Href
 
     public PostHref $post;
     public CommentHref $comment;
-    public SocialHref $social;
+    public FriendHref $friend;
     public CompanyHref $company;
     public MenuHref $menu;
     public PointHref $point;
@@ -342,7 +331,7 @@ class Href
     {
         $this->post = new PostHref();
         $this->comment = new CommentHref();
-        $this->social = new SocialHref();
+        $this->friend = new FriendHref();
         $this->company = new CompanyHref();
         $this->menu = new MenuHref();
         $this->point = new PointHref();

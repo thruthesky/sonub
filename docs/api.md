@@ -5,25 +5,49 @@
 - [Sonub API 문서](#sonub-api-문서)
   - [목차](#목차)
   - [개요](#개요)
-  - [UTF-8 인코딩 필수 규칙](#utf-8-인코딩-필수-규칙)
   - [API First 설계 철학](#api-first-설계-철학)
   - [API 동작 방식](#api-동작-방식)
   - [api.php 상세 동작 방식](#apiphp-상세-동작-방식)
     - [개요](#개요-1)
     - [핵심 코드 구조](#핵심-코드-구조)
     - [단계별 동작 설명](#단계별-동작-설명)
+      - [1단계: 헤더 설정](#1단계-헤더-설정)
+      - [2단계: 함수 이름 확인](#2단계-함수-이름-확인)
+      - [3단계: 동적 함수 호출](#3단계-동적-함수-호출)
+      - [4단계: 응답 처리](#4단계-응답-처리)
+      - [5단계: 예외 처리](#5단계-예외-처리)
     - [실제 사용 예제](#실제-사용-예제)
-    - [http_params() 함수](#http_params-함수)
+      - [예제 1: 정상 응답](#예제-1-정상-응답)
+      - [예제 2: 에러 응답 (함수 없음)](#예제-2-에러-응답-함수-없음)
+      - [예제 3: 함수 이름 누락](#예제-3-함수-이름-누락)
+      - [예제 4: 파라미터가 있는 함수 호출](#예제-4-파라미터가-있는-함수-호출)
+    - [http\_params() 함수](#http_params-함수)
     - [func 필드 자동 추가](#func-필드-자동-추가)
     - [API 설계의 장점](#api-설계의-장점)
     - [주의사항](#주의사항)
   - [API 엔드포인트](#api-엔드포인트)
   - [LIB 폴더 구조](#lib-폴더-구조)
+  - [func() 헬퍼 함수 (권장)](#func-헬퍼-함수-권장)
+    - [개요](#개요-2)
+    - [함수 시그니처](#함수-시그니처)
+    - [기본 사용법](#기본-사용법)
+    - [실제 사용 예제](#실제-사용-예제-1)
+    - [Vue.js에서 사용하기](#vuejs에서-사용하기)
+    - [func() 함수 내부 동작](#func-함수-내부-동작)
+    - [주의사항](#주의사항-1)
   - [API 호출 예제](#api-호출-예제)
     - [기본 요청](#기본-요청)
     - [사용자 관련 API](#사용자-관련-api)
     - [게시글 관련 API](#게시글-관련-api)
   - [에러 처리](#에러-처리)
+    - [에러 응답 형식](#에러-응답-형식)
+    - [에러 응답 유형](#에러-응답-유형)
+      - [1. 함수 이름 누락 에러](#1-함수-이름-누락-에러)
+      - [2. 함수 실행 에러 (error() 함수 사용)](#2-함수-실행-에러-error-함수-사용)
+      - [3. 예외 발생 에러 (함수 없음, 치명적 오류 등)](#3-예외-발생-에러-함수-없음-치명적-오류-등)
+    - [일반적인 에러 코드](#일반적인-에러-코드)
+    - [에러 확인 방법](#에러-확인-방법)
+    - [에러 처리 모범 사례](#에러-처리-모범-사례)
   - [보안 고려사항](#보안-고려사항)
 
 ---
@@ -38,7 +62,9 @@ Sonub는 **API First** 설계 철학을 따르는 웹 애플리케이션입니�
 
 **Sonub는 API First 클래스 시스템입니다:**
 
-- ✅ **모든 LIB 폴더의 함수는 API를 통해 직접 호출 가능**
+- ✅ **모든 함수는 API를 통해 직접 호출 가능하다**
+- ✅ **모든 함수는 배열을 리턴해야하며, 클라이언트에게 JSON 으로 리턴한다**
+- ✅ **모든 함수는 배열을 리턴해야하며, 에러가 있으면 error_code 와 error_message 에 에러 코드와 메시지를 저장하고, JSON 으로 클라이언트에게 전달한다**
 - ✅ RESTful 클라이언트가 API를 통해 모든 기능에 접근 가능
 - ✅ 프론트엔드와 백엔드가 명확히 분리됨
 - ✅ 모바일 앱, 웹 앱, 서드파티 서비스 등 다양한 클라이언트 지원
@@ -589,6 +615,377 @@ lib/
 
 ---
 
+## func() 헬퍼 함수 (권장)
+
+**⭐️ Sonub에서 JavaScript로 API를 호출하는 가장 권장되는 방법입니다!**
+
+### 개요
+
+`func()` 함수는 `/js/app.js`에 정의된 API 호출 헬퍼 함수로, 모든 페이지에서 즉시 사용 가능합니다.
+
+**왜 func()를 사용해야 하나요?**
+
+- ✅ **자동 에러 처리**: 에러 발생 시 자동으로 사용자에게 알림 (옵션)
+- ✅ **Firebase 인증 자동 처리**: 로그인이 필요한 API 호출 시 ID 토큰 자동 전송
+- ✅ **일관된 호출 패턴**: 모든 API 호출이 동일한 방식으로 작동
+- ✅ **간결한 코드**: Axios 설정 없이 함수 이름과 파라미터만 전달
+- ✅ **에러 정보 자동 추출**: error_code, error_message를 자동으로 파싱
+
+### 함수 시그니처
+
+```javascript
+async function func(name, params = {})
+```
+
+**파라미터:**
+
+- `name` (string, 필수): 호출할 PHP API 함수 이름
+- `params` (object, 선택): 함수에 전달할 파라미터 객체
+  - `auth` (boolean, 선택): true로 설정 시 Firebase ID 토큰 자동 전송 (기본값: false)
+  - `alertOnError` (boolean, 선택): true로 설정 시 에러 발생 시 alert 표시 (기본값: true)
+  - 그 외 모든 파라미터는 PHP 함수에 전달됨
+
+**리턴값:**
+
+- 성공 시: API 함수의 응답 데이터 (객체)
+- 실패 시: Error 객체 throw (try-catch로 처리 필요)
+
+### 기본 사용법
+
+**1. 간단한 API 호출**
+
+```javascript
+// 사용자 정보 조회
+const user = await func('get_user_info', { user_id: 123 });
+console.log('사용자:', user);
+
+// 프로필 업데이트
+const result = await func('update_user_profile', {
+    display_name: '홍길동',
+    gender: 'male',
+    birthday: '1990-01-01'
+});
+
+if (result.success) {
+    console.log('프로필 업데이트 완료');
+}
+```
+
+**2. Firebase 인증이 필요한 API 호출**
+
+```javascript
+// Firebase 로그인 (ID 토큰 자동 전송)
+await func('login_with_firebase', {
+    firebase_uid: user.uid,
+    auth: true,           // Firebase ID 토큰 자동 전송
+    alertOnError: true    // 에러 시 alert 표시
+});
+
+// 게시글 작성 (로그인 필요)
+await func('create_post', {
+    title: '게시글 제목',
+    content: '게시글 내용',
+    auth: true            // 로그인한 사용자의 ID 토큰 전송
+});
+```
+
+**3. 에러 처리**
+
+```javascript
+// 기본 에러 처리 (alertOnError: true가 기본값)
+// 에러 발생 시 자동으로 alert 표시
+const user = await func('get_user_info', { user_id: 999 });
+
+// 에러 알림 비활성화
+const response = await func('set_language', {
+    language_code: 'ko',
+    alertOnError: false   // 에러 시 alert 표시 안 함
+});
+
+// try-catch로 직접 에러 처리
+try {
+    const user = await func('get_user_info', { user_id: 999 });
+    console.log('사용자:', user);
+} catch (error) {
+    console.error('에러 코드:', error.code);
+    console.error('에러 메시지:', error.message);
+    console.error('원본 에러:', error.originalError);
+}
+```
+
+### 실제 사용 예제
+
+**예제 1: 언어 선택**
+
+```javascript
+/**
+ * 언어 선택 및 저장
+ * @param {string} languageCode - 선택된 언어 코드 (en, ko, ja, zh)
+ */
+async selectLanguage(languageCode) {
+    try {
+        // API 호출하여 언어 선택 저장
+        const response = await func('set_language', {
+            language_code: languageCode,
+            alertOnError: true
+        });
+
+        if (response.success) {
+            // 현재 언어 표시 업데이트
+            this.currentLanguage = languageCode;
+
+            // 페이지 새로고침하여 언어 변경 적용
+            window.location.reload();
+        }
+    } catch (error) {
+        console.error('언어 선택 중 오류 발생:', error);
+    }
+}
+```
+
+**예제 2: 사용자 프로필 업데이트**
+
+```javascript
+async updateProfile() {
+    // 생년월일 변환
+    const birthday = this.form.birthday
+        ? `${this.form.birthday.year}-${String(this.form.birthday.month).padStart(2, '0')}-${String(this.form.birthday.day).padStart(2, '0')}`
+        : '';
+
+    try {
+        // 프로필 업데이트 API 호출
+        const result = await func('update_user_profile', {
+            display_name: this.form.displayName.trim(),
+            gender: this.form.gender,
+            birthday: birthday,
+            auth: true,           // Firebase 인증 토큰 전송
+            alertOnError: true    // 에러 시 alert 표시
+        });
+
+        if (result.success) {
+            alert('프로필이 업데이트되었습니다!');
+            window.location.href = '/';
+        }
+    } catch (error) {
+        console.error('프로필 업데이트 실패:', error);
+    }
+}
+```
+
+**예제 3: Firebase 로그인**
+
+```javascript
+// Firebase 인증 상태 변경 감지
+firebase.auth().onAuthStateChanged(async (user) => {
+    if (user) {
+        try {
+            // Firebase UID로 Sonub 로그인
+            await func('login_with_firebase', {
+                firebase_uid: user.uid,
+                email: user.email,
+                auth: true,
+                alertOnError: true
+            });
+
+            console.log('로그인 성공:', user.email);
+        } catch (error) {
+            console.error('로그인 실패:', error);
+        }
+    } else {
+        console.log('로그아웃 상태');
+    }
+});
+```
+
+**예제 4: 파일 업로드**
+
+```javascript
+async uploadFile(file) {
+    const formData = new FormData();
+    formData.append('userfile', file);
+
+    try {
+        // func() 함수 대신 axios 직접 사용 (FormData의 경우)
+        const response = await axios.post('/api.php?f=file_upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+
+        if (response.data.error_code) {
+            throw new Error(response.data.error_message);
+        }
+
+        console.log('업로드 성공:', response.data.url);
+        return response.data;
+    } catch (error) {
+        console.error('파일 업로드 실패:', error);
+        throw error;
+    }
+}
+```
+
+### Vue.js에서 사용하기
+
+```javascript
+ready(() => {
+    Vue.createApp({
+        setup() {
+            const user = Vue.ref(null);
+            const loading = Vue.ref(false);
+            const error = Vue.ref(null);
+
+            // 사용자 정보 로드
+            const loadUser = async (userId) => {
+                loading.value = true;
+                error.value = null;
+
+                try {
+                    // func() 함수로 API 호출
+                    const data = await func('get_user_info', {
+                        user_id: userId,
+                        alertOnError: false  // Vue에서 직접 에러 처리
+                    });
+
+                    user.value = data;
+                } catch (err) {
+                    error.value = '사용자 정보를 가져올 수 없습니다.';
+                    console.error(err);
+                } finally {
+                    loading.value = false;
+                }
+            };
+
+            // 프로필 업데이트
+            const updateProfile = async (displayName, gender, birthday) => {
+                loading.value = true;
+                error.value = null;
+
+                try {
+                    const result = await func('update_user_profile', {
+                        display_name: displayName,
+                        gender: gender,
+                        birthday: birthday,
+                        auth: true,
+                        alertOnError: false
+                    });
+
+                    if (result.success) {
+                        alert('프로필이 업데이트되었습니다!');
+                        return true;
+                    }
+                } catch (err) {
+                    error.value = '프로필 업데이트에 실패했습니다.';
+                    console.error(err);
+                    return false;
+                } finally {
+                    loading.value = false;
+                }
+            };
+
+            // 컴포넌트 마운트 시 실행
+            Vue.onMounted(() => {
+                loadUser(123);
+            });
+
+            return {
+                user,
+                loading,
+                error,
+                loadUser,
+                updateProfile
+            };
+        }
+    }).mount('#app');
+});
+```
+
+### func() 함수 내부 동작
+
+**소스 코드 (`/js/app.js`):**
+
+```javascript
+/**
+ * API 함수 호출
+ * @param {string} name - 호출할 함수 이름
+ * @param {object} params - 파라미터 객체
+ *   - auth: true - 현재 로그인한 사용자의 ID 토큰을 'idToken'에 포함
+ *   - alertOnError: true - 오류 발생 시 alert()로 알림 (기본값: true)
+ * @returns {Promise<object>} API 응답 데이터
+ */
+async function func(name, params = {}) {
+    // 함수 이름을 params.func에 설정
+    params.func = name;
+
+    // alertOnError 기본값 설정 (기본값: true)
+    const alertOnError = params.alertOnError !== undefined ? params.alertOnError : true;
+
+    // Firebase 인증 토큰 추가
+    if (params.auth) {
+        params.idToken = await firebase.auth().currentUser.getIdToken(true);
+        delete params.auth;  // auth 필드는 제거
+    }
+
+    try {
+        // Axios로 API 호출
+        const res = await axios.post('/api.php', params);
+
+        // 에러 코드가 있으면 에러 throw
+        if (res.data.error_code) {
+            throw new Error(res.data.error_code + ': ' + res.data.error_message);
+        }
+
+        // 성공 시 응답 데이터 리턴
+        return res.data;
+    } catch (error) {
+        // 에러 코드와 메시지 추출
+        let errorCode = 'unknown-error';
+        let errorMessage = error.message;
+
+        if (error.response && error.response.data) {
+            // 서버에서 반환한 에러 정보
+            errorCode = error.response.data.error_code || errorCode;
+            errorMessage = error.response.data.error_message || errorMessage;
+        } else if (error.message) {
+            // Error 객체에서 추출한 에러 메시지
+            const match = error.message.match(/^([^:]+):\s*(.+)$/);
+            if (match) {
+                errorCode = match[1];
+                errorMessage = match[2];
+            }
+        }
+
+        // 콘솔에 에러 로그
+        console.error(`Error occurred while calling ${name}:`, {
+            errorCode,
+            errorMessage,
+            fullError: error
+        });
+
+        // alertOnError가 true일 때 사용자에게 에러 표시
+        if (alertOnError) {
+            alert(`Error: ${errorCode}\n${errorMessage}`);
+        }
+
+        // 에러 코드와 메시지를 포함하여 에러 던지기
+        const customError = new Error(errorMessage);
+        customError.code = errorCode;
+        customError.originalError = error;
+        throw customError;
+    }
+}
+```
+
+### 주의사항
+
+1. **func 필드 자동 설정**: `params.func`는 자동으로 설정되므로 직접 설정하지 마세요
+2. **auth 필드 제거**: `params.auth`는 처리 후 자동으로 제거됩니다
+3. **alertOnError 기본값**: 기본값이 `true`이므로 에러 시 alert가 자동으로 표시됩니다
+4. **Firebase 로그인 필요**: `auth: true`를 사용하려면 Firebase에 로그인되어 있어야 합니다
+5. **try-catch 권장**: 에러 처리를 직접 하려면 try-catch를 사용하세요
+
+---
+
 ## API 호출 예제
 
 ### 기본 요청
@@ -710,9 +1107,38 @@ Sonub API는 `error()` 함수를 통해 표준화된 에러 응답을 제공합�
 **필드 설명:**
 
 - `error_code`: kebab-case 형식의 에러 코드 (예: `user-not-found`)
-- `error_message`: 사용자에게 표시할 에러 메시지
+- `error_message`: 사용자에게 표시할 에러 메시지 (다국어 번역 지원)
 - `error_data`: 추가 에러 정보를 담은 객체
 - `error_response_code`: HTTP 응답 코드 (400, 401, 403, 404, 500 등)
+
+**다국어 번역 지원:**
+
+API는 `tr()` 함수를 사용하여 에러 메시지를 사용자의 언어로 자동 번역합니다.
+
+```php
+// 에러 메시지를 다국어로 제공
+return error('user-not-found', tr('user-not-found', '사용자를 찾을 수 없습니다.'));
+```
+
+클라이언트는 사용자의 현재 언어 설정에 따라 번역된 에러 메시지를 받게 됩니다:
+
+```json
+{
+  "error_code": "user-not-found",
+  "error_message": "User not found",  // 영어 사용자
+  "error_data": {},
+  "error_response_code": 404
+}
+```
+
+```json
+{
+  "error_code": "user-not-found",
+  "error_message": "사용자를 찾을 수 없습니다.",  // 한국어 사용자
+  "error_data": {},
+  "error_response_code": 404
+}
+```
 
 ### 에러 응답 유형
 

@@ -1,11 +1,13 @@
 <?php
+
+
 include_once './init.php';
 
-if (is_logout_page()) {
-    if (login() != null) {
-        // If the user is logged in, clear the session cookie
-        clear_session_cookie();
-    }
+
+// 모듈 로드
+$module_path = get_module_path();
+if (file_exists($module_path)) {
+    include $module_path;
 }
 
 
@@ -47,13 +49,31 @@ if (is_logout_page()) {
             document.readyState !== "loading" ? fn() :
                 document.addEventListener("DOMContentLoaded", fn);
         }
+
+
+        // Firebase 초기화 함수. 여러번 호출해도 한번만 초기화 함. 그리고 </body> 태그 바로 직전에서 한번 호출 됨
+        function firebase_ready(callback) {
+            ready(() => {
+                if (typeof firebase === 'undefined') {
+                    throw new Error("No firebase. Firebase SDK script not loaded.");
+                }
+                if (firebase.apps.length > 0) {
+                    // 이미 초기화 되었으면 바로 콜백 호출
+                    console.log("---> Firebase 이미 초기화 되어 있음");
+                    callback();
+                    return;
+                }
+                // 파이어베이스 app 초기화: Firebase (and user) available immediately after this line.
+                firebase.initializeApp(firebaseConfig);
+                console.log("---> Firebase 초기화 됨");
+                callback();
+            })
+        }
     </script>
 
 
     <script>
-        const appConfig = {
-            id: <?= login()?->id ?: 0 ?>,
-        };
+        const appConfig = <?php echo json_encode(config(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
     </script>
 
 
@@ -62,74 +82,68 @@ if (is_logout_page()) {
 <body>
 
 
-    <?php include ROOT_DIR . '/etc/firebase/firebase-setup.php'; ?>
-    <script src="/js/axios.js"></script>
-    <script src="/js/vue.global.prod.js"></script>
-    <?php include_once ROOT_DIR . '/etc/php-hot-reload-client.php'; ?>
-    <link href="/css/app.css" rel="stylesheet">
-    <script src="/js/app.js" defer></script>
-    <?php if (is_index_page()) { ?>
-    <?php } else { ?>
-        <?php include_page_css() ?>
-        <?php include_page_js() ?>
-    <?php } ?>
-
 
     <!-- Header Navigation -->
-    <header class="bg-dark text-white">
-        <nav class="navbar navbar-expand-lg navbar-dark">
+    <header class="top-bar bg-white border-bottom">
+        <nav class="navbar navbar-expand-lg navbar-light">
             <div class="container-fluid">
-                <!-- 모바일: [S] 표시, 데스크톱: Sonub 표시 -->
-                <a class="navbar-brand" href="/">
-                    <span class="d-md-none">[S]</span>
-                    <span class="d-none d-md-inline">Sonub</span>
+                <!-- 로고: Bootstrap Icons bi-chat-heart-fill -->
+                <a class="navbar-brand d-flex align-items-center" href="/">
+                    <i class="bi bi-chat-heart-fill text-dark fs-4 me-2"></i>
+                    <span class="text-dark d-none d-md-inline">Sonub</span>
                 </a>
 
-                <!-- Mobile: 채팅, 친구찾기, User icon and toggler on the right -->
+                <!-- 우측 아이콘 및 토글 버튼 -->
                 <div class="d-flex align-items-center ms-auto">
                     <!-- 모바일 전용: 채팅, 친구찾기 아이콘 -->
                     <div class="d-md-none d-flex align-items-center">
-                        <a href="/chat" class="me-2">
-                            <i class="bi bi-chat-dots sonub-nav-icon"></i>
+                        <a href="<?= href()->friend->find_friend ?>" class="me-3 text-dark">
+                            <i class="bi bi-people fs-5"></i>
                         </a>
-                        <a href="/friends" class="me-2">
-                            <i class="bi bi-people sonub-nav-icon"></i>
+
+
+                        <a href="/chat" class="me-3 text-dark">
+                            <i class="bi bi-chat-dots fs-5"></i>
                         </a>
                     </div>
 
-                    <div class="me-2">
-                        <a href="<?= href()->user->profile ?>">
-                            <i class="bi bi-person-circle sonub-nav-icon"></i>
+                    <!-- 프로필 아이콘 -->
+                    <div class="me-3">
+                        <a href="<?= href()->user->profile ?>" class="text-dark">
+                            <i class="bi bi-person-circle fs-5"></i>
                         </a>
                     </div>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+
+                    <!-- 모바일 토글 버튼 -->
+                    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                         <span class="navbar-toggler-icon"></span>
                     </button>
                 </div>
 
+                <!-- 네비게이션 메뉴 -->
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav me-auto">
                         <li class="nav-item">
-                            <a class="nav-link" href="/">Home</a>
+                            <a class="nav-link text-dark" href="/">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/posts">Posts</a>
+                            <a class="nav-link text-dark" href="/posts">Posts</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/users">Users</a>
+                            <a class="nav-link text-dark" href="/users">Users</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/about">About</a>
+                            <a class="nav-link text-dark" href="/about">About</a>
                         </li>
                     </ul>
                     <ul class="navbar-nav">
                         <?php if (login() == null) { ?>
                             <li class="nav-item">
-                                <a class="nav-link" href="<?= href()->user->login ?>">Sign in</a>
+                                <a class="nav-link text-dark" href="<?= href()->user->login ?>">Sign in</a>
                             </li>
                         <?php } else { ?>
                             <li class="nav-item">
-                                <a class="nav-link" href="<?= href()->user->logout_submit ?>">Sign out</a>
+                                <a class="nav-link text-dark" href="<?= href()->user->logout_submit ?>">Sign out</a>
                             </li>
                         <?php } ?>
                     </ul>
@@ -214,6 +228,21 @@ if (is_logout_page()) {
     </footer>
 
 
+
+
+
+
+    <?php include ROOT_DIR . '/etc/firebase/firebase-setup.php'; ?>
+    <script src="/js/axios.js"></script>
+    <script src="/js/vue.global.prod.js"></script>
+    <?php include_once ROOT_DIR . '/etc/php-hot-reload-client.php'; ?>
+    <link href="/css/app.css" rel="stylesheet">
+    <script src="/js/app.js" defer></script>
+    <?php if (is_index_page()) { ?>
+    <?php } else { ?>
+        <?php include_page_css() ?>
+        <?php include_page_js() ?>
+    <?php } ?>
 
 
     <script src="/etc/frameworks/bootstrap/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js"></script>

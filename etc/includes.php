@@ -25,3 +25,6 @@ include_once ROOT_DIR . '/lib/debug/debug.functions.php';
 include_once ROOT_DIR . '/lib/user/user.crud.php';
 include_once ROOT_DIR . '/lib/user/user.functions.php';
 include_once ROOT_DIR . '/lib/user/user.model.php';
+include_once ROOT_DIR . '/lib/file/file.upload.php';
+
+include_once ROOT_DIR . '/etc/config/app.config.php';

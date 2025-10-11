@@ -33,17 +33,20 @@ inject_logout_submit_language();
 </div>
 
 <script>
-    // Firebase Auth에서 로그아웃 후 홈으로 리다이렉트
-    firebase.auth().signOut().then(() => {
-        // 로그아웃 성공
-        setTimeout(() => {
-            window.location.href = '<?= href()->home ?>';
-        }, 1500); // 1.5초 후 리다이렉트
-    }).catch((error) => {
-        // 로그아웃 중 오류 발생
-        console.error("로그아웃 오류:", error);
-        window.location.href = '<?= href()->home ?>'; // 오류가 발생해도 홈으로 리다이렉트
-    });
+    firebase_ready(() => {
+
+        // Firebase Auth에서 로그아웃 후 홈으로 리다이렉트
+        firebase.auth().signOut().then(() => {
+            // 로그아웃 성공
+            setTimeout(() => {
+                window.location.href = '<?= href()->home ?>';
+            }, 1500); // 1.5초 후 리다이렉트
+        }).catch((error) => {
+            // 로그아웃 중 오류 발생
+            console.error("로그아웃 오류:", error);
+            window.location.href = '<?= href()->home ?>'; // 오류가 발생해도 홈으로 리다이렉트
+        });
+    })
 </script>
 
 <?php

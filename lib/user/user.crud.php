@@ -104,7 +104,7 @@ function get_user(array $input): array
 
 
 /**
- * 사용자 프로필 업데이트
+ * 로그인 한 사용자의 프로필 업데이트
  *
  * @param array $input HTTP 입력 파라미터
  * - $input['display_name']: (선택) 사용자 표시 이름
@@ -166,6 +166,11 @@ function update_user_profile(array $input): array
         $data['gender'] = $input['gender'];
     }
 
+    // photo_url이 제공된 경우
+    if (isset($input['photo_url'])) {
+        $data['photo_url'] = $input['photo_url'];
+    }
+
     // 데이터베이스 업데이트
     $affected = db()->update($data)
         ->userTable()
@@ -179,4 +184,10 @@ function update_user_profile(array $input): array
         ->first();
 
     return $user;
+}
+
+
+function update_my_profile(array $input): array
+{
+    return update_user_profile($input);
 }

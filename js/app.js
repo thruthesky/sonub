@@ -75,6 +75,13 @@ async function func(name, params = {}) {
     }
 }
 
+
+/** 자신의 프로필 업데이트. 모든 필드 업데이트 가능. 참고: user.md */
+async function update_my_profile(data) {
+    return func('update_my_profile', data, { alert_on_error: true });
+}
+
+
 /**
  * 로그인 함수: 이 함수로는 지정된 몇 명의 사용자만 로그인을 할 수 있다.
  */
@@ -89,3 +96,144 @@ async function login(id, pw) {
 
 
 }
+
+
+/**
+ * Axios 에러 메시지를 추출하는 함수
+ *
+ * Axios 에러 객체에서 사용자 친화적인 에러 메시지를 생성합니다.
+ * HTTP 상태 코드별로 적절한 메시지를 반환하고, 에러 코드와 메시지를 포함합니다.
+ *
+ * @param {AxiosError} err - Axios 에러 객체 (response, request, message 등 포함)
+ * @param {object} options - 옵션 { alert_on_error: boolean, debug: boolean }
+ * @returns {string} 사용자 친화적인 에러 메시지
+ *
+ * @example
+ * try {
+ *   await axios.post('/api', data);
+ * } catch (err) {
+ *   const message = get_axios_error_message(err, { alert_on_error: true });
+ *   console.error(message);
+ * }
+ */
+function get_axios_error_message(err, options = {}) {
+    // 디버그 로그 출력
+    console.error('Axios Error:', err);
+
+    // HTTP 상태 코드 추출
+    // response가 있으면 상태 코드, 없으면 0 (네트워크 에러 등)
+    const status = err.response?.status || 0;
+
+    // 에러 코드와 메시지 초기화
+    let errorCode = '';        // 서버가 반환한 에러 코드 (예: 'file-not-found')
+    let errorMessage = 'Unknown error';  // 기본 에러 메시지
+
+    /**
+     * 1. response.data가 있는 경우 (서버 응답이 있는 경우)
+     *
+     * 서버가 정상적으로 응답했지만 에러 상태 코드(4xx, 5xx)를 반환한 경우
+     * 예: 400 Bad Request, 404 Not Found, 500 Internal Server Error
+     */
+    if (err.response?.data) {
+        const errorData = err.response.data;
+
+        // 문자열인 경우 (서버가 단순 문자열 메시지를 반환)
+        // 예: "파일을 찾을 수 없습니다"
+        if (typeof errorData === 'string') {
+            errorMessage = errorData;
+        }
+        // 객체인 경우 (서버가 구조화된 에러 객체를 반환)
+        // 예: { error: 'file-not-found', message: '파일을 찾을 수 없습니다' }
+        else if (typeof errorData === 'object') {
+            errorCode = errorData.error || '';         // 에러 코드 (예: 'file-not-found')
+            errorMessage = errorData.message || errorMessage;  // 에러 메시지
+        }
+    }
+    /**
+     * 2. request는 있지만 response가 없는 경우 (네트워크 에러)
+     *
+     * 요청은 전송되었지만 서버로부터 응답을 받지 못한 경우
+     * 예: 서버가 다운됨, 네트워크 끊김, CORS 에러, 타임아웃
+     */
+    else if (err.request) {
+        errorMessage = '네트워크 연결 오류 또는 서버 응답 없음';
+    }
+    /**
+     * 3. 요청 설정 중 에러 발생
+     *
+     * 요청을 보내기 전에 에러가 발생한 경우
+     * 예: 잘못된 URL, 잘못된 설정, 브라우저 제한
+     */
+    else if (err.message) {
+        errorMessage = err.message;
+    }
+
+    /**
+     * HTTP 상태 코드별 친화적인 메시지 생성
+     *
+     * 사용자가 이해하기 쉬운 상태 텍스트로 변환
+     */
+    let statusText = '';
+    switch (status) {
+        case 400:
+            statusText = 'Bad Request';  // 잘못된 요청
+            break;
+        case 401:
+            statusText = 'Unauthorized';  // 인증 필요
+            break;
+        case 403:
+            statusText = 'Forbidden';  // 권한 없음
+            break;
+        case 404:
+            statusText = 'Not Found';  // 찾을 수 없음
+            break;
+        case 500:
+            statusText = 'Server Error';  // 서버 내부 오류
+            break;
+        case 502:
+            statusText = 'Bad Gateway';  // 게이트웨이 오류
+            break;
+        case 503:
+            statusText = 'Service Unavailable';  // 서비스 이용 불가
+            break;
+        case 0:
+            statusText = 'Network Error';  // 네트워크 에러
+            break;
+        default:
+            // 그 외 상태 코드
+            statusText = status ? `Error ${status}` : 'Unknown Error';
+    }
+
+    /**
+     * 최종 에러 메시지 생성
+     *
+     * 에러 코드가 있으면 [코드] 형식으로 포함
+     * 예: "[file-not-found] 파일을 찾을 수 없습니다"
+     */
+    const fullMessage = errorCode ? `[${errorCode}] ${errorMessage}` : errorMessage;
+
+    // 상세 에러 정보를 콘솔에 로깅 (디버깅용)
+    if (options.debug) {
+        console.error('API error details:', {
+            status: status,           // HTTP 상태 코드
+            statusText: statusText,   // 상태 텍스트
+            errorCode: errorCode,     // 에러 코드
+            errorMessage: errorMessage, // 에러 메시지
+            fullError: err            // 전체 에러 객체
+        });
+    }
+
+    /**
+     * alert_on_error 옵션이 true이면 사용자에게 에러 알림
+     *
+     * 팝업 창으로 상태 코드와 에러 메시지를 표시
+     * 예: "요청 실패 (Not Found)\n\n[file-not-found] 파일을 찾을 수 없습니다"
+     */
+    if (options.alert_on_error) {
+        alert(`요청 실패 (${statusText})\n\n${fullMessage}`);
+    }
+
+    // 상태 텍스트와 에러 메시지를 포함한 최종 문자열 반환
+    return `${statusText}: ${fullMessage}`;
+}
+
