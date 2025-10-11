@@ -225,6 +225,10 @@ if (file_exists($module_path)) {
                 </div>
             </div>
         </div>
+
+        <?php if (is_dev_computer()) { ?>
+            A B C D E F G H J K L M
+        <?php } ?>
     </footer>
 
 

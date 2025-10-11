@@ -40,36 +40,49 @@ async function func(name, params = {}) {
     } catch (error) {
         // Axios 에러 응답에서 error_code와 error_message 추출
         let errorCode = 'unknown-error';
-        let errorMessage = error.message;
+        let errorMessage = '알 수 없는 오류가 발생했습니다.';
 
         if (error.response && error.response.data) {
-            // 서버에서 반환한 에러 정보
-            errorCode = error.response.data.error_code || errorCode;
-            errorMessage = error.response.data.error_message || errorMessage;
+            // 서버에서 반환한 에러 정보 (HTTP 4xx, 5xx 응답)
+            const data = error.response.data;
+            if (data.error_code) {
+                errorCode = data.error_code;
+                errorMessage = data.error_message || errorCode;
+            } else {
+                // error_code가 없는 경우 응답 데이터를 그대로 사용
+                errorMessage = typeof data === 'string' ? data : JSON.stringify(data);
+            }
         } else if (error.message) {
             // Error 객체에서 추출한 에러 메시지
             const match = error.message.match(/^([^:]+):\s*(.+)$/);
             if (match) {
                 errorCode = match[1];
                 errorMessage = match[2];
+            } else {
+                errorMessage = error.message;
             }
         }
+
+        // 에러 메시지 형식: "error_message (error_code)"
+        const displayMessage = `${errorMessage} (${errorCode})`;
 
         // 콘솔에 에러 코드와 메시지 로그
         console.error(`Error occurred while calling ${name}:`, {
             errorCode,
             errorMessage,
+            displayMessage,
             fullError: error
         });
 
         // alertOnError가 true일 때 사용자에게 에러 표시
         if (alertOnError) {
-            alert(`Error: ${errorCode}\n${errorMessage}`);
+            alert(displayMessage);
         }
 
         // 에러 코드와 메시지를 포함하여 에러 던지기
-        const customError = new Error(errorMessage);
+        const customError = new Error(displayMessage);
         customError.code = errorCode;
+        customError.message = displayMessage;
         customError.originalError = error;
         throw customError;
     }
@@ -118,7 +131,7 @@ async function login(id, pw) {
  */
 function get_axios_error_message(err, options = {}) {
     // 디버그 로그 출력
-    console.error('Axios Error:', err);
+    console.error('get_axios_error_message():', err);
 
     // HTTP 상태 코드 추출
     // response가 있으면 상태 코드, 없으면 0 (네트워크 에러 등)
@@ -137,6 +150,7 @@ function get_axios_error_message(err, options = {}) {
     if (err.response?.data) {
         const errorData = err.response.data;
 
+
         // 문자열인 경우 (서버가 단순 문자열 메시지를 반환)
         // 예: "파일을 찾을 수 없습니다"
         if (typeof errorData === 'string') {
@@ -145,9 +159,11 @@ function get_axios_error_message(err, options = {}) {
         // 객체인 경우 (서버가 구조화된 에러 객체를 반환)
         // 예: { error: 'file-not-found', message: '파일을 찾을 수 없습니다' }
         else if (typeof errorData === 'object') {
-            errorCode = errorData.error || '';         // 에러 코드 (예: 'file-not-found')
-            errorMessage = errorData.message || errorMessage;  // 에러 메시지
+
+            errorCode = errorData.error_code || '';         // 에러 코드 (예: 'file-not-found')
+            errorMessage = errorData.error_message || errorMessage;  // 에러 메시지
         }
+
     }
     /**
      * 2. request는 있지만 response가 없는 경우 (네트워크 에러)
@@ -222,7 +238,7 @@ function get_axios_error_message(err, options = {}) {
             fullError: err            // 전체 에러 객체
         });
     }
-
+    console.log('extra options:', options);
     /**
      * alert_on_error 옵션이 true이면 사용자에게 에러 알림
      *

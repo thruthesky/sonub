@@ -1,1 +1,37 @@
+<?php
 
+/**
+ * 첨부 파일 삭제
+ * @param array $params 
+ * $params['url'] - 에는 /var/uploads/[user-id]/[file-name] 과 같이 파일 경로가 들어 올 수 있다.
+ * @return void 
+ * 
+ * 로직:
+ * - 로그인 한 경우만 이 함수를 호출 할 수 있으며,
+ * - 반드시 자신의 폴더 /var/uploads/[id]/xxxxx 와 같은 폴더에 저장되어져 있는 경우만 삭제를 할 수 있다.
+ */
+function file_delete(array $params)
+{
+    if (! login()) {
+        return error('login-first', t()->login_first);
+    }
+
+    // check if the path is valid and contains the login user's ID
+    if (
+        !isset($params['url']) || !is_string($params['url']) ||
+        strpos($params['url'], '/var/uploads/' . login()->id . '/') !== 0
+    ) {
+        return error('invalid-file-path', tr(['en' => 'Invalid file path.', 'ko' => '잘못된 파일 경로입니다.']), ['path' => $params['url'] ?? '']);
+    }
+
+    $file_path = ROOT_DIR . $params['url'];
+    if (!file_exists($file_path)) {
+        return error('file-not-found', tr(['en' => 'File not found.', 'ko' => '파일을 찾을 수 없습니다.']), ['path' => $file_path]);
+    }
+
+    $deleted = unlink($file_path);
+    if (! $deleted) {
+        return error('file-delete-failed', tr(['en' => 'File delete failed.', 'ko' => '파일 삭제에 실패했습니다.']), ['path' => $file_path]);
+    }
+    return ['deleted' => true, 'path' => $file_path];
+}

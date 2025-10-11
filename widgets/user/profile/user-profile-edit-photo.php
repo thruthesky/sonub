@@ -116,15 +116,15 @@
             accept="image/*" />
 
         <!-- 카메라 아이콘 (항상 표시) -->
-        <i class="fa-solid fa-camera camera-icon text-body"></i>
+        <i class="bi bi-camera-fill camera-icon text-body"></i>
     </label>
 
     <!-- 삭제 버튼 (프로필 사진이 있을 때만 표시) -->
     <button class="profile-photo-delete-button <?= login()->photo_url ? '' : 'd-none' ?>"
         type="button"
-        onclick="delete_file(get_hidden_input_value('profile-photo'), {id: 'profile-photo', on_deleted: on_deleted});"
+        onclick="delete_file(get_hidden_input_value('profile-photo'), {id: 'profile-photo', on_deleted: on_deleted, alert_on_error: true});"
         title="<?= t()->삭제 ?>">
-        <i class="fa-solid fa-xmark"></i>
+        <i class="bi bi-x-lg"></i>
     </button>
 </div>
 

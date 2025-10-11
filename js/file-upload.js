@@ -304,7 +304,7 @@ function display_uploaded_files(displayAreaId) {
             btn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
             btn.onclick = (e) => {
                 e.stopPropagation();
-                delete_file(url, { id: displayAreaId });
+                delete_file(url, { id: displayAreaId, alert_on_error: true });
             };
             uploadedFilesNav.appendChild(btn);
         }
@@ -387,7 +387,7 @@ function create_file_item(url, displayAreaId) {
     deleteBtn.classList.add('btn', 'btn-danger', 'btn-sm', 'position-absolute', 'top-0', 'start-0', 'm-1');
     deleteBtn.style.zIndex = '10';
     deleteBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-    deleteBtn.onclick = () => delete_file(url, { id: displayAreaId });
+    deleteBtn.onclick = () => delete_file(url, { id: displayAreaId, alert_on_error: true });
     col.appendChild(deleteBtn);
 
     // 파일 타입에 따라 HTML 생성
@@ -479,16 +479,11 @@ async function delete_file(url, extra = {}) {
 
 
     try {
-        const uid = firebase.auth().currentUser?.uid;
-        if (!uid) {
-            alert('파일 삭제 오류: 잠시 후 다시 시도하세요. (파베 UID 없음)');
-            return;
-        }
+
         // Axios를 사용하여 파일 삭제 API 호출 (GET 방식)
         const response = await axios.get(appConfig.api.file_delete_url, {
             params: {
-                url: url,
-                uid: uid
+                url: url
             }
         });
 
@@ -499,8 +494,7 @@ async function delete_file(url, extra = {}) {
         }
 
     } catch (e) {
-        const msg = get_axios_error_message(e);
-        alert(msg);
+        const msg = get_axios_error_message(e, extra);
         if (msg.indexOf('file-not-found') == -1) {
             throw msg;
         }
