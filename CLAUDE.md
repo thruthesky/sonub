@@ -86,6 +86,56 @@ Sonub (sonub.com) 웹사이트 개발 가이드라인 및 규칙
   - [ ] **페이지별 커스텀 리소스**:
     - [ ] 페이지별 CSS: `/page/user/profile-edit.css` → 자동 로드됨
     - [ ] 페이지별 JS: `/page/user/profile-edit.js` → 자동 로드됨
+  - [ ] **🔥🔥🔥 최강력 규칙: 페이지 링크 및 네비게이션 - href() 함수 필수 사용 🔥🔥🔥**:
+    - [ ] **절대 준수**: 모든 페이지 링크 및 URL 생성 시 반드시 `href()` 함수를 사용해야 합니다
+    - [ ] **href() 함수 위치**: `lib/href/href.functions.php`에 정의되어 있음
+    - [ ] **절대 금지**: 하드코딩된 URL 문자열 사용 금지 (예: `'/user/login'`, `'/post/list'` 등)
+    - [ ] **사용 예제**:
+      ```php
+      // ✅ 올바른 방법: href() 함수 사용 (일반 HTML)
+      <a href="<?= href()->user->login ?>">로그인</a>
+      <a href="<?= href()->user->profile_edit ?>">프로필 수정</a>
+      <a href="<?= href()->post->list(1, 'discussion') ?>">토론 게시판</a>
+      <a href="<?= href()->help->contact ?>">문의하기</a>
+      <a href="<?= href()->home ?>">홈</a>
+
+      // ✅ 올바른 방법: href() 함수 사용 (HEREDOC 내부)
+      $home_url = href()->home;
+      $contact_url = href()->admin->contact;
+      echo <<<HTML
+      <a href="{$home_url}">홈</a>
+      <a href="{$contact_url}">관리자 문의</a>
+      HTML;
+
+      // 또는 직접 사용
+      echo <<<HTML
+      <a href="{href()->home}">홈</a>
+      <a href="{href()->admin->contact}">관리자 문의</a>
+      HTML;
+
+      // ❌ 잘못된 방법: 하드코딩된 URL
+      <a href="/user/login">로그인</a>
+      <a href="/user/profile-edit">프로필 수정</a>
+      <a href="/post/list?category=discussion">토론 게시판</a>
+      ```
+    - [ ] **href() 함수 구조**:
+      - [ ] `href()->home`: 홈 페이지
+      - [ ] `href()->user->login`: 로그인 페이지
+      - [ ] `href()->user->register`: 회원가입 페이지
+      - [ ] `href()->user->profile`: 프로필 페이지
+      - [ ] `href()->user->profile_edit`: 프로필 수정 페이지
+      - [ ] `href()->user->settings`: 설정 페이지
+      - [ ] `href()->post->list($page, $category)`: 게시글 목록 (동적 파라미터)
+      - [ ] `href()->post->create`: 게시글 작성
+      - [ ] `href()->comment->list($idx_member)`: 댓글 목록
+      - [ ] `href()->help->howto`: 사용 방법
+      - [ ] `href()->help->guideline`: 가이드라인
+      - [ ] `href()->help->terms_and_conditions`: 이용약관
+      - [ ] `href()->help->privacy`: 개인정보처리방침
+      - [ ] `href()->admin->contact`: 관리자 문의
+      - [ ] `href()->admin->dashboard`: 관리자 대시보드
+      - [ ] `href()->chat->rooms`: 채팅방 목록
+    - [ ] **위반 시**: 코드 리뷰 거부, URL 변경 시 유지보수 어려움, 일관성 문제
   - [ ] **올바른 페이지 파일 구조**:
     ```php
     <?php
@@ -181,6 +231,32 @@ Sonub (sonub.com) 웹사이트 개발 가이드라인 및 규칙
   - [ ] **절대 준수**: 모든 언어 번역은 각 PHP 파일 하단에 `inject_[php_file_name]_language()` 로컬 함수를 정의해야 합니다
   - [ ] 함수 내부에서 `t()->inject(...)` 함수를 통해 다국어 번역 텍스트를 주입해야 합니다
   - [ ] 예시: `index.php` 파일에서는 맨 아래에 `inject_index_language()` 함수를 정의하고, 파일 맨 위에서 이 함수를 호출하여 번역 텍스트를 주입합니다
+  - [ ] **🔥🔥🔥 최강력 규칙: 모든 번역은 반드시 4개 국어(한국어, 영어, 일본어, 중국어)로 작성해야 합니다 🔥🔥🔥**
+  - [ ] **필수 언어 및 순서**:
+    - [ ] 1. 한국어 (ko)
+    - [ ] 2. 영어 (en)
+    - [ ] 3. 일본어 (ja)
+    - [ ] 4. 중국어 (zh)
+  - [ ] **필수 번역 방법**:
+    - [ ] `t()->inject()` 함수를 사용하여 번역 텍스트 주입
+    - [ ] 키는 **반드시 한글**이어야 함
+    - [ ] 번역 텍스트 사용 시: `<?= t()->키이름 ?>` 형식 사용
+  - [ ] **인라인 번역 예제**:
+    ```php
+    // 인라인 번역 (4개 국어 순서대로)
+    <?= tr(['ko' => '환영합니다', 'en' => 'Welcome', 'ja' => 'ようこそ', 'zh' => '欢迎']) ?>
+    ```
+  - [ ] **t()->inject() 사용 예제**:
+    ```php
+    t()->inject([
+        '이름' => ['ko' => '이름', 'en' => 'Name', 'ja' => '名前', 'zh' => '姓名'],
+        '나이' => ['ko' => '나이', 'en' => 'Age', 'ja' => '年齢', 'zh' => '年龄'],
+    ]);
+
+    // 사용
+    <?= t()->이름 ?>
+    <?= t()->나이 ?>
+    ```
   - [ ] **위반 금지**: 이 워크플로우를 따르지 않는 번역 구현은 절대 금지됩니다
   - [ ] 번역 관련 작업 시작 전 반드시 `docs/translation.md` 문서를 읽고 이해해야 합니다
 

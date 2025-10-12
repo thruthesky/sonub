@@ -25,8 +25,7 @@ $user_data = get_user(['id' => $user_id]);
 
 // 사용자를 찾을 수 없는 경우
 if (isset($user_data['error_code'])) {
-    echo '<div class="container mt-5"><div class="alert alert-danger">' . tr(['en' => 'User not found.', 'ko' => '사용자를 찾을 수 없습니다.']) . '</div></div>';
-    return;
+    return display_error(tr(['en' => 'User not found.', 'ko' => '사용자를 찾을 수 없습니다.']));
 }
 
 // UserModel 객체 생성

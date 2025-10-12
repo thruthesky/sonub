@@ -32,3 +32,4 @@ include_once ROOT_DIR . '/lib/file/file.delete.php';
 include_once ROOT_DIR . '/etc/config/app.config.php';
 include_once ROOT_DIR . '/lib/pagination/basic.pagination.php';
 include_once ROOT_DIR . '/etc/config/category.config.php';
+include_once ROOT_DIR . '/lib/error/error.functions.php';

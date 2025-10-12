@@ -1,12 +1,18 @@
 <div id="language-selector-app">
     <div class="dropdown d-inline-block">
-        <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="bi bi-globe"></i> <span>{{ currentLanguage }}</span>
+        <button class="btn btn-sm btn-light rounded-pill border dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-translate text-primary"></i>
+            <span class="text-dark">{{ getCurrentLanguageName() }}</span>
         </button>
-        <ul class="dropdown-menu" aria-labelledby="languageDropdown">
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="languageDropdown">
             <li v-for="lang in languages" :key="lang.code">
-                <a class="dropdown-item" href="#" @click.prevent="selectLanguage(lang.code)">
-                    {{ lang.name }}
+                <a class="dropdown-item d-flex align-items-center"
+                   href="#"
+                   @click.prevent="selectLanguage(lang.code)"
+                   :class="{ 'active': currentLanguage === lang.code }">
+                    <i class="bi bi-check-circle-fill text-success me-2" v-if="currentLanguage === lang.code"></i>
+                    <i class="bi bi-circle me-2 text-muted" v-else></i>
+                    <span>{{ lang.name }}</span>
                 </a>
             </li>
         </ul>
@@ -42,6 +48,14 @@
                 };
             },
             methods: {
+                /**
+                 * 현재 언어의 전체 이름 가져오기
+                 * @returns {string} 현재 언어의 이름
+                 */
+                getCurrentLanguageName() {
+                    const lang = this.languages.find(l => l.code === this.currentLanguage);
+                    return lang ? lang.name : this.currentLanguage;
+                },
                 /**
                  * 언어 선택 및 저장
                  * @param {string} languageCode - 선택된 언어 코드 (en, ko, ja, zh)

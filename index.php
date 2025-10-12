@@ -216,46 +216,33 @@ if (file_exists($module_path)) {
     </div>
 
     <!-- Footer -->
-    <footer class="bg-dark text-white mt-5 py-3">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-12 text-center">
+    <footer class="bg-light border-top mt-5 py-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                    <a href="<?= href()->home ?>" class="text-primary text-decoration-none me-3 fw-semibold">Home</a>
+                    <a href="<?= href()->help->guideline ?>" class="text-secondary text-decoration-none me-3">About</a>
+                    <a href="<?= href()->admin->contact ?>" class="text-secondary text-decoration-none">Contact</a>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
                     <!-- Language Selector -->
                     <div class="mb-2">
                         <?php include ROOT_DIR . '/widgets/language/language-selector.php'; ?>
                     </div>
-                    <p class="mb-0">&copy; 2024 Sonub Application. All rights reserved.</p>
+                </div>
+            </div>
+            <hr class="my-3 border-secondary border-opacity-25">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <p class="mb-0 text-muted small">&copy; 2024 Sonub Application. All rights reserved.</p>
                 </div>
             </div>
         </div>
-
-        <?php if (is_dev_computer()) { ?>
-            <button onclick="login_as('apple')">A</button>
-            <button onclick="login_as('banana')">B</button>
-            <button onclick="login_as('cherry')">C</button>
-            <button onclick="login_as('date')">D</button>
-            <button onclick="login_as('elderberry')">E</button>
-            <button onclick="login_as('fig')">F</button>
-            <button onclick="login_as('grape')">G</button>
-            <button onclick="login_as('honeydew')">H</button>
-            <button onclick="login_as('jackfruit')">J</button>
-            <button onclick="login_as('kiwi')">K</button>
-            <button onclick="login_as('lemon')">L</button>
-            <button onclick="login_as('mango')">M</button>
-
-            <script>
-                async function login_as(user_id) {
-                    const user = await login_email_password(user_id + '@test.com', '12345a,*');
-                    await func('login_with_firebase', {
-                        firebase_uid: user.uid,
-                        alertOnError: true,
-                    });
-                    // 로그인 성공 후 리다이렉션
-                    window.location.href = '<?= href()->home ?>';
-                }
-            </script>
-        <?php } ?>
     </footer>
+
+    <?php if (is_dev_computer()) {
+        include ROOT_DIR . '/etc/dev/dev-footer.php';
+    } ?>
 
 
 
