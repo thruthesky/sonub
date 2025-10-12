@@ -384,7 +384,7 @@ function create_file_item(url, displayAreaId) {
     // 삭제 버튼 생성
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
-    deleteBtn.classList.add('btn', 'btn-danger', 'btn-sm', 'position-absolute', 'top-0', 'start-0', 'm-1');
+    deleteBtn.classList.add('btn', 'btn-danger', 'btn-sm', 'position-absolute', 'top-0', 'end-0', 'm-1', 'me-2');
     deleteBtn.style.zIndex = '10';
     deleteBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
     deleteBtn.onclick = () => delete_file(url, { id: displayAreaId, alert_on_error: true });
