@@ -63,8 +63,9 @@ Sonub는 **API First** 설계 철학을 따르는 웹 애플리케이션입니�
 **Sonub는 API First 클래스 시스템입니다:**
 
 - ✅ **모든 함수는 API를 통해 직접 호출 가능하다**
-- ✅ **모든 함수는 배열 또는 객체를 리턴해야하며, 클라이언트에게 JSON 으로 리턴한다**
-- ✅ **모든 함수는 배열을 리턴해야하며, 에러가 있으면 error_code 와 error_message 에 에러 코드와 메시지를 저장하고, JSON 으로 클라이언트에게 전달한다**
+- ✅ **모든 함수는 배열 또는 객체를 리턴해야하며, 클라이언트에게 JSON으로 리턴한다**
+- ✅ **모든 함수는 에러 발생 시 `error()` 함수를 호출하여 `ApiException`을 throw한다**
+- ✅ **`api.php`에서 try/catch 블록으로 `ApiException`을 catch하여 JSON 에러 응답으로 변환한다**
 - ✅ **Model 객체(UserModel, PostModel 등)를 리턴하는 경우, 반드시 toArray() 메서드를 구현해야 한다**
 - ✅ RESTful 클라이언트가 API를 통해 모든 기능에 접근 가능
 - ✅ 프론트엔드와 백엔드가 명확히 분리됨
@@ -119,28 +120,80 @@ const ROOT_DIR = __DIR__;
 include_once ROOT_DIR . '/etc/includes.php';
 header('Content-Type: application/json; charset=utf-8');
 
-if (http_params('f')) {
-    try {
-        // 함수 호출
-        $res = http_params('f')(http_params());
-        if (is_array($res) || is_object($res)) {
-            if (isset($res['error_code'])) {
-                http_response_code($res['response_code'] ?? 400);
-                echo json_encode($res, JSON_UNESCAPED_UNICODE);
-            }
-            $res['func'] = http_params('f');
-            echo json_encode($res, JSON_UNESCAPED_UNICODE);
-        } else {
-            http_response_code(500);
-            echo json_encode(error('response-not-array-or-object'), JSON_UNESCAPED_UNICODE);
-        }
-    } catch (Throwable $e) {
-        http_response_code(500);
-        echo json_encode(error('exception', $e->getMessage(), ['trace' => $e->getTraceAsString()]), JSON_UNESCAPED_UNICODE);
-    }
-} else {
+$func_name = http_params('func');
+if ($func_name === null) {
     http_response_code(400);
-    echo json_encode(error('no-function-specified'), JSON_UNESCAPED_UNICODE);
+    $error_response = [
+        'error_code' => 'no-function-specified',
+        'error_message' => 'Function name is required',
+        'error_data' => [],
+        'error_response_code' => 400
+    ];
+    echo json_encode($error_response, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+if (!function_exists($func_name)) {
+    http_response_code(400);
+    $error_response = [
+        'error_code' => 'function-not-exists',
+        'error_message' => "Function '{$func_name}' does not exist",
+        'error_data' => ['function' => $func_name],
+        'error_response_code' => 400
+    ];
+    echo json_encode($error_response, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+try {
+    // 함수 호출
+    $res = $func_name(http_params());
+
+    // 리턴 타입 검증
+    if (!is_array($res) && !is_object($res)) {
+        http_response_code(500);
+        $error_response = [
+            'error_code' => 'response-not-array-or-object',
+            'error_message' => '함수가 배열이나 객체를 리턴하지 않았습니다.',
+            'error_data' => ['type' => gettype($res)],
+            'error_response_code' => 500,
+            'func' => $func_name
+        ];
+        echo json_encode($error_response, JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    // 객체를 배열로 변환 (Model 객체 지원)
+    if (is_object($res)) {
+        if (method_exists($res, 'toArray')) {
+            $res = $res->toArray();
+        } else {
+            $res = get_object_vars($res);
+        }
+    }
+
+    // 정상 응답 처리
+    $res['func'] = $func_name;
+    echo json_encode($res, JSON_UNESCAPED_UNICODE);
+} catch (ApiException $e) {
+    // API 에러 처리 (error() 함수로 throw된 에러)
+    http_response_code($e->getErrorResponseCode());
+    $error_response = $e->toArray();
+    $error_response['func'] = $func_name;
+    echo json_encode($error_response, JSON_UNESCAPED_UNICODE);
+} catch (Throwable $e) {
+    // 예상치 못한 예외 처리
+    http_response_code(500);
+    $error_response = [
+        'error_code' => 'exception',
+        'error_message' => $e->getMessage(),
+        'error_data' => [
+            'trace' => $e->getTraceAsString(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ],
+        'error_response_code' => 500,
+        'func' => $func_name
+    ];
+    echo json_encode($error_response, JSON_UNESCAPED_UNICODE);
 }
 ?>
 ```

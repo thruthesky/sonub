@@ -168,39 +168,47 @@
 
 ### 에러 처리 표준
 
-**🔥🔥🔥 최강력 규칙: 모든 에러는 반드시 `error()` 함수를 사용하여 처리해야 합니다 🔥🔥🔥**
+**🔥🔥🔥 최강력 규칙: 모든 에러는 반드시 `error()` 함수를 사용하여 throw해야 합니다 🔥🔥🔥**
 
-- **✅ 필수**: 모든 함수에서 에러가 발생하면 **반드시** `error()` 함수를 사용하여 에러 응답을 리턴
-- **✅ 필수**: `error()` 함수는 `lib/functions.php`에 정의되어 있음
-- **✅ 필수**: 모든 API 응답과 내부 함수 호출에서 일관된 에러 형식 사용
+- **✅ 필수**: 모든 함수에서 에러가 발생하면 **반드시** `error()` 함수를 호출하여 `ApiException`을 throw
+- **✅ 필수**: `error()` 함수는 `lib/functions.php`에 정의되어 있으며, 내부적으로 `ApiException`을 throw
+- **✅ 필수**: `ApiException` 클래스는 `lib/ApiException.php`에 정의되어 있음
+- **✅ 필수**: `api.php`에서 try/catch 블록으로 `ApiException`을 catch하여 JSON 에러 응답으로 변환
+- **✅ 필수**: 모든 API 함수는 에러 발생 시 `error()` 함수를 통해 예외를 throw
 - **❌ 금지**: 에러 발생 시 직접 배열을 만들어 리턴하는 것 금지
-- **❌ 금지**: 예외를 던지거나(throw) 직접 처리하는 방식 금지 (특별한 경우 제외)
+- **❌ 금지**: `error()` 함수를 사용하지 않고 직접 Exception을 throw하는 것 금지
 
 #### error() 함수 시그니처
 
 ```php
 /**
- * 모든 에러 응답을 이 함수를 통해서 리턴한다.
- * @param string $code 에러 코드 (예: 'user-not-found', 'invalid-input')
+ * API 에러를 throw하는 함수
+ *
+ * 모든 API 함수에서 에러 발생 시 이 함수를 호출하여 ApiException을 throw합니다.
+ * api.php에서 이 Exception을 catch하여 JSON 에러 응답으로 변환합니다.
+ *
+ * @param string $code 에러 코드 (kebab-case 형식, 예: 'user-not-found', 'invalid-input')
  * @param string $message 에러 메시지 (사용자에게 표시될 메시지)
  * @param array $data 추가 에러 데이터 (선택사항)
  * @param int $response_code HTTP 응답 코드 (기본값: 400)
- * @return array 에러 배열
+ * @return never 이 함수는 항상 Exception을 throw하므로 절대 반환하지 않습니다
+ * @throws ApiException
  */
-function error(string $code = 'unknown', string $message = '', array $data = [], int $response_code = 400): array
+function error(string $code = 'unknown', string $message = '', array $data = [], int $response_code = 400): never
 ```
 
 #### 에러 응답 형식
 
-`error()` 함수는 다음과 같은 형식의 배열을 리턴합니다:
+`error()` 함수를 호출하면 `ApiException`이 throw되고, `api.php`에서 catch하여 다음과 같은 형식의 JSON 응답을 생성합니다:
 
-```php
-[
-    'error_code' => 'user-not-found',
-    'error_message' => '사용자를 찾을 수 없습니다',
-    'error_data' => [],
-    'error_response_code' => 404,
-]
+```json
+{
+    "error_code": "user-not-found",
+    "error_message": "사용자를 찾을 수 없습니다",
+    "error_data": {},
+    "error_response_code": 404,
+    "func": "getUserInfo"
+}
 ```
 
 #### 올바른 에러 처리 예제
@@ -210,21 +218,24 @@ function error(string $code = 'unknown', string $message = '', array $data = [],
 /**
  * 사용자 정보를 조회하는 함수
  *
- * @param int $user_id 사용자 ID
- * @return array 성공 시 사용자 정보, 실패 시 에러 배열
+ * @param array $params HTTP 파라미터 배열
+ * @return array 성공 시 사용자 정보
+ * @throws ApiException 에러 발생 시
  */
-function getUserInfo($user_id) {
-    // 입력값 검증
+function getUserInfo($params) {
+    $user_id = $params['user_id'] ?? null;
+
+    // 입력값 검증 - 에러 발생 시 ApiException throw
     if (empty($user_id)) {
-        return error('invalid-user-id', '사용자 ID가 유효하지 않습니다');
+        error('invalid-user-id', '사용자 ID가 유효하지 않습니다');
     }
 
     // 데이터베이스에서 사용자 조회
-    $user = db()->get('users', $user_id);
+    $user = db()->select('*')->from('users')->where('id = ?', [$user_id])->first();
 
-    // 사용자가 없으면 에러 리턴
+    // 사용자가 없으면 ApiException throw
     if (!$user) {
-        return error('user-not-found', '사용자를 찾을 수 없습니다', ['user_id' => $user_id], 404);
+        error('user-not-found', '사용자를 찾을 수 없습니다', ['user_id' => $user_id], 404);
     }
 
     // 성공 시 사용자 정보 리턴
@@ -234,34 +245,37 @@ function getUserInfo($user_id) {
 /**
  * 게시글을 작성하는 함수
  *
- * @param string $title 제목
- * @param string $content 내용
- * @return array 성공 시 게시글 정보, 실패 시 에러 배열
+ * @param array $params HTTP 파라미터 배열
+ * @return array 성공 시 게시글 정보
+ * @throws ApiException 에러 발생 시
  */
-function createPost($title, $content) {
-    // 입력값 검증
+function createPost($params) {
+    $title = $params['title'] ?? '';
+    $content = $params['content'] ?? '';
+
+    // 입력값 검증 - 에러 발생 시 ApiException throw
     if (empty($title)) {
-        return error('missing-title', '제목을 입력해주세요');
+        error('missing-title', '제목을 입력해주세요');
     }
 
     if (empty($content)) {
-        return error('missing-content', '내용을 입력해주세요');
+        error('missing-content', '내용을 입력해주세요');
     }
 
     // 제목 길이 검증
     if (strlen($title) > 100) {
-        return error('title-too-long', '제목은 100자를 초과할 수 없습니다', ['max_length' => 100]);
+        error('title-too-long', '제목은 100자를 초과할 수 없습니다', ['max_length' => 100]);
     }
 
     // 게시글 작성
-    $post_id = db()->insert('posts', [
+    $post_id = db()->insert([
         'title' => $title,
         'content' => $content,
         'created_at' => time(),
-    ]);
+    ])->into('posts');
 
     if (!$post_id) {
-        return error('create-failed', '게시글 작성에 실패했습니다', [], 500);
+        error('create-failed', '게시글 작성에 실패했습니다', [], 500);
     }
 
     // 성공 시 게시글 정보 리턴
@@ -274,39 +288,43 @@ function createPost($title, $content) {
 ?>
 ```
 
-#### 에러 체크 예제
+#### API 호출 흐름
 
-함수를 호출한 후 에러를 확인하는 방법:
+**1. 클라이언트에서 API 호출:**
+
+```javascript
+// JavaScript에서 API 호출
+const result = await func('getUserInfo', { user_id: 123 });
+console.log('사용자:', result);
+```
+
+**2. api.php에서 함수 실행 및 에러 처리:**
 
 ```php
-<?php
-// 사용자 정보 조회
-$user = getUserInfo(123);
+try {
+    // getUserInfo() 함수 호출
+    $res = getUserInfo(http_params());
 
-// 에러 체크
-if (isset($user['error_code'])) {
-    // 에러 처리
-    echo "에러 발생: " . $user['error_message'];
-    // 또는 에러를 상위로 전파
-    return $user;
+    // 성공 시 JSON 응답
+    echo json_encode(['func' => 'getUserInfo', ...$res]);
+} catch (ApiException $e) {
+    // error() 함수로 throw된 ApiException을 catch
+    http_response_code($e->getErrorResponseCode());
+    echo json_encode($e->toArray());
 }
+```
 
-// 성공 시 처리
-echo "사용자 이름: " . $user['name'];
+**3. 클라이언트에서 에러 처리:**
 
-// 게시글 작성
-$result = createPost('제목', '내용');
-
-// 에러 체크
-if (isset($result['error_code'])) {
-    // 에러 처리
-    echo "에러 발생: " . $result['error_message'];
-    return $result;
+```javascript
+try {
+    const user = await func('getUserInfo', { user_id: 999 });
+    console.log('사용자:', user);
+} catch (error) {
+    // error() 함수로 throw된 에러를 catch
+    console.error('에러 코드:', error.code);
+    console.error('에러 메시지:', error.message);
 }
-
-// 성공 시 처리
-echo "게시글 작성 완료: " . $result['post_id'];
-?>
 ```
 
 #### 잘못된 에러 처리 예제 (절대 금지)
@@ -314,8 +332,9 @@ echo "게시글 작성 완료: " . $result['post_id'];
 ```php
 <?php
 // ❌ 절대 금지: 직접 배열을 만들어 에러 리턴
-function getUserInfo($user_id) {
-    if (!$user_id) {
+function getUserInfo($params) {
+    if (!$params['user_id']) {
+        // error() 함수를 사용하지 않고 직접 배열 리턴 (잘못됨)
         return [
             'error' => true,
             'message' => '사용자 ID가 없습니다'
@@ -323,24 +342,35 @@ function getUserInfo($user_id) {
     }
 }
 
-// ❌ 절대 금지: 예외를 던지는 방식 (특별한 경우 제외)
-function getUserInfo($user_id) {
-    if (!$user_id) {
+// ❌ 절대 금지: error() 함수를 사용하지 않고 직접 Exception throw
+function getUserInfo($params) {
+    if (!$params['user_id']) {
+        // error() 함수 대신 Exception을 직접 throw (잘못됨)
         throw new Exception('사용자 ID가 없습니다');
     }
 }
 
 // ❌ 절대 금지: null이나 false만 리턴
-function getUserInfo($user_id) {
-    if (!$user_id) {
-        return null; // 에러 정보가 없음
+function getUserInfo($params) {
+    if (!$params['user_id']) {
+        // 에러 정보 없이 null만 리턴 (잘못됨)
+        return null;
     }
 }
 
 // ❌ 절대 금지: die()나 exit() 사용
-function getUserInfo($user_id) {
-    if (!$user_id) {
-        die('사용자 ID가 없습니다'); // 실행 중단
+function getUserInfo($params) {
+    if (!$params['user_id']) {
+        // 스크립트 실행 중단 (잘못됨)
+        die('사용자 ID가 없습니다');
+    }
+}
+
+// ✅ 올바른 방법: error() 함수 사용
+function getUserInfo($params) {
+    if (!$params['user_id']) {
+        // error() 함수로 ApiException throw
+        error('invalid-user-id', '사용자 ID가 없습니다');
     }
 }
 ?>

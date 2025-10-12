@@ -334,31 +334,39 @@ Sonub (sonub.com) 웹사이트 개발 가이드라인 및 규칙
 - [ ] **데이터베이스 개발 가이드라인 - 최강력 필수 준수**
   - [ ] **🔥🔥🔥 최강력 규칙: 모든 데이터는 MariaDB에 저장해야 합니다 🔥🔥🔥**
   - [ ] **🔥🔥🔥 최강력 규칙: 데이터베이스 작업 시 반드시 `docs/database.md` 문서를 먼저 읽어야 합니다 🔥🔥🔥**
-  - [ ] **절대 준수**: 모든 데이터베이스 쿼리는 `lib/db/db.php`의 쿼리 빌더를 사용해야 합니다
-  - [ ] **절대 금지**: 직접 SQL 문자열을 작성하거나 mysqli를 직접 사용하는 것은 절대 금지 (복잡한 쿼리 제외)
+  - [ ] **🔥🔥🔥 최우선 필수 규칙: 모든 데이터베이스 작업은 `pdo()` 함수를 통해 PDO 객체를 얻어서 수행해야 합니다 🔥🔥🔥**
+  - [ ] **✅ 최우선 권장**: `pdo()` 함수로 PDO 객체를 얻어 직접 SQL 쿼리 실행
+  - [ ] **❌ 차선택**: `db()` 쿼리 빌더는 특별한 경우에만 사용하고, 가능한 사용하지 마세요
+  - [ ] **절대 금지**: mysqli를 직접 사용하는 것은 절대 금지
   - [ ] **데이터베이스 작업 전 필수 확인 사항**:
-    - [ ] `docs/database.md` 문서를 읽고 쿼리 빌더 사용법 확인
-    - [ ] `lib/db/db.php`의 메서드 예제 확인
+    - [ ] `docs/database.md` 문서를 읽고 PDO 사용법 확인
+    - [ ] `lib/db/db.php`의 `pdo()` 함수 예제 확인
     - [ ] 비슷한 기능의 기존 코드가 있는지 검색
-  - [ ] **PHP 함수 작성 시 DB 입출력 규칙**:
-    - [ ] 모든 SELECT 쿼리: `db()->select()->from()->where()->get()` 패턴 사용
-    - [ ] 모든 INSERT 쿼리: `db()->insert($data)->into($table)` 패턴 사용
-    - [ ] 모든 UPDATE 쿼리: `db()->update($data)->table($table)->where()->execute()` 패턴 사용
-    - [ ] 모든 DELETE 쿼리: `db()->delete()->from($table)->where()->execute()` 패턴 사용
+  - [ ] **PHP 함수 작성 시 DB 입출력 규칙 (PDO 직접 사용)**:
+    - [ ] 모든 SELECT 쿼리: `$pdo = pdo(); $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?"); $stmt->execute([$id]); $user = $stmt->fetch();`
+    - [ ] 모든 INSERT 쿼리: `$pdo = pdo(); $stmt = $pdo->prepare("INSERT INTO users (name, email) VALUES (?, ?)"); $stmt->execute([$name, $email]); $id = $pdo->lastInsertId();`
+    - [ ] 모든 UPDATE 쿼리: `$pdo = pdo(); $stmt = $pdo->prepare("UPDATE users SET name = ? WHERE id = ?"); $stmt->execute([$name, $id]); $affected = $stmt->rowCount();`
+    - [ ] 모든 DELETE 쿼리: `$pdo = pdo(); $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?"); $stmt->execute([$id]); $deleted = $stmt->rowCount();`
     - [ ] 플레이스홀더(?)를 사용하여 SQL 인젝션 방지
   - [ ] **데이터베이스 작업 예시**:
-    - [ ] ✅ 올바른 방법: `db()->select('*')->from('users')->where('id = ?', [$id])->first()`
-    - [ ] ✅ 올바른 방법: `db()->insert(['name' => $name, 'email' => $email])->into('users')`
+    - [ ] ✅ 올바른 방법 (최우선): `$pdo = pdo(); $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?"); $stmt->execute([$id]); $user = $stmt->fetch();`
+    - [ ] ✅ 올바른 방법 (최우선): `$pdo = pdo(); $stmt = $pdo->prepare("INSERT INTO users (name, email) VALUES (?, ?)"); $stmt->execute([$name, $email]); $userId = $pdo->lastInsertId();`
+    - [ ] ⚠️ 차선택: `db()->select('*')->from('users')->where('id = ?', [$id])->first()` (특별한 경우에만 사용)
     - [ ] ❌ 잘못된 방법: `mysqli_query($conn, "SELECT * FROM users WHERE id = $id")`
-    - [ ] ❌ 잘못된 방법: 직접 SQL 문자열 작성 (복잡한 쿼리 제외)
   - [ ] **사용자, 게시판, 댓글 등 모든 데이터 입출력**:
     - [ ] 사용자 데이터: `users` 테이블 사용
     - [ ] 게시글 데이터: `posts` 테이블 사용
     - [ ] 댓글 데이터: `comments` 테이블 사용
-    - [ ] 모든 데이터 조회/생성/수정/삭제 시 `db()` 쿼리 빌더 사용
+    - [ ] 모든 데이터 조회/생성/수정/삭제 시 `pdo()` 함수로 PDO 객체를 얻어 직접 쿼리 실행
   - [ ] **복잡한 쿼리의 경우**:
-    - [ ] JOIN, GROUP BY, HAVING 등이 필요한 경우에만 `db()->query()` 사용
-    - [ ] 그 외에는 반드시 쿼리 빌더 메서드 사용
+    - [ ] JOIN, GROUP BY, HAVING 등이 필요한 경우에도 `pdo()` 함수로 PDO 객체를 얻어 직접 SQL 작성
+    - [ ] PDO는 모든 SQL 기능을 완벽하게 지원합니다
+  - [ ] **쿼리 빌더 `db()` 사용 금지 (제한적 예외)**:
+    - [ ] 쿼리 빌더는 다음과 같은 매우 제한적인 경우에만 사용:
+      - [ ] 매우 복잡한 동적 쿼리 생성이 필요한 경우
+      - [ ] 여러 조건이 동적으로 추가되어야 하는 검색 기능
+      - [ ] 레거시 코드 유지보수
+    - [ ] 위 경우가 아니면 반드시 PDO를 직접 사용하세요
   - [ ] **위반 시**: 코드 리뷰 거부, SQL 인젝션 취약점 발생, 데이터 일관성 문제
 - [ ] **다국어 번역 개발 가이드라인 - 필수 준수**
   - [ ] **언어 번역 관련 작업을 요청받으면 반드시 `docs/translation.md`의 Standard Workflow를 따라야 합니다**

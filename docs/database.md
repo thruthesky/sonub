@@ -1,9 +1,16 @@
-# 데이터베이스 쿼리 빌더 문서
+# 데이터베이스 접근 문서
 
 ## 목차
 - [개요](#개요)
+- [🔥🔥🔥 최우선 권장사항 - PDO 직접 사용](#최우선-권장사항---pdo-직접-사용)
 - [설치 및 구성](#설치-및-구성)
-- [기본 사용법](#기본-사용법)
+- [PDO 기본 사용법 (최우선)](#pdo-기본-사용법-최우선)
+  - [PDO INSERT 작업](#pdo-insert-작업)
+  - [PDO SELECT 작업](#pdo-select-작업)
+  - [PDO UPDATE 작업](#pdo-update-작업)
+  - [PDO DELETE 작업](#pdo-delete-작업)
+  - [PDO 트랜잭션](#pdo-트랜잭션)
+- [쿼리 빌더 사용법 (차선택)](#쿼리-빌더-사용법-차선택)
   - [INSERT 작업](#insert-작업)
   - [SELECT 작업](#select-작업)
   - [UPDATE 작업](#update-작업)
@@ -26,7 +33,36 @@
 
 ## 개요
 
-Sonub 데이터베이스 쿼리 빌더는 데이터베이스 쿼리를 구축하고 실행하기 위한 유연하고 체인 가능한 인터페이스를 제공합니다. 내부적으로 PDO를 사용하며 prepared statement를 통해 SQL 인젝션으로부터 보호합니다.
+Sonub는 데이터베이스 접근을 위해 **PDO (PHP Data Objects) 직접 사용을 최우선으로 권장**합니다. PDO는 PHP의 표준 데이터베이스 접근 방식이며, prepared statement를 통해 SQL 인젝션으로부터 보호합니다.
+
+**🔥🔥🔥 중요: 가능한 모든 경우에 PDO를 직접 사용하세요 🔥🔥🔥**
+
+## 🔥🔥🔥 최우선 권장사항 - PDO 직접 사용
+
+**✅ 필수: 모든 데이터베이스 작업은 `pdo()` 함수를 통해 PDO 객체를 얻어서 수행해야 합니다**
+
+**❌ 차선택: `db()` 쿼리 빌더는 특별한 경우에만 사용하고, 가능한 사용하지 마세요**
+
+### PDO 사용의 장점
+
+1. **표준화**: PHP 표준 데이터베이스 접근 방식
+2. **성능**: 불필요한 추상화 레이어 없이 직접 실행
+3. **유연성**: 모든 SQL 기능에 완전한 접근
+4. **명확성**: SQL 쿼리가 명확하게 보임
+5. **디버깅**: 쿼리 문제를 빠르게 파악 가능
+6. **호환성**: 다른 프로젝트나 프레임워크와 호환
+
+### pdo() 함수 사용법
+
+```php
+// PDO 객체 가져오기
+$pdo = pdo();
+
+// 이제 PDO의 모든 메서드를 직접 사용할 수 있습니다
+$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->execute([123]);
+$user = $stmt->fetch();
+```
 
 ## 설치 및 구성
 
@@ -40,13 +76,195 @@ $pass = 'asdf';
 $charset = 'utf8mb4';
 ```
 
-데이터베이스 쿼리 빌더를 사용하려면 `db()` 함수를 호출하기만 하면 됩니다:
+PDO 객체를 가져오려면 `pdo()` 함수를 호출하기만 하면 됩니다:
 
 ```php
 require_once '/lib/db/db.php';
 
-// db() 함수는 싱글톤 인스턴스를 반환합니다
+// pdo() 함수는 싱글톤 PDO 인스턴스를 반환합니다
+$pdo = pdo();
+```
+
+## PDO 기본 사용법 (최우선)
+
+**🔥🔥🔥 최강력 규칙: 모든 데이터베이스 작업은 PDO를 직접 사용해야 합니다 🔥🔥🔥**
+
+### PDO INSERT 작업
+
+새 레코드를 삽입하고 삽입된 ID를 가져옵니다:
+
+```php
+// ✅ 올바른 방법: PDO 직접 사용
+$pdo = pdo();
+
+// 단순 삽입 - 마지막 삽입 ID를 반환합니다
+$stmt = $pdo->prepare("INSERT INTO users (display_name, email, created_at) VALUES (?, ?, ?)");
+$stmt->execute(['jaeho', 'jaeho@example.com', time()]);
+$userId = $pdo->lastInsertId();
+
+echo "새 사용자 ID: {$userId}";
+
+// 여러 필드로 삽입
+$stmt = $pdo->prepare("INSERT INTO posts (user_id, title, content, category, created_at) VALUES (?, ?, ?, ?, ?)");
+$stmt->execute([
+    123,
+    '게시글 제목',
+    '게시글 내용',
+    'discussion',
+    time()
+]);
+$postId = $pdo->lastInsertId();
+```
+
+### PDO SELECT 작업
+
+#### 여러 레코드 검색
+
+```php
+$pdo = pdo();
+
+// 모든 사용자 조회
+$stmt = $pdo->query("SELECT * FROM users");
+$users = $stmt->fetchAll();
+
+// 조건부 조회
+$stmt = $pdo->prepare("SELECT * FROM users WHERE id > ? LIMIT 5");
+$stmt->execute([2]);
+$users = $stmt->fetchAll();
+
+// 플레이스홀더를 사용한 prepared statement
+$stmt = $pdo->prepare("SELECT * FROM users WHERE status = ? AND created_at > ?");
+$stmt->execute(['active', strtotime('-30 days')]);
+$users = $stmt->fetchAll();
+```
+
+#### 단일 레코드 검색
+
+```php
+$pdo = pdo();
+
+// 첫 번째 일치하는 레코드 가져오기
+$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->execute([123]);
+$user = $stmt->fetch();
+
+if ($user) {
+    echo "사용자 이름: {$user['display_name']}";
+} else {
+    echo "사용자를 찾을 수 없습니다";
+}
+
+// 이메일로 사용자 찾기
+$stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+$stmt->execute(['hong@example.com']);
+$user = $stmt->fetch();
+```
+
+#### 레코드 수 세기
+
+```php
+$pdo = pdo();
+
+// 전체 레코드 수
+$stmt = $pdo->query("SELECT COUNT(*) FROM users");
+$count = $stmt->fetchColumn();
+
+// 조건부 수 세기
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE status = ?");
+$stmt->execute(['active']);
+$activeCount = $stmt->fetchColumn();
+```
+
+### PDO UPDATE 작업
+
+```php
+$pdo = pdo();
+
+// 레코드 업데이트 - 영향받은 행 수를 반환합니다
+$stmt = $pdo->prepare("UPDATE users SET display_name = ?, updated_at = ? WHERE id = ?");
+$stmt->execute(['송재호', time(), 123]);
+$affectedRows = $stmt->rowCount();
+
+echo "{$affectedRows}개 행이 업데이트되었습니다";
+
+// 여러 필드 업데이트
+$stmt = $pdo->prepare("UPDATE users SET display_name = ?, email = ?, updated_at = ? WHERE id = ?");
+$stmt->execute(['Updated Name', 'new@example.com', time(), 5]);
+$affectedRows = $stmt->rowCount();
+```
+
+### PDO DELETE 작업
+
+```php
+$pdo = pdo();
+
+// 레코드 삭제 - 삭제된 행 수를 반환합니다
+$stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+$stmt->execute([123]);
+$deletedRows = $stmt->rowCount();
+
+echo "{$deletedRows}개 행이 삭제되었습니다";
+
+// 여러 조건으로 삭제
+$stmt = $pdo->prepare("DELETE FROM users WHERE status = ? AND created_at < ?");
+$stmt->execute(['inactive', strtotime('-1 year')]);
+$deletedRows = $stmt->rowCount();
+```
+
+### PDO 트랜잭션
+
+```php
+$pdo = pdo();
+
+try {
+    $pdo->beginTransaction();
+
+    // 사용자 삽입
+    $stmt = $pdo->prepare("INSERT INTO users (display_name, email, created_at) VALUES (?, ?, ?)");
+    $stmt->execute(['John Doe', 'john@example.com', time()]);
+    $userId = $pdo->lastInsertId();
+
+    // 프로필 삽입
+    $stmt = $pdo->prepare("INSERT INTO profiles (user_id, bio) VALUES (?, ?)");
+    $stmt->execute([$userId, 'Software Developer']);
+
+    // 통계 업데이트
+    $stmt = $pdo->query("SELECT COUNT(*) FROM users");
+    $userCount = $stmt->fetchColumn();
+
+    $stmt = $pdo->prepare("UPDATE stats SET user_count = ? WHERE id = 1");
+    $stmt->execute([$userCount]);
+
+    $pdo->commit();
+    echo "트랜잭션이 성공적으로 완료되었습니다";
+
+} catch (Exception $e) {
+    $pdo->rollBack();
+    echo "트랜잭션 실패: " . $e->getMessage();
+}
+```
+
+## 쿼리 빌더 사용법 (차선택)
+
+**⚠️ 경고: 쿼리 빌더(`db()` 클래스)는 특별한 경우에만 사용하고, 가능한 사용하지 마세요**
+
+쿼리 빌더는 다음과 같은 **제한적인 경우에만** 사용하세요:
+- 매우 복잡한 동적 쿼리 생성이 필요한 경우
+- 여러 조건이 동적으로 추가되어야 하는 검색 기능
+- 레거시 코드 유지보수
+
+**✅ 일반적인 경우: PDO를 직접 사용하세요**
+
+```php
+require_once '/lib/db/db.php';
+
+// ❌ 차선택: 쿼리 빌더 사용
 $result = db()->select('*')->from('users')->get();
+
+// ✅ 최우선: PDO 직접 사용
+$pdo = pdo();
+$stmt = $pdo->query("SELECT * FROM users");
+$result = $stmt->fetchAll();
 ```
 
 ## 기본 사용법

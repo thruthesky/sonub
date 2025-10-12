@@ -1176,8 +1176,57 @@ function db_connection(): PDO
 }
 
 /**
+ * PDO 객체 가져오기 (최우선 권장 방식)
+ *
+ * 🔥🔥🔥 최강력 규칙: 모든 데이터베이스 작업은 이 함수를 사용하여 PDO 객체를 얻어야 합니다 🔥🔥🔥
+ *
+ * @return PDO 데이터베이스 PDO 객체
+ *
+ * @example SELECT 쿼리
+ * $pdo = pdo();
+ * $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+ * $stmt->execute([123]);
+ * $user = $stmt->fetch();
+ *
+ * @example INSERT 쿼리
+ * $pdo = pdo();
+ * $stmt = $pdo->prepare("INSERT INTO users (display_name, email, created_at) VALUES (?, ?, ?)");
+ * $stmt->execute(['홍길동', 'hong@example.com', time()]);
+ * $userId = $pdo->lastInsertId();
+ *
+ * @example UPDATE 쿼리
+ * $pdo = pdo();
+ * $stmt = $pdo->prepare("UPDATE users SET display_name = ? WHERE id = ?");
+ * $stmt->execute(['김철수', 123]);
+ * $affectedRows = $stmt->rowCount();
+ *
+ * @example DELETE 쿼리
+ * $pdo = pdo();
+ * $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
+ * $stmt->execute([123]);
+ * $deletedRows = $stmt->rowCount();
+ *
+ * @example 트랜잭션
+ * $pdo = pdo();
+ * try {
+ *     $pdo->beginTransaction();
+ *     $stmt = $pdo->prepare("INSERT INTO users (display_name, email) VALUES (?, ?)");
+ *     $stmt->execute(['John', 'john@example.com']);
+ *     $pdo->commit();
+ * } catch (Exception $e) {
+ *     $pdo->rollBack();
+ *     throw $e;
+ * }
+ */
+function pdo(): PDO
+{
+    return db_connection();
+}
+
+/**
  * 데이터베이스 핸들(PDO) 가져오기
  *
+ * @deprecated pdo() 함수를 사용하세요
  * @return PDO 데이터베이스 핸들
  *
  * @example PDO 직접 사용
