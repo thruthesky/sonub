@@ -22,6 +22,7 @@ if (file_exists($module_path)) {
     <title>Sonub Application</title>
     <link href="/etc/frameworks/bootstrap/bootstrap-5.3.8-dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/etc/frameworks/bootstrap/bootstrap-icons-1.13.1/bootstrap-icons.css">
+    <link rel="stylesheet" href="/etc/frameworks/fontawesome/css/all.min.css">
 
 
     <!-- Google Fonts - Noto Sans KR -->
@@ -263,6 +264,17 @@ if (file_exists($module_path)) {
 
 
     <script src="/etc/frameworks/bootstrap/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js"></script>
+
+    <?php
+    // ------------------------------------------------
+    // Loading deferred JavaScripts in priority order
+    // ------------------------------------------------
+    foreach ($global_deferred_scripts as $priority => $scripts) {
+        foreach ($scripts as $script) {
+            echo "\n" . get_deferred_script_tag($script);
+        }
+    }
+    ?>
 </body>
 
 </html>

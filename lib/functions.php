@@ -79,21 +79,45 @@ function is_cli(): bool
 
 
 /**
- * 모든 에러 응답을 이 함수를 통해서 리턴한다.
- * @param string $code 
- * @param string $message 
- * @param array $data 
- * @param int $response_code 
- * @return array 
+ * API 에러를 throw하는 함수
+ *
+ * 모든 API 함수에서 에러 발생 시 이 함수를 호출하여 ApiException을 throw합니다.
+ * api.php에서 이 Exception을 catch하여 JSON 에러 응답으로 변환합니다.
+ *
+ * @param string $code 에러 코드 (kebab-case 형식, 예: 'user-not-found', 'invalid-input')
+ * @param string $message 에러 메시지 (사용자에게 표시될 메시지)
+ * @param array $data 추가 에러 데이터 (선택사항)
+ * @param int $response_code HTTP 응답 코드 (기본값: 400)
+ * @return never 이 함수는 항상 Exception을 throw하므로 절대 반환하지 않습니다
+ * @throws ApiException
+ *
+ * @example 기본 사용법
+ * ```php
+ * if ($user_id === null) {
+ *     error('invalid-user-id', '사용자 ID가 필요합니다.');
+ * }
+ * ```
+ *
+ * @example HTTP 상태 코드 지정
+ * ```php
+ * if (!$user) {
+ *     error('user-not-found', '사용자를 찾을 수 없습니다.', [], 404);
+ * }
+ * ```
+ *
+ * @example 추가 데이터 포함
+ * ```php
+ * error(
+ *     'validation-failed',
+ *     '입력값 검증 실패',
+ *     ['field' => 'email', 'value' => $email],
+ *     400
+ * );
+ * ```
  */
-function error(string $code = 'unknown', string $message = '', array $data = [], int $response_code = 400): array
+function error(string $code = 'unknown', string $message = '', array $data = [], int $response_code = 400): never
 {
-    return [
-        'error_code' => $code,
-        'error_message' => $message,
-        'error_data' => $data,
-        'error_response_code' => $response_code,
-    ];
+    throw new ApiException($code, $message, $data, $response_code);
 }
 
 

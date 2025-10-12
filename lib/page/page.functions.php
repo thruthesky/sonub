@@ -68,3 +68,46 @@ function include_page_js()
         echo '<script defer src="' . $uri . '"></script>';
     }
 }
+
+
+
+
+
+/**
+ * Global array to hold deferred scripts
+ */
+$global_deferred_scripts = [];
+
+/**
+ * Include JavaScript files as deferred
+ *
+ * @param string $path
+ * - If the file path begin with `/', it must be the complete JavaScript path.
+ * 
+ * @param int|null $priority
+ * - If this value is set,
+ *  - The JavaScript will be injected before the closing </body> tag in the priority order.
+ * - 0 means the lowest priority.
+ * - 9 means the highest priority.
+ * - If this value is not given, the `<script src=...>` will be injected immediately into the HTML.
+ */
+function load_deferred_js(string $path, int $priority = 0)
+{
+    global $global_deferred_scripts;
+
+    if (!isset($global_deferred_scripts[$priority])) {
+        $global_deferred_scripts[$priority] = [];
+    }
+    $global_deferred_scripts[$priority][] = $path;
+}
+
+
+function get_deferred_script_tag(string $path): string
+{
+    // If the file path begins with '/', it is a complete path.
+    if (strpos($path, '/') === 0) {
+        return '<script defer src="' . $path . '?v=' . APP_VERSION . '"></script>';
+    } else {
+        return '<script defer src="/js/' . $path . '.js?v=' . APP_VERSION . '"></script>';
+    }
+}

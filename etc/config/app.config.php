@@ -6,7 +6,7 @@
 function config(): array
 {
     return [
-        'login' => login()->data(),
+        'login' => login()?->data(),
         'api' => [
             'file_upload_url' => '/api.php?func=file_upload',
             'file_delete_url' => '/api.php?func=file_delete'

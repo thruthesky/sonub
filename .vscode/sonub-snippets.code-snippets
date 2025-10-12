@@ -1,0 +1,53 @@
+{
+	// Place your www workspace snippets here. Each snippet is defined under a snippet name and has a scope, prefix, body and 
+	// description. Add comma separated ids of the languages where the snippet is applicable in the scope field. If scope 
+	// is left empty or omitted, the snippet gets applied to all languages. The prefix is what is 
+	// used to trigger the snippet and the body will be expanded and inserted. Possible variables are: 
+	// $1, $2 for tab stops, $0 for the final cursor position, and ${1:label}, ${2:another} for placeholders. 
+	// Placeholders with the same ids are connected.
+	// Example:
+	// "Print to console": {
+	// 	"scope": "javascript,typescript",
+	// 	"prefix": "log",
+	// 	"body": [
+	// 		"console.log('$1');",
+	// 		"$2"
+	// 	],
+	// 	"description": "Log output to console"
+	// }
+
+  "PHP Tag": {
+    "prefix": "php",
+    "body": [
+      "<?php ${1} ?>"
+    ],
+    "description": "PHP 태그"
+  },
+  "Inline Text": { 
+    "prefix": "widget",
+    "body": [
+      "<?php include WIDGET_DIR . '${1}' ?>"
+    ],
+    "description": "위젯 태그"
+  },
+  "Family Alert Snippet": {
+    "prefix": "falert",
+	"scope": "php",
+    "body": [
+	  "<?php",
+      "family_alert([",
+      "    'ko' => '${1:}',",
+      "    'en' => '${2:}',",
+      "    'ja' => '${3:}',",
+      "    'zh' => '${4:}'",
+      "], [",
+      "    'type' => '${5:info}',",
+      "    'show_if' => ${6:\\$is_edit_mode},",
+      "    'class' => '${7:mb-4}'",
+      "]);",
+	  "?>"
+    ],
+    "description": "Insert a family_alert with empty translations",
+  }
+
+}

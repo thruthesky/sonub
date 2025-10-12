@@ -63,8 +63,9 @@ Sonub는 **API First** 설계 철학을 따르는 웹 애플리케이션입니�
 **Sonub는 API First 클래스 시스템입니다:**
 
 - ✅ **모든 함수는 API를 통해 직접 호출 가능하다**
-- ✅ **모든 함수는 배열을 리턴해야하며, 클라이언트에게 JSON 으로 리턴한다**
+- ✅ **모든 함수는 배열 또는 객체를 리턴해야하며, 클라이언트에게 JSON 으로 리턴한다**
 - ✅ **모든 함수는 배열을 리턴해야하며, 에러가 있으면 error_code 와 error_message 에 에러 코드와 메시지를 저장하고, JSON 으로 클라이언트에게 전달한다**
+- ✅ **Model 객체(UserModel, PostModel 등)를 리턴하는 경우, 반드시 toArray() 메서드를 구현해야 한다**
 - ✅ RESTful 클라이언트가 API를 통해 모든 기능에 접근 가능
 - ✅ 프론트엔드와 백엔드가 명확히 분리됨
 - ✅ 모바일 앱, 웹 앱, 서드파티 서비스 등 다양한 클라이언트 지원
@@ -501,18 +502,192 @@ function app_version(): array {
 
 3. **리턴 타입**: 함수는 반드시 배열이나 객체를 리턴해야 함
    ```php
-   // ✅ 올바른 예
+   // ✅ 올바른 예 1: 배열 리턴
    function getUser() {
-       return ['name' => '홍길동'];
+       return ['name' => '홍길동', 'email' => 'hong@example.com'];
    }
 
-   // ❌ 잘못된 예
+   // ✅ 올바른 예 2: Model 객체 리턴 (toArray() 메서드 필수)
+   function getUserById($params) {
+       $id = http_params('user_id');
+       return get_user_by_id($id);  // UserModel 객체 리턴
+   }
+
+   // ✅ 올바른 예 3: Model 객체 리턴 (toArray() 메서드 필수)
+   function createPost($params) {
+       $input = [
+           'title' => http_params('title'),
+           'content' => http_params('content')
+       ];
+       return create_post($input);  // PostModel 객체 리턴
+   }
+
+   // ❌ 잘못된 예: 문자열 리턴
    function getUser() {
-       return '홍길동';  // 문자열 리턴 시 에러
+       return '홍길동';  // 문자열 리턴 시 에러 (response-not-array-or-object)
+   }
+
+   // ❌ 잘못된 예: 숫자 리턴
+   function getUserCount() {
+       return 42;  // 숫자 리턴 시 에러 (response-not-array-or-object)
    }
    ```
 
-4. **함수 이름**: 공개 API로 사용할 함수 이름은 명확하고 일관성 있게 작성
+4. **Model 객체 리턴 시 toArray() 메서드 필수**: Model 클래스는 반드시 toArray() 메서드를 구현해야 함
+
+   **배경:**
+   - API 함수가 UserModel, PostModel 등의 객체를 리턴하면 `api.php`가 자동으로 `toArray()` 메서드를 호출합니다
+   - `toArray()` 메서드는 객체의 모든 데이터를 배열로 변환하여 JSON 인코딩이 가능하도록 합니다
+   - `toArray()` 메서드가 없는 객체는 `get_object_vars()`로 public 프로퍼티만 배열로 변환됩니다
+
+   **api.php의 자동 변환 로직:**
+   ```php
+   // 객체를 배열로 자동 변환
+   if (is_object($res)) {
+       if (method_exists($res, 'toArray')) {
+           // Model 클래스: toArray() 메서드 호출
+           $res = $res->toArray();
+       } else {
+           // 일반 객체: get_object_vars()로 public 프로퍼티만 배열 변환
+           $res = get_object_vars($res);
+       }
+   }
+   ```
+
+   **Model 클래스 예제:**
+   ```php
+   // ✅ 올바른 예: toArray() 메서드 구현
+   class UserModel {
+       private int $idx;
+       private string $email;
+       private string $display_name;
+       private int $created_at;
+
+       public function __construct(array $data) {
+           $this->idx = $data['idx'] ?? 0;
+           $this->email = $data['email'] ?? '';
+           $this->display_name = $data['display_name'] ?? '';
+           $this->created_at = $data['created_at'] ?? 0;
+       }
+
+       /**
+        * 객체 데이터를 배열로 변환
+        * API 응답을 위해 필수 메서드
+        */
+       public function toArray(): array {
+           return [
+               'idx' => $this->idx,
+               'email' => $this->email,
+               'display_name' => $this->display_name,
+               'created_at' => $this->created_at
+           ];
+       }
+   }
+
+   // ✅ 올바른 예: PostModel
+   class PostModel {
+       private int $id;
+       private string $title;
+       private string $content;
+       private int $created_at;
+       private int $updated_at;
+
+       public function __construct(array $data) {
+           $this->id = $data['id'] ?? 0;
+           $this->title = $data['title'] ?? '';
+           $this->content = $data['content'] ?? '';
+           $this->created_at = $data['created_at'] ?? 0;
+           $this->updated_at = $data['updated_at'] ?? 0;
+       }
+
+       /**
+        * 객체 데이터를 배열로 변환
+        * API 응답을 위해 필수 메서드
+        */
+       public function toArray(): array {
+           return [
+               'id' => $this->id,
+               'title' => $this->title,
+               'content' => $this->content,
+               'created_at' => $this->created_at,
+               'updated_at' => $this->updated_at
+           ];
+       }
+   }
+   ```
+
+   **API 함수에서 Model 객체 사용:**
+   ```php
+   /**
+    * 사용자 정보 조회 API
+    * UserModel 객체를 리턴하며, api.php가 자동으로 배열로 변환합니다
+    */
+   function api_get_user_info($params): ?UserModel {
+       $user_id = http_params('user_id');
+       if (empty($user_id)) {
+           return error('invalid-user-id', '사용자 ID가 필요합니다');
+       }
+
+       // get_user_by_id()는 UserModel 객체를 리턴
+       $user = get_user_by_id((int)$user_id);
+       if (!$user) {
+           return error('user-not-found', '사용자를 찾을 수 없습니다', [], 404);
+       }
+
+       // UserModel 객체를 리턴하면 api.php가 자동으로 toArray() 호출
+       return $user;
+   }
+
+   /**
+    * 게시글 생성 API
+    * PostModel 객체를 리턴하며, api.php가 자동으로 배열로 변환합니다
+    */
+   function api_create_post($params): ?PostModel {
+       $title = http_params('title');
+       $content = http_params('content');
+
+       if (empty($title) || empty($content)) {
+           return error('invalid-input', '제목과 내용이 필요합니다');
+       }
+
+       // create_post()는 PostModel 객체를 리턴
+       $post = create_post([
+           'title' => $title,
+           'content' => $content
+       ]);
+
+       if (!$post) {
+           return error('post-creation-failed', '게시글 생성에 실패했습니다');
+       }
+
+       // PostModel 객체를 리턴하면 api.php가 자동으로 toArray() 호출
+       return $post;
+   }
+   ```
+
+   **최종 JSON 응답:**
+   ```json
+   // api_get_user_info 응답
+   {
+     "func": "api_get_user_info",
+     "idx": 123,
+     "email": "user@example.com",
+     "display_name": "홍길동",
+     "created_at": 1734000000
+   }
+
+   // api_create_post 응답
+   {
+     "func": "api_create_post",
+     "id": 1,
+     "title": "게시글 제목",
+     "content": "게시글 내용",
+     "created_at": 1734000000,
+     "updated_at": 1734000000
+   }
+   ```
+
+5. **함수 이름**: 공개 API로 사용할 함수 이름은 명확하고 일관성 있게 작성
    ```php
    // ✅ 좋은 예
    function getUserProfile() { }

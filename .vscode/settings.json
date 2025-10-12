@@ -179,14 +179,14 @@
                 "php"
             ]
         },
-        // {
-        //   // 기본 __DIR__ 링크: __DIR__ "*.php";
-        //   "linkPattern": "__DIR__ . ['\"]([^'\"\\)]+)",
-        //   "linkTarget": "./$1",
-        //   "languages": [
-        //     "php"
-        //   ]
-        // }
+        {
+            // 기본 WIDGET_DIR 링크: WIDGET_DIR "*.php";
+            "linkPattern": "WIDGET_DIR . ['\"]([^'\"\\)]+)",
+            "linkTarget": "/Users/thruthesky/apps/sonub/widgets/$1",
+            "languages": [
+                "php"
+            ]
+        },
         {
             // initFileUpload 텍스트
             "linkPattern": "initBannerComponent|showBannerCreateForm|showBannerUpdateForm",

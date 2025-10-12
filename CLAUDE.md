@@ -78,6 +78,7 @@ Sonub (sonub.com) 웹사이트 개발 가이드라인 및 규칙
     - [ ] `init.php` - 프로젝트 초기화 및 설정
     - [ ] Bootstrap 5.3.8 CSS/JS
     - [ ] Bootstrap Icons 1.13.1
+    - [ ] Font Awesome 7.1 (Pro)
     - [ ] Vue.js 3.x (글로벌 빌드)
     - [ ] Axios
     - [ ] Firebase 설정
@@ -158,7 +159,124 @@ Sonub (sonub.com) 웹사이트 개발 가이드라인 및 규칙
   - [ ] **라이트 모드만 지원**: Sonub 웹사이트는 라이트 모드만 지원합니다. 다크 모드 기능을 절대 구현하지 마세요.
   - [ ] 항상 Bootstrap의 기본 색상 또는 Bootstrap의 기본 색상 변수를 최대한 사용하세요.
   - [ ] 꼭 필요한 경우가 아니면 커스텀 색상, HEX 코드, 색상 단어 코드 사용을 피하세요.
+  - [ ] **아이콘 사용 규칙 - 필수 준수**:
+    - [ ] **🔥🔥🔥 최강력 규칙: 아이콘을 추가할 때는 반드시 Font Awesome 7.1 Pro를 먼저 사용해야 합니다 🔥🔥🔥**
+    - [ ] Font Awesome 7.1 (Pro)과 Bootstrap Icons 1.13.1을 함께 사용합니다
+    - [ ] 두 아이콘 라이브러리 모두 이미 로드되어 있으며 즉시 사용 가능합니다
+    - [ ] **✅ 우선순위 1순위**: Font Awesome 7.1 Pro - 먼저 확인하고 사용
+    - [ ] **✅ 우선순위 2순위**: Bootstrap Icons - Font Awesome에 없는 경우에만 사용
+    - [ ] Font Awesome: `<i class="fa-solid fa-house"></i>` 형식 사용
+    - [ ] Font Awesome Pro는 더 많은 아이콘과 스타일을 제공합니다 (solid, regular, light, thin, duotone 등)
+    - [ ] Bootstrap Icons: `<i class="bi bi-house"></i>` 형식 사용
+    - [ ] **위반 금지**: Font Awesome에 해당 아이콘이 있는데 Bootstrap Icons를 사용하는 것은 금지
   - [ ] **디자인 관련 작업 시 반드시 `docs/design-guideline.md` 문서를 먼저 읽어야 합니다**
+- [ ] **🔥🔥🔥 CSS 및 JavaScript 파일 분리 규칙 - 최강력 필수 준수 🔥🔥🔥**
+  - [ ] **⚠️⚠️⚠️ 최강력 경고: 페이지 파일(./page/)과 위젯 파일(./widgets/)의 CSS/JS 관리 방식이 완전히 다릅니다 ⚠️⚠️⚠️**
+  - [ ] **🔥🔥🔥 페이지 파일(`./page/**/*.php`) CSS/JS 분리 규칙 - 절대 준수 🔥🔥🔥**:
+    - [ ] **✅ 필수**: Bootstrap Layout Utility 클래스(container, row, col, mb-, mt- 등)를 **제외한** 모든 CSS는 반드시 외부 `.css` 파일로 분리해야 합니다
+    - [ ] **✅ 필수**: 페이지별 CSS 파일은 `./page/**/*.css` 위치에 저장하며, 페이지 PHP 파일과 같은 위치에 동일한 이름으로 저장
+    - [ ] **✅ 필수**: 페이지별 JavaScript 파일은 `./page/**/*.js` 위치에 저장하며, 페이지 PHP 파일과 같은 위치에 동일한 이름으로 저장
+    - [ ] **✅ 필수**: CSS와 JS 파일은 `index.php`에서 자동으로 로드됩니다 - 수동으로 `<link>` 또는 `<script>` 태그 추가하지 마세요
+    - [ ] **❌ 절대 금지**: 페이지 파일 내에 `<style>` 태그 사용 금지 (Bootstrap Layout Utility 클래스는 예외)
+    - [ ] **❌ 절대 금지**: 페이지 파일 내에 인라인 `style=""` 속성 사용 금지 (Bootstrap 클래스로 대체)
+    - [ ] **위반 시**: 코드 리뷰 거부, CSS 관리 어려움, 유지보수 불가
+  - [ ] **🔥🔥🔥 위젯 파일(`./widgets/**/*.php`) CSS/JS 포함 규칙 - 절대 준수 🔥🔥🔥**:
+    - [ ] **✅ 필수**: 위젯의 모든 CSS는 반드시 **같은 PHP 파일 내부**에 `<style>` 태그로 작성해야 합니다
+    - [ ] **✅ 필수**: 위젯의 모든 JavaScript는 반드시 **같은 PHP 파일 내부**에 `<script>` 태그로 작성해야 합니다
+    - [ ] **✅ 필수**: `<style>` 태그는 HTML 구조 직후에 배치
+    - [ ] **✅ 필수**: `<script>` 태그는 `<style>` 태그 직후에 배치
+    - [ ] **✅ 필수**: CSS 클래스명은 위젯별로 고유하게 작성 (예: `.post-card-widget`, `.comment-list-widget`)
+    - [ ] **❌ 절대 금지**: 위젯 파일의 CSS를 외부 `.css` 파일로 분리하는 것은 절대 금지
+    - [ ] **❌ 절대 금지**: 위젯 파일의 JavaScript를 외부 `.js` 파일로 분리하는 것은 절대 금지
+    - [ ] **위반 시**: 위젯 재사용 불가, 의존성 관리 어려움, 코드 유지보수 불가
+  - [ ] **페이지와 위젯의 차이점 요약**:
+    - [ ] **페이지 파일 (`./page/**/*.php`)**: CSS → 외부 `.css` 파일, JS → 외부 `.js` 파일
+    - [ ] **위젯 파일 (`./widgets/**/*.php`)**: CSS → 같은 파일 `<style>` 태그, JS → 같은 파일 `<script>` 태그
+  - [ ] **올바른 예제 - 페이지 파일 (`./page/user/profile-edit.php`)**:
+    ```php
+    <?php
+    // PHP 로직
+    $user = login();
+    ?>
+
+    <!-- HTML: Bootstrap Layout Utility 클래스만 사용 -->
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="profile-card">
+                    <h1 class="profile-title">프로필 수정</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+    ```
+    **외부 CSS 파일 (`./page/user/profile-edit.css`)**:
+    ```css
+    .profile-card {
+        background-color: white;
+        border-radius: 8px;
+        padding: 2rem;
+    }
+    .profile-title {
+        font-size: 1.5rem;
+        color: var(--bs-primary);
+    }
+    ```
+  - [ ] **올바른 예제 - 위젯 파일 (`./widgets/post/post-card.php`)**:
+    ```php
+    <?php
+    $unique_id = 'post-card-' . uniqid();
+    ?>
+
+    <div id="<?= $unique_id ?>" class="post-card-widget">
+        <h2 class="post-card-title">게시글 제목</h2>
+        <p class="post-card-content">게시글 내용...</p>
+    </div>
+
+    <style>
+    .post-card-widget {
+        background-color: white;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .post-card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    .post-card-content {
+        color: var(--bs-secondary);
+    }
+    </style>
+
+    <script>
+    ready(() => {
+        Vue.createApp({
+            setup() {
+                const likes = Vue.ref(0);
+                const addLike = () => { likes.value++; };
+                return { likes, addLike };
+            }
+        }).mount('#<?= $unique_id ?>');
+    });
+    </script>
+    ```
+  - [ ] **잘못된 예제 (절대 금지) - 페이지 파일에 `<style>` 태그 사용**:
+    ```php
+    <!-- ❌ 절대 금지 -->
+    <div class="profile-card">프로필</div>
+    <style>
+    .profile-card { background: white; }
+    </style>
+    ```
+  - [ ] **잘못된 예제 (절대 금지) - 위젯 파일에서 CSS를 외부 파일로 분리**:
+    ```php
+    <!-- ❌ 절대 금지 -->
+    <link rel="stylesheet" href="/widgets/post/post-card.css">
+    <div class="post-card-widget">게시글</div>
+    ```
 - [ ] **JavaScript 프레임워크 - Vue.js 3.x**:
   - [ ] Sonub는 PHP MPA(Multi-Page Application) 방식으로 Vue.js 3.x를 CDN을 통해 사용합니다
   - [ ] Vue.js는 모든 페이지에 CDN을 통해 자동으로 로드됩니다 - 수동으로 추가하지 마세요
@@ -172,19 +290,35 @@ Sonub (sonub.com) 웹사이트 개발 가이드라인 및 규칙
   - [ ] 문서 구조가 변경될 때마다(섹션 추가, 제거, 이름 변경) 목차를 업데이트해야 합니다.
   - [ ] 목차는 문서의 모든 주요 제목(##)과 부제목(###)을 반영해야 합니다.
   - [ ] 목차를 실제 콘텐츠와 항상 동기화 상태로 유지하세요.
-- [ ] PHP 단위 테스트 가이드라인
+- [ ] **PHP 테스트 가이드라인 - 필수 준수**
+  - [ ] **🔥🔥🔥 최강력 규칙: 테스트 관련 작업 시 반드시 `docs/test.md` 문서를 먼저 읽어야 합니다 🔥🔥🔥**
+  - [ ] **테스트 환경**: 모든 테스트는 `https://local.sonub.com/` 개발 환경에서 수행
+  - [ ] **테스트 종류 자동 선택**:
+    - [ ] "페이지", "UI", "요소" 테스트 요청 시 → PHP E2E 테스트 작성
+    - [ ] "함수", "로직" 테스트 요청 시 → PHP Unit 테스트 작성
+    - [ ] "e2e" 키워드 명시 시 → PHP E2E 테스트 작성
   - [ ] **🔥🔥🔥 최강력 규칙: 모든 테스트 파일, 임시 파일, 검증 파일은 반드시 `./tests` 폴더 아래에 저장해야 합니다 🔥🔥🔥**
   - [ ] **절대 금지**: 테스트 관련 파일을 프로젝트 루트나 `lib`, `src` 등 다른 폴더에 저장하는 것은 절대 금지
   - [ ] **위반 시**: 프로젝트 구조 오염, 운영 코드와 테스트 코드 혼재, Git 관리 어려움
-  - [ ] 모든 PHP 단위 테스트는 외부 테스트 프레임워크 없이 순수 PHP로 작성해야 합니다.
-  - [ ] 테스트 파일은 소스 코드와 동일한 구조로 `tests` 디렉토리에 저장해야 합니다.
-  - [ ] 테스트 파일 이름은 `.test.php`로 끝나야 합니다 (예: `db.php` 테스트를 위한 `db.test.php`).
-  - [ ] 각 테스트 파일은 PHP 명령어로 독립적으로 실행 가능해야 합니다: `php tests/db/db.test.php`
-  - [ ] 간단한 단언문과 명확한 출력 메시지를 사용하여 테스트 결과를 표시하세요.
+  - [ ] **PHP Unit Test (단위 테스트)**:
+    - [ ] 외부 테스트 프레임워크 없이 순수 PHP로 작성
+    - [ ] 테스트 파일은 `tests` 디렉토리에 저장 (예: `tests/db/db.connection.test.php`)
+    - [ ] 파일 이름은 `.test.php`로 끝나야 함
+    - [ ] CLI에서 직접 실행: `php tests/db/db.test.php`
+    - [ ] 함수, 로직, DB 쿼리 결과 검증
+  - [ ] **PHP E2E Test (통합 테스트)**:
+    - [ ] 외부 라이브러리 없이 순수 PHP로 작성
+    - [ ] `curl` 또는 `file_get_contents()` 함수 사용
+    - [ ] `https://local.sonub.com/`에 HTTP 요청을 보내 테스트
+    - [ ] 테스트 파일은 `tests/e2e/` 디렉토리에 저장
+    - [ ] 파일 이름은 `.e2e.test.php`로 끝나야 함 (예: `tests/e2e/user-login.e2e.test.php`)
+    - [ ] HTTP 상태 코드, 응답 본문, HTML 요소 검증
   - [ ] **테스트 파일 저장 위치 예시**:
-    - [ ] ✅ 올바른 위치: `tests/db/db.connection.test.php`
-    - [ ] ✅ 올바른 위치: `tests/user/user.crud.test.php`
-    - [ ] ✅ 올바른 위치: `tests/temp/verify_api.php`
+    - [ ] ✅ 올바른 위치: `tests/db/db.connection.test.php` (Unit Test)
+    - [ ] ✅ 올바른 위치: `tests/user/user.crud.test.php` (Unit Test)
+    - [ ] ✅ 올바른 위치: `tests/e2e/user-login.e2e.test.php` (E2E Test)
+    - [ ] ✅ 올바른 위치: `tests/e2e/homepage.e2e.test.php` (E2E Test)
+    - [ ] ✅ 올바른 위치: `tests/temp/verify_api.php` (임시 검증 파일)
     - [ ] ❌ 잘못된 위치: `db.test.php` (루트 폴더)
     - [ ] ❌ 잘못된 위치: `lib/db/db.test.php` (소스 코드 폴더)
     - [ ] ❌ 잘못된 위치: `temp.php` (루트 폴더)

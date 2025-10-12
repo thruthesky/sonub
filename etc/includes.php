@@ -2,6 +2,7 @@
 
 include_once ROOT_DIR . '/lib/defines.php';
 include_once ROOT_DIR . '/etc/app.version.php';
+include_once ROOT_DIR . '/lib/ApiException.php';
 include_once ROOT_DIR . '/lib/functions.php';
 
 
@@ -26,6 +27,8 @@ include_once ROOT_DIR . '/lib/debug/debug.functions.php';
 include_once ROOT_DIR . '/lib/user/user.crud.php';
 include_once ROOT_DIR . '/lib/user/user.functions.php';
 include_once ROOT_DIR . '/lib/user/user.model.php';
+include_once ROOT_DIR . '/lib/post/post.model.php';
+include_once ROOT_DIR . '/lib/post/post.crud.php';
 include_once ROOT_DIR . '/lib/file/file.upload.php';
 include_once ROOT_DIR . '/lib/file/file.delete.php';
 

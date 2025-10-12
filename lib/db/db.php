@@ -1176,6 +1176,22 @@ function db_connection(): PDO
 }
 
 /**
+ * 데이터베이스 핸들(PDO) 가져오기
+ *
+ * @return PDO 데이터베이스 핸들
+ *
+ * @example PDO 직접 사용
+ * $dbh = get_dbh();
+ * $stmt = $dbh->prepare("SELECT * FROM users WHERE id = ?");
+ * $stmt->execute([123]);
+ * $user = $stmt->fetch();
+ */
+function get_db(): PDO
+{
+    return db_connection();
+}
+
+/**
  * 데이터베이스 연결 종료
  *
  * @example 연결 종료

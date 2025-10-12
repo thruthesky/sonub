@@ -48,10 +48,30 @@
       - [예제 1: 지원 페이지 만들기](#예제-1-지원-페이지-만들기)
       - [예제 2: 사용자 로그인 페이지](#예제-2-사용자-로그인-페이지)
       - [출력 예제](#출력-예제)
+  - [공유 JavaScript 파일 로딩 - load_deferred_js()](#공유-javascript-파일-로딩---load_deferred_js)
+    - [개요](#개요-2)
+    - [필요한 이유](#필요한-이유)
+    - [함수 위치 및 시그니처](#함수-위치-및-시그니처)
+    - [사용 방법](#사용-방법)
+      - [기본 사용법](#기본-사용법)
+      - [실제 사용 예제](#실제-사용-예제)
+    - [우선순위 시스템](#우선순위-시스템)
+    - [잘못된 사용 예제 (절대 금지)](#잘못된-사용-예제-절대-금지)
+    - [올바른 사용 예제](#올바른-사용-예제)
+    - [장점](#장점)
+    - [주의사항](#주의사항-1)
+    - [사용 시나리오](#사용-시나리오)
   - [Firebase 통합 가이드라인](#firebase-통합-가이드라인)
     - [로딩 동작](#로딩-동작)
     - [JavaScript에서 사용](#javascript에서-사용)
     - [Vue.js에서 Firebase 실시간 업데이트](#vuejs에서-firebase-실시간-업데이트)
+  - [라우팅 규칙](#라우팅-규칙)
+    - [Nginx 라우팅 설정](#nginx-라우팅-설정)
+    - [라우팅 동작 방식](#라우팅-동작-방식)
+    - [URL과 페이지 파일 매핑](#url과-페이지-파일-매핑)
+    - [라우팅 예제](#라우팅-예제)
+    - [중요 사항](#중요-사항-1)
+    - [라우팅 시스템의 장점](#라우팅-시스템의-장점)
   - [개발 시스템 시작](#개발-시스템-시작)
     - [빠른 시작 (필수 명령어)](#빠른-시작-필수-명령어)
     - [데이터베이스 관리](#데이터베이스-관리)
@@ -85,6 +105,10 @@
     - [디자인 작업 시 필수 규칙](#디자인-작업-시-필수-규칙)
       - [1️⃣ 레이아웃 포지션 관련 (인라인 클래스 사용)](#1️⃣-레이아웃-포지션-관련-인라인-클래스-사용)
       - [2️⃣ 스타일 관련 (CSS 파일 사용)](#2️⃣-스타일-관련-css-파일-사용)
+    - [CSS 및 JavaScript 파일 분리 규칙](#css-및-javascript-파일-분리-규칙)
+      - [페이지 파일 (./page/**/*.php)](#페이지-파일-pagephp)
+      - [위젯 파일 (./widgets/**/*.php)](#위젯-파일-widgetsphp)
+      - [페이지 vs 위젯 비교표](#페이지-vs-위젯-비교표)
     - [올바른 CSS 사용 예제](#올바른-css-사용-예제)
     - [잘못된 CSS 사용 예제 (절대 금지)](#잘못된-css-사용-예제-절대-금지)
     - [위반 시 결과](#위반-시-결과-2)
@@ -450,6 +474,17 @@ $total_count = $result['total'];
 - **라이트 모드만 지원**: Sonub 웹사이트는 라이트 모드만 지원합니다. 다크 모드 기능을 절대 구현하지 마세요.
 - **Bootstrap 색상 사용**: 항상 Bootstrap의 기본 색상 클래스와 변수를 최대한 사용하세요.
 - **커스텀 색상 금지**: 꼭 필요한 경우가 아니면 커스텀 HEX 코드나 CSS 색상 이름을 사용하지 마세요.
+- **아이콘 라이브러리 - 필수 준수**:
+  - **🔥🔥🔥 최강력 규칙: 아이콘을 추가할 때는 반드시 Font Awesome 7.1 Pro를 먼저 사용해야 합니다 🔥🔥🔥**
+  - Font Awesome 7.1 (Pro)과 Bootstrap Icons 1.13.1을 함께 사용합니다.
+  - 두 아이콘 라이브러리 모두 이미 로드되어 있으며 즉시 사용 가능합니다.
+  - **✅ 우선순위 1순위**: Font Awesome 7.1 Pro - 먼저 확인하고 사용
+  - **✅ 우선순위 2순위**: Bootstrap Icons - Font Awesome에 없는 경우에만 사용
+  - Font Awesome: `<i class="fa-solid fa-house"></i>` 형식
+  - Font Awesome Pro는 더 많은 아이콘과 스타일을 제공합니다 (solid, regular, light, thin, duotone 등)
+  - Bootstrap Icons: `<i class="bi bi-house"></i>` 형식
+  - **위반 금지**: Font Awesome에 해당 아이콘이 있는데 Bootstrap Icons를 사용하는 것은 금지
+  - 자세한 사용법은 `docs/design-guideline.md`의 "아이콘 사용 가이드라인" 섹션 참조
 
 ---
 
@@ -1356,6 +1391,204 @@ createApp({
 
 ---
 
+## 공유 JavaScript 파일 로딩 - load_deferred_js()
+
+### 개요
+
+`load_deferred_js()` 함수는 여러 페이지에서 공통으로 사용하는 JavaScript 파일을 중복 없이 한 번만 로드하기 위한 함수입니다.
+
+**🔥🔥🔥 최강력 규칙: 여러 페이지에서 사용하는 JavaScript는 반드시 load_deferred_js() 함수를 사용해야 합니다 🔥🔥🔥**
+
+### 필요한 이유
+
+**문제 상황:**
+- 동일한 JavaScript 파일을 여러 위젯이나 페이지에서 사용해야 하는 경우
+- 각 위젯에서 `<script src="...">` 태그로 직접 로드하면 중복 로드 발생
+- 중복 로드는 성능 저하와 예측 불가능한 동작을 유발
+
+**해결 방법:**
+- `load_deferred_js()` 함수를 사용하면 JavaScript 파일을 HTML 문서 맨 아래에서 **한 번만** 로드
+- 여러 곳에서 호출해도 중복 로드 방지
+- `defer` 속성으로 로드되어 페이지 렌더링을 차단하지 않음
+
+### 함수 위치 및 시그니처
+
+**파일 위치:** `lib/page/page.functions.php`
+
+```php
+/**
+ * JavaScript 파일을 defer 속성으로 로드
+ *
+ * @param string $path JavaScript 파일 경로
+ *   - '/'로 시작하면 완전한 경로로 간주
+ *   - '/'로 시작하지 않으면 '/js/' 폴더에서 찾음
+ *
+ * @param int $priority 우선순위 (0-9)
+ *   - 0: 가장 낮은 우선순위 (기본값)
+ *   - 9: 가장 높은 우선순위
+ *   - 우선순위가 높을수록 먼저 로드됨
+ */
+function load_deferred_js(string $path, int $priority = 0)
+```
+
+### 사용 방법
+
+#### 기본 사용법
+
+```php
+<?php
+// 위젯 또는 페이지 파일 상단에서 호출
+
+// 예제 1: /js/ 폴더의 파일 로드 (확장자 제외)
+load_deferred_js('file-upload');
+// → <script defer src="/js/file-upload.js?v=..."></script>
+
+// 예제 2: 전체 경로로 파일 로드
+load_deferred_js('/lib/utils/helper.js');
+// → <script defer src="/lib/utils/helper.js?v=..."></script>
+
+// 예제 3: 우선순위 지정
+load_deferred_js('jquery', 9);  // 가장 먼저 로드
+load_deferred_js('app', 5);     // 중간 우선순위
+load_deferred_js('plugin', 0);  // 가장 나중에 로드
+?>
+```
+
+#### 실제 사용 예제
+
+**파일 업로드 기능을 여러 위젯에서 사용하는 경우:**
+
+```php
+<!-- /widgets/post/post-list-create.php -->
+<?php
+/**
+ * 게시물 작성 폼
+ */
+
+// 파일 업로드 JavaScript 로드 (중복 방지)
+load_deferred_js('file-upload');
+?>
+<section id="post-list-create">
+    <form>
+        <input type="file" multiple onchange="handle_file_change(event, { id: 'display-files' })">
+        <div id="display-files"></div>
+    </form>
+</section>
+```
+
+```php
+<!-- /widgets/user/profile-photo-upload.php -->
+<?php
+/**
+ * 프로필 사진 업로드 위젯
+ */
+
+// 동일한 파일 업로드 JavaScript 로드 (중복되지 않음)
+load_deferred_js('file-upload');
+?>
+<section id="profile-photo-upload">
+    <input type="file" onchange="handle_file_change(event, { id: 'profile-photo' })">
+    <div id="profile-photo"></div>
+</section>
+```
+
+**결과:**
+- 두 위젯 모두 `load_deferred_js('file-upload')`를 호출
+- 하지만 `/js/file-upload.js` 파일은 HTML 문서 맨 아래에서 **한 번만** 로드됨
+- 중복 로드 방지 및 성능 향상
+
+### 우선순위 시스템
+
+JavaScript 로딩 순서가 중요한 경우 우선순위를 지정할 수 있습니다:
+
+```php
+<?php
+// jQuery를 가장 먼저 로드 (우선순위 9)
+load_deferred_js('jquery', 9);
+
+// Vue.js를 두 번째로 로드 (우선순위 8)
+load_deferred_js('vue', 8);
+
+// 앱 스크립트를 세 번째로 로드 (우선순위 5)
+load_deferred_js('app', 5);
+
+// 플러그인을 마지막으로 로드 (우선순위 0, 기본값)
+load_deferred_js('plugin');
+?>
+```
+
+**생성되는 HTML:**
+
+```html
+<body>
+  <!-- 페이지 콘텐츠 -->
+
+  <!-- load_deferred_js()로 등록된 스크립트들이 우선순위 순서대로 출력 -->
+  <script defer src="/js/jquery.js?v=..."></script>      <!-- 우선순위 9 -->
+  <script defer src="/js/vue.js?v=..."></script>         <!-- 우선순위 8 -->
+  <script defer src="/js/app.js?v=..."></script>         <!-- 우선순위 5 -->
+  <script defer src="/js/plugin.js?v=..."></script>      <!-- 우선순위 0 -->
+</body>
+```
+
+### 잘못된 사용 예제 (절대 금지)
+
+```php
+<!-- ❌ 절대 금지: 각 위젯에서 직접 <script> 태그 사용 -->
+
+<!-- /widgets/post/post-list-create.php -->
+<script defer src="/js/file-upload.js"></script>  <!-- 중복 로드 발생! -->
+
+<!-- /widgets/user/profile-photo-upload.php -->
+<script defer src="/js/file-upload.js"></script>  <!-- 중복 로드 발생! -->
+
+<!-- 결과: 동일한 파일이 두 번 로드되어 성능 저하 및 오류 발생 -->
+```
+
+### 올바른 사용 예제
+
+```php
+<!-- ✅ 올바른 방법: load_deferred_js() 함수 사용 -->
+
+<!-- /widgets/post/post-list-create.php -->
+<?php load_deferred_js('file-upload'); ?>
+
+<!-- /widgets/user/profile-photo-upload.php -->
+<?php load_deferred_js('file-upload'); ?>
+
+<!-- 결과: /js/file-upload.js 파일이 HTML 문서 맨 아래에서 한 번만 로드됨 -->
+```
+
+### 장점
+
+1. **중복 로드 방지**: 동일한 파일을 여러 번 로드하지 않음
+2. **성능 향상**: 불필요한 네트워크 요청 제거
+3. **유지보수 용이**: 파일 경로를 한 곳에서 관리
+4. **로딩 순서 제어**: 우선순위를 통해 로딩 순서 지정 가능
+5. **캐시 버전 관리**: 자동으로 `?v=...` 파라미터 추가하여 캐시 관리
+
+### 주의사항
+
+- **✅ 필수**: 여러 페이지/위젯에서 사용하는 JavaScript는 반드시 `load_deferred_js()` 사용
+- **✅ 필수**: 파일 경로가 `/js/` 폴더 외부인 경우 `/`로 시작하는 완전한 경로 사용
+- **❌ 금지**: 동일한 JavaScript 파일을 `<script>` 태그로 직접 로드 금지
+- **❌ 금지**: 페이지별 JavaScript 파일(`profile.js`)은 자동 로드되므로 `load_deferred_js()` 불필요
+
+### 사용 시나리오
+
+**사용해야 하는 경우:**
+- 파일 업로드 기능을 여러 위젯에서 사용
+- 시간 표시 함수를 여러 페이지에서 사용
+- 공통 유틸리티 함수를 여러 컴포넌트에서 사용
+- 서드파티 라이브러리를 여러 페이지에서 사용
+
+**사용하지 않아도 되는 경우:**
+- 페이지별 JavaScript 파일 (자동 로드됨)
+- 전역 JavaScript 파일 (`/js/app.js` 등, 이미 `index.php`에서 로드됨)
+- 한 페이지에서만 사용하는 스크립트
+
+---
+
 ## Firebase 통합 가이드라인
 
 ### 로딩 동작
@@ -1492,6 +1725,75 @@ createApp({
 - MPA 방식이므로 페이지 이동 시 자동으로 리스너가 정리됩니다
 - 필요시 `beforeUnmount()`에서 명시적으로 리스너를 해제할 수 있습니다
 - Firebase 구성은 시스템에서 자동으로 처리되므로 재초기화하지 마세요
+
+---
+
+## 라우팅 규칙
+
+**⚠️⚠️⚠️ 중요: Sonub의 라우팅 시스템 동작 방식 ⚠️⚠️⚠️**
+
+### Nginx 라우팅 설정
+
+Sonub는 Nginx 서버에서 다음과 같이 라우팅이 설정되어 있습니다:
+
+```nginx
+index index.php;
+
+location / {
+    try_files $uri $uri/ /index.php?$query_string;
+}
+```
+
+### 라우팅 동작 방식
+
+1. **존재하는 파일 접근**: 요청한 파일이 존재하면 해당 파일을 반환
+2. **존재하지 않는 파일 접근**: 요청한 파일이 존재하지 않으면 **모든 요청은 `index.php`로 전달**
+3. **페이지 파일 로딩**: `index.php`는 요청 경로를 분석하여 `/page/**/*.php` 폴더 아래의 PHP 스크립트를 로드
+
+### URL과 페이지 파일 매핑
+
+| 요청 URL | 로드되는 파일 |
+|---------|-------------|
+| `/` | `/page/index.php` |
+| `/abc/def` | `/page/abc/def.php` |
+| `/user/login` | `/page/user/login.php` |
+| `/post/list` | `/page/post/list.php` |
+| `/admin/dashboard` | `/page/admin/dashboard.php` |
+
+### 라우팅 예제
+
+**예제 1: 사용자 로그인 페이지**
+
+- **URL**: `https://sonub.com/user/login`
+- **Nginx**: 파일 `/user/login`이 존재하지 않음 → `index.php`로 전달
+- **index.php**: 요청 경로 `/user/login`을 분석하여 `/page/user/login.php`를 로드
+
+**예제 2: 게시글 목록 페이지**
+
+- **URL**: `https://sonub.com/post/list`
+- **Nginx**: 파일 `/post/list`가 존재하지 않음 → `index.php`로 전달
+- **index.php**: 요청 경로 `/post/list`을 분석하여 `/page/post/list.php`를 로드
+
+**예제 3: 메인 페이지**
+
+- **URL**: `https://sonub.com/`
+- **Nginx**: 디렉토리 인덱스 → `index.php` 실행
+- **index.php**: 요청 경로가 `/`이므로 `/page/index.php`를 로드
+
+### 중요 사항
+
+- **✅ 필수**: 모든 페이지 파일은 `/page/` 디렉토리 아래에 저장
+- **✅ 필수**: URL 경로와 동일한 구조로 PHP 파일 생성
+- **✅ 필수**: 페이지 링크는 반드시 `href()` 함수 사용 (자세한 내용은 [URL 및 페이지 링크 관리 규칙](#url-및-페이지-링크-관리-규칙) 참조)
+- **❌ 금지**: `/page/` 디렉토리 외부에 페이지 파일 생성 금지
+- **❌ 금지**: 하드코딩된 URL 경로 사용 금지
+
+### 라우팅 시스템의 장점
+
+1. **깔끔한 URL**: 확장자 없는 URL 사용 가능 (`/user/login` 대신 `/user/login.php`)
+2. **단일 진입점**: 모든 요청이 `index.php`를 거쳐 공통 초기화 수행
+3. **유연한 구조**: 디렉토리 구조에 따라 자유롭게 페이지 구성
+4. **중앙 집중 관리**: `index.php`에서 라우팅, 인증, 설정 등을 통합 관리
 
 ---
 
@@ -1863,6 +2165,201 @@ function sonub_messages_page()
   - 효과 (Effects): `.shadow-custom`, `.hover-effect` 등
   - 폰트 (Typography): `.custom-font`, `.text-style` 등
 - **이유**: 재사용 가능한 스타일을 중앙 집중식으로 관리하기 위함
+
+### CSS 및 JavaScript 파일 분리 규칙
+
+**🔥🔥🔥 최강력 규칙: 페이지와 위젯에서 CSS/JS 파일 관리 방식이 다릅니다 🔥🔥🔥**
+
+#### 페이지 파일 (`./page/**/*.php`)
+
+**✅ 필수: 페이지 파일에서는 CSS를 반드시 외부 파일로 분리해야 합니다**
+
+- **CSS 분리 규칙**:
+  - **✅ 필수**: 레이아웃 관련 Bootstrap CSS 유틸리티 클래스는 HTML에 직접 작성
+  - **✅ 필수**: 스타일 관련 CSS는 **반드시** `./page/**/*.css` 파일로 분리
+  - **✅ 자동 로드**: 페이지별 CSS 파일은 `index.php`에서 자동으로 로드됨
+  - **❌ 금지**: 페이지 파일 내에 `<style>` 태그 사용 금지 (레이아웃 관련 Bootstrap 클래스 제외)
+
+- **JavaScript 분리 규칙**:
+  - **✅ 필수**: JavaScript 코드는 **반드시** `./page/**/*.js` 파일로 분리
+  - **✅ 자동 로드**: 페이지별 JS 파일은 `index.php`에서 자동으로 로드됨
+  - **❌ 금지**: 페이지 파일 내에 `<script>` 태그로 JavaScript 작성 금지
+
+**올바른 페이지 파일 구조:**
+
+```php
+<!-- ./page/user/profile.php -->
+<?php
+// 페이지 고유 로직만 작성
+$user = login();
+?>
+
+<!-- ✅ 올바른 방법: 레이아웃은 Bootstrap 클래스, 스타일은 CSS 파일로 분리 -->
+<div class="container my-5">  <!-- Bootstrap 유틸리티 클래스 -->
+    <div class="d-flex flex-column gap-3">  <!-- Bootstrap 유틸리티 클래스 -->
+        <div class="profile-card">  <!-- 스타일은 profile.css에 정의 -->
+            <h1 class="profile-title"><?= $user->name ?></h1>
+            <p class="profile-bio"><?= $user->bio ?></p>
+        </div>
+    </div>
+</div>
+
+<!-- ❌ 금지: <style> 태그 사용 금지 -->
+<!-- ❌ 금지: <script> 태그 사용 금지 -->
+```
+
+```css
+/* ./page/user/profile.css */
+/* ✅ 올바른 방법: 스타일은 외부 CSS 파일에 정의 */
+
+.profile-card {
+  background-color: var(--bs-light);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.profile-title {
+  color: var(--bs-primary);
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.profile-bio {
+  color: var(--bs-body-color);
+  line-height: 1.6;
+}
+```
+
+```javascript
+// ./page/user/profile.js
+// ✅ 올바른 방법: JavaScript는 외부 JS 파일에 정의
+
+Vue.createApp({
+  data() {
+    return {
+      user: null,
+    };
+  },
+  methods: {
+    async loadProfile() {
+      // 프로필 로드 로직
+    },
+  },
+  mounted() {
+    this.loadProfile();
+  },
+}).mount("#profile-app");
+```
+
+#### 위젯 파일 (`./widgets/**/*.php`)
+
+**✅ 필수: 위젯 파일에서는 CSS와 JS를 모두 같은 PHP 파일 내에 작성합니다**
+
+- **CSS 작성 규칙**:
+  - **✅ 필수**: 위젯의 CSS는 `<style>` 태그 내에 작성
+  - **✅ 권장**: 위젯 고유의 스타일만 작성 (전역 스타일 금지)
+  - **✅ 권장**: 위젯별로 고유한 CSS 클래스 이름 사용 (충돌 방지)
+
+- **JavaScript 작성 규칙**:
+  - **✅ 필수**: 위젯의 JavaScript는 `<script>` 태그 내에 작성
+  - **✅ 필수**: Vue 앱은 고유한 ID를 가진 컨테이너에 마운트
+  - **✅ 권장**: 위젯 고유의 로직만 작성
+
+**올바른 위젯 파일 구조:**
+
+```php
+<!-- ./widgets/post/post-card.php -->
+<?php
+/**
+ * 게시물 카드 위젯
+ *
+ * @param array $post 게시물 데이터
+ */
+?>
+
+<!-- ✅ 올바른 방법: 레이아웃은 Bootstrap 클래스 사용 -->
+<div class="d-flex flex-column gap-2 post-card-widget" id="post-card-<?= $post['id'] ?>">
+    <div class="post-card-header">
+        <h3 class="post-card-title"><?= $post['title'] ?></h3>
+    </div>
+    <div class="post-card-body">
+        <p class="post-card-content"><?= $post['content'] ?></p>
+    </div>
+</div>
+
+<!-- ✅ 올바른 방법: 위젯의 CSS는 <style> 태그 내에 작성 -->
+<style>
+/* 위젯 고유 스타일 */
+.post-card-widget {
+    background-color: var(--bs-light);
+    padding: 15px;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.post-card-header {
+    border-bottom: 1px solid var(--bs-border-color);
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+.post-card-title {
+    color: var(--bs-primary);
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.post-card-content {
+    color: var(--bs-body-color);
+    line-height: 1.5;
+}
+</style>
+
+<!-- ✅ 올바른 방법: 위젯의 JavaScript는 <script> 태그 내에 작성 -->
+<script>
+ready(() => {
+    Vue.createApp({
+        data() {
+            return {
+                likes: <?= $post['likes'] ?>,
+            };
+        },
+        methods: {
+            async likePost() {
+                // 좋아요 로직
+                this.likes++;
+            },
+        },
+    }).mount('#post-card-<?= $post['id'] ?>');
+});
+</script>
+```
+
+#### 페이지 vs 위젯 비교표
+
+| 항목 | 페이지 (`./page/**/*.php`) | 위젯 (`./widgets/**/*.php`) |
+|------|---------------------------|---------------------------|
+| **CSS 위치** | ✅ 외부 파일 (`./page/**/*.css`) | ✅ 같은 파일 내 `<style>` 태그 |
+| **JS 위치** | ✅ 외부 파일 (`./page/**/*.js`) | ✅ 같은 파일 내 `<script>` 태그 |
+| **자동 로드** | ✅ `index.php`에서 자동 로드 | ❌ 수동 include 필요 |
+| **Bootstrap 클래스** | ✅ 레이아웃에 사용 | ✅ 레이아웃에 사용 |
+| **`<style>` 태그** | ❌ 절대 금지 | ✅ 필수 사용 |
+| **`<script>` 태그** | ❌ 절대 금지 | ✅ 필수 사용 |
+| **용도** | 전체 페이지 콘텐츠 | 재사용 가능한 컴포넌트 |
+
+#### 위반 시 결과
+
+**페이지 파일에서 `<style>` 또는 `<script>` 태그 사용 시:**
+- 자동 로딩 시스템과 충돌
+- CSS/JS 파일이 중복 로드됨
+- 유지보수 어려움
+- 코드 구조가 일관되지 않음
+
+**위젯 파일에서 외부 CSS/JS 파일 사용 시:**
+- 위젯을 다른 페이지에서 재사용할 때 CSS/JS 파일도 함께 관리해야 함
+- 위젯의 독립성 저하
+- 파일 관리가 복잡해짐
 
 ### 올바른 CSS 사용 예제
 
