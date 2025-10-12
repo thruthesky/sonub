@@ -2,6 +2,7 @@
 
 ## 목차
 - [개요](#개요)
+- [데이터베이스 스키마](#데이터베이스-스키마)
 - [🔥🔥🔥 최우선 권장사항 - PDO 직접 사용](#최우선-권장사항---pdo-직접-사용)
 - [설치 및 구성](#설치-및-구성)
 - [PDO 기본 사용법 (최우선)](#pdo-기본-사용법-최우선)
@@ -36,6 +37,97 @@
 Sonub는 데이터베이스 접근을 위해 **PDO (PHP Data Objects) 직접 사용을 최우선으로 권장**합니다. PDO는 PHP의 표준 데이터베이스 접근 방식이며, prepared statement를 통해 SQL 인젝션으로부터 보호합니다.
 
 **🔥🔥🔥 중요: 가능한 모든 경우에 PDO를 직접 사용하세요 🔥🔥🔥**
+
+## 데이터베이스 스키마
+
+**🔥🔥🔥 중요: 데이터베이스 쿼리 작성 전 반드시 스키마를 확인하세요 🔥🔥🔥**
+
+Sonub 프로젝트의 최신 MariaDB 데이터베이스 구조는 항상 다음 파일에서 확인할 수 있습니다:
+
+**스키마 파일 위치**: `etc/db-schema/sonub-database-schema.sql`
+
+### 데이터베이스 구조 확인 방법
+
+데이터베이스 쿼리를 작성하기 전에 반드시 스키마 파일을 확인하여 다음 사항을 파악해야 합니다:
+
+1. **테이블 구조**: 어떤 테이블들이 존재하는지
+2. **컬럼 정보**: 각 테이블의 컬럼명, 데이터 타입, 기본값
+3. **인덱스**: 어떤 컬럼에 인덱스가 설정되어 있는지 (WHERE 절 최적화)
+4. **관계**: PRIMARY KEY, FOREIGN KEY, UNIQUE 제약조건
+
+### 주요 테이블
+
+현재 Sonub 데이터베이스의 주요 테이블:
+
+#### `users` 테이블
+- `id` (INT, PRIMARY KEY, AUTO_INCREMENT): 사용자 고유 ID
+- `firebase_uid` (VARCHAR(128), UNIQUE): Firebase 인증 UID
+- `display_name` (VARCHAR(64), UNIQUE): 사용자 표시 이름
+- `birthday` (INT): 생년월일 (Unix timestamp)
+- `gender` (CHAR(1)): 성별 (M/F)
+- `photo_url` (VARCHAR(255)): 프로필 사진 URL
+- `created_at` (INT): 생성일 (Unix timestamp)
+- `updated_at` (INT): 수정일 (Unix timestamp)
+
+#### `posts` 테이블
+- `id` (INT, PRIMARY KEY, AUTO_INCREMENT): 게시글 고유 ID
+- `user_id` (INT): 작성자 ID (users.id와 연결)
+- `category` (VARCHAR(64)): 게시글 카테고리 분류
+  - 각 카테고리별로 게시글을 목록화할 때 사용
+  - 예: 'discussion', 'qna', 'notice', 'free' 등
+  - WHERE 절에서 `category = ?` 조건으로 특정 카테고리의 게시글만 조회 가능
+- `title` (VARCHAR(255)): 게시글 제목
+- `content` (LONGTEXT): 게시글 내용
+- `files` (TEXT): 파일 URL 목록 (콤마로 구분)
+  - **첨부 파일의 URL을 저장**: 게시글에 첨부된 모든 파일의 URL을 콤마(,)로 구분하여 저장
+  - **외부 URL 지원**: HTTP/HTTPS로 시작하는 외부 리소스 URL 저장 가능
+    - 예: `https://abc.com/def/photo.jpg`
+  - **로컬 파일 경로 지원**: `/var/uploads/[숫자]/...` 형식의 로컬 파일 경로 저장 가능
+    - 예: `/var/uploads/345/another-file.zip`
+  - **여러 파일 저장**: 콤마(,)로 구분하여 여러 파일 URL을 하나의 문자열로 저장
+    - 예: `https://abc.com/def/photo.jpg,/var/uploads/345/another-file.zip`
+  - **파일 URL 형식**:
+    - 외부 URL: `https://example.com/path/to/file.ext`
+    - 로컬 경로: `/var/uploads/[user_id 또는 숫자]/filename.ext`
+  - **사용 예시**:
+    ```php
+    // 단일 파일
+    $post = create_post([
+        'category' => 'discussion',
+        'files' => 'https://example.com/photo.jpg'
+    ]);
+
+    // 여러 파일 (콤마로 구분)
+    $post = create_post([
+        'category' => 'discussion',
+        'files' => 'https://abc.com/photo.jpg,/var/uploads/123/doc.pdf,https://cdn.example.com/video.mp4'
+    ]);
+
+    // 파일 배열로 분리
+    $filesArray = explode(',', $post->files);
+    foreach ($filesArray as $fileUrl) {
+        echo $fileUrl . "\n";
+    }
+    ```
+- `created_at` (INT): 생성일 (Unix timestamp)
+- `updated_at` (INT): 수정일 (Unix timestamp)
+
+### 스키마 파일 사용 예시
+
+```bash
+# 스키마 파일 확인
+cat etc/db-schema/sonub-database-schema.sql
+
+# 특정 테이블 구조 검색
+grep -A 20 "CREATE TABLE \`users\`" etc/db-schema/sonub-database-schema.sql
+```
+
+### 쿼리 작성 시 주의사항
+
+1. **컬럼명 확인**: 스키마 파일에서 정확한 컬럼명 확인
+2. **데이터 타입 일치**: INSERT/UPDATE 시 올바른 데이터 타입 사용
+3. **인덱스 활용**: 인덱스가 설정된 컬럼을 WHERE 절에 사용하여 성능 최적화
+4. **타임스탬프 형식**: 모든 날짜/시간 필드는 Unix timestamp (정수) 사용
 
 ## 🔥🔥🔥 최우선 권장사항 - PDO 직접 사용
 

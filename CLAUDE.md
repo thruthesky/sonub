@@ -42,6 +42,326 @@ Sonub (sonub.com) 웹사이트 개발 가이드라인 및 규칙
 
 ---
 
+# "update" 명령 워크플로우
+
+**🔥🔥🔥 최강력 규칙: 개발자가 "update" 요청 시 반드시 따라야 할 워크플로우 🔥🔥🔥**
+
+개발자가 짧게 **"update"**라고 요청하면, 이는 현재 파일, 선택된 코드, 또는 요청된 코드를 **모든 표준 코딩 가이드라인에 맞게 전면적으로 업데이트**하라는 의미입니다.
+
+## "update" 명령이 포함하는 모든 작업
+
+- **✅ 필수**: "update" 명령은 **"l10n" (다국어 번역) 요청을 포함**합니다. `t()->inject()` 함수를 사용하여 4개 국어(한국어, 영어, 일본어, 중국어)로 번역을 추가해야 합니다. 만약, 함수 안에서 사용되는 하드 코딩된 문자열이 있으면, `tr(['en' => '..', 'ko' => '..', 'ja' => '..', 'zh' => '..'])` 함수를 사용하여 번역 가능한 문자열로 변경해야 합니다.
+- **✅ 필수**: 현재 파일/선택 영역/요청된 코드를 CLAUDE.md의 모든 워크플로우 및 가이드라인에 맞게 수정
+- **✅ 필수**: 관련 문서(`docs/**/*.md`)를 참고하여 표준에 맞게 업데이트
+- **✅ 필수**: 코드 수정 후 테스트를 작성하고 실행하여 검증
+- **✅ 필수**: 테스트 실패 시 코드를 수정하여 모든 테스트 통과
+
+## "update" 워크플로우 단계
+
+### 1단계: 관련 문서 검색 및 통보 (필수)
+
+1. **관련 문서 즉시 검색**:
+   - `docs/coding-guideline.md` - PHP, CSS, JavaScript 코딩 가이드라인
+   - `docs/database.md` - 데이터베이스 쿼리 작성 가이드라인
+   - `docs/test.md` - 테스트 작성 및 실행 가이드라인
+   - `docs/translation.md` - 다국어 번역 가이드라인
+   - `docs/design-guideline.md` - 디자인 및 UI 가이드라인
+   - 기타 관련 문서
+
+2. **개발자에게 통보**:
+   ```
+   📋 참고 문서:
+   - docs/coding-guideline.md
+   - docs/database.md
+   - docs/test.md
+   - docs/translation.md
+
+   🔤 인코딩: UTF-8로 모든 파일 생성/수정
+   🌐 언어: 모든 주석 및 문서는 한국어로 작성
+   ```
+
+3. **문서 읽기 및 분석**: 모든 관련 문서를 읽고 코딩 표준을 파악
+
+### 2단계: 코드 업데이트 (필수)
+
+**✅ PHP 코드 업데이트**:
+- [ ] 모든 데이터베이스 쿼리는 `pdo()` 함수를 사용하여 PDO 직접 사용
+- [ ] 플레이스홀더(?)를 사용하여 SQL 인젝션 방지
+- [ ] 에러 처리는 `throw error()` 또는 `throw ApiException()` 사용
+- [ ] 모든 주석은 한국어로 작성
+- [ ] PHPDoc 형식으로 함수 문서화
+
+**✅ CSS 코드 업데이트**:
+- [ ] 페이지 파일(`./page/**/*.php`): CSS를 외부 `.css` 파일로 분리
+- [ ] 위젯 파일(`./widgets/**/*.php`): CSS를 같은 파일 내 `<style>` 태그로 작성
+- [ ] Bootstrap 기본 색상 및 변수 최대한 활용
+- [ ] 커스텀 색상 사용 최소화
+
+**✅ JavaScript 코드 업데이트**:
+- [ ] 페이지 파일(`./page/**/*.php`): JavaScript를 외부 `.js` 파일로 분리
+- [ ] 위젯 파일(`./widgets/**/*.php`): JavaScript를 같은 파일 내 `<script>` 태그로 작성
+- [ ] `Vue.createApp()`, `Vue.ref()` 등 Vue 객체 직접 사용 (구조 분해 할당 금지)
+- [ ] `ready(() => { ... })` 래퍼로 감싸기
+- [ ] API 호출 시 `func()` 함수 사용
+- [ ] Firebase 사용 시 `firebase_ready()` 함수 사용
+
+**✅ 다국어 번역 업데이트 (l10n)**:
+- [ ] 파일 하단에 `inject_[php_file_name]_language()` 함수 정의
+- [ ] `t()->inject()` 함수로 번역 텍스트 주입
+- [ ] 4개 국어(한국어, 영어, 일본어, 중국어) 필수 번역
+- [ ] 키는 반드시 한글로 작성
+- [ ] `<?= t()->키이름 ?>` 형식으로 사용
+
+**✅ href() 함수 사용**:
+- [ ] 모든 페이지 링크는 `href()` 함수 사용
+- [ ] 하드코딩된 URL 문자열 제거
+
+**✅ 주석 및 문서화**:
+- [ ] 모든 주석은 한국어로 작성
+- [ ] 함수/메서드는 PHPDoc 또는 JSDoc으로 문서화
+
+### 3단계: 테스트 작성 및 실행 (필수)
+
+**🔥🔥🔥 최강력 규칙: 코드 업데이트 후 반드시 테스트를 작성하고 실행해야 합니다 🔥🔥🔥**
+
+1. **테스트 종류 선택**:
+   - **PHP Unit Test**: 함수, 로직, DB 쿼리 결과 검증
+   - **PHP E2E Test**: 페이지, UI 요소, HTML 콘텐츠 검증
+   - **Playwright E2E Test**: 폼 전송, JavaScript 실행, 브라우저 상호작용 (PHP로 불가능한 경우에만)
+
+2. **테스트 작성**:
+   - [ ] `docs/test.md` 문서를 참고하여 테스트 작성
+   - [ ] 테스트 파일은 `./tests` 폴더 아래에 저장
+   - [ ] PHP Unit Test: `tests/[module]/[module].test.php`
+   - [ ] PHP E2E Test: `tests/e2e/[page-name].e2e.test.php`
+   - [ ] Playwright E2E Test: `tests/playwright/e2e/[page-name].spec.ts`
+
+3. **테스트 실행**:
+   - [ ] PHP Unit Test: `php tests/[module]/[module].test.php`
+   - [ ] PHP E2E Test: `php tests/e2e/[page-name].e2e.test.php`
+   - [ ] Playwright E2E Test: `npx playwright test tests/playwright/e2e/[page-name].spec.ts`
+
+4. **테스트 결과 확인 및 수정**:
+   - [ ] ✅ 모든 테스트 통과: 업데이트 완료
+   - [ ] ❌ 테스트 실패: 코드를 수정하여 모든 테스트 통과할 때까지 반복
+
+### 4단계: UTF-8 인코딩 확인 (필수)
+
+- [ ] 수정된 모든 파일의 인코딩을 확인:
+  ```bash
+  file -I [파일경로]
+  ```
+- [ ] 출력이 `charset=utf-8`인지 확인
+
+### 5단계: 개발자에게 완료 보고 (필수)
+
+**개발자에게 다음 정보를 보고**:
+```
+✅ 코드 업데이트 완료
+✅ PHP 코딩 가이드라인 준수 완료
+✅ CSS/JavaScript 분리 규칙 준수 완료
+✅ 데이터베이스 쿼리 업데이트 완료 (PDO 직접 사용)
+✅ 다국어 번역 추가 완료 (4개 국어)
+✅ 테스트 작성 및 실행 완료 (모든 테스트 통과)
+✅ UTF-8 인코딩 확인 완료
+```
+
+## "update" 명령 예시
+
+**사용자 요청**: "update"
+
+**AI 수행 작업**:
+1. 현재 열려 있는 파일 또는 선택된 코드 확인
+2. 관련 문서(`docs/coding-guideline.md`, `docs/database.md`, `docs/test.md`, `docs/translation.md`) 읽기
+3. PHP 코드 업데이트 (PDO 사용, 에러 처리, 주석)
+4. CSS/JavaScript 분리 규칙 적용
+5. 다국어 번역 추가 (4개 국어)
+6. href() 함수로 URL 변경
+7. 테스트 작성 및 실행
+8. 테스트 실패 시 코드 수정 후 재실행
+9. UTF-8 인코딩 확인
+10. 개발자에게 완료 보고
+
+**⚠️⚠️⚠️ 최강력 경고: "update" 명령은 단순한 코드 수정이 아니라, 모든 표준 가이드라인에 맞게 전면적으로 업데이트하고 테스트하여 검증하는 것입니다 ⚠️⚠️⚠️**
+
+---
+
+# "디자인 수정" 명령 워크플로우
+
+**🔥🔥🔥 최강력 규칙: 개발자가 "디자인 수정" 요청 시 반드시 따라야 할 워크플로우 🔥🔥🔥**
+
+개발자가 **"디자인 수정"**이라고 요청하면, 이는 현재 파일 또는 선택된 코드의 디자인을 **Sonub 디자인 가이드라인에 맞게 전면적으로 재작업**하라는 의미입니다.
+
+## "디자인 수정" 명령이 포함하는 모든 작업
+
+- **✅ 필수**: `docs/design-guideline.md` 문서를 읽고 디자인 가이드라인 준수
+- **✅ 필수**: 심플하면서 단조롭고 현대적이며 단순한 디자인
+- **✅ 필수**: Bootstrap으로 레이아웃 작성
+- **✅ 필수**: 세련되면서도 아주 단순한 구조로 작성
+- **✅ 필수**: 페이지 파일인 경우 CSS를 외부 `.css` 파일로 분리
+- **✅ 필수**: 위젯/함수인 경우 CSS를 `<style>` 태그 내에 작성
+
+## "디자인 수정" 워크플로우 단계
+
+### 1단계: 문서 검토 및 개발자 통보 (필수)
+
+1. **`docs/design-guideline.md` 문서 읽기**:
+   - 디자인 철학 이해
+   - Bootstrap 색상 및 레이아웃 규칙 숙지
+   - CSS/JavaScript 분리 규칙 확인
+
+2. **개발자에게 통보**:
+   ```
+   📋 참고 문서:
+   - docs/design-guideline.md
+
+   🎨 디자인 원칙:
+   - 심플하고 단조로운 디자인
+   - 현대적이고 단순한 구조
+   - Bootstrap 레이아웃 유틸리티 클래스 사용
+   - 충분한 여백, 단순한 색상
+   - Shadow 최소화
+
+   🔤 인코딩: UTF-8로 모든 파일 생성/수정
+   🌐 언어: 모든 주석 및 문서는 한국어로 작성
+   ```
+
+### 2단계: 디자인 수정 작업 (필수)
+
+**✅ 디자인 철학 준수**:
+- [ ] **심플하고 단조로운 디자인**: 절대 화려한 디자인을 하지 마세요
+- [ ] **현대적이고 단순한 디자인**: 복잡한 구조 금지
+- [ ] **세련되면서도 단순한 구조**: 미니멀한 디자인
+
+**✅ Bootstrap 레이아웃 규칙**:
+- [ ] **레이아웃은 반드시 Bootstrap으로 작성**: `container`, `row`, `col`, `d-flex`, `gap-*`, `mb-*`, `mt-*` 등
+- [ ] **레이아웃 관련 유틸리티 클래스는 인라인 `class=''` 속성으로 작성**
+- [ ] **레이아웃과 관련 없는 Bootstrap 유틸리티 클래스는 별도 CSS 파일로 분리**
+
+**✅ CSS 파일 분리 규칙**:
+- [ ] **페이지 파일 (`./page/**/*.php`)**: 반드시 외부 `.css` 파일 생성 (`./page/**/*.css`)
+- [ ] **위젯/함수 파일**: `<style>` 태그 내에 CSS 작성
+
+**✅ 디자인 세부 규칙**:
+- [ ] **Shadow 최소화**: 가능한 shadow를 추가하지 마세요
+- [ ] **단순한 색상**: Bootstrap 기본 색상 변수 사용 (`var(--bs-primary)`, `var(--bs-light)` 등)
+- [ ] **충분한 여백**: 요소 간 여백을 충분히 주어서 여유 있는 디자인
+- [ ] **페이지 가장자리 여백 최소화**: 왼쪽/오른쪽 가장자리 여백은 작게
+
+**✅ 올바른 디자인 예제 - 페이지 파일**:
+
+```php
+<!-- ./page/user/profile.php -->
+<?php
+$user = login();
+?>
+
+<!-- ✅ 올바른 방법: 레이아웃은 Bootstrap 유틸리티 클래스 -->
+<div class="container-fluid px-2 py-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <!-- profile-card 클래스는 profile.css에 정의 -->
+            <div class="profile-card mb-4">
+                <h1><?= $user->name ?></h1>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+**외부 CSS 파일 (`./page/user/profile.css`)**:
+
+```css
+/* ✅ 올바른 방법: 심플하고 단조로운 디자인 */
+.profile-card {
+    background-color: var(--bs-light);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 8px;
+    padding: 2rem;
+    /* shadow 최소화 */
+}
+
+.profile-card h1 {
+    color: var(--bs-emphasis-color);
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+```
+
+**✅ 올바른 디자인 예제 - 위젯 파일**:
+
+```php
+<!-- ./widgets/post/post-card.php -->
+<div class="d-flex flex-column gap-3 post-card-widget">
+    <h3><?= $post->title ?></h3>
+    <p><?= $post->content ?></p>
+</div>
+
+<style>
+/* ✅ 올바른 방법: 위젯 CSS는 <style> 태그 내 작성 */
+.post-card-widget {
+    background-color: white;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    /* shadow 없음 - 심플한 디자인 */
+}
+
+.post-card-widget h3 {
+    font-size: 1.25rem;
+    color: var(--bs-emphasis-color);
+    margin-bottom: 0.75rem;
+}
+
+.post-card-widget p {
+    color: var(--bs-body-color);
+    line-height: 1.6;
+}
+</style>
+```
+
+### 3단계: UTF-8 인코딩 확인 (필수)
+
+- [ ] 수정된 모든 파일의 인코딩을 확인:
+  ```bash
+  file -I [파일경로]
+  ```
+- [ ] 출력이 `charset=utf-8`인지 확인
+
+### 4단계: 개발자에게 완료 보고 (필수)
+
+**개발자에게 다음 정보를 보고**:
+```
+✅ 디자인 수정 완료
+✅ 심플하고 단조로운 디자인 적용 완료
+✅ Bootstrap 레이아웃 규칙 준수 완료
+✅ CSS 파일 분리 규칙 준수 완료
+✅ Shadow 최소화 및 단순한 색상 사용 완료
+✅ 충분한 여백 적용 완료
+✅ UTF-8 인코딩 확인 완료
+```
+
+## "디자인 수정" 명령 예시
+
+**사용자 요청**: "디자인 수정"
+
+**AI 수행 작업**:
+1. `docs/design-guideline.md` 문서 읽기
+2. 현재 열려 있는 파일 또는 선택된 코드 확인
+3. 파일 타입 확인 (페이지 vs 위젯)
+4. Bootstrap 레이아웃 유틸리티 클래스로 레이아웃 작성
+5. 페이지 파일인 경우 외부 `.css` 파일 생성
+6. 위젯/함수인 경우 `<style>` 태그에 CSS 작성
+7. 심플하고 단조로운 디자인 적용
+8. Shadow 제거 및 단순한 색상 사용
+9. 충분한 여백 추가, 가장자리 여백 최소화
+10. UTF-8 인코딩 확인
+11. 개발자에게 완료 보고
+
+**⚠️⚠️⚠️ 최강력 경고: "디자인 수정" 명령은 심플하고 단조로우며 현대적인 디자인을 적용하는 것입니다. 절대 화려한 디자인을 하지 마세요 ⚠️⚠️⚠️**
+
+---
+
 - [ ] 이슈 생성: 작업을 시작하기 전에 git 커밋 메시지 규칙을 따르는 이슈를 생성합니다.
 - [ ] **파일 인코딩 요구사항 - UTF-8 필수 (최우선 최강력 규칙)**:
   - [ ] **🔥🔥🔥🔥🔥 최강력 규칙: 모든 파일은 100% 예외 없이 반드시 UTF-8 인코딩으로 저장해야 합니다 🔥🔥🔥🔥🔥**
@@ -290,13 +610,35 @@ Sonub (sonub.com) 웹사이트 개발 가이드라인 및 규칙
   - [ ] 문서 구조가 변경될 때마다(섹션 추가, 제거, 이름 변경) 목차를 업데이트해야 합니다.
   - [ ] 목차는 문서의 모든 주요 제목(##)과 부제목(###)을 반영해야 합니다.
   - [ ] 목차를 실제 콘텐츠와 항상 동기화 상태로 유지하세요.
-- [ ] **PHP 테스트 가이드라인 - 필수 준수**
+- [ ] **테스트 가이드라인 - 필수 준수**
   - [ ] **🔥🔥🔥 최강력 규칙: 테스트 관련 작업 시 반드시 `docs/test.md` 문서를 먼저 읽어야 합니다 🔥🔥🔥**
   - [ ] **테스트 환경**: 모든 테스트는 `https://local.sonub.com/` 개발 환경에서 수행
-  - [ ] **테스트 종류 자동 선택**:
-    - [ ] "페이지", "UI", "요소" 테스트 요청 시 → PHP E2E 테스트 작성
-    - [ ] "함수", "로직" 테스트 요청 시 → PHP Unit 테스트 작성
-    - [ ] "e2e" 키워드 명시 시 → PHP E2E 테스트 작성
+  - [ ] **🔥🔥🔥 테스트 종류 자동 선택 - 최강력 규칙 🔥🔥🔥**:
+    - [ ] **1순위: PHP Unit Test** - "함수", "로직", "DB 쿼리" 테스트 요청 시 사용
+    - [ ] **2순위: PHP E2E Test** - "페이지", "UI 요소", "HTML 콘텐츠" 테스트 요청 시 사용
+    - [ ] **3순위 (최후 수단): Playwright E2E Test** - PHP로 불가능한 경우에만 사용
+  - [ ] **🔥🔥🔥 Playwright 사용 판단 기준 - 반드시 따라야 합니다 🔥🔥🔥**:
+    - [ ] **✅ Playwright를 사용해야 하는 경우**:
+      - [ ] "폼 전송" 테스트 요청 시 (PHP는 폼 submit을 시뮬레이션할 수 없음)
+      - [ ] "사용자 입력" 또는 "타이핑" 테스트 요청 시 (PHP는 키보드 입력을 시뮬레이션할 수 없음)
+      - [ ] "버튼 클릭" 후 JavaScript 동작 테스트 요청 시 (PHP는 JavaScript를 실행할 수 없음)
+      - [ ] "파일 업로드" 및 "업로드 프로그레스" 테스트 요청 시 (JavaScript로 구현된 기능)
+      - [ ] "드래그 앤 드롭", "스크롤" 등 브라우저 이벤트 테스트 요청 시
+      - [ ] "모달", "드롭다운" 등 JavaScript로 구현된 UI 컴포넌트 상호작용 테스트 요청 시
+    - [ ] **✅ PHP E2E 테스트를 사용해야 하는 경우**:
+      - [ ] "페이지에서 .title 클래스가 잘 보이는지" 테스트 요청 시 (HTML 요소 존재 여부만 확인)
+      - [ ] "페이지가 200 상태 코드를 반환하는지" 테스트 요청 시
+      - [ ] "특정 텍스트가 페이지에 포함되어 있는지" 테스트 요청 시
+      - [ ] "HTML 구조가 올바른지" 테스트 요청 시
+      - [ ] 브라우저 상호작용이 필요 없는 모든 페이지 테스트
+    - [ ] **⚠️⚠️⚠️ 최강력 경고: PHP로 테스트가 가능하면 반드시 PHP로 테스트하고, PHP로 불가능한 경우에만 Playwright를 사용하세요 ⚠️⚠️⚠️**
+  - [ ] **테스트 선택 예시**:
+    - [ ] 사용자 요청: "로그인 폼 전송 테스트" → **Playwright E2E** (폼 전송 필요)
+    - [ ] 사용자 요청: "페이지에서 .title 클래스가 잘 보이는지 테스트" → **PHP E2E** (HTML 요소 확인만 필요)
+    - [ ] 사용자 요청: "게시글 작성 후 목록에 표시되는지 테스트" → **Playwright E2E** (폼 전송 + JavaScript 동작)
+    - [ ] 사용자 요청: "홈페이지가 정상적으로 로드되는지 테스트" → **PHP E2E** (HTTP 상태 코드 확인)
+    - [ ] 사용자 요청: "파일 업로드 프로그레스 바 테스트" → **Playwright E2E** (JavaScript 동작 + UI 상호작용)
+    - [ ] 사용자 요청: "사용자 생성 함수 테스트" → **PHP Unit Test** (함수 로직만 테스트)
   - [ ] **🔥🔥🔥 최강력 규칙: 모든 테스트 파일, 임시 파일, 검증 파일은 반드시 `./tests` 폴더 아래에 저장해야 합니다 🔥🔥🔥**
   - [ ] **절대 금지**: 테스트 관련 파일을 프로젝트 루트나 `lib`, `src` 등 다른 폴더에 저장하는 것은 절대 금지
   - [ ] **위반 시**: 프로젝트 구조 오염, 운영 코드와 테스트 코드 혼재, Git 관리 어려움
@@ -313,14 +655,22 @@ Sonub (sonub.com) 웹사이트 개발 가이드라인 및 규칙
     - [ ] 테스트 파일은 `tests/e2e/` 디렉토리에 저장
     - [ ] 파일 이름은 `.e2e.test.php`로 끝나야 함 (예: `tests/e2e/user-login.e2e.test.php`)
     - [ ] HTTP 상태 코드, 응답 본문, HTML 요소 검증
+  - [ ] **Playwright E2E Test (브라우저 자동화 테스트)**:
+    - [ ] TypeScript로 작성
+    - [ ] 테스트 파일은 `tests/playwright/e2e/` 디렉토리에 저장
+    - [ ] 파일 이름은 `.spec.ts`로 끝나야 함 (예: `tests/playwright/e2e/user-login.spec.ts`)
+    - [ ] 실제 브라우저에서 폼 전송, JavaScript 실행, 사용자 입력 시뮬레이션 가능
   - [ ] **테스트 파일 저장 위치 예시**:
-    - [ ] ✅ 올바른 위치: `tests/db/db.connection.test.php` (Unit Test)
-    - [ ] ✅ 올바른 위치: `tests/user/user.crud.test.php` (Unit Test)
-    - [ ] ✅ 올바른 위치: `tests/e2e/user-login.e2e.test.php` (E2E Test)
-    - [ ] ✅ 올바른 위치: `tests/e2e/homepage.e2e.test.php` (E2E Test)
+    - [ ] ✅ 올바른 위치: `tests/db/db.connection.test.php` (PHP Unit Test)
+    - [ ] ✅ 올바른 위치: `tests/user/user.crud.test.php` (PHP Unit Test)
+    - [ ] ✅ 올바른 위치: `tests/e2e/user-login.e2e.test.php` (PHP E2E Test)
+    - [ ] ✅ 올바른 위치: `tests/e2e/homepage.e2e.test.php` (PHP E2E Test)
+    - [ ] ✅ 올바른 위치: `tests/playwright/e2e/user-login.spec.ts` (Playwright E2E Test)
+    - [ ] ✅ 올바른 위치: `tests/playwright/e2e/post-create.spec.ts` (Playwright E2E Test)
     - [ ] ✅ 올바른 위치: `tests/temp/verify_api.php` (임시 검증 파일)
     - [ ] ❌ 잘못된 위치: `db.test.php` (루트 폴더)
     - [ ] ❌ 잘못된 위치: `lib/db/db.test.php` (소스 코드 폴더)
+    - [ ] ❌ 잘못된 위치: `user-login.spec.ts` (루트 폴더)
     - [ ] ❌ 잘못된 위치: `temp.php` (루트 폴더)
   - [ ] **테스트 코드 작성 시 필수 사항**:
     - [ ] 모든 테스트 파일 맨 위에 반드시 `include '../init.php'` 추가 (상대 경로는 테스트 파일 위치에 따라 조정)

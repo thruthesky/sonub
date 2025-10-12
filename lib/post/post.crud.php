@@ -13,6 +13,7 @@ declare(strict_types=1);
  *                     - category: 카테고리 (필수)
  *                     - title: 게시글 제목 (선택)
  *                     - content: 게시글 내용 (선택)
+ *                     - files: 첨부 파일 URL (선택, 콤마로 구분된 여러 URL)
  *
  * @return PostModel|array 성공 시 생성된 PostModel 객체 반환, 실패 시 에러 배열 반환
  *
@@ -28,6 +29,13 @@ declare(strict_types=1);
  * $post = create_post([
  *     'category' => 'discussion'
  * ]);
+ *
+ * // 파일 첨부 예시 (콤마로 구분)
+ * $post = create_post([
+ *     'category' => 'discussion',
+ *     'title' => '파일 첨부 게시글',
+ *     'files' => 'https://abc.com/def/photo.jpg,/var/uploads/345/another-file.zip'
+ * ]);
  */
 function create_post(array $input)
 {
@@ -39,7 +47,7 @@ function create_post(array $input)
     if (login() == false) {
         // 에러 배열 반환: error_code, error_message
         // API를 통해 호출되면 자동으로 JSON으로 변환됩니다.
-        return error('login-required', '로그인이 필요합니다.');
+        error('login-required', tr(['en' => 'Login is required.', 'ko' => '로그인이 필요합니다.', 'ja' => 'ログインが必要です。', 'zh' => '需要登录。']));
     }
 
     // 로그인된 사용자 정보 가져오기
@@ -49,18 +57,19 @@ function create_post(array $input)
     // ========================================================================
     // 2단계: 입력값 정리 및 검증
     // ========================================================================
-    // 입력값에서 title, content, category를 추출하고 공백 제거
+    // 입력값에서 title, content, category, files를 추출하고 공백 제거
     // trim()을 사용하여 앞뒤 공백을 제거합니다.
     // (string) 캐스팅으로 타입을 명확히 합니다.
     $title = isset($input['title']) ? trim((string)$input['title']) : '';
     $content = isset($input['content']) ? trim((string)$input['content']) : '';
     $category = isset($input['category']) ? trim((string)$input['category']) : '';
+    $files = isset($input['files']) ? trim((string)$input['files']) : '';
 
     // 필수 입력값 검증: category만 필수
-    // title과 content는 선택사항 (빈 문자열 허용)
+    // title, content, files는 선택사항 (빈 문자열 허용)
     if ($category === '') {
         // category가 비어있으면 에러 반환
-        return error('category-required', 'category는 필수 항목입니다.');
+        error('category-required', tr(['en' => 'Category is required.', 'ko' => 'category는 필수 항목입니다.', 'ja' => 'カテゴリは必須項目です。', 'zh' => '类别是必填项。']));
     }
 
     // ========================================================================
@@ -79,13 +88,13 @@ function create_post(array $input)
         // ====================================================================
         // 3단계: 데이터베이스 연결 (PDO)
         // ====================================================================
-        // get_db() 함수는 PDO 인스턴스를 반환합니다.
+        // pdo() 함수는 PDO 인스턴스를 반환합니다.
         // PDO (PHP Data Objects)는 데이터베이스 접근을 위한 표준 인터페이스입니다.
         // 장점:
         // - Prepared statement 지원 (SQL 인젝션 방지)
         // - 여러 데이터베이스 지원 (MySQL, PostgreSQL, SQLite 등)
         // - 예외 처리 지원
-        $db = get_db();
+        $db = pdo();
 
         // 권장 설정: PDO 예외 모드 활성화
         // 이렇게 하면 SQL 에러 시 예외(Exception)가 발생하여 try-catch로 잡을 수 있습니다.
@@ -114,8 +123,8 @@ function create_post(array $input)
         // - :title, :content, :category, :user_id 등은 "명명된 플레이스홀더(named placeholder)"입니다.
         // - 나중에 bindValue()로 실제 값을 연결합니다.
         // - 또 다른 방식: ? (위치 기반 플레이스홀더, positional placeholder)
-        $sql = 'INSERT INTO posts (user_id, title, content, category, created_at, updated_at)
-                VALUES (:user_id, :title, :content, :category, :created_at, :updated_at)';
+        $sql = 'INSERT INTO posts (user_id, title, content, category, files, created_at, updated_at)
+                VALUES (:user_id, :title, :content, :category, :files, :created_at, :updated_at)';
 
         // prepare() 메서드:
         // - SQL 쿼리를 데이터베이스에 보내 파싱(구문 분석)합니다.
@@ -149,6 +158,12 @@ function create_post(array $input)
         $stmt->bindValue(':content', $content, PDO::PARAM_STR);
         $stmt->bindValue(':category', $category, PDO::PARAM_STR);
 
+        // files: 콤마로 구분된 파일 URL 문자열
+        // 예: 'https://abc.com/def/photo.jpg,/var/uploads/345/another-file.zip'
+        // - HTTP/HTTPS로 시작하는 외부 URL
+        // - /var/uploads/[n]/... 형식의 로컬 파일 경로
+        $stmt->bindValue(':files', $files, PDO::PARAM_STR);
+
         // created_at과 updated_at는 Unix timestamp (정수)
         // PDO::PARAM_INT로 타입을 명시하여 정수임을 명확히 합니다.
         $stmt->bindValue(':created_at', $now, PDO::PARAM_INT);
@@ -178,7 +193,7 @@ function create_post(array $input)
         }
 
         // 실행 실패 또는 ID가 0인 경우 에러 반환
-        return error('post-creation-failed', '게시글 생성에 실패했습니다.');
+        error('post-creation-failed', tr(['en' => 'Failed to create post.', 'ko' => '게시글 생성에 실패했습니다.', 'ja' => '投稿の作成に失敗しました。', 'zh' => '创建帖子失败。']));
     } catch (Throwable $e) {
         // ====================================================================
         // 7단계: 예외 처리
@@ -194,7 +209,7 @@ function create_post(array $input)
         error_log('create_post error: ' . $e->getMessage());
 
         // 예외 발생 시 에러 배열 반환 (데이터베이스 오류)
-        return error('database-error', '데이터베이스 오류가 발생했습니다.');
+        error('database-error', tr(['en' => 'A database error occurred.', 'ko' => '데이터베이스 오류가 발생했습니다.', 'ja' => 'データベースエラーが発生しました。', 'zh' => '发生数据库错误。']));
     }
 }
 
@@ -218,8 +233,8 @@ function get_post_by_id(int $id): ?PostModel
     // ========================================================================
     // 1단계: 데이터베이스 연결
     // ========================================================================
-    // get_db()로 PDO 인스턴스를 가져옵니다.
-    $db = get_db();
+    // pdo()로 PDO 인스턴스를 가져옵니다.
+    $db = pdo();
 
     // ========================================================================
     // 2단계: Prepared Statement 준비
@@ -267,4 +282,241 @@ function get_post_by_id(int $id): ?PostModel
 
     // 실행 실패 또는 데이터가 없으면 null 반환
     return null;
+}
+
+
+/**
+ * 게시글 목록 조회
+ *
+ * 다양한 필터 조건에 따라 게시글 목록을 조회합니다.
+ * Prepared statement를 사용하여 SQL 인젝션을 방지합니다.
+ *
+ * @param array $filters 필터 조건 (선택 사항)
+ *                       - category: 카테고리 (문자열)
+ *                       - user_id: 작성자 ID (정수)
+ *                       - created_after: 생성일 이후 (Unix timestamp, 정수)
+ *                       - created_before: 생성일 이전 (Unix timestamp, 정수)
+ *                       - limit: 최대 결과 수 (정수)
+ *
+ * @return PostListModel 게시글 목록 배열 (조건에 맞는 게시글이 없으면 빈 배열)
+ *
+ * @example
+ * // 모든 게시글 조회
+ * $posts = list_posts();
+ *
+ * // 특정 카테고리의 게시글 조회
+ * $posts = list_posts(['category' => 'discussion']);
+ *
+ * // 특정 사용자가 작성한 게시글 조회
+ * $posts = list_posts(['user_id' => 42]);
+ *
+ * // 최근 7일 이내에 생성된 게시글 조회
+ * $one_week_ago = time() - 7 * 24 * 60 * 60;
+ * $posts = list_posts(['created_after' => $one_week_ago]);
+ *
+ * // 최대 10개의 게시글만 조회
+ * $posts = list_posts(['limit' => 10]);
+ */
+function list_posts(array $filters = []): PostListModel
+{
+    // ========================================================================
+    // 1단계: 데이터베이스 연결
+    // ========================================================================
+    // pdo() 함수로 PDO 인스턴스를 가져옵니다.
+    $pdo = pdo();
+
+    // ========================================================================
+    // 2단계: 동적 WHERE 조건 빌드
+    // ========================================================================
+    // 필터 조건에 따라 WHERE 절과 파라미터 배열을 동적으로 생성합니다.
+    $conditions = [];
+    $params = [];
+
+    // 카테고리 필터
+    if (isset($filters['category'])) {
+        $conditions[] = 'category = ?';
+        $params[] = $filters['category'];
+    }
+
+    // 사용자 ID 필터
+    if (isset($filters['user_id'])) {
+        $conditions[] = 'user_id = ?';
+        $params[] = $filters['user_id'];
+    }
+
+    // 생성일 이후 필터 (Unix timestamp)
+    if (isset($filters['created_after'])) {
+        $conditions[] = 'created_at >= ?';
+        $params[] = $filters['created_after'];
+    }
+
+    // 생성일 이전 필터 (Unix timestamp)
+    if (isset($filters['created_before'])) {
+        $conditions[] = 'created_at <= ?';
+        $params[] = $filters['created_before'];
+    }
+
+    // ========================================================================
+    // 3단계: SQL 쿼리 빌드
+    // ========================================================================
+    // 기본 SELECT 쿼리
+    $sql = 'SELECT * FROM posts';
+
+    // WHERE 절 추가 (조건이 있는 경우)
+    if (count($conditions) > 0) {
+        $sql .= ' WHERE ' . implode(' AND ', $conditions);
+    }
+
+    // ORDER BY 절 추가 (최신순 정렬)
+    $sql .= ' ORDER BY created_at DESC';
+
+    // LIMIT 절 추가 (제한이 있는 경우)
+    if (isset($filters['limit']) && is_int($filters['limit']) && $filters['limit'] > 0) {
+        // OFFSET이 있는 경우 LIMIT와 함께 사용
+        if (isset($filters['offset']) && is_int($filters['offset']) && $filters['offset'] >= 0) {
+            $sql .= ' LIMIT ? OFFSET ?';
+            $params[] = $filters['limit'];
+            $params[] = $filters['offset'];
+        } else {
+            $sql .= ' LIMIT ?';
+            $params[] = $filters['limit'];
+        }
+    }
+
+    // ========================================================================
+    // 4단계: Prepared Statement 준비 및 실행
+    // ========================================================================
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+
+        // ====================================================================
+        // 5단계: 결과 가져오기 및 PostModel 객체로 변환
+        // ====================================================================
+        // fetchAll() 메서드:
+        // - 쿼리 결과에서 모든 행을 가져옵니다.
+        // - PDO::FETCH_ASSOC: 연관 배열로 반환 (컬럼명이 키)
+        //   예: ['id' => 1, 'title' => '제목', 'content' => '내용', ...]
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // PostModel 객체 배열로 변환
+        $posts = $data ? array_map(fn($item) => new PostModel($item), $data) : [];
+
+        // ====================================================================
+        // 6단계: 전체 게시글 개수 조회 (페이지네이션용)
+        // ====================================================================
+        // count_posts() 함수로 필터 조건에 맞는 전체 게시글 개수를 조회합니다.
+        // limit과 offset은 전체 개수 조회에서 제외해야 하므로 필터에서 제거합니다.
+        $countFilters = $filters;
+        unset($countFilters['limit']);
+        unset($countFilters['offset']);
+        $total = count_posts($countFilters);
+
+        // ====================================================================
+        // 7단계: PostListModel 객체 생성 및 반환
+        // ====================================================================
+        // 페이지네이션 정보 추출
+        $page = isset($filters['page']) ? (int)$filters['page'] : 1;
+        $per_page = isset($filters['limit']) ? (int)$filters['limit'] : 20;
+
+        // PostListModel 객체 생성 및 반환
+        return new PostListModel($posts, $total, $page, $per_page);
+
+    } catch (PDOException $e) {
+        // ====================================================================
+        // 8단계: 에러 처리
+        // ====================================================================
+        // 데이터베이스 에러 발생 시 에러 로그 기록 후 빈 PostListModel 반환
+        error_log('게시글 목록 조회 실패: ' . $e->getMessage());
+        return new PostListModel([], 0, 1, 20);
+    }
+}
+
+function search_posts(array $filters): PostListModel
+{
+    return list_posts($filters);
+}
+
+/**
+ * 게시글 총 개수 조회 함수
+ *
+ * 필터 조건에 맞는 게시글의 총 개수를 반환합니다.
+ * 페이지네이션의 전체 페이지 수 계산에 사용됩니다.
+ *
+ * @param array $filters 필터 조건 배열
+ *                       - category: 카테고리 필터 (선택)
+ *                       - user_id: 사용자 ID 필터 (선택)
+ *                       - created_after: 생성일 이후 필터 (Unix timestamp, 선택)
+ *                       - created_before: 생성일 이전 필터 (Unix timestamp, 선택)
+ *
+ * @return int 게시글 총 개수
+ *
+ * @example
+ * // 특정 카테고리의 게시글 개수
+ * $count = count_posts(['category' => 'discussion']);
+ *
+ * // 특정 사용자의 게시글 개수
+ * $count = count_posts(['user_id' => 123]);
+ */
+function count_posts(array $filters = []): int
+{
+    // ========================================================================
+    // 1단계: 데이터베이스 연결
+    // ========================================================================
+    $pdo = pdo();
+
+    // ========================================================================
+    // 2단계: 동적 WHERE 조건 빌드
+    // ========================================================================
+    $conditions = [];
+    $params = [];
+
+    // 카테고리 필터
+    if (isset($filters['category'])) {
+        $conditions[] = 'category = ?';
+        $params[] = $filters['category'];
+    }
+
+    // 사용자 ID 필터
+    if (isset($filters['user_id'])) {
+        $conditions[] = 'user_id = ?';
+        $params[] = $filters['user_id'];
+    }
+
+    // 생성일 이후 필터 (Unix timestamp)
+    if (isset($filters['created_after'])) {
+        $conditions[] = 'created_at >= ?';
+        $params[] = $filters['created_after'];
+    }
+
+    // 생성일 이전 필터 (Unix timestamp)
+    if (isset($filters['created_before'])) {
+        $conditions[] = 'created_at <= ?';
+        $params[] = $filters['created_before'];
+    }
+
+    // ========================================================================
+    // 3단계: SQL 쿼리 빌드
+    // ========================================================================
+    $sql = 'SELECT COUNT(*) FROM posts';
+
+    // WHERE 절 추가 (조건이 있는 경우)
+    if (count($conditions) > 0) {
+        $sql .= ' WHERE ' . implode(' AND ', $conditions);
+    }
+
+    // ========================================================================
+    // 4단계: Prepared Statement 준비 및 실행
+    // ========================================================================
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+
+        // fetchColumn()으로 COUNT(*) 결과 가져오기
+        return (int)$stmt->fetchColumn();
+    } catch (PDOException $e) {
+        // 데이터베이스 에러 발생 시 에러 로그 기록 후 0 반환
+        error_log('게시글 개수 조회 실패: ' . $e->getMessage());
+        return 0;
+    }
 }

@@ -198,8 +198,8 @@
         },
         {
             // /lib/(*.php) 를 포함하는 링크
-            "linkPattern": "load_alpine_component\\(['\"]([^'\"\\)]+)",
-            "linkTarget": "/Users/thruthesky/apps/sonub/js/alpine-components/$1.component.js",
+            "linkPattern": "handle_file_change",
+            "linkTarget": "/Users/thruthesky/apps/sonub/js/file-upload.js",
             "languages": [
                 "php"
             ]

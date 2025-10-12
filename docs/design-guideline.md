@@ -145,6 +145,206 @@ include ROOT_DIR . '/etc/boot/foot.php';
 - 다크 모드 기능이나 다크 모드 전용 스타일을 **절대** 구현하지 마세요
 - 모든 디자인 결정은 라이트 모드 외관에 최적화되어야 합니다
 
+### 디자인 핵심 원칙
+
+**🔥🔥🔥 최강력 규칙: Sonub 디자인은 심플하고 단조로우며 현대적이어야 합니다 🔥🔥🔥**
+
+#### 1. 심플하고 단조로운 디자인
+- **✅ 필수**: 절대 화려한 디자인을 하지 마세요
+- **✅ 필수**: 복잡한 구조나 과도한 장식 금지
+- **✅ 필수**: 미니멀한 디자인 추구
+
+#### 2. 현대적이고 단순한 구조
+- **✅ 필수**: 세련되면서도 아주 단순한 구조로 작성
+- **✅ 필수**: 최신 디자인 트렌드를 따르되 복잡도는 최소화
+
+#### 3. Bootstrap 레이아웃 필수 사용
+- **✅ 필수**: 반드시 Bootstrap으로 레이아웃을 작성합니다
+- **✅ 필수**: 레이아웃 관련 유틸리티 클래스는 인라인 `class=''` 속성으로 작성
+- **✅ 필수**: 레이아웃과 관련 없는 Bootstrap 유틸리티 클래스는 별도 CSS 파일로 분리
+- **Bootstrap 레이아웃 유틸리티 클래스 예시**:
+  - 컨테이너: `container`, `container-fluid`
+  - 그리드: `row`, `col`, `col-md-6`, `offset-md-2`
+  - Flexbox: `d-flex`, `flex-column`, `gap-3`, `justify-content-center`, `align-items-center`
+  - 간격: `mb-3`, `mt-4`, `p-2`, `px-3`, `py-4`
+
+#### 4. CSS 파일 분리 규칙
+- **✅ 페이지 파일 (`./page/**/*.php`)**: CSS를 반드시 외부 `.css` 파일로 분리
+  - 파일 위치: `./page/**/*.css` (페이지 파일과 같은 폴더)
+  - 자동 로드: `index.php`에서 자동으로 로드됨
+- **✅ 위젯/함수 파일**: CSS를 `<style>` 태그 내에 작성
+  - 위젯의 독립성 유지
+  - 재사용성 향상
+
+#### 5. Shadow 최소화
+- **✅ 필수**: 가능한 shadow를 추가하지 마세요
+- **✅ 허용**: 꼭 필요한 경우 매우 미세한 shadow만 사용
+  - 예: `box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);`
+
+#### 6. 단순한 색상
+- **✅ 필수**: Bootstrap 기본 색상 변수 사용
+  - `var(--bs-primary)`, `var(--bs-secondary)`, `var(--bs-light)`, `var(--bs-dark)`
+  - `var(--bs-border-color)`, `var(--bs-emphasis-color)`, `var(--bs-body-color)`
+- **❌ 금지**: HEX 색상 코드나 커스텀 색상 최소화
+
+#### 7. 충분한 여백
+- **✅ 필수**: 요소 간 여백을 충분히 주어서 여유 있는 디자인
+- **✅ 필수**: 페이지 가장자리(왼쪽/오른쪽) 여백은 작게
+  - 예: `container-fluid px-2` 또는 `container px-3`
+
+### 디자인 수정 체크리스트
+
+**페이지 파일 (`./page/**/*.php`) 디자인 수정 시**:
+- [ ] Bootstrap 레이아웃 유틸리티 클래스로 레이아웃 작성 (`d-flex`, `gap-3`, `mb-4` 등)
+- [ ] 레이아웃과 관련 없는 스타일은 외부 `.css` 파일로 분리
+- [ ] 심플하고 단조로운 디자인 적용
+- [ ] Shadow 최소화 또는 제거
+- [ ] Bootstrap 기본 색상 변수 사용
+- [ ] 충분한 여백 적용
+- [ ] 페이지 가장자리 여백 최소화 (`px-2`, `px-3`)
+
+**위젯/함수 파일 디자인 수정 시**:
+- [ ] Bootstrap 레이아웃 유틸리티 클래스로 레이아웃 작성
+- [ ] CSS는 `<style>` 태그 내에 작성
+- [ ] 위젯 고유의 CSS 클래스명 사용 (충돌 방지)
+- [ ] 심플하고 단조로운 디자인 적용
+- [ ] Shadow 최소화 또는 제거
+- [ ] Bootstrap 기본 색상 변수 사용
+- [ ] 충분한 여백 적용
+
+### 디자인 예제
+
+**✅ 올바른 예제 - 페이지 파일**:
+
+```php
+<!-- ./page/user/profile.php -->
+<?php
+$user = login();
+?>
+
+<!-- ✅ 올바른 방법: 레이아웃은 Bootstrap 유틸리티 클래스 -->
+<div class="container-fluid px-2 py-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <!-- profile-header 클래스는 profile.css에 정의 -->
+            <div class="profile-header mb-4">
+                <h1><?= $user->name ?></h1>
+                <p><?= $user->bio ?></p>
+            </div>
+
+            <!-- profile-content 클래스는 profile.css에 정의 -->
+            <div class="profile-content">
+                <p>콘텐츠...</p>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+**외부 CSS 파일 (`./page/user/profile.css`)**:
+
+```css
+/* ✅ 올바른 방법: 심플하고 단조로운 디자인 */
+
+/* 프로필 헤더 - 미니멀한 스타일 */
+.profile-header {
+    background-color: var(--bs-light);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 8px;
+    padding: 2rem;
+    /* shadow 없음 - 심플한 디자인 */
+}
+
+.profile-header h1 {
+    color: var(--bs-emphasis-color);
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.profile-header p {
+    color: var(--bs-body-color);
+    margin: 0;
+}
+
+/* 프로필 콘텐츠 - 단순한 구조 */
+.profile-content {
+    background-color: white;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 8px;
+    padding: 2rem;
+}
+
+.profile-content p {
+    color: var(--bs-body-color);
+    line-height: 1.6;
+}
+```
+
+**✅ 올바른 예제 - 위젯 파일**:
+
+```php
+<!-- ./widgets/post/post-card.php -->
+<div class="d-flex flex-column gap-3 post-card-widget mb-3">
+    <h3><?= $post->title ?></h3>
+    <p><?= $post->content ?></p>
+</div>
+
+<style>
+/* ✅ 올바른 방법: 위젯 CSS는 <style> 태그 내 작성 */
+
+/* 심플하고 단조로운 디자인 */
+.post-card-widget {
+    background-color: white;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    /* shadow 없음 - 미니멀한 디자인 */
+}
+
+.post-card-widget h3 {
+    font-size: 1.25rem;
+    color: var(--bs-emphasis-color);
+    margin-bottom: 0.75rem;
+}
+
+.post-card-widget p {
+    color: var(--bs-body-color);
+    line-height: 1.6;
+    margin: 0;
+}
+</style>
+```
+
+**❌ 잘못된 예제 - 화려하고 복잡한 디자인 (절대 금지)**:
+
+```css
+/* ❌ 절대 금지: 화려하고 복잡한 디자인 */
+.profile-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+    padding: 3rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+    animation: rotate 10s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+```
+
 ## 색상 가이드라인
 
 ### Bootstrap 색상 사용

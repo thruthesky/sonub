@@ -7,6 +7,7 @@ class PostModel
     public string $category;
     public string $title;
     public string $content;
+    public array $files;
     public int $created_at;
     public int $updated_at;
 
@@ -17,6 +18,7 @@ class PostModel
         $this->category = $data['category'] ?? '';
         $this->title = $data['title'] ?? '';
         $this->content = $data['content'] ?? '';
+        $this->files = explode(',', $data['files'] ?? '');
         $this->created_at = $data['created_at'] ?? 0;
         $this->updated_at = $data['updated_at'] ?? 0;
     }
@@ -35,6 +37,7 @@ class PostModel
             'category' => $this->category,
             'title' => $this->title,
             'content' => $this->content,
+            'files' => $this->files,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

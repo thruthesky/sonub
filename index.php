@@ -33,19 +33,19 @@ if (file_exists($module_path)) {
 
 
     <!-- 기본 파비콘 -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/res/favicons/favicon-300.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/res/favicons/favicon-300.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/res/img/logo/small.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/res/img/logo/small.png">
 
     <!-- 애플 터치 아이콘 -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/res/favicons/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/res/img/logo/medium.png">
 
     <!-- 안드로이드/크롬 -->
-    <link rel="icon" type="image/png" sizes="192x192" href="/res/favicons/android-chrome-300.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="/res/favicons/android-chrome-300.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/res/img/logo/medium.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/res/img/logo/medium.png">
 
 
     <script>
-        /** DOMContentLoaded 이벤트가 발생했을 때 실행할 함수 등록. jQuery 가 defer 로드되므로, 이 코드를 활용해서 jQuery 를 쓰면 된다. */
+        /** DOMContentLoaded 이벤트가 발생했을 때 실행할 함수 등록. */
         function ready(fn) {
             document.readyState !== "loading" ? fn() :
                 document.addEventListener("DOMContentLoaded", fn);
@@ -73,6 +73,11 @@ if (file_exists($module_path)) {
     </script>
 
 
+    <?php if (is_dev_computer()) { ?>
+        <script src="/js/dev.js"></script>
+    <?php } ?>
+
+
     <script>
         const appConfig = <?php echo json_encode(config(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
     </script>
@@ -88,9 +93,9 @@ if (file_exists($module_path)) {
     <header class="top-bar bg-white border-bottom">
         <nav class="navbar navbar-expand-lg navbar-light">
             <div class="container-fluid">
-                <!-- 로고: Bootstrap Icons bi-chat-heart-fill -->
+                <!-- 로고: Sonub Logo Image -->
                 <a class="navbar-brand d-flex align-items-center" href="/">
-                    <i class="bi bi-chat-heart-fill text-dark fs-4 me-2"></i>
+                    <img src="/res/img/logo/small.png" alt="Sonub Logo" height="24" class="me-2">
                     <span class="text-dark d-none d-md-inline">Sonub</span>
                 </a>
 

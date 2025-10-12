@@ -18,7 +18,7 @@ inject_post_list_create_language();
         <nav class="d-flex">
             <label v-show="!expanded" class="flex-shrink-1 pointer">
                 <i class="fa-solid fa-camera" style="font-size: 2em;"></i>
-                <input type="file" multiple style="display: none;" onchange="handle_file_change(event, { id: 'display-uploaded-files' })">
+                <input type="file" multiple style="display: none;" onchange="handle_file_change(event, { id: 'files', on_uploaded: (data) => { console.log('파일 업로드 완료:', data); if (window.postListCreateVm) { window.postListCreateVm.expanded = true; } } })">
             </label>
             <textarea
                 ref="textarea"
@@ -37,7 +37,7 @@ inject_post_list_create_language();
             <div class="d-flex justify-content-between align-items-center my-2">
                 <label class="flex-shrink-1 pointer">
                     <i class="fa-solid fa-camera" style="font-size: 2em;"></i>
-                    <input type="file" multiple style="display: none;" onchange="handle_file_change(event, { id: 'display-uploaded-files' })">
+                    <input type="file" multiple style="display: none;" onchange="handle_file_change(event, { id: 'files', on_uploaded: (data) => { console.log('파일 업로드 완료:', data); if (window.postListCreateVm) { window.postListCreateVm.expanded = true; } } })">
                 </label>
 
                 <button type="submit" class="btn btn-primary"><?= t()->작성 ?></button>
@@ -45,7 +45,7 @@ inject_post_list_create_language();
         </data>
 
         <section>
-            <div id="display-uploaded-files"></div>
+            <div id="files"></div>
         </section>
     </form>
 </section>
@@ -89,9 +89,7 @@ inject_post_list_create_language();
                  * textarea 확장 함수
                  */
                 expand() {
-                    console.log('expand() 호출됨, 현재 expanded:', this.expanded);
                     this.expanded = true;
-                    console.log('expand() 실행 후, expanded:', this.expanded);
                 },
                 /**
                  * 게시물 작성 폼 제출 처리
@@ -111,10 +109,19 @@ inject_post_list_create_language();
                     }
 
                     // API 호출하여 게시물 작성
-                    const response = await func('create_post', {
+                    const post = await func('create_post', {
+                        category: '<?= http_param('category') ?>',
                         content: content,
+                        files: document.querySelector('[name="files"]').value,
                         alertOnError: true,
                     });
+
+                    console.log('게시물 작성 응답:', post);
+
+                    if (post && post.id) {
+                        // 작성 성공 시, 페이지 새로고침
+                        window.location.reload();
+                    }
                 }
             },
             mounted() {
@@ -124,6 +131,9 @@ inject_post_list_create_language();
 
         const vm = app.mount('#post-list-create');
         console.log('Vue 인스턴스 마운트됨:', vm);
+
+        // Vue 인스턴스를 전역 변수로 노출 (파일 업로드 콜백에서 접근하기 위함)
+        window.postListCreateVm = vm;
     });
 </script>
 
