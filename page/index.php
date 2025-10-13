@@ -4,7 +4,7 @@ inject_index_language();
 <h1 class="display-4"><?php echo t()->{'Welcome to Sonub'}; ?></h1>
 <p class="lead"><?php echo t()->{'Sonub application is running!'}; ?></p>
 
-<h2>TODO:</h2>
+<h2 class="todo">TODO:</h2>
 <ul>
     <li>닉네임이 unique 이지만, nullable 하게 할 것</li>
     <li>페이스북 형태의 소셜 글 목록, 무제한 스크롤링 기능 구현</li>
