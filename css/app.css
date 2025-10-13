@@ -26,3 +26,28 @@
 .pointer {
   cursor: pointer; /* 커서를 포인터로 변경 */
 }
+
+/* 앱 버전 표시 스타일 - 심플하고 세련된 디자인 */
+.app-version {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--bs-light);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 6px;
+}
+
+.app-version .version-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--bs-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.app-version .version-number {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--bs-body-color);
+}
