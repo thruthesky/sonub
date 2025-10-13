@@ -13,6 +13,7 @@
     //     }
     // });
 
+
 })();
 
 
@@ -252,4 +253,51 @@ function get_axios_error_message(err, options = {}) {
     // 상태 텍스트와 에러 메시지를 포함한 최종 문자열 반환
     return `${statusText}: ${fullMessage}`;
 }
+
+
+// AppStore (Vue 3 전역 상태 관리)
+ready(() => {
+    // Vue 전역 스토어 (모든 앱이 공유)
+
+    const { reactive, computed } = Vue;
+
+    // 1️⃣ 상태 (state)
+    const state = reactive({
+        count: 0,
+        user: window.__HYDRATE__?.user ?? null  // index.php에서 주입된 로그인 사용자 정보
+    });
+
+    // 2️⃣ 계산값 (getters)
+    const getters = {
+        doubled: computed(() => state.count * 2)
+    };
+
+    // 3️⃣ 액션 (actions)
+    const actions = {
+        inc() { state.count++; },
+        setUser(u) { state.user = u; }
+    };
+
+    // 4️⃣ 전역 노출 (모든 Vue 앱이 동일한 인스턴스를 사용)
+    window.AppStore = { state, getters, actions };
+});
+
+// 사용자 프로필 아이콘 컴포넌트
+ready(() => {
+    Vue.createApp({
+        data() {
+            return {
+                state: window.AppStore.state
+            };
+        },
+        template: `
+            <img v-if="state.user?.photo_url"
+                 :src="state.user.photo_url"
+                 class="rounded-circle"
+                 style="width: 32px; height: 32px; object-fit: cover;"
+                 alt="프로필 사진">
+            <i v-else class="bi bi-person-circle fs-5"></i>
+        `,
+    }).mount('.user-profile-icon');
+});
 

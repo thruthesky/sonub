@@ -535,7 +535,286 @@ PHP MPA 방식으로 동작하므로 다음과 같은 특징이 있습니다:
 - **자동 리셋**: 페이지 이동 시 모든 Vue 인스턴스와 이벤트 리스너가 자동으로 해제됩니다
 - **이벤트 리스너 정리 불필요**: SPA와 달리 `beforeUnmount`나 `unmounted`에서 이벤트 리스너를 수동으로 해제할 필요가 없습니다
 - **메모리 누수 방지**: 페이지 전환 시 브라우저가 자동으로 메모리를 정리합니다
-- **단순한 상태 관리**: 각 페이지가 독립적이므로 복잡한 전역 상태 관리가 필요 없습니다
+- **단순한 상태 관리**: 각 페이지가 독립적이지만, 필요 시 전역 상태 관리(AppStore)를 사용할 수 있습니다
+
+### Vue.js 전역 상태 관리 - AppStore
+
+**🔥🔥🔥 최강력 규칙: 페이지 간 공유가 필요한 상태는 AppStore를 사용해야 합니다 🔥🔥🔥**
+
+Sonub는 Vue.js 3의 `reactive`를 활용한 전역 상태 관리 시스템(AppStore)을 제공합니다.
+
+#### AppStore란?
+
+- **싱글톤 패턴**: 애플리케이션 전체에서 하나의 상태 저장소만 존재
+- **전역 접근**: 모든 페이지, 모든 Vue 인스턴스에서 동일한 상태에 접근 가능
+- **반응형**: Vue 3의 `reactive`로 구현되어 상태 변경 시 자동으로 UI 업데이트
+- **간단한 구조**: Vuex나 Pinia 없이 순수 Vue 3 Composition API만 사용
+
+#### AppStore 위치 및 초기화
+
+**파일 위치**: `/js/app.js`
+
+```javascript
+// AppStore (Vue 3 전역 상태 관리)
+ready(() => {
+    // Vue 전역 스토어 (모든 앱이 공유)
+    const { reactive, computed } = Vue;
+
+    // 1️⃣ 상태 (state)
+    const state = reactive({
+        count: 0,
+        user: window.__HYDRATE__?.user ?? null  // index.php에서 주입된 로그인 사용자 정보
+    });
+
+    // 2️⃣ 계산값 (getters)
+    const getters = {
+        doubled: computed(() => state.count * 2)
+    };
+
+    // 3️⃣ 액션 (actions)
+    const actions = {
+        inc() { state.count++; },
+        setUser(u) { state.user = u; }
+    };
+
+    // 4️⃣ 전역 노출 (모든 Vue 앱이 동일한 인스턴스를 사용)
+    window.AppStore = { state, getters, actions };
+});
+```
+
+#### 서버에서 클라이언트로 데이터 전달 (Hydration)
+
+**Hydration이란?**
+- 서버(PHP)에서 생성된 데이터를 클라이언트(JavaScript)로 전달하는 기법
+- `window.__HYDRATE__` 객체를 통해 안전하게 데이터 전달
+
+**index.php에서 데이터 주입:**
+
+```php
+<!-- index.php 상단 - __HYDRATE__ 객체 초기화 -->
+<head>
+    <script>
+        // 서버에서 클라이언트로 데이터 전달용 객체 (Hydration)
+        window.__HYDRATE__ = {};
+    </script>
+</head>
+
+<!-- index.php 하단 - 사용자 정보 주입 -->
+<body>
+    <!-- 페이지 콘텐츠 -->
+
+    <script>
+        // PHP에서 로그인 사용자 정보를 JavaScript로 전달
+        __HYDRATE__.user = <?php echo json_encode(login()->data(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+    </script>
+</body>
+```
+
+**데이터 흐름:**
+```
+1. PHP login()->data() 실행
+2. JSON으로 변환하여 __HYDRATE__.user에 할당
+3. AppStore 초기화 시 __HYDRATE__.user 읽어서 state.user에 저장
+4. 모든 Vue 앱에서 AppStore.state.user로 접근 가능
+```
+
+#### AppStore 사용 방법
+
+**1. Vue 컴포넌트에서 사용:**
+
+```javascript
+// 페이지별 JavaScript 파일에서
+ready(() => {
+    Vue.createApp({
+        data() {
+            return {
+                // AppStore의 상태를 직접 참조
+                state: window.AppStore.state
+            };
+        },
+        methods: {
+            updateCount() {
+                // 상태 직접 업데이트 (모든 컴포넌트에서 동기화됨)
+                this.state.count++;
+            }
+        },
+        template: `
+            <div>
+                <p>카운트: {{ state.count }}</p>
+                <p>사용자: {{ state.user?.display_name }}</p>
+                <button @click="updateCount">증가</button>
+            </div>
+        `
+    }).mount('#app');
+});
+```
+
+**2. 전역 컴포넌트 예제 - 사용자 프로필 아이콘:**
+
+```javascript
+// /js/app.js - 사용자 프로필 아이콘 컴포넌트
+ready(() => {
+    Vue.createApp({
+        data() {
+            return {
+                state: window.AppStore.state
+            };
+        },
+        template: `
+            <img v-if="state.user?.photo_url"
+                 :src="state.user.photo_url"
+                 class="rounded-circle"
+                 style="width: 32px; height: 32px; object-fit: cover;"
+                 alt="프로필 사진">
+            <i v-else class="bi bi-person-circle fs-5"></i>
+        `,
+    }).mount('.user-profile-icon');
+});
+```
+
+```html
+<!-- index.php - 헤더에서 사용 -->
+<header>
+    <nav>
+        <a href="/user/profile">
+            <i class="user-profile-icon"></i>
+        </a>
+    </nav>
+</header>
+```
+
+**3. 상태 업데이트 예제 - 프로필 사진 변경:**
+
+```javascript
+// page/user/profile-edit.js - 프로필 수정 페이지
+ready(() => {
+    Vue.createApp({
+        data() {
+            return {
+                uploading: false
+            };
+        },
+        methods: {
+            async uploadPhoto(event) {
+                this.uploading = true;
+
+                try {
+                    // 파일 업로드
+                    const file = event.target.files[0];
+                    const formData = new FormData();
+                    formData.append('photo', file);
+
+                    // API 호출
+                    const response = await axios.post('/api.php?func=upload_profile_photo', formData);
+
+                    if (response.data.error_code) {
+                        alert(response.data.error_message);
+                        return;
+                    }
+
+                    // ✅ AppStore 상태 직접 업데이트
+                    // 이렇게 하면 헤더의 프로필 아이콘이 즉시 업데이트됨!
+                    AppStore.state.user.photo_url = response.data.url;
+
+                    alert('프로필 사진이 변경되었습니다.');
+                } catch (error) {
+                    console.error('업로드 실패:', error);
+                    alert('업로드에 실패했습니다.');
+                } finally {
+                    this.uploading = false;
+                }
+            }
+        },
+        template: `
+            <div>
+                <input type="file" @change="uploadPhoto" accept="image/*">
+                <p v-if="uploading">업로드 중...</p>
+            </div>
+        `
+    }).mount('#profile-edit-app');
+});
+```
+
+**작동 방식:**
+1. 사용자가 프로필 수정 페이지에서 사진 업로드
+2. API 호출하여 서버에 사진 저장
+3. `AppStore.state.user.photo_url = response.data.url;` 실행
+4. Vue의 `reactive` 덕분에 헤더의 `.user-profile-icon` 컴포넌트가 즉시 업데이트됨
+5. 페이지 새로고침 없이 프로필 사진이 변경됨
+
+#### 상태 업데이트 패턴
+
+**✅ 올바른 방법 - 직접 업데이트:**
+
+```javascript
+// 상태 직접 업데이트 (권장)
+AppStore.state.user.photo_url = 'https://example.com/photo.jpg';
+AppStore.state.user.display_name = '홍길동';
+AppStore.state.count++;
+
+// 객체 전체 교체
+AppStore.state.user = {
+    id: 123,
+    display_name: '홍길동',
+    photo_url: 'https://example.com/photo.jpg'
+};
+```
+
+**✅ 올바른 방법 - 액션 사용:**
+
+```javascript
+// AppStore의 액션 사용
+AppStore.actions.setUser({
+    id: 123,
+    display_name: '홍길동',
+    photo_url: 'https://example.com/photo.jpg'
+});
+
+AppStore.actions.inc();  // count 증가
+```
+
+**❌ 잘못된 방법:**
+
+```javascript
+// ❌ 금지: state를 재할당하려고 시도
+AppStore.state = reactive({ user: null });  // 반응성 상실!
+
+// ❌ 금지: AppStore 자체를 교체
+window.AppStore = { state: {}, getters: {}, actions: {} };  // 다른 컴포넌트와 연결 끊김!
+```
+
+#### AppStore 활용 시나리오
+
+**1. 로그인 사용자 정보 공유:**
+- 헤더에 사용자 프로필 표시
+- 사이드바에 사용자 이름 표시
+- 댓글 작성 시 사용자 정보 사용
+
+**2. 실시간 업데이트:**
+- 프로필 수정 후 즉시 UI 반영
+- 알림 카운트 업데이트
+- 장바구니 아이템 개수 표시
+
+**3. 페이지 간 데이터 전달:**
+- 검색 필터 상태 유지
+- 폼 입력 값 임시 저장
+- 페이지네이션 상태 유지
+
+#### 주의사항
+
+- **✅ 필수**: 전역적으로 공유해야 하는 상태만 AppStore에 저장
+- **✅ 필수**: 페이지별 로컬 상태는 각 Vue 인스턴스의 `data()`에 저장
+- **✅ 권장**: 상태 업데이트 시 `AppStore.state.xxx = value` 직접 할당 사용
+- **❌ 금지**: AppStore 자체를 재할당하거나 교체하지 마세요
+- **❌ 금지**: 불필요한 데이터를 AppStore에 저장하지 마세요
+
+#### 장점
+
+1. **간단한 구조**: Vuex나 Pinia 없이 순수 Vue 3만 사용
+2. **타입스크립트 불필요**: JavaScript만으로 충분히 안전하게 사용 가능
+3. **즉시 동기화**: 상태 변경 시 모든 컴포넌트가 즉시 업데이트
+4. **쉬운 디버깅**: 브라우저 콘솔에서 `AppStore.state` 직접 확인 가능
+5. **MPA와 완벽 호환**: 페이지 이동 시 자동으로 정리되고 재초기화됨
 
 ### 자동 리소스 로딩
 

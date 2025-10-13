@@ -147,6 +147,9 @@
 
                 // 삭제 버튼 표시
                 document.querySelector('.profile-photo-delete-button').classList.remove('d-none');
+
+
+                AppStore.state.user.photo_url = json.url;
             }).catch(error => {
                 console.error('프로필 사진 업데이트 실패:', error);
                 alert('프로필 사진 업데이트에 실패했습니다: ' + error.message);

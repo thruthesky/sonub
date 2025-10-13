@@ -79,7 +79,11 @@ if (file_exists($module_path)) {
 
 
     <script>
+        // 애플리케이션 전역 설정
         const appConfig = <?php echo json_encode(config(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+
+        // 서버에서 클라이언트로 데이터 전달용 객체 (Hydration)
+        window.__HYDRATE__ = {};
     </script>
 
 
@@ -119,7 +123,7 @@ if (file_exists($module_path)) {
                     <!-- 프로필 아이콘 -->
                     <div class="me-3">
                         <a href="<?= href()->user->profile ?>" class="text-dark">
-                            <i class="bi bi-person-circle fs-5"></i>
+                            <i class="user-profile-icon"></i>
                         </a>
                     </div>
 
@@ -280,6 +284,10 @@ if (file_exists($module_path)) {
         }
     }
     ?>
+
+    <script>
+        __HYDRATE__.user = <?php echo json_encode(login()->data(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+    </script>
 </body>
 
 </html>
