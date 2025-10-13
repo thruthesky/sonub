@@ -4,10 +4,11 @@ inject_index_language();
 <h1 class="display-4"><?php echo t()->{'Welcome to Sonub'}; ?></h1>
 <p class="lead"><?php echo t()->{'Sonub application is running!'}; ?></p>
 
-<!-- Browser Language Display -->
-<div class="alert alert-secondary" role="alert">
-    <strong><?php echo t()->{'Browser Language'}; ?>:</strong> <?php echo get_browser_language(); ?>
-</div>
+<h2>TODO:</h2>
+<ul>
+    <li>닉네임이 unique 이지만, nullable 하게 할 것</li>
+    <li>페이스북 형태의 소셜 글 목록, 무제한 스크롤링 기능 구현</li>
+</ul>
 
 <h1 class="welcome-text"><?= t()->환영합니다 ?>, <?= login()->display_name ?? t()->손님 ?></h1>
 
