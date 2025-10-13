@@ -1,4 +1,4 @@
-/* Welcome 텍스트 스타일 */
+/* Welcome 텍스트 스타일 - 빨간색 적용 */
 .welcome-text {
-    color: var(--bs-danger);
+    color: var(--bs-danger) !important;
 }
