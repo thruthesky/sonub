@@ -9,7 +9,7 @@ inject_index_language();
     <strong><?php echo t()->{'Browser Language'}; ?>:</strong> <?php echo get_browser_language(); ?>
 </div>
 
-<h1>Welcome,</h1>
+<h1 class="welcome-text">Welcome,</h1>
 
 <p>
     Nickname: <?php echo login()->display_name ?? 'Guest'; ?><br>

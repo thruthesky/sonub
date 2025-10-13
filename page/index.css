@@ -1,0 +1,4 @@
+/* Welcome 텍스트 스타일 */
+.welcome-text {
+    color: var(--bs-danger);
+}
