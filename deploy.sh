@@ -65,5 +65,4 @@ echo "🚀 SSH를 통한 실제 배포 시작..."
 ssh sonub@68.183.185.185 'cd sonub && git pull'
 
 echo "✅ 배포 완료!"
-open 'https://sonub.com'
 
