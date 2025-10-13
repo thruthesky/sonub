@@ -305,7 +305,7 @@ if (file_exists($module_path)) {
     ?>
 
     <script>
-        __HYDRATE__.user = <?php echo json_encode(login()->data(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+        __HYDRATE__.user = <?php echo login() ? json_encode(login()->data(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : 'null'; ?>;
     </script>
 </body>
 

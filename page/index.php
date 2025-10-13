@@ -1,25 +1,166 @@
 <?php
+$category = 'my-wall';
+$per_page = 10;
+$page = 1;
 inject_index_language();
 ?>
-<h1 class="display-4"><?php echo t()->{'Welcome to Sonub'}; ?></h1>
-<p class="lead"><?php echo t()->{'Sonub application is running!'}; ?></p>
 
-<h2 class="todo">TODO:</h2>
-<ul>
-    <li>닉네임이 unique 이지만, nullable 하게 할 것</li>
-    <li>페이스북 형태의 소셜 글 목록, 무제한 스크롤링 기능 구현</li>
-</ul>
-
-<h1 class="welcome-text"><?= t()->환영합니다 ?>, <?= login()->display_name ?? t()->손님 ?></h1>
-
-
-<div class="card mt-4">
-    <div class="card-body">
-        <h5 class="card-title"><?php echo t()->{'Getting Started'}; ?></h5>
-        <p class="card-text"><?php echo t()->{'Start building your application with our powerful features.'}; ?></p>
-        <a href="#" class="btn btn-primary"><?php echo t()->{'Learn More'}; ?></a>
-    </div>
+<div>
+    <!-- 게시글 작성 위젯 -->
+    <?php
+    $widget_category = $category;
+    include WIDGET_DIR . '/post/post-list-create.php';
+    ?>
 </div>
+
+<?php
+$offset = ($page - 1) * $per_page;
+$postList = list_posts([
+    'category' => $category,
+    'user_id' => login() ? login()->id : null,
+    'limit' => $per_page,
+    'offset' => $offset,
+    'page' => $page
+]);
+
+
+
+?>
+
+@todo: 여기서 부터, .... 필고에서 쓰는 infinte scroll 을 가져와서, 여기에서 적용해서, 무한 페이지 스크롤 로딩을 할 것.
+
+<div id="my-wall" class="container mt-4">
+    <!-- Vue 앱이 여기에 렌더링됩니다 -->
+</div>
+
+
+
+<script>
+    ready(() => {
+        // Vue 앱 초기화
+        const app = Vue.createApp({
+            template: `
+                <div>
+                    <!-- 게시물이 없을 때 -->
+                    <div v-if="postList.isEmpty" class="text-center py-5">
+                        <p class="text-muted">아직 게시물이 없습니다.</p>
+                    </div>
+
+                    <!-- 게시물 목록 -->
+                    <div v-else>
+                        <article v-for="post in postList.posts" :key="post.id" class="post-card card mb-3">
+                            <div class="card-body">
+                                <!-- 게시물 내용 -->
+                                <div v-if="post.content" class="post-content mb-3" v-html="formatContent(post.content)"></div>
+
+                                <!-- 게시물 사진들 -->
+                                <div v-if="hasPhotos(post.files)" class="post-photos mb-3">
+                                    <div class="row g-2">
+                                        <div v-for="(fileUrl, index) in getValidPhotos(post.files)" :key="index"
+                                             :class="getPhotoColumnClass(getValidPhotos(post.files).length)">
+                                            <img :src="fileUrl"
+                                                 :alt="'Photo ' + (index + 1)"
+                                                 class="img-fluid rounded"
+                                                 style="width: 100%; height: 200px; object-fit: cover; cursor: pointer;"
+                                                 @click="openPhotoModal(fileUrl)">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 게시물 메타 정보 -->
+                                <div class="post-meta text-muted small mt-2">
+                                    <span>작성자: {{ post.user_display_name || '익명' }}</span>
+                                    <span class="ms-3">작성일: {{ formatDate(post.created_at) }}</span>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            `,
+            data() {
+                return {
+                    // 서버에서 hydrate된 게시물 목록
+                    postList: <?= json_encode($postList, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
+                };
+            },
+            methods: {
+                /**
+                 * 게시물 새로고침
+                 */
+                refreshPosts() {
+                    window.location.reload();
+                },
+                /**
+                 * 게시물 내용 포맷팅 (줄바꿈 처리)
+                 */
+                formatContent(content) {
+                    if (!content) return '';
+                    return content.replace(/\n/g, '<br>');
+                },
+                /**
+                 * 날짜 포맷팅
+                 */
+                formatDate(dateString) {
+                    if (!dateString) return '';
+                    const date = new Date(dateString);
+                    return date.toLocaleString('ko-KR');
+                },
+                /**
+                 * 사진 개수에 따른 Bootstrap column 클래스 반환
+                 * @param {number} photoCount - 사진 개수
+                 * @returns {string} Bootstrap column 클래스
+                 */
+                getPhotoColumnClass(photoCount) {
+                    if (photoCount === 1) return 'col-12';
+                    if (photoCount === 2) return 'col-6';
+                    if (photoCount === 3) return 'col-4';
+                    return 'col-6 col-md-4 col-lg-3'; // 4개 이상
+                },
+                /**
+                 * 사진 모달 열기 (확대 보기)
+                 * @param {string} photoUrl - 사진 URL
+                 */
+                openPhotoModal(photoUrl) {
+                    // Bootstrap 모달이나 라이트박스를 사용할 수 있습니다
+                    // 간단하게 새 창으로 열기
+                    window.open(photoUrl, '_blank');
+                },
+                /**
+                 * 유효한 사진이 있는지 확인
+                 * @param {Array} files - 파일 URL 배열
+                 * @returns {boolean} 유효한 사진이 하나라도 있으면 true
+                 */
+                hasPhotos(files) {
+                    if (!files || !Array.isArray(files) || files.length === 0) {
+                        return false;
+                    }
+                    return files.some(url => url && url.trim() !== '');
+                },
+                /**
+                 * 유효한 사진 URL만 필터링
+                 * @param {Array} files - 파일 URL 배열
+                 * @returns {Array} 빈 문자열이 제거된 URL 배열
+                 */
+                getValidPhotos(files) {
+                    if (!files || !Array.isArray(files)) {
+                        return [];
+                    }
+                    return files.filter(url => url && url.trim() !== '');
+                }
+            },
+            mounted() {
+                console.log('Vue 앱 마운트 완료, 게시물 목록:', this.postList);
+            }
+        });
+
+        const vm = app.mount('#my-wall');
+        console.log('Vue 인스턴스 마운트됨:', vm);
+
+        // Vue 인스턴스를 전역 변수로 노출
+        window.myWallVm = vm;
+    });
+</script>
+
 
 <?php
 

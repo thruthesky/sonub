@@ -108,11 +108,15 @@ inject_post_list_create_language();
                         return;
                     }
 
+                    // 파일 업로드된 파일들의 URL 가져오기 (파일 업로드 위젯에서 관리)
+                    const filesInput = document.querySelector('[name="files"]');
+                    const filesValue = filesInput ? filesInput.value : '';
+
                     // API 호출하여 게시물 작성
                     const post = await func('create_post', {
-                        category: '<?= http_param('category') ?>',
+                        category: '<?= http_param('category') ?? $widget_category ?>',
                         content: content,
-                        files: document.querySelector('[name="files"]').value,
+                        files: filesValue,
                         alertOnError: true,
                     });
 
