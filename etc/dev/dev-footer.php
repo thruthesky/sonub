@@ -1,12 +1,16 @@
 <!-- 개발자 빠른 로그인 패널 - 드롭다운 형태 -->
 <div class="fixed-bottom" style="right: 20px; left: auto; bottom: 20px; width: auto;">
     <div class="dropdown dropup">
-        <button class="btn btn-primary rounded-circle shadow-lg" type="button" id="devLoginDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="width: 50px; height: 50px;">
-            <i class="fa-solid fa-user-shield"></i>
+        <button class="btn btn-primary rounded-circle shadow-lg d-flex align-items-center justify-content-center" type="button" id="devLoginDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="width: 36px; height: 36px; padding: 0;">
+            <i class="fa-solid fa-user-shield" style="font-size: 0.875rem;"></i>
         </button>
         <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="devLoginDropdown">
-            <li><h6 class="dropdown-header"><i class="fa-solid fa-code"></i> Dev Login</h6></li>
-            <li><hr class="dropdown-divider"></li>
+            <li>
+                <h6 class="dropdown-header"><i class="fa-solid fa-code"></i> Dev Login</h6>
+            </li>
+            <li>
+                <hr class="dropdown-divider">
+            </li>
             <li><a class="dropdown-item" href="#" onclick="login_as('apple'); return false;"><i class="fa-solid fa-a text-primary"></i> Apple</a></li>
             <li><a class="dropdown-item" href="#" onclick="login_as('banana'); return false;"><i class="fa-solid fa-b text-success"></i> Banana</a></li>
             <li><a class="dropdown-item" href="#" onclick="login_as('cherry'); return false;"><i class="fa-solid fa-c text-danger"></i> Cherry</a></li>

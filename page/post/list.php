@@ -26,7 +26,6 @@ load_deferred_js('infinite-scroll');
 <style>
     #post-list-container {
         height: calc(100vh - 200px);
-        overflow-y: auto;
     }
 </style>
 
@@ -50,7 +49,7 @@ load_deferred_js('infinite-scroll');
 <script>
     ready(() => {
         // InfiniteScroll 초기화
-        const scrollController = InfiniteScroll.init('#post-list-container', {
+        const scrollController = InfiniteScroll.init('body', {
             onScrolledToBottom: () => {
                 console.log('하단 도달: 더 많은 데이터 로드');
                 if (window.postListVm) {
