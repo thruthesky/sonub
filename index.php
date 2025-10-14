@@ -239,9 +239,6 @@ if (file_exists($module_path)) {
                     <div class="mb-2">
                         <?php include ROOT_DIR . '/widgets/language/language-selector.php'; ?>
 
-                        <?php if (is_dev_computer()) {
-                            include ROOT_DIR . '/etc/dev/dev-footer.php';
-                        } ?>
 
                     </div>
                 </div>
@@ -277,6 +274,10 @@ if (file_exists($module_path)) {
 
 
 
+
+    <?php if (is_dev_computer()) {
+        include ROOT_DIR . '/etc/dev/dev-footer.php';
+    } ?>
 
 
     <?php include ROOT_DIR . '/etc/firebase/firebase-setup.php'; ?>
