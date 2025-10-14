@@ -851,13 +851,102 @@ lib/
 
 `func()` 함수는 `/js/app.js`에 정의된 API 호출 헬퍼 함수로, 모든 페이지에서 즉시 사용 가능합니다.
 
+**🔥🔥🔥 최강력 핵심 개념: func() 함수는 PHP 함수를 직접 호출합니다 🔥🔥🔥**
+
+func() 함수는 단순한 API 호출 함수가 아니라, **JavaScript에서 PHP 함수를 직접 호출하는 것과 동일**하게 작동합니다.
+
+**핵심 원리:**
+
+```javascript
+// JavaScript 코드
+const result = await func('list_posts', {
+    category: 'discussion',
+    limit: 10
+});
+
+// ↓ 실제로는 다음 PHP 함수가 실행됩니다
+// PHP 코드
+function list_posts($params) {
+    $category = $params['category'];  // 'discussion'
+    $limit = $params['limit'];        // 10
+
+    // ... 게시글 목록 조회 로직 ...
+
+    return [
+        'posts' => $posts,
+        'total' => $total
+    ];
+}
+
+// ↓ PHP 함수의 리턴값이 JavaScript로 그대로 전달됩니다
+// JavaScript에서 받은 result
+{
+    func: 'list_posts',  // API에서 자동 추가
+    posts: [...],
+    total: 100
+}
+```
+
+**중요 규칙:**
+
+1. **입력값 일치**: JavaScript에서 전달하는 파라미터는 PHP 함수가 받는 `$params` 배열의 키/값과 정확히 일치해야 합니다
+2. **출력값 확인**: PHP 함수가 리턴하는 배열/객체 구조를 미리 확인하고 JavaScript에서 올바르게 사용해야 합니다
+3. **PHP 함수 조회 필수**: func() 함수 사용 전 반드시 해당 PHP 함수의 정의를 찾아서 읽어야 합니다
+4. **타입 주의**: PHP와 JavaScript 간 타입 변환(숫자, 문자열, null 등)에 유의해야 합니다
+
+**예제: PHP 함수 정의 확인 → JavaScript 호출**
+
+```php
+// 📁 lib/post/post.functions.php
+/**
+ * 게시글 목록 조회
+ * @param array $params - 파라미터 배열
+ *   - string category: 카테고리 (선택)
+ *   - int limit: 한 페이지당 개수 (기본값: 20)
+ *   - int page: 페이지 번호 (기본값: 1)
+ * @return array - 게시글 목록 및 메타 정보
+ *   - array posts: PostModel 객체 배열
+ *   - int total: 전체 게시글 수
+ *   - int current_page: 현재 페이지
+ */
+function list_posts($params) {
+    $category = http_params('category');
+    $limit = http_params('limit') ?? 20;
+    $page = http_params('page') ?? 1;
+
+    // ... DB 조회 로직 ...
+
+    return [
+        'posts' => $posts,
+        'total' => $total,
+        'current_page' => $page
+    ];
+}
+```
+
+```javascript
+// JavaScript: PHP 함수 정의를 확인한 후 호출
+const result = await func('list_posts', {
+    category: 'discussion',  // PHP의 http_params('category')로 전달됨
+    limit: 10,               // PHP의 http_params('limit')로 전달됨
+    page: 1                  // PHP의 http_params('page')로 전달됨
+});
+
+// PHP 함수의 리턴값과 동일한 구조
+console.log(result.posts);        // PostModel 배열
+console.log(result.total);        // 전체 개수
+console.log(result.current_page); // 현재 페이지
+```
+
 **왜 func()를 사용해야 하나요?**
 
+- ✅ **PHP 함수 직접 호출**: JavaScript에서 PHP 함수를 마치 JavaScript 함수처럼 호출 가능
 - ✅ **자동 에러 처리**: 에러 발생 시 자동으로 사용자에게 알림 (옵션)
 - ✅ **Firebase 인증 자동 처리**: 로그인이 필요한 API 호출 시 ID 토큰 자동 전송
 - ✅ **일관된 호출 패턴**: 모든 API 호출이 동일한 방식으로 작동
 - ✅ **간결한 코드**: Axios 설정 없이 함수 이름과 파라미터만 전달
 - ✅ **에러 정보 자동 추출**: error_code, error_message를 자동으로 파싱
+- ✅ **타입 안전성**: PHP 함수 정의를 확인하면 입력/출력 구조를 명확히 알 수 있음
 
 ### 함수 시그니처
 
@@ -1206,11 +1295,45 @@ async function func(name, params = {}) {
 
 ### 주의사항
 
-1. **func 필드 자동 설정**: `params.func`는 자동으로 설정되므로 직접 설정하지 마세요
-2. **auth 필드 제거**: `params.auth`는 처리 후 자동으로 제거됩니다
-3. **alertOnError 기본값**: 기본값이 `true`이므로 에러 시 alert가 자동으로 표시됩니다
-4. **Firebase 로그인 필요**: `auth: true`를 사용하려면 Firebase에 로그인되어 있어야 합니다
-5. **try-catch 권장**: 에러 처리를 직접 하려면 try-catch를 사용하세요
+1. **🔥 PHP 함수 정의 필수 확인**: func() 함수 사용 전 반드시 호출할 PHP 함수의 정의를 찾아서 읽어야 합니다
+   - **입력 파라미터 확인**: PHP 함수가 기대하는 파라미터 이름과 타입을 정확히 파악
+   - **출력 구조 확인**: PHP 함수가 리턴하는 배열/객체 구조를 미리 확인
+   - **PHPDoc 참고**: 함수 문서화 주석을 읽고 입력/출력 형식을 이해
+   - **예제**:
+     ```javascript
+     // ❌ 잘못된 방법: PHP 함수 확인 없이 호출
+     const posts = await func('list_posts', { limit: 10 });
+     console.log(posts.items);  // ← PHP 함수는 'posts' 키를 사용하는데 'items'를 참조
+
+     // ✅ 올바른 방법: PHP 함수 정의를 확인한 후 호출
+     // PHP: return ['posts' => $posts, 'total' => $total];
+     const result = await func('list_posts', { limit: 10 });
+     console.log(result.posts);   // ← 올바른 키 사용
+     console.log(result.total);
+     ```
+
+2. **입력값과 출력값 일치**: JavaScript와 PHP 간 데이터 구조가 정확히 일치해야 합니다
+   - **입력**: JavaScript 파라미터 → PHP `http_params()` 함수로 접근
+   - **출력**: PHP 리턴값 → JavaScript 변수에 그대로 전달
+   - **타입 변환 주의**: 숫자, 문자열, null, 배열 등 타입이 올바르게 변환되는지 확인
+
+3. **func 필드 자동 설정**: `params.func`는 자동으로 설정되므로 직접 설정하지 마세요
+
+4. **auth 필드 제거**: `params.auth`는 처리 후 자동으로 제거됩니다
+
+5. **alertOnError 기본값**: 기본값이 `true`이므로 에러 시 alert가 자동으로 표시됩니다
+
+6. **Firebase 로그인 필요**: `auth: true`를 사용하려면 Firebase에 로그인되어 있어야 합니다
+
+7. **try-catch 권장**: 에러 처리를 직접 하려면 try-catch를 사용하세요
+
+8. **개발 워크플로우**:
+   ```
+   1. PHP 함수 정의 찾기 (lib/**/*.php)
+   2. PHPDoc 주석 읽고 입력/출력 확인
+   3. JavaScript에서 func() 호출
+   4. PHP 함수의 리턴 구조에 맞게 데이터 사용
+   ```
 
 ---
 

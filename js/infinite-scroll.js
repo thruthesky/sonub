@@ -19,14 +19,39 @@
 const InfiniteScroll = {
     /**
      * Initialize infinite scroll
-     * @param {string} element - DOM element for observing the scroll of the list
+     * @param {string|HTMLElement} element - CSS selector string or DOM element for observing the scroll of the list
      * @param {Object} options - Configuration options
      */
     init(element, options = {}) {
+        // element가 유효한지 확인
+        if (!element) {
+            throw new Error('InfiniteScroll: element is required');
+        }
 
-        // Apply required styles - set overflow-y to auto for scrollability
-        element.style.overflowY = 'auto';
-        element.style.position = 'relative';
+        // 문자열인 경우 querySelector로 DOM 요소 찾기
+        let targetElement = element;
+        if (typeof element === 'string') {
+            // 'body' 또는 'html' 문자열인 경우 직접 참조
+            if (element === 'body') {
+                targetElement = document.body;
+            } else if (element === 'html') {
+                targetElement = document.documentElement;
+            } else {
+                targetElement = document.querySelector(element);
+                if (!targetElement) {
+                    throw new Error(`InfiniteScroll: element not found: ${element}`);
+                }
+            }
+        }
+
+        // body 또는 html 태그인 경우 window 스크롤을 사용
+        const isBodyOrHtml = targetElement === document.body || targetElement === document.documentElement;
+
+        // Apply required styles - body/html이 아닌 경우에만 스타일 적용
+        if (!isBodyOrHtml) {
+            targetElement.style.overflowY = 'auto';
+            targetElement.style.position = 'relative';
+        }
 
         // Default options
         const config = {
@@ -48,9 +73,18 @@ const InfiniteScroll = {
             }
 
             scrollTimer = setTimeout(() => {
-                const scrollTop = element.scrollTop;
-                const scrollHeight = element.scrollHeight;
-                const clientHeight = element.clientHeight;
+                let scrollTop, scrollHeight, clientHeight;
+
+                // body/html 태그인 경우 window 스크롤 사용
+                if (isBodyOrHtml) {
+                    scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    scrollHeight = document.documentElement.scrollHeight;
+                    clientHeight = window.innerHeight;
+                } else {
+                    scrollTop = targetElement.scrollTop;
+                    scrollHeight = targetElement.scrollHeight;
+                    clientHeight = targetElement.clientHeight;
+                }
 
                 // Check if scrolled to top
                 if (scrollTop <= config.threshold) {
@@ -65,41 +99,49 @@ const InfiniteScroll = {
             }, config.debounceDelay);
         };
 
-        // Register scroll event listener
-        element.addEventListener('scroll', handleScroll);
+        // Register scroll event listener - body/html인 경우 window에 등록
+        const scrollTarget = isBodyOrHtml ? window : targetElement;
+        scrollTarget.addEventListener('scroll', handleScroll);
 
         // Helper function to force scroll to bottom
         const forceScrollToBottom = () => {
-            // Force layout recalculation by reading offsetHeight
-            void element.offsetHeight; // Force reflow
+            let scrollHeight, clientHeight, maxScroll;
 
-            const scrollHeight = element.scrollHeight;
-            const clientHeight = element.clientHeight;
-            const maxScroll = scrollHeight - clientHeight;
+            // body/html 태그인 경우 window 스크롤 사용
+            if (isBodyOrHtml) {
+                scrollHeight = document.documentElement.scrollHeight;
+                clientHeight = window.innerHeight;
+                maxScroll = scrollHeight - clientHeight;
 
-            //  console.log('InfiniteScroll: Attempting to scroll', {
-            //     scrollHeight,
-            //     clientHeight,
-            //     maxScroll,
-            //     currentScrollTop: element.scrollTop,
-            //     overflow: window.getComputedStyle(element).overflowY
-            // });
-
-            if (maxScroll > 0) {
-                // Try multiple methods to ensure scrolling works
-                element.scrollTop = maxScroll;
-
-                // Alternative method if first doesn't work
-                if (element.scrollTop === 0) {
-                    element.scrollTo({
+                if (maxScroll > 0) {
+                    window.scrollTo({
                         top: maxScroll,
                         behavior: 'instant'
                     });
                 }
+            } else {
+                // Force layout recalculation by reading offsetHeight
+                void targetElement.offsetHeight; // Force reflow
 
-                // Force another reflow and check
-                void element.offsetHeight;
-                // console.log('InfiniteScroll: After scroll attempt, scrollTop:', element.scrollTop);
+                scrollHeight = targetElement.scrollHeight;
+                clientHeight = targetElement.clientHeight;
+                maxScroll = scrollHeight - clientHeight;
+
+                if (maxScroll > 0) {
+                    // Try multiple methods to ensure scrolling works
+                    targetElement.scrollTop = maxScroll;
+
+                    // Alternative method if first doesn't work
+                    if (targetElement.scrollTop === 0) {
+                        targetElement.scrollTo({
+                            top: maxScroll,
+                            behavior: 'instant'
+                        });
+                    }
+
+                    // Force another reflow and check
+                    void targetElement.offsetHeight;
+                }
             }
         };
 
@@ -115,12 +157,16 @@ const InfiniteScroll = {
                 forceScrollToBottom();
 
                 // Check if scroll was successful
-                if (element.scrollTop > 0 || scrollAttempts >= maxAttempts) {
+                const currentScrollTop = isBodyOrHtml
+                    ? (window.pageYOffset || document.documentElement.scrollTop)
+                    : targetElement.scrollTop;
+
+                if (currentScrollTop > 0 || scrollAttempts >= maxAttempts) {
                     if (observer) {
                         observer.disconnect();
                         observer = null;
                     }
-                    if (element.scrollTop > 0) {
+                    if (currentScrollTop > 0) {
                         // console.log('InfiniteScroll: Successfully scrolled to bottom after', scrollAttempts, 'attempts');
                     } else {
                         // console.warn('InfiniteScroll: Failed to scroll after', scrollAttempts, 'attempts');
@@ -145,7 +191,7 @@ const InfiniteScroll = {
             });
 
             // Start observing
-            observer.observe(element, {
+            observer.observe(targetElement, {
                 childList: true,
                 subtree: true,
                 characterData: true
@@ -170,39 +216,66 @@ const InfiniteScroll = {
         // Return cleanup functions
         return {
             destroy() {
-                element.removeEventListener('scroll', handleScroll);
+                scrollTarget.removeEventListener('scroll', handleScroll);
                 if (scrollTimer) {
                     clearTimeout(scrollTimer);
                 }
             },
             // Scroll to bottom
             scrollToBottom() {
-                // Force layout recalculation
-                void element.offsetHeight;
+                if (isBodyOrHtml) {
+                    const scrollHeight = document.documentElement.scrollHeight;
+                    const clientHeight = window.innerHeight;
+                    const maxScroll = scrollHeight - clientHeight;
 
-                const scrollHeight = element.scrollHeight;
-                const clientHeight = element.clientHeight;
-                const maxScroll = scrollHeight - clientHeight;
-
-                if (maxScroll > 0) {
-                    element.scrollTop = maxScroll;
-
-                    // Alternative method if first doesn't work
-                    if (element.scrollTop !== maxScroll) {
-                        element.scrollTo({
+                    if (maxScroll > 0) {
+                        window.scrollTo({
                             top: maxScroll,
                             behavior: 'instant'
                         });
+                    }
+                } else {
+                    // Force layout recalculation
+                    void targetElement.offsetHeight;
+
+                    const scrollHeight = targetElement.scrollHeight;
+                    const clientHeight = targetElement.clientHeight;
+                    const maxScroll = scrollHeight - clientHeight;
+
+                    if (maxScroll > 0) {
+                        targetElement.scrollTop = maxScroll;
+
+                        // Alternative method if first doesn't work
+                        if (targetElement.scrollTop !== maxScroll) {
+                            targetElement.scrollTo({
+                                top: maxScroll,
+                                behavior: 'instant'
+                            });
+                        }
                     }
                 }
             },
             // Scroll to top
             scrollToTop() {
-                element.scrollTop = 0;
+                if (isBodyOrHtml) {
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'instant'
+                    });
+                } else {
+                    targetElement.scrollTop = 0;
+                }
             },
             // Scroll to specific position
             scrollTo(position) {
-                element.scrollTop = position;
+                if (isBodyOrHtml) {
+                    window.scrollTo({
+                        top: position,
+                        behavior: 'instant'
+                    });
+                } else {
+                    targetElement.scrollTop = position;
+                }
             }
         };
     }
