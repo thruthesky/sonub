@@ -523,6 +523,14 @@ echo "\n🎉 모든 테스트 통과!\n";
    - HTML 요소 존재 여부
    - 페이지 리다이렉션 확인
 
+5. **🔥🔥🔥 필수 레이아웃 요소 검증 (최강력 규칙) 🔥🔥🔥**
+   - **모든 페이지 E2E 테스트는 다음 필수 레이아웃 요소를 반드시 검증해야 합니다**:
+     - **`header#page-header`**: 페이지 헤더 존재 여부
+     - **`<main>`**: 메인 콘텐츠 영역 존재 여부
+     - **`footer#page-footer`**: 페이지 푸터 존재 여부
+   - **이유**: `index.php`가 모든 페이지를 감싸는(wrap) 레이아웃 역할을 하므로, 모든 페이지에는 이 세 가지 요소가 반드시 존재해야 합니다
+   - **위반 시**: 레이아웃 구조가 깨졌음을 의미하며 즉시 수정 필요
+
 ### PHP E2E Test 코드 예제 (curl 사용)
 
 ```php
@@ -554,8 +562,35 @@ if ($http_code === 200) {
     exit(1);
 }
 
-// 테스트 2: 로그인 폼 요소 확인
-echo "🧪 테스트 2: 로그인 폼 요소 확인\n";
+// 테스트 2: 필수 레이아웃 요소 확인 (최강력 규칙)
+echo "🧪 테스트 2: 필수 레이아웃 요소 확인\n";
+
+// header#page-header 확인
+if (str_contains($response, '<header id="page-header"')) {
+    echo "   ✅ header#page-header 존재\n";
+} else {
+    echo "   ❌ header#page-header를 찾을 수 없음\n";
+    exit(1);
+}
+
+// <main> 태그 확인
+if (str_contains($response, '<main')) {
+    echo "   ✅ <main> 태그 존재\n";
+} else {
+    echo "   ❌ <main> 태그를 찾을 수 없음\n";
+    exit(1);
+}
+
+// footer#page-footer 확인
+if (str_contains($response, '<footer id="page-footer"')) {
+    echo "   ✅ footer#page-footer 존재\n";
+} else {
+    echo "   ❌ footer#page-footer를 찾을 수 없음\n";
+    exit(1);
+}
+
+// 테스트 3: 로그인 폼 요소 확인
+echo "🧪 테스트 3: 로그인 폼 요소 확인\n";
 
 if (str_contains($response, '<form') && str_contains($response, 'type="email"')) {
     echo "   ✅ 로그인 폼 존재\n";
@@ -604,6 +639,33 @@ if ($response === false) {
 }
 
 echo "   ✅ 홈페이지 접근 성공\n";
+
+// 테스트: 필수 레이아웃 요소 확인 (최강력 규칙)
+echo "🧪 테스트: 필수 레이아웃 요소 확인\n";
+
+// header#page-header 확인
+if (str_contains($response, '<header id="page-header"')) {
+    echo "   ✅ header#page-header 존재\n";
+} else {
+    echo "   ❌ header#page-header를 찾을 수 없음\n";
+    exit(1);
+}
+
+// <main> 태그 확인
+if (str_contains($response, '<main')) {
+    echo "   ✅ <main> 태그 존재\n";
+} else {
+    echo "   ❌ <main> 태그를 찾을 수 없음\n";
+    exit(1);
+}
+
+// footer#page-footer 확인
+if (str_contains($response, '<footer id="page-footer"')) {
+    echo "   ✅ footer#page-footer 존재\n";
+} else {
+    echo "   ❌ footer#page-footer를 찾을 수 없음\n";
+    exit(1);
+}
 
 // 테스트: 페이지 콘텐츠 확인
 if (str_contains($response, '<html') && str_contains($response, '</html>')) {
