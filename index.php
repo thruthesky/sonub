@@ -80,7 +80,7 @@ if (file_exists($module_path)) {
 
     <script>
         // 애플리케이션 전역 설정
-        const appConfig = <?php echo json_encode(config(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+        const appConfig = <?php echo json_encode(config()->toArray(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
 
         // 서버에서 클라이언트로 데이터 전달용 객체 (Hydration)
         window.__HYDRATE__ = {};
@@ -89,7 +89,7 @@ if (file_exists($module_path)) {
 
 </head>
 
-<body>
+<body page="<?= htmlspecialchars(page(), ENT_QUOTES) ?>">
 
 
 
@@ -227,48 +227,52 @@ if (file_exists($module_path)) {
 
     <!-- Footer -->
     <footer id="page-footer" class="bg-light border-top mt-5 py-4">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
-                    <a href="<?= href()->home ?>" class="text-primary text-decoration-none me-3 fw-semibold">Home</a>
-                    <a href="<?= href()->help->guideline ?>" class="text-secondary text-decoration-none me-3">About</a>
-                    <a href="<?= href()->admin->contact ?>" class="text-secondary text-decoration-none">Contact</a>
+
+        <?php if (show_footer()) : ?>
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                        <a href="<?= href()->home ?>" class="text-primary text-decoration-none me-3 fw-semibold">Home</a>
+                        <a href="<?= href()->help->guideline ?>" class="text-secondary text-decoration-none me-3">About</a>
+                        <a href="<?= href()->admin->contact ?>" class="text-secondary text-decoration-none">Contact</a>
+                    </div>
+                    <div class="col-md-6 text-center text-md-end">
+                        <!-- Language Selector -->
+                        <div class="mb-2">
+                            <?php include ROOT_DIR . '/widgets/language/language-selector.php'; ?>
+
+
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-6 text-center text-md-end">
-                    <!-- Language Selector -->
-                    <div class="mb-2">
-                        <?php include ROOT_DIR . '/widgets/language/language-selector.php'; ?>
-
-
+                <hr class="my-3 border-secondary border-opacity-25">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <p class="mb-0 text-muted small">&copy; 2024 Sonub Application. All rights reserved.</p>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="app-version text-center">
+                            <span class="version-label">Version</span>
+                            <span class="version-number">
+                                <?php
+                                // APP_VERSION을 사람이 읽기 편한 형식으로 변환
+                                // 형식: 2025-10-13-23-01-54 → 2025년 10월 13일 23:01:54
+                                $version_parts = explode('-', APP_VERSION);
+                                if (count($version_parts) === 6) {
+                                    echo $version_parts[0] . '년 ' . $version_parts[1] . '월 ' . $version_parts[2] . '일 ' . $version_parts[3] . ':' . $version_parts[4] . ':' . $version_parts[5];
+                                } else {
+                                    echo APP_VERSION;
+                                }
+                                ?>
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
-            <hr class="my-3 border-secondary border-opacity-25">
-            <div class="row">
-                <div class="col-12 text-center">
-                    <p class="mb-0 text-muted small">&copy; 2024 Sonub Application. All rights reserved.</p>
-                </div>
-            </div>
-            <div class="row mt-4">
-                <div class="col-12">
-                    <div class="app-version text-center">
-                        <span class="version-label">Version</span>
-                        <span class="version-number">
-                            <?php
-                            // APP_VERSION을 사람이 읽기 편한 형식으로 변환
-                            // 형식: 2025-10-13-23-01-54 → 2025년 10월 13일 23:01:54
-                            $version_parts = explode('-', APP_VERSION);
-                            if (count($version_parts) === 6) {
-                                echo $version_parts[0] . '년 ' . $version_parts[1] . '월 ' . $version_parts[2] . '일 ' . $version_parts[3] . ':' . $version_parts[4] . ':' . $version_parts[5];
-                            } else {
-                                echo APP_VERSION;
-                            }
-                            ?>
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <?php endif; ?>
+
     </footer>
 
 
