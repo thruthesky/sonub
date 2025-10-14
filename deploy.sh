@@ -50,6 +50,14 @@ else
 fi
 
 
+# Run tests unless in fast mode
+if [ "$FAST_MODE" = false ]; then
+  echo "🧪 테스트 실행..."
+  # 여기에 테스트 실행 명령어 추가
+  ./run-all-php-e2e-tests.sh
+  echo "✅ 모든 테스트 통과!"
+fi
+
 
 
 # Git commit & push
@@ -57,6 +65,12 @@ git add .
 git commit -m "Commit for the release of the version: ${YMD}"
 git push
 
+
+# If dry run, skip the deployment step
+if [ "$DRY_RUN" = true ]; then
+  echo "⚠️  --dry-run 옵션이 설정되어 실제 배포를 건너뜁니다."
+  exit 0
+fi
 
 
 
