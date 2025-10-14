@@ -12,6 +12,9 @@ function config(): array
             'file_delete_url' => '/api.php?func=file_delete'
         ],
         'upload_path' => get_file_upload_path(),
+        'test' => [
+            'url' => 'https://local.sonub.com/',
+        ]
     ];
 }
 

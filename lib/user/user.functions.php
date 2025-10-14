@@ -80,12 +80,9 @@ function login_with_firebase(array $params)
     }
 
     // 데이터 준비
-    // display_name이 없으면 기본값 생성 (firebase_uid의 앞 3글자-타임스탬프)
-    $displayName = $params['display_name'] ?? (substr($firebase_uid, 0, 3) . '-' . time());
 
     $data = [
         'firebase_uid' => $firebase_uid,
-        'display_name' => $displayName,
         'created_at' => time(),
         'updated_at' => time(),
         'birthday' => (int)($params['birthday'] ?? 0),

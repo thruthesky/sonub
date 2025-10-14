@@ -94,7 +94,7 @@ if (file_exists($module_path)) {
 
 
     <!-- Header Navigation -->
-    <header class="top-bar bg-white border-bottom">
+    <header id="page-header" class="top-bar bg-white border-bottom">
         <nav class="navbar navbar-expand-lg navbar-light">
             <div class="container-fluid">
                 <!-- 로고: Sonub Logo Image -->
@@ -140,7 +140,7 @@ if (file_exists($module_path)) {
                             <a class="nav-link text-dark" href="/">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" href="/posts">Posts</a>
+                            <a class="nav-link text-dark" href="<?= href()->post->categories ?>">Posts</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="/users">Users</a>
@@ -226,7 +226,7 @@ if (file_exists($module_path)) {
     </div>
 
     <!-- Footer -->
-    <footer class="bg-light border-top mt-5 py-4">
+    <footer id="page-footer" class="bg-light border-top mt-5 py-4">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
@@ -305,7 +305,7 @@ if (file_exists($module_path)) {
     ?>
 
     <script>
-        __HYDRATE__.user = <?php echo json_encode(login()->data(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+        __HYDRATE__.user = <?php echo login() ? json_encode(login()->data(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : 'null'; ?>;
     </script>
 </body>
 
