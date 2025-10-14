@@ -3,7 +3,7 @@ $category = 'my-wall';
 $per_page = 10;
 $page = 1;
 inject_index_language();
-load_deferred_js('infitinite-scroll');
+load_deferred_js('infinite-scroll');
 ?>
 
 <div>
@@ -40,15 +40,19 @@ $postList = list_posts([
 </div>
 
 <script>
-    // InfiniteScroll 초기화
-    const scrollController = InfiniteScroll.init('#my-wall', {
-        onScrolledToBottom: () => {
-            console.log('하단 도달: 더 많은 데이터 로드');
-            loadMoreMessages();
-        },
-        threshold: 10,
-        debounceDelay: 100,
-        initialScrollToBottom: true
+    ready(() => {
+        // InfiniteScroll 초기화
+        const scrollController = InfiniteScroll.init('body', {
+            onScrolledToBottom: () => {
+                console.log('하단 도달: 더 많은 데이터 로드');
+                if (window.myWallVm) {
+                    window.myWallVm.loadNextPage();
+                }
+            },
+            threshold: 10,
+            debounceDelay: 100,
+            initialScrollToBottom: false
+        });
     });
 </script>
 
@@ -101,6 +105,34 @@ $postList = list_posts([
                 };
             },
             methods: {
+                async loadNextPage() {
+                    if (this.postList.isLastPage) {
+                        console.log('마지막 페이지에 도달했습니다.');
+                        return;
+                    }
+                    const nextPage = this.postList.page + 1;
+                    try {
+                        const obj = await func('list_posts', {
+                            category: '<?= $category ?>',
+                            user_id: <?= login() ? login()->id : 'null' ?>,
+                            limit: <?= $per_page ?>,
+                            page: nextPage,
+                            alertOnError: true,
+                        });
+                        console.log('다음 페이지 데이터:', obj);
+                        if (obj.posts && obj.posts.length > 0) {
+                            this.postList.posts.push(...obj.posts);
+                            this.postList.page = nextPage;
+                            this.postList.isLastPage = obj.posts.length < <?= $per_page ?>;
+                            console.log(nextPage + '번 째 페이지 로드 완료, 총 게시물 수:', this.postList.posts.length);
+                        } else {
+                            this.postList.isLastPage = true;
+                            console.log('더 이상 로드할 게시물이 없습니다.');
+                        }
+                    } catch (error) {
+                        console.error('게시물 로드 중 오류 발생:', error);
+                    }
+                },
                 /**
                  * 게시물 새로고침
                  */

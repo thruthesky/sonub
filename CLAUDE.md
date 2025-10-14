@@ -809,11 +809,29 @@ $user = login();
   - [ ] **✅ 필수: JavaScript에서 PHP API 함수를 호출할 때는 반드시 `func()` 함수를 사용해야 합니다**
   - [ ] `func()` 함수는 `/js/app.js`에 정의되어 있으며 모든 페이지에서 사용 가능합니다
   - [ ] **절대 금지**: `axios.post('/api.php')` 또는 `fetch('/api.php')` 직접 호출 금지
+
+  - [ ] **🔥🔥🔥 최강력 규칙: func() 함수는 PHP 함수를 직접 호출합니다 🔥🔥🔥**
+    - [ ] **핵심 개념**: `func('php_function_name', { params })` 호출 시 PHP 함수 `php_function_name()`이 실행됩니다
+    - [ ] **입력값**: JavaScript에서 전달한 파라미터가 PHP 함수의 입력값이 됩니다
+    - [ ] **출력값**: PHP 함수가 리턴하는 값이 JavaScript로 그대로 전달됩니다
+    - [ ] **중요**: func() 함수 사용 전 반드시 해당 PHP 함수를 조회하여 입력값과 출력값을 확인해야 합니다
+    - [ ] **예제**:
+      ```javascript
+      // JavaScript: list_posts() PHP 함수 호출
+      const posts = await func('list_posts', {
+          category: 'discussion',
+          limit: 10
+      });
+      // → PHP의 list_posts() 함수가 실행되며, 리턴값이 posts 변수에 저장됨
+      // → PHP 함수 정의를 확인하여 입력 파라미터와 리턴 형식을 파악해야 함
+      ```
+
   - [ ] **func() 함수 장점**:
     - [ ] 자동 에러 처리 (alertOnError 옵션)
     - [ ] Firebase 인증 토큰 자동 전송 (auth 옵션)
     - [ ] 일관된 API 호출 패턴
     - [ ] 에러 코드 및 메시지 자동 추출
+    - [ ] PHP 함수를 JavaScript에서 직접 호출하는 것처럼 사용 가능
 
   - [ ] **func() 함수 사용 예제:**
     ```javascript

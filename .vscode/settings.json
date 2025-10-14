@@ -121,7 +121,7 @@
         },
         {
             // app.js 함수 연결 philgo_api 텍스트
-            "linkPattern": "philgo_api|getFormData|get_form_data|get_id_token|update_my_profile|update_my_company|save_fcm_token|update_fcm_token|get_fcm_token|show_toast|close_toast|show_dialog|close_dialog|get_posts|get_comments|href_post_view",
+            "linkPattern": "philgo_api|getFormData|get_form_data|get_id_token|update_my_profile|update_my_company|save_fcm_token|update_fcm_token|get_fcm_token|show_toast|close_toast|show_dialog|close_dialog|get_posts|get_comments|href_post_view|func",
             "linkTarget": "/Users/thruthesky/apps/sonub/js/app.js",
             "languages": [
                 "php",
