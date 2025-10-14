@@ -1,21 +1,25 @@
-<!-- 개발자 빠른 로그인 패널 -->
-<div class="fixed-bottom bg-light border-top border-primary border-2 shadow-lg py-2">
-    <div class="container">
-        <div class="d-flex align-items-center justify-content-center gap-2">
-            <span class="badge bg-primary">DEV</span>
-            <button onclick="login_as('apple')" class="btn btn-outline-primary btn-sm">A</button>
-            <button onclick="login_as('banana')" class="btn btn-outline-success btn-sm">B</button>
-            <button onclick="login_as('cherry')" class="btn btn-outline-danger btn-sm">C</button>
-            <button onclick="login_as('date')" class="btn btn-outline-warning btn-sm">D</button>
-            <button onclick="login_as('elderberry')" class="btn btn-outline-info btn-sm">E</button>
-            <button onclick="login_as('fig')" class="btn btn-outline-secondary btn-sm">F</button>
-            <button onclick="login_as('grape')" class="btn btn-outline-primary btn-sm">G</button>
-            <button onclick="login_as('honeydew')" class="btn btn-outline-success btn-sm">H</button>
-            <button onclick="login_as('jackfruit')" class="btn btn-outline-danger btn-sm">J</button>
-            <button onclick="login_as('kiwi')" class="btn btn-outline-warning btn-sm">K</button>
-            <button onclick="login_as('lemon')" class="btn btn-outline-info btn-sm">L</button>
-            <button onclick="login_as('mango')" class="btn btn-outline-secondary btn-sm">M</button>
-        </div>
+<!-- 개발자 빠른 로그인 패널 - 드롭다운 형태 -->
+<div class="fixed-bottom" style="right: 20px; left: auto; bottom: 20px; width: auto;">
+    <div class="dropdown dropup">
+        <button class="btn btn-primary rounded-circle shadow-lg" type="button" id="devLoginDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="width: 50px; height: 50px;">
+            <i class="fa-solid fa-user-shield"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="devLoginDropdown">
+            <li><h6 class="dropdown-header"><i class="fa-solid fa-code"></i> Dev Login</h6></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#" onclick="login_as('apple'); return false;"><i class="fa-solid fa-a text-primary"></i> Apple</a></li>
+            <li><a class="dropdown-item" href="#" onclick="login_as('banana'); return false;"><i class="fa-solid fa-b text-success"></i> Banana</a></li>
+            <li><a class="dropdown-item" href="#" onclick="login_as('cherry'); return false;"><i class="fa-solid fa-c text-danger"></i> Cherry</a></li>
+            <li><a class="dropdown-item" href="#" onclick="login_as('date'); return false;"><i class="fa-solid fa-d text-warning"></i> Date</a></li>
+            <li><a class="dropdown-item" href="#" onclick="login_as('elderberry'); return false;"><i class="fa-solid fa-e text-info"></i> Elderberry</a></li>
+            <li><a class="dropdown-item" href="#" onclick="login_as('fig'); return false;"><i class="fa-solid fa-f text-secondary"></i> Fig</a></li>
+            <li><a class="dropdown-item" href="#" onclick="login_as('grape'); return false;"><i class="fa-solid fa-g text-primary"></i> Grape</a></li>
+            <li><a class="dropdown-item" href="#" onclick="login_as('honeydew'); return false;"><i class="fa-solid fa-h text-success"></i> Honeydew</a></li>
+            <li><a class="dropdown-item" href="#" onclick="login_as('jackfruit'); return false;"><i class="fa-solid fa-j text-danger"></i> Jackfruit</a></li>
+            <li><a class="dropdown-item" href="#" onclick="login_as('kiwi'); return false;"><i class="fa-solid fa-k text-warning"></i> Kiwi</a></li>
+            <li><a class="dropdown-item" href="#" onclick="login_as('lemon'); return false;"><i class="fa-solid fa-l text-info"></i> Lemon</a></li>
+            <li><a class="dropdown-item" href="#" onclick="login_as('mango'); return false;"><i class="fa-solid fa-m text-secondary"></i> Mango</a></li>
+        </ul>
     </div>
 </div>
 

@@ -39,7 +39,18 @@ $postList = list_posts([
     <!-- Vue 앱이 여기에 렌더링됩니다 -->
 </div>
 
-
+<script>
+    // InfiniteScroll 초기화
+    const scrollController = InfiniteScroll.init('#my-wall', {
+        onScrolledToBottom: () => {
+            console.log('하단 도달: 더 많은 데이터 로드');
+            loadMoreMessages();
+        },
+        threshold: 10,
+        debounceDelay: 100,
+        initialScrollToBottom: true
+    });
+</script>
 
 <script>
     ready(() => {

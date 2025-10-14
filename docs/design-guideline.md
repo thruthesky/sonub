@@ -18,6 +18,45 @@ Sonub 웹사이트 개발을 위한 디자인 가이드라인
 
 Sonub는 PHP 기반 MPA 방식을 사용하며, **모든 필수 리소스는 `index.php`에서 자동으로 로드됩니다.**
 
+### index.php 레이아웃 구조
+
+**🔥🔥🔥 최강력 규칙: `index.php`는 모든 페이지를 감싸는(wrap) 레이아웃 역할을 합니다 🔥🔥🔥**
+
+`index.php`는 다음과 같은 구조로 모든 페이지를 감싸고 있습니다:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- CSS 프레임워크, 아이콘, 커스텀 스타일 로드 -->
+</head>
+<body>
+    <!-- Header (네비게이션) -->
+    <header id="page-header">
+        <!-- 헤더 내용 -->
+    </header>
+
+    <!-- Main Content Area -->
+    <main>
+        <?php include page() ?>  <!-- 개별 페이지 파일이 여기에 포함됨 -->
+    </main>
+
+    <!-- Footer -->
+    <footer id="page-footer">
+        <!-- 푸터 내용 -->
+    </footer>
+
+    <!-- JavaScript 라이브러리 로드 -->
+</body>
+</html>
+```
+
+**✅ 필수 규칙:**
+- **모든 페이지에는 `header#page-header`, `<main>`, `footer#page-footer`가 반드시 존재합니다**
+- 개별 페이지 파일(`./page/**/*.php`)은 `<main>` 태그 안에 포함됩니다
+- 개별 페이지 파일에서는 페이지 고유 콘텐츠만 작성합니다
+- `<!DOCTYPE html>`, `<html>`, `<head>`, `<body>` 태그는 `index.php`에 이미 존재하므로 개별 페이지에서 사용하지 마세요
+
 ### 자동 로드되는 리소스
 
 `index.php`에서 다음 항목들이 자동으로 로드되므로 **개별 페이지에서 중복 로드하지 마세요**:
