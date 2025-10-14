@@ -166,7 +166,7 @@ if (file_exists($module_path)) {
     </header>
 
     <!-- Main Content Area with Sidebars -->
-    <div class="sonub-container mt-4">
+    <div class="sonub-container">
         <div class="row">
             <!-- Left Sidebar -->
             <aside class="d-none d-lg-block col-12 col-md-3 col-lg-2 bg-light p-3 border-end">

@@ -3,6 +3,7 @@ $category = 'my-wall';
 $per_page = 10;
 $page = 1;
 inject_index_language();
+load_deferred_js('infitinite-scroll');
 ?>
 
 <div>
@@ -25,9 +26,14 @@ $postList = list_posts([
 
 
 
+
 ?>
 
-@todo: 여기서 부터, .... 필고에서 쓰는 infinte scroll 을 가져와서, 여기에서 적용해서, 무한 페이지 스크롤 로딩을 할 것.
+<style>
+    #my-wall {
+        height: calc(100vh - 200px);
+    }
+</style>
 
 <div id="my-wall" class="container mt-4">
     <!-- Vue 앱이 여기에 렌더링됩니다 -->
