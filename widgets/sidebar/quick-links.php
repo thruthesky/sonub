@@ -41,26 +41,28 @@
         font-size: 0.875rem;
         font-weight: 600;
         color: var(--bs-emphasis-color);
-        margin-bottom: 0.5rem;
-        padding: 0.75rem 0;
+        margin-bottom: 0;
+        padding: 0;
     }
 
-    /* Links Container - Compact list */
+    /* Links Container - Inline with wrapping */
     .quick-links-widget .links-container {
         display: flex;
-        flex-direction: column;
-        gap: 0;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        margin-top: 0.5rem;
     }
 
-    /* Quick Link Item - Compact with no borders */
+    /* Quick Link Item - Inline compact */
     .quick-links-widget .quick-link-item {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: 0.625rem;
-        padding: 0.5rem 0;
+        gap: 0.375rem;
+        padding: 0;
         text-decoration: none;
         color: var(--bs-body-color);
         transition: color 0.2s ease;
+        white-space: nowrap;
     }
 
     .quick-links-widget .quick-link-item:hover {
