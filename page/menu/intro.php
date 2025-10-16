@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Sonub 메뉴 페이지
  *
@@ -78,7 +79,7 @@ $user = login();
                                 <small class="text-muted">내가 작성한 글 보기</small>
                             </div>
                         </a>
-                        <a href="<?= href()->comment->list($user['id']) ?>" class="list-group-item list-group-item-action d-flex align-items-center">
+                        <a href="<?= href()->comment->list($user->id) ?>" class="list-group-item list-group-item-action d-flex align-items-center">
                             <i class="bi bi-chat-left-text fs-4 me-3 text-success"></i>
                             <div>
                                 <div class="fw-semibold">내 댓글</div>
@@ -172,7 +173,7 @@ $user = login();
 
             <?php if ($user): ?>
                 <!-- 관리자 메뉴 (관리자만 표시) -->
-                <?php if ($user['is_admin'] ?? false): ?>
+                <?php if ($user->is_admin): ?>
                     <div class="card mb-4">
                         <div class="card-header bg-danger text-white">
                             <h5 class="mb-0">관리자</h5>
@@ -183,20 +184,6 @@ $user = login();
                                 <div>
                                     <div class="fw-semibold">대시보드</div>
                                     <small class="text-muted">관리자 대시보드</small>
-                                </div>
-                            </a>
-                            <a href="<?= href()->admin->users ?>" class="list-group-item list-group-item-action d-flex align-items-center">
-                                <i class="bi bi-people-fill fs-4 me-3 text-danger"></i>
-                                <div>
-                                    <div class="fw-semibold">사용자 관리</div>
-                                    <small class="text-muted">회원 관리</small>
-                                </div>
-                            </a>
-                            <a href="<?= href()->admin->posts ?>" class="list-group-item list-group-item-action d-flex align-items-center">
-                                <i class="bi bi-file-post fs-4 me-3 text-danger"></i>
-                                <div>
-                                    <div class="fw-semibold">게시글 관리</div>
-                                    <small class="text-muted">게시글 관리</small>
                                 </div>
                             </a>
                         </div>

@@ -11,6 +11,9 @@ class UserModel
     public string $gender;
     public string $photo_url;
 
+
+    public bool $is_admin = false;
+
     public function __construct(array $data)
     {
         $this->id = $data['id'] ?? 0;
@@ -39,6 +42,7 @@ class UserModel
             'birthday' => $this->birthday,
             'gender' => $this->gender,
             'photo_url' => $this->photo_url,
+            'is_admin' => $this->is_admin,
         ];
     }
 
