@@ -179,7 +179,7 @@ class ChatHref
 
 class MenuHref
 {
-    public string $intro = '/page/menu/intro';
+    public string $intro = '/menu/intro';
 }
 
 
