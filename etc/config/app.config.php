@@ -21,7 +21,8 @@ function config(): array
 
 function get_file_upload_path(): string
 {
-    return ROOT_DIR . '/var/uploads/' . login()->id . '/';
+	        // TODO: what if the user has not loggd in?
+    return ROOT_DIR . '/var/uploads/' . (login()?->id ?? 0) . '/';
 }
 /**
  * $file_path 에서 '/var/uploads/' 이전의 경로를 제거한 다음 리턴
