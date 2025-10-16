@@ -24,9 +24,14 @@ $firstNames = [
     'Yerin', 'Jimin', 'Daeun', 'Yujin', 'Soyul', 'Sua', 'Ain', 'Jian', 'Yunseo', 'Sohyun'
 ];
 
-// Random profile photo categories
-$photoCategories = [
-    'portraits', 'people', 'faces'
+// Real profile photo IDs from Picsum Photos (always available)
+$photoIds = [
+    1, 10, 11, 12, 13, 14, 15, 16, 18, 20, 22, 23, 24, 25, 27, 28, 29, 30, 31, 32,
+    33, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 54,
+    56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78,
+    82, 83, 84, 85, 88, 91, 96, 99, 101, 103, 104, 106, 111, 112, 113, 116, 119, 120,
+    121, 122, 123, 124, 125, 126, 128, 129, 130, 133, 134, 135, 137, 139, 140, 141,
+    142, 143, 144, 145, 146, 147
 ];
 
 // Get PDO object
@@ -60,9 +65,9 @@ for ($i = 1; $i <= 100; $i++) {
         // Generate random birthday (between 1970 and 2005)
         $birthday = strtotime(rand(1970, 2005) . '-' . rand(1, 12) . '-' . rand(1, 28));
 
-        // Generate random profile photo URL (Unsplash Random API)
-        $category = $photoCategories[array_rand($photoCategories)];
-        $photoUrl = "https://source.unsplash.com/random/400x400/?{$category}&sig=" . rand(1, 10000);
+        // Get real profile photo URL from Picsum Photos (always available)
+        $photoId = $photoIds[array_rand($photoIds)];
+        $photoUrl = "https://picsum.photos/id/{$photoId}/400/400";
 
         // Current timestamp
         $now = time();

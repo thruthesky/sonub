@@ -55,7 +55,12 @@ class AppConfig
             'api' => $this->api ? $this->api->toArray() : null,
             'upload_path' => $this->upload_path,
             'test' => $this->test->toArray(),
-            'pages_without_footer' => $this->pages_without_footer,
+            'pages_without_footer' => [
+                // exmaple: '/' 르면 보여 주지 않는다.
+                '/',
+                '/post/list'
+
+            ],
         ];
     }
 }
@@ -103,6 +108,15 @@ function get_download_url(string $file_path): string
 }
 
 
+/**
+ * 푸터(홈페이지 맨 하단 정보)를 보여 줄지 결정한다.
+ * 
+ * 참고로, 무제한 스크롤이 필요한 페이지에는 보여주지 않는다.
+ * @return bool 
+ * @throws ApiException 
+ * @throws PDOException 
+ * @throws InvalidArgumentException 
+ */
 function show_footer(): bool
 {
 
