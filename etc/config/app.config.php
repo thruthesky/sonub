@@ -55,12 +55,7 @@ class AppConfig
             'api' => $this->api ? $this->api->toArray() : null,
             'upload_path' => $this->upload_path,
             'test' => $this->test->toArray(),
-            'pages_without_footer' => [
-                // exmaple: '/' 르면 보여 주지 않는다.
-                '/',
-                '/post/list',
-                '/user/list',
-            ],
+            'pages_without_footer' => $this->pages_without_footer,
         ];
     }
 }

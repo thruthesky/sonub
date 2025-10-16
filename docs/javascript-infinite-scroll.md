@@ -2,9 +2,49 @@
 
 본 문서에서는 PhilGo 웹 개발에서 사용되는 InfiniteScroll 라이브러리의 사용 방법을 설명한다.
 
+---
+
+## 🚀 초간단 예제 (빠르게 시작하기)
+
+**가장 간단하게 InfiniteScroll을 사용하는 방법입니다. 페이지 하단에 도달하면 자동으로 더 많은 데이터를 로드합니다.**
+
+```php
+<?php
+// InfiniteScroll 라이브러리를 지연 로딩 (defer)으로 로드
+load_deferred_js('infinite-scroll');
+?>
+
+<script>
+    ready(() => {
+        // InfiniteScroll 초기화
+        const scrollController = InfiniteScroll.init('body', {
+            onScrolledToBottom: () => {
+                console.log('하단 도달: 더 많은 데이터 로드');
+                // 여기에 데이터 로드 로직 추가
+                // 예: loadMorePosts();
+            },
+            threshold: 10,              // 하단으로부터 10px 이내에서 트리거
+            debounceDelay: 100,         // 100ms 디바운스
+            initialScrollToBottom: false // 페이지 로드 시 자동 스크롤 안 함
+        });
+    });
+</script>
+```
+
+**핵심 포인트**:
+- ✅ `load_deferred_js('infinite-scroll')`로 라이브러리 로드
+- ✅ `ready()` 함수로 DOM 로드 완료 대기
+- ✅ `InfiniteScroll.init('body', {...})`로 body 스크롤 감지
+- ✅ `onScrolledToBottom` 콜백에서 데이터 로드 로직 실행
+
+**더 자세한 사용법은 아래 문서를 참고하세요! 👇**
+
+---
+
 ## 목차
 
 - [InfiniteScroll 라이브러리 사용 가이드](#infinitescroll-라이브러리-사용-가이드)
+  - [🚀 초간단 예제 (빠르게 시작하기)](#-초간단-예제-빠르게-시작하기)
   - [목차](#목차)
   - [개요](#개요)
   - [기본 사용법](#기본-사용법)

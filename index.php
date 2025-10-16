@@ -188,6 +188,7 @@ if (file_exists($module_path)) {
 
     <!-- Footer -->
 
+
     <?php if (show_footer()) : ?>
 
         <footer id="page-footer" class="bg-light border-top mt-5 py-4">
