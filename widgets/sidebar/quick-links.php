@@ -31,64 +31,57 @@
 </div>
 
 <style>
-    /* Quick Links Widget - Simple and Clean Design */
+    /* Quick Links Widget - Compact and Clean Design */
     .quick-links-widget {
-        background-color: var(--bs-light);
-        border: 1px solid var(--bs-border-color);
-        border-radius: 8px;
-        padding: 1.5rem;
+        background-color: white;
+        padding: 0;
     }
 
     .quick-links-widget .widget-title {
-        font-size: 1rem;
+        font-size: 0.875rem;
         font-weight: 600;
         color: var(--bs-emphasis-color);
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem;
+        padding: 0.75rem 0;
     }
 
-    /* Links Container - Simple Grid Layout */
+    /* Links Container - Compact list */
     .quick-links-widget .links-container {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
     }
 
-    /* Quick Link Item */
+    /* Quick Link Item - Compact with no borders */
     .quick-links-widget .quick-link-item {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0.75rem;
-        background-color: white;
-        border: 1px solid var(--bs-border-color);
-        border-radius: 6px;
+        gap: 0.625rem;
+        padding: 0.5rem 0;
         text-decoration: none;
         color: var(--bs-body-color);
-        transition: all 0.2s ease;
+        transition: color 0.2s ease;
     }
 
     .quick-links-widget .quick-link-item:hover {
-        border-color: var(--bs-primary);
         color: var(--bs-primary);
     }
 
     /* Icon */
     .quick-links-widget .quick-link-item i {
-        font-size: 1rem;
-        width: 20px;
+        font-size: 0.875rem;
+        width: 16px;
         text-align: center;
+        color: var(--bs-secondary);
+    }
+
+    .quick-links-widget .quick-link-item:hover i {
+        color: var(--bs-primary);
     }
 
     /* Link Text */
     .quick-links-widget .quick-link-item span {
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .quick-links-widget .links-container {
-            grid-template-columns: 1fr;
-        }
+        font-size: 0.8rem;
+        font-weight: 400;
     }
 </style>

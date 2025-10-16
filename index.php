@@ -173,7 +173,7 @@ if (file_exists($module_path)) {
     <div class="sonub-container">
         <div class="row">
             <!-- Left Sidebar -->
-            <aside class="d-none d-lg-block col-12 col-md-3 col-lg-3 px-0 bg-light border-end">
+            <aside class="d-none d-lg-block col-12 col-md-3 col-lg-3 px-0">
                 <?php include_once WIDGET_DIR . '/sidebar/new-users.php'; ?>
                 <?php include_once WIDGET_DIR . '/sidebar/quick-links.php'; ?>
             </aside>

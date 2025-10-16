@@ -13,7 +13,7 @@ $displayUsers = array_slice($users, 0, 16);
 $userCount = count($displayUsers);
 ?>
 
-<div class="new-users-widget">
+<div class="new-users-widget mb-3">
     <div class="widget-header">
         <div class="widget-heading">
             <h5 class="widget-title">New Members</h5>
