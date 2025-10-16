@@ -136,7 +136,7 @@ $userCount = count($displayUsers);
         width: 100%;
     }
 
-    /* User item - Minimal design */
+    /* User item - Clean design without borders */
     .new-users-widget .user-item {
         display: flex;
         flex-direction: column;
@@ -147,18 +147,8 @@ $userCount = count($displayUsers);
         text-decoration: none;
         color: var(--bs-body-color);
         background: white;
-        border-right: 1px solid var(--bs-border-color);
-        border-bottom: 1px solid var(--bs-border-color);
         transition: background-color 0.2s ease, color 0.2s ease;
         min-width: 0;
-    }
-
-    .new-users-widget .user-item:nth-child(4n) {
-        border-right: none;
-    }
-
-    .new-users-widget .user-item:nth-last-child(-n+4) {
-        border-bottom: none;
     }
 
     .new-users-widget .user-item:hover {

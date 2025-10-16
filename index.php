@@ -179,7 +179,7 @@ if (file_exists($module_path)) {
             </aside>
 
             <!-- Main Content -->
-            <main class="col-12 col-md-6 col-lg-7 p-4">
+            <main class="col-12 col-md-6 col-lg-7">
                 <?php include page() ?>
             </main>
 
