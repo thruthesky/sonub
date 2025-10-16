@@ -26,6 +26,19 @@ if (!function_exists($func_name)) {
     echo json_encode($error_response, JSON_UNESCAPED_UNICODE);
     exit;
 }
+
+
+// ====================================================================
+// 허용된 함수인지 확인
+// ====================================================================
+$defined = get_defined_functions();
+$user_funcs = $defined['user'];
+if (!in_array($func_name, $user_funcs)) {
+    error("function-not-allowed", "허용되지 않은 함수입니다: $func_name", 403);
+}
+
+
+
 try {
     // ====================================================================
     // 함수 호출

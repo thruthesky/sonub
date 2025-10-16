@@ -1,7 +1,13 @@
 <?php
 // TOOD: 여기서 부터, v5 의 url.ts 를 보고 복사 할 것.
 
-use Google\ApiCore\Page;
+
+
+
+class AdvertisementHref
+{
+    public string $intro = '/page/adv/intro';
+}
 
 class CategoryHref
 {
@@ -143,6 +149,7 @@ class HelpHref
     public string $guideline = '/page/help/guideline';
     public string $terms_and_conditions = '/page/help/terms-and-conditions';
     public string $privacy = '/page/help/privacy';
+    public string $about = '/page/help/about';
 }
 
 
@@ -195,6 +202,7 @@ class Href
     public AdminHref $admin;
 
     public ChatHref $chat;
+    public AdvertisementHref $adv;
 
 
     public function __construct()
@@ -206,6 +214,7 @@ class Href
         $this->help = new HelpHref();
         $this->admin = new AdminHref();
         $this->chat = new ChatHref();
+        $this->adv = new AdvertisementHref();
     }
 }
 

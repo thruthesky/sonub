@@ -17,7 +17,7 @@ echo "홈페이지 E2E 테스트 시작\n";
 echo "========================================\n\n";
 
 // 테스트 URL
-$test_url = config()['test']['url'];
+$test_url = config()->test->url;
 
 echo "테스트 URL: $test_url\n\n";
 

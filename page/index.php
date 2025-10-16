@@ -9,7 +9,6 @@ load_deferred_js('infinite-scroll');
 <div>
     <!-- 게시글 작성 위젯 -->
     <?php
-    $widget_category = $category;
     include WIDGET_DIR . '/post/post-list-create.php';
     ?>
 </div>
