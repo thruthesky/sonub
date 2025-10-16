@@ -1,4 +1,5 @@
 <?php
+const API_CALL = true;
 const ROOT_DIR = __DIR__;
 include_once ROOT_DIR . '/etc/includes.php';
 header('Content-Type: application/json; charset=utf-8');
@@ -34,7 +35,7 @@ if (!function_exists($func_name)) {
 $defined = get_defined_functions();
 $user_funcs = $defined['user'];
 if (!in_array($func_name, $user_funcs)) {
-    error("function-not-allowed", "허용되지 않은 함수입니다: $func_name", 403);
+    error("function-not-allowed", "허용되지 않은 함수입니다: $func_name", response_code: 403);
 }
 
 

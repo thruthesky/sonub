@@ -39,3 +39,4 @@ include_once ROOT_DIR . '/etc/config/category.config.php';
 include_once ROOT_DIR . '/lib/error/error.functions.php';
 include_once ROOT_DIR . '/lib/test/test.functions.php';
 include_once ROOT_DIR . '/lib/html/html.functions.php';
+include_once ROOT_DIR . '/etc/error.handler.php';  // 에러 핸들러 등록

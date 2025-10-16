@@ -179,23 +179,14 @@ if (file_exists($module_path)) {
             </aside>
 
             <!-- Main Content -->
-            <main class="col-12 col-md-6 col-lg-7">
+            <main class="col-12 col-md-6 col-lg-6">
                 <?php include page() ?>
             </main>
 
             <!-- Right Sidebar -->
-            <aside class="d-none d-lg-block col-12 col-md-3 col-lg-2 bg-light p-3 border-start">
-                <h5 class="mb-3">Right Sidebar</h5>
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h6 class="card-title">Recent Activity</h6>
-                        <ul class="list-unstyled small">
-                            <li>User joined - 5 mins ago</li>
-                            <li>New post created - 1 hour ago</li>
-                            <li>Comment added - 2 hours ago</li>
-                        </ul>
-                    </div>
-                </div>
+            <aside class="d-none d-lg-block col-12 col-md-3 col-lg-3">
+
+                <?php include_once WIDGET_DIR . '/sidebar/latest-posts.php'; ?>
 
                 <div class="card">
                     <div class="card-body">

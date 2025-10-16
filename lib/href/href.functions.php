@@ -50,6 +50,11 @@ class PostHref
         return "/post/search?query=" . urlencode($query) . "&page=$page";
     }
 
+    public function view(int $id): string
+    {
+        return "/post/view?id=$id";
+    }
+
     public function latest(): string
     {
         return "/post/latest-post-and-comment-list";
@@ -68,9 +73,9 @@ class CommentHref
 
 
 
-    public function list(int $idx_member, string $display_profile = 'yes'): string
+    public function list(int $user_id, string $display_profile = 'yes'): string
     {
-        return "/post/comment/list?idx_member=$idx_member&display_profile=$display_profile";
+        return "";
     }
     public function latest(): string
     {

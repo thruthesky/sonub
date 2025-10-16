@@ -1,6 +1,6 @@
 /* Sonub 컨테이너 - 콘텐츠 최대 너비 제한 */
 .sonub-container {
-  max-width: 1120px; /* 최대 너비를 1120px로 제한 */
+  max-width: 1200px; /* 최대 너비를 1200px로 제한 */
   margin: 0 auto; /* 가운데 정렬 */
   padding: 0 15px; /* 좌우 여백 15px */
 }
@@ -23,7 +23,12 @@
 
 /* Body에 헤더 높이만큼 padding-top 추가 (콘텐츠가 헤더에 가려지지 않도록) */
 body {
-  padding-top: 70px; /* 헤더 높이만큼 여백 추가 */
+  padding-top: 80px; /* 헤더 높이만큼 여백 추가 */
+}
+@media (min-width: 768px) {
+  body {
+    padding-top: 88px; /* 모바일에서는 헤더 높이 증가에 따라 여백 증가 */
+  }
 }
 
 /* 네비게이션 로고 이미지 스타일 */
