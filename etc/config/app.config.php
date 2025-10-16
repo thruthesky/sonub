@@ -19,6 +19,11 @@ class AppConfigApi
     }
 }
 
+class CategoryConfig
+{
+    public string $my_wall = 'my_wall';
+}
+
 class AppConfigTest
 {
     public string $url;
@@ -46,7 +51,7 @@ class AppConfig
     public function toArray(): array
     {
         return [
-            'login' => $this->login->toArray(),
+            'login' => $this->login ? $this->login->toArray() : null,
             'api' => $this->api ? $this->api->toArray() : null,
             'upload_path' => $this->upload_path,
             'test' => $this->test->toArray(),
@@ -81,7 +86,10 @@ function config(): AppConfig
 
 function get_file_upload_path(): string
 {
-    return ROOT_DIR . '/var/uploads/' . login()->id . '/';
+    // 로그인된 사용자가 있으면 사용자별 디렉토리, 없으면 공통 디렉토리
+    $user = login();
+    $userPath = $user ? $user->id . '/' : '';
+    return ROOT_DIR . '/var/uploads/' . $userPath;
 }
 /**
  * $file_path 에서 '/var/uploads/' 이전의 경로를 제거한 다음 리턴

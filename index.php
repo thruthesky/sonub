@@ -93,14 +93,13 @@ if (file_exists($module_path)) {
 
 
 
-    <!-- Header Navigation -->
+    <!-- 헤더 : 탑바 -->
     <header id="page-header" class="top-bar bg-white border-bottom">
         <nav class="navbar navbar-expand-lg navbar-light">
             <div class="container-fluid">
                 <!-- 로고: Sonub Logo Image -->
                 <a class="navbar-brand d-flex align-items-center" href="/">
-                    <img src="/res/img/logo/small.png" alt="Sonub Logo" height="24" class="me-2">
-                    <span class="text-dark d-none d-md-inline">Sonub</span>
+                    <img src="/res/img/logo/medium.png" class="navbar-logo rounded-circle me-2" alt="Sonub Logo">
                 </a>
 
                 <!-- 우측 아이콘 및 토글 버튼 -->
@@ -120,8 +119,8 @@ if (file_exists($module_path)) {
                         </a>
                     </div>
 
-                    <!-- 프로필 아이콘 -->
-                    <div class="me-3">
+                    <!-- 프로필 아이콘 (모바일/태블릿 전용) -->
+                    <div class="me-3 d-lg-none">
                         <a href="<?= href()->user->profile ?>" class="text-dark">
                             <i class="user-profile-icon"></i>
                         </a>
@@ -135,7 +134,8 @@ if (file_exists($module_path)) {
 
                 <!-- 네비게이션 메뉴 -->
                 <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav me-auto">
+                    <!-- 데스크톱: 메뉴를 오른쪽으로 이동 (ms-auto 추가) -->
+                    <ul class="navbar-nav ms-auto">
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="/">Home</a>
                         </li>
@@ -148,8 +148,12 @@ if (file_exists($module_path)) {
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="/about">About</a>
                         </li>
-                    </ul>
-                    <ul class="navbar-nav">
+                        <!-- 데스크톱: 프로필 아이콘을 메뉴 뒤에 표시 -->
+                        <li class="nav-item d-none d-lg-block">
+                            <a class="nav-link text-dark" href="<?= href()->user->profile ?>">
+                                <i class="user-profile-icon"></i>
+                            </a>
+                        </li>
                         <?php if (login() == null) { ?>
                             <li class="nav-item">
                                 <a class="nav-link text-dark" href="<?= href()->user->login ?>">Sign in</a>
@@ -169,15 +173,9 @@ if (file_exists($module_path)) {
     <div class="sonub-container">
         <div class="row">
             <!-- Left Sidebar -->
-            <aside class="d-none d-lg-block col-12 col-md-3 col-lg-2 bg-light p-3 border-end">
-                <h5 class="mb-3">Left Sidebar</h5>
-                <nav class="nav flex-column">
-                    <a class="nav-link" href="<?= href()->user->login ?>">Login</a>
-                    <a class="nav-link" href="#">Dashboard</a>
-                    <a class="nav-link" href="<?= href()->user->profile ?>">Profile</a>
-                    <a class="nav-link" href="#">Settings</a>
-                    <a class="nav-link" href="#">Messages</a>
-                </nav>
+            <aside class="d-none d-lg-block col-12 col-md-3 col-lg-3 bg-light p-3 border-end">
+
+                <?php include_once WIDGET_DIR . '/sidebar/new-users.php'; ?>
                 <hr>
                 <div class="mt-3">
                     <h6>Quick Links</h6>
@@ -190,7 +188,7 @@ if (file_exists($module_path)) {
             </aside>
 
             <!-- Main Content -->
-            <main class="col-12 col-md-6 col-lg-8 p-4">
+            <main class="col-12 col-md-6 col-lg-7 p-4">
                 <?php include page() ?>
             </main>
 

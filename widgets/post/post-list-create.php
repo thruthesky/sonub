@@ -11,9 +11,10 @@ load_deferred_js('file-upload');
 // 다국어 번역 텍스트 주입
 inject_post_list_create_language();
 
+$category = http_param('category') ?? 'my-wall';
+
 ?>
 <section id="post-list-create" class="mb-4">
-
     <form @submit.prevent="submit_post" :class="{ 'expanded': expanded}">
         <nav class="d-flex">
             <label v-show="!expanded" class="flex-shrink-1 pointer">
@@ -114,7 +115,7 @@ inject_post_list_create_language();
 
                     // API 호출하여 게시물 작성
                     const post = await func('create_post', {
-                        category: '<?= http_param('category') ?? $widget_category ?>',
+                        category: '<?= $category ?>',
                         content: content,
                         files: filesValue,
                         alertOnError: true,
