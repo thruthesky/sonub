@@ -23,13 +23,13 @@
 
 /* Body에 헤더 높이만큼 padding-top 추가 (콘텐츠가 헤더에 가려지지 않도록) */
 body {
-  padding-top: 80px; /* 헤더 높이만큼 여백 추가 (컴팩트한 헤더에 맞춤) */
+  padding-top: 70px; /* 헤더 높이만큼 여백 추가 */
 }
 
 /* 네비게이션 로고 이미지 스타일 */
 .navbar-logo {
-  width: 32px; /* 로고 너비 */
-  height: 32px; /* 로고 높이 */
+  width: 40px; /* 로고 너비 */
+  height: 40px; /* 로고 높이 */
   object-fit: cover; /* 이미지 비율 유지하면서 영역 채우기 */
 }
 
@@ -43,6 +43,22 @@ body {
 .top-bar a:hover i {
   color: var(--bs-primary) !important; /* 호버 시 primary 색상 */
   transition: color 0.2s ease; /* 부드러운 색상 전환 */
+}
+
+/* 헤더 아이콘 크기 */
+.top-bar .bi {
+  font-size: 1.375rem; /* Bootstrap 아이콘 크기 증가 */
+}
+
+/* 사용자 프로필 아이콘 */
+.user-profile-icon {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--bs-secondary);
+  background-size: cover;
+  background-position: center;
 }
 
 /* * Utility Classes * */
