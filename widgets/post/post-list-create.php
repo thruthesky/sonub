@@ -14,7 +14,7 @@ inject_post_list_create_language();
 $category = http_param('category') ?? 'my-wall';
 
 ?>
-<section id="post-list-create" class="mb-4">
+<section id="post-list-create" class="mb-4 px-2">
     <form @submit.prevent="submit_post" :class="{ 'expanded': expanded}">
         <nav class="d-flex">
             <label v-show="!expanded" class="flex-shrink-1 pointer">

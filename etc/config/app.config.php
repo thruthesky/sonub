@@ -80,10 +80,8 @@ function config(): AppConfig
         $config->test = new AppConfigTest(
             url: 'https://local.sonub.com'
         );
-        $config->pages_without_footer = [
-            '/page/index.php',
-            '/page/post/list.php',
-        ];
+        // 개발 환경에서도 footer를 표시
+        $config->pages_without_footer = [];
     }
     return $config;
 }

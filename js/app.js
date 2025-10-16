@@ -283,21 +283,25 @@ ready(() => {
 });
 
 // 사용자 프로필 아이콘 컴포넌트
+// 여러 개의 .user-profile-icon 요소가 있을 수 있으므로 각각에 대해 Vue 앱 마운트
 ready(() => {
-    Vue.createApp({
-        data() {
-            return {
-                state: window.AppStore.state
-            };
-        },
-        template: `
-            <img v-if="state.user?.photo_url"
-                 :src="state.user.photo_url"
-                 class="rounded-circle"
-                 style="width: 32px; height: 32px; object-fit: cover;"
-                 alt="프로필 사진">
-            <i v-else class="bi bi-person-circle fs-5"></i>
-        `,
-    }).mount('.user-profile-icon');
+    // 모든 .user-profile-icon 요소를 찾아서 각각 마운트
+    document.querySelectorAll('.user-profile-icon').forEach((element) => {
+        Vue.createApp({
+            data() {
+                return {
+                    state: window.AppStore.state
+                };
+            },
+            template: `
+                <img v-if="state.user?.photo_url"
+                     :src="state.user.photo_url"
+                     class="rounded-circle"
+                     style="width: 32px; height: 32px; object-fit: cover;"
+                     alt="프로필 사진">
+                <i v-else class="bi bi-person-circle fs-5"></i>
+            `,
+        }).mount(element);
+    });
 });
 

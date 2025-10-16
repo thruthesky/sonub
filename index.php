@@ -102,68 +102,53 @@ if (file_exists($module_path)) {
                     <img src="/res/img/logo/medium.png" class="navbar-logo rounded-circle me-2" alt="Sonub Logo">
                 </a>
 
-                <!-- 우측 아이콘 및 토글 버튼 -->
+                <!-- 우측 아이콘 메뉴 (모바일 & 데스크톱 공통) -->
                 <div class="d-flex align-items-center ms-auto">
-                    <!-- 모바일 전용: 채팅, 친구찾기 아이콘 -->
-                    <div class="d-md-none d-flex align-items-center">
-                        <a href="<?= href()->friend->find_friend ?>" class="me-3 text-dark">
+                    <!-- 아이콘 메뉴 (모든 화면 크기에서 표시) -->
+                    <div class="d-flex align-items-center">
+                        <!-- 홈 아이콘 -->
+                        <a href="/" class="me-3 text-dark" title="Home">
+                            <i class="bi bi-house fs-5"></i>
+                        </a>
+
+                        <!-- 게시판 카테고리 아이콘 -->
+                        <a href="<?= href()->post->categories ?>" class="me-3 text-dark" title="Posts">
+                            <i class="bi bi-grid fs-5"></i>
+                        </a>
+
+                        <!-- 사용자 목록 아이콘 -->
+                        <a href="/users" class="me-3 text-dark" title="Users">
                             <i class="bi bi-people fs-5"></i>
                         </a>
 
-
-                        <a href="<?= href()->chat->rooms ?>" class="me-3 text-dark">
+                        <!-- 채팅 아이콘 -->
+                        <a href="<?= href()->chat->rooms ?>" class="me-3 text-dark" title="Chat">
                             <i class="bi bi-chat-dots fs-5"></i>
                         </a>
-                        <a href="<?= href()->post->categories ?>" class="me-3 text-dark">
-                            <i class="bi bi-grid fs-5"></i>
+
+                        <!-- About 아이콘 -->
+                        <a href="/about" class="me-3 text-dark" title="About">
+                            <i class="bi bi-info-circle fs-5"></i>
                         </a>
-                    </div>
 
-                    <!-- 프로필 아이콘 (모바일/태블릿 전용) -->
-                    <div class="me-3 d-lg-none">
-                        <a href="<?= href()->user->profile ?>" class="text-dark">
-                            <i class="user-profile-icon"></i>
-                        </a>
-                    </div>
-
-                    <!-- 모바일 토글 버튼 -->
-                    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                </div>
-
-                <!-- 네비게이션 메뉴 -->
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <!-- 데스크톱: 메뉴를 오른쪽으로 이동 (ms-auto 추가) -->
-                    <ul class="navbar-nav ms-auto">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="/">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="<?= href()->post->categories ?>">Posts</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="/users">Users</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="/about">About</a>
-                        </li>
-                        <!-- 데스크톱: 프로필 아이콘을 메뉴 뒤에 표시 -->
-                        <li class="nav-item d-none d-lg-block">
-                            <a class="nav-link text-dark" href="<?= href()->user->profile ?>">
+                        <!-- 로그인 상태에 따른 아이콘 -->
+                        <?php if (login() == null) { ?>
+                            <!-- 로그인 아이콘 -->
+                            <a href="<?= href()->user->login ?>" class="me-3 text-dark" title="Sign in">
+                                <i class="bi bi-box-arrow-in-right fs-5"></i>
+                            </a>
+                        <?php } else { ?>
+                            <!-- 프로필 아이콘 -->
+                            <a href="<?= href()->user->profile ?>" class="me-3 text-dark" title="Profile">
                                 <i class="user-profile-icon"></i>
                             </a>
-                        </li>
-                        <?php if (login() == null) { ?>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" href="<?= href()->user->login ?>">Sign in</a>
-                            </li>
-                        <?php } else { ?>
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" href="<?= href()->user->logout_submit ?>">Sign out</a>
-                            </li>
+
+                            <!-- 로그아웃 아이콘 -->
+                            <a href="<?= href()->user->logout_submit ?>" class="text-dark" title="Sign out">
+                                <i class="bi bi-box-arrow-right fs-5"></i>
+                            </a>
                         <?php } ?>
-                    </ul>
+                    </div>
                 </div>
             </div>
         </nav>
@@ -206,9 +191,10 @@ if (file_exists($module_path)) {
     </div>
 
     <!-- Footer -->
-    <footer id="page-footer" class="bg-light border-top mt-5 py-4">
 
-        <?php if (show_footer()) : ?>
+    <?php if (show_footer()) : ?>
+
+        <footer id="page-footer" class="bg-light border-top mt-5 py-4">
             <div class="container">
                 <div class="row align-items-center">
                     <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
@@ -249,9 +235,10 @@ if (file_exists($module_path)) {
                     </div>
                 </div>
             </div>
-        <?php endif; ?>
 
-    </footer>
+        </footer>
+    <?php endif; ?>
+
 
 
 
