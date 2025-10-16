@@ -108,34 +108,34 @@ if (file_exists($module_path)) {
                     <div class="d-flex align-items-center">
                         <!-- 홈 아이콘 -->
                         <a href="/" class="me-3 text-dark" title="Home">
-                            <i class="bi bi-house fs-5"></i>
+                            <i class="bi bi-house fs-4"></i>
                         </a>
 
                         <!-- 게시판 카테고리 아이콘 -->
                         <a href="<?= href()->post->categories ?>" class="me-3 text-dark" title="Posts">
-                            <i class="bi bi-grid fs-5"></i>
+                            <i class="bi bi-grid fs-4"></i>
                         </a>
 
                         <!-- 사용자 목록 아이콘 -->
                         <a href="/users" class="me-3 text-dark" title="Users">
-                            <i class="bi bi-people fs-5"></i>
+                            <i class="bi bi-people fs-4"></i>
                         </a>
 
                         <!-- 채팅 아이콘 -->
                         <a href="<?= href()->chat->rooms ?>" class="me-3 text-dark" title="Chat">
-                            <i class="bi bi-chat-dots fs-5"></i>
+                            <i class="bi bi-chat-dots fs-4"></i>
                         </a>
 
                         <!-- About 아이콘 -->
                         <a href="/about" class="me-3 text-dark" title="About">
-                            <i class="bi bi-info-circle fs-5"></i>
+                            <i class="bi bi-info-circle fs-4"></i>
                         </a>
 
                         <!-- 로그인 상태에 따른 아이콘 -->
                         <?php if (login() == null) { ?>
                             <!-- 로그인 아이콘 -->
                             <a href="<?= href()->user->login ?>" class="me-3 text-dark" title="Sign in">
-                                <i class="bi bi-box-arrow-in-right fs-5"></i>
+                                <i class="bi bi-box-arrow-in-right fs-4"></i>
                             </a>
                         <?php } else { ?>
                             <!-- 프로필 아이콘 -->
@@ -143,9 +143,9 @@ if (file_exists($module_path)) {
                                 <i class="user-profile-icon"></i>
                             </a>
 
-                            <!-- 로그아웃 아이콘 -->
-                            <a href="<?= href()->user->logout_submit ?>" class="text-dark" title="Sign out">
-                                <i class="bi bi-box-arrow-right fs-5"></i>
+                            <!-- 메뉴 아이콘 (로그아웃 대신) -->
+                            <a href="<?= href()->user->logout_submit ?>" class="text-dark" title="Menu">
+                                <i class="bi bi-list fs-4"></i>
                             </a>
                         <?php } ?>
                     </div>
