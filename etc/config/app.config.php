@@ -58,8 +58,8 @@ class AppConfig
             'pages_without_footer' => [
                 // exmaple: '/' 르면 보여 주지 않는다.
                 '/',
-                '/post/list'
-
+                '/post/list',
+                '/user/list',
             ],
         ];
     }

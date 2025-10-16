@@ -177,6 +177,10 @@ class ChatHref
 
 
 
+class MenuHref
+{
+    public string $intro = '/page/intro';
+}
 
 
 
@@ -208,6 +212,7 @@ class Href
 
     public ChatHref $chat;
     public AdvertisementHref $adv;
+    public MenuHref $menu;
 
 
     public function __construct()
@@ -220,6 +225,7 @@ class Href
         $this->admin = new AdminHref();
         $this->chat = new ChatHref();
         $this->adv = new AdvertisementHref();
+        $this->menu = new MenuHref();
     }
 }
 

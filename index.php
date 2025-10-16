@@ -106,10 +106,6 @@ if (file_exists($module_path)) {
                 <div class="d-flex align-items-center ms-auto">
                     <!-- 아이콘 메뉴 (모든 화면 크기에서 표시) -->
                     <div class="d-flex align-items-center">
-                        <!-- 홈 아이콘 -->
-                        <a href="/" class="me-3 text-dark" title="Home">
-                            <i class="bi bi-house fs-4"></i>
-                        </a>
 
                         <!-- 게시판 카테고리 아이콘 -->
                         <a href="<?= href()->post->categories ?>" class="me-3 text-dark" title="Posts">
@@ -117,7 +113,7 @@ if (file_exists($module_path)) {
                         </a>
 
                         <!-- 사용자 목록 아이콘 -->
-                        <a href="/users" class="me-3 text-dark" title="Users">
+                        <a href="<?= href()->user->list ?>" class="me-3 text-dark" title="Users">
                             <i class="bi bi-people fs-4"></i>
                         </a>
 
@@ -134,8 +130,8 @@ if (file_exists($module_path)) {
                         <!-- 로그인 상태에 따른 아이콘 -->
                         <?php if (login() == null) { ?>
                             <!-- 로그인 아이콘 -->
-                            <a href="<?= href()->user->login ?>" class="me-3 text-dark" title="Sign in">
-                                <i class="bi bi-box-arrow-in-right fs-4"></i>
+                            <a href="<?= href()->menu->intro ?>" class="me-3 text-dark" title="Sign in">
+                                <i class="bi bi-list fs-4"></i>
                             </a>
                         <?php } else { ?>
                             <!-- 프로필 아이콘 -->
@@ -144,7 +140,7 @@ if (file_exists($module_path)) {
                             </a>
 
                             <!-- 메뉴 아이콘 (로그아웃 대신) -->
-                            <a href="<?= href()->user->logout_submit ?>" class="text-dark" title="Menu">
+                            <a href="<?= href()->menu->intro ?>" class="text-dark" title="Menu">
                                 <i class="bi bi-list fs-4"></i>
                             </a>
                         <?php } ?>
