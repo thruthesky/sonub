@@ -2,28 +2,25 @@
 /**
  * New Users Widget
  *
- * Displays the 16 most recently registered users in a responsive grid.
+ * Displays the 16 most recently registered users in a compact 4x4 grid.
  */
 
 // Get 16 most recent users
 $result = list_users(['page' => 1, 'per_page' => 16]);
 $users = $result['users'] ?? [];
-$userCount = count($users);
+$displayUsers = array_slice($users, 0, 16);
+$userCount = count($displayUsers);
 ?>
 
 <div class="new-users-widget">
     <div class="widget-header">
         <div class="widget-heading">
-            <span class="widget-eyebrow">Latest arrivals</span>
             <h5 class="widget-title">New Members</h5>
+            <p class="widget-subtitle">Latest arrivals</p>
         </div>
-        <span class="widget-count">
-            <?php if ($userCount > 0): ?>
-                <?= $userCount ?> <?= $userCount === 1 ? 'new member' : 'new members' ?>
-            <?php else: ?>
-                Be the first to join
-            <?php endif; ?>
-        </span>
+        <?php if ($userCount > 0): ?>
+            <span class="widget-count"><?= $userCount ?></span>
+        <?php endif; ?>
     </div>
 
     <?php if ($userCount === 0): ?>
@@ -33,7 +30,7 @@ $userCount = count($users);
         </div>
     <?php else: ?>
         <div class="users-grid">
-            <?php foreach ($users as $user): ?>
+            <?php foreach ($displayUsers as $user): ?>
                 <a href="<?= href()->user->profile ?>?id=<?= $user['id'] ?>" class="user-item">
                     <div class="user-avatar">
                         <?php if (!empty($user['photo_url'])): ?>
@@ -53,94 +50,78 @@ $userCount = count($users);
 </div>
 
 <style>
-/* New users widget styles */
+/* New users widget styles - Clean and Modern Design */
 .new-users-widget {
-    position: relative;
-    background: linear-gradient(155deg, rgba(99, 102, 241, 0.12), rgba(59, 130, 246, 0.04));
-    border: 1px solid rgba(15, 23, 42, 0.08);
-    border-radius: 16px;
-    padding: 1.75rem 1.5rem;
-    box-shadow: 0 18px 45px -32px rgba(15, 23, 42, 0.55);
+    background: white;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 8px;
+    padding: 0;
     overflow: hidden;
-    backdrop-filter: blur(6px);
-}
-
-.new-users-widget::after {
-    content: "";
-    position: absolute;
-    top: -60px;
-    right: -30px;
-    width: 180px;
-    height: 180px;
-    background: radial-gradient(circle, rgba(59, 130, 246, 0.28), transparent 65%);
-    opacity: 0.6;
-    pointer-events: none;
 }
 
 .new-users-widget .widget-header {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 1.5rem;
-    position: relative;
-    z-index: 1;
+    padding: 1.25rem 1.25rem 0.75rem 1.25rem;
+    background: var(--bs-light);
+    border-bottom: 1px solid var(--bs-border-color);
 }
 
 .new-users-widget .widget-heading {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
-}
-
-.new-users-widget .widget-eyebrow {
-    display: inline-block;
-    text-transform: uppercase;
-    font-size: 0.7rem;
-    letter-spacing: 0.18em;
-    font-weight: 600;
-    color: rgba(15, 23, 42, 0.55);
+    gap: 0.25rem;
 }
 
 .new-users-widget .widget-title {
     margin: 0;
-    font-size: 1.15rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--bs-emphasis-color);
 }
 
+.new-users-widget .widget-subtitle {
+    margin: 0;
+    text-transform: uppercase;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    font-weight: 500;
+    color: var(--bs-secondary);
+}
+
 .new-users-widget .widget-count {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.35rem 0.75rem;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(15, 23, 42, 0.1);
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: rgba(15, 23, 42, 0.65);
+    min-width: 2.25rem;
+    height: 2.25rem;
+    padding: 0 0.5rem;
+    border-radius: 50%;
+    background: var(--bs-primary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: white;
 }
 
 .new-users-widget .empty-state {
-    position: relative;
-    z-index: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 0.75rem;
-    padding: 2rem;
+    padding: 1.5rem;
     text-align: center;
     color: rgba(15, 23, 42, 0.6);
-    background: rgba(255, 255, 255, 0.82);
-    border-radius: 14px;
+    background: rgba(148, 163, 184, 0.08);
+    border-radius: 10px;
     border: 1px dashed rgba(15, 23, 42, 0.12);
 }
 
 .new-users-widget .empty-state i {
-    font-size: 2rem;
-    color: var(--bs-primary);
+    font-size: 1.8rem;
+    color: rgba(59, 130, 246, 0.65);
 }
 
 .new-users-widget .empty-state span {
@@ -148,48 +129,51 @@ $userCount = count($users);
     color: rgba(15, 23, 42, 0.45);
 }
 
-/* Grid layout */
+/* Grid layout - No gaps, clean borders */
 .new-users-widget .users-grid {
-    position: relative;
-    z-index: 1;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 1.2rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    padding: 0;
 }
 
-/* User item */
+/* User item - Minimal design */
 .new-users-widget .user-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.6rem;
-    padding: 1rem;
+    gap: 0.5rem;
+    padding: 1rem 0.5rem;
     text-decoration: none;
     color: var(--bs-body-color);
-    background: rgba(255, 255, 255, 0.78);
-    border: 1px solid rgba(15, 23, 42, 0.1);
-    border-radius: 14px;
-    box-shadow: 0 12px 30px -26px rgba(15, 23, 42, 0.5);
-    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+    background: white;
+    border-right: 1px solid var(--bs-border-color);
+    border-bottom: 1px solid var(--bs-border-color);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.new-users-widget .user-item:nth-child(4n) {
+    border-right: none;
+}
+
+.new-users-widget .user-item:nth-last-child(-n+4) {
+    border-bottom: none;
 }
 
 .new-users-widget .user-item:hover {
-    transform: translateY(-6px);
-    border-color: rgba(59, 130, 246, 0.4);
-    box-shadow: 0 18px 32px -24px rgba(59, 130, 246, 0.45);
+    background-color: var(--bs-light);
     color: var(--bs-primary);
 }
 
-/* User avatar */
+/* User avatar - Larger and cleaner */
 .new-users-widget .user-avatar {
-    width: 64px;
-    height: 64px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
     overflow: hidden;
-    border: 1px solid rgba(59, 130, 246, 0.25);
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.24), rgba(99, 102, 241, 0.14));
-    box-shadow: inset 0 3px 6px -4px rgba(15, 23, 42, 0.4);
+    border: 2px solid var(--bs-border-color);
+    background: var(--bs-light);
 }
 
 .new-users-widget .user-avatar img {
@@ -205,71 +189,68 @@ $userCount = count($users);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.6);
-    color: rgba(59, 130, 246, 0.65);
+    background: var(--bs-light);
+    color: var(--bs-secondary);
     font-size: 1.5rem;
 }
 
-/* User name */
+/* User name - More visible and clear */
 .new-users-widget .user-name {
-    font-size: 0.82rem;
-    font-weight: 600;
+    font-size: 0.8rem;
+    font-weight: 500;
     text-align: center;
-    color: var(--bs-emphasis-color);
+    color: var(--bs-body-color);
+    line-height: 1.2;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     max-width: 100%;
-    transition: color 0.25s ease;
+    transition: color 0.2s ease;
 }
 
 .new-users-widget .user-item:hover .user-name {
     color: var(--bs-primary);
+    font-weight: 600;
 }
 
 /* Responsive design */
-@media (max-width: 992px) {
-    .new-users-widget {
-        padding: 1.5rem;
-    }
-
-    .new-users-widget .users-grid {
-        gap: 1rem;
-    }
-}
-
 @media (max-width: 768px) {
     .new-users-widget .widget-header {
-        flex-direction: column;
-        align-items: flex-start;
+        padding: 1rem 1rem 0.625rem 1rem;
     }
 
-    .new-users-widget .widget-count {
-        align-self: flex-start;
+    .new-users-widget .user-item {
+        padding: 0.875rem 0.4rem;
     }
 
-    .new-users-widget .users-grid {
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    .new-users-widget .user-avatar {
+        width: 48px;
+        height: 48px;
+    }
+
+    .new-users-widget .user-name {
+        font-size: 0.75rem;
     }
 }
 
 @media (max-width: 576px) {
-    .new-users-widget {
-        padding: 1.25rem;
-    }
-
-    .new-users-widget .users-grid {
-        grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
-        gap: 0.85rem;
-    }
-
-    .new-users-widget .user-avatar {
-        width: 56px;
-        height: 56px;
+    .new-users-widget .widget-header {
+        padding: 0.875rem 0.875rem 0.5rem 0.875rem;
     }
 
     .new-users-widget .user-item {
-        padding: 0.75rem;
+        padding: 0.75rem 0.3rem;
+    }
+
+    .new-users-widget .user-avatar {
+        width: 44px;
+        height: 44px;
+    }
+
+    .new-users-widget .user-name {
+        font-size: 0.7rem;
     }
 }
 </style>

@@ -173,18 +173,9 @@ if (file_exists($module_path)) {
     <div class="sonub-container">
         <div class="row">
             <!-- Left Sidebar -->
-            <aside class="d-none d-lg-block col-12 col-md-3 col-lg-3 bg-light p-3 border-end">
-
+            <aside class="d-none d-lg-block col-12 col-md-3 col-lg-3 px-0 bg-light border-end">
                 <?php include_once WIDGET_DIR . '/sidebar/new-users.php'; ?>
-                <hr>
-                <div class="mt-3">
-                    <h6>Quick Links</h6>
-                    <ul class="list-unstyled">
-                        <li><a href="#" class="text-decoration-none">Documentation</a></li>
-                        <li><a href="/support" class="text-decoration-none">Support</a></li>
-                        <li><a href="#" class="text-decoration-none">Contact</a></li>
-                    </ul>
-                </div>
+                <?php include_once WIDGET_DIR . '/sidebar/quick-links.php'; ?>
             </aside>
 
             <!-- Main Content -->
@@ -238,8 +229,6 @@ if (file_exists($module_path)) {
                         <!-- Language Selector -->
                         <div class="mb-2">
                             <?php include ROOT_DIR . '/widgets/language/language-selector.php'; ?>
-
-
                         </div>
                     </div>
                 </div>
