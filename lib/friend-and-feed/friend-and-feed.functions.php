@@ -79,15 +79,21 @@ function request_friend(array $input): array
     // 비즈니스 로직 수행
     $pdo = pdo();
     [$a, $b] = friend_pair($me, $other);
+    $now = now_epoch();
     $sql = "INSERT INTO friendships
               (user_id_a, user_id_b, status, requested_by, created_at, updated_at)
             VALUES
-              (:a, :b, 'pending', :req, :now, :now)
+              (:a, :b, 'pending', :req, :created, :updated)
             ON DUPLICATE KEY UPDATE
               updated_at = VALUES(updated_at)";
     $stmt = $pdo->prepare($sql);
-    $now = now_epoch();
-    $stmt->execute([':a' => $a, ':b' => $b, ':req' => $me, ':now' => $now]);
+    $stmt->execute([
+        ':a' => $a,
+        ':b' => $b,
+        ':req' => $me,
+        ':created' => $now,
+        ':updated' => $now
+    ]);
 
     return ['message' => '친구 요청을 보냈습니다'];
 }
@@ -222,11 +228,11 @@ function get_friend_ids(array $input): array
 
     // 비즈니스 로직 수행
     $pdo = pdo();
-    $sql = "SELECT CASE WHEN user_id_a = :me THEN user_id_b ELSE user_id_a END AS friend_id
+    $sql = "SELECT CASE WHEN user_id_a = :me1 THEN user_id_b ELSE user_id_a END AS friend_id
               FROM friendships
-             WHERE (user_id_a = :me OR user_id_b = :me) AND status='accepted'";
+             WHERE (user_id_a = :me2 OR user_id_b = :me3) AND status='accepted'";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([':me' => $me]);
+    $stmt->execute([':me1' => $me, ':me2' => $me, ':me3' => $me]);
     $friend_ids = array_map(fn($r) => (int)$r['friend_id'], $stmt->fetchAll());
 
     return ['friend_ids' => $friend_ids];
