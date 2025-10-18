@@ -6,6 +6,7 @@ declare(strict_types=1);
  * 헬퍼 함수: 두 사용자 ID를 정렬하여 [작은 ID, 큰 ID] 배열 반환
  *
  * 무방향 친구 관계에서 (user_id_a, user_id_b)를 항상 작은 ID를 a, 큰 ID를 b로 저장하기 위한 헬퍼 함수
+ * (내부 전용 - API로 호출되지 않음)
  *
  * @param int $a 첫 번째 사용자 ID
  * @param int $b 두 번째 사용자 ID
@@ -22,6 +23,8 @@ function friend_pair(int $a, int $b): array
 /**
  * 헬퍼 함수: 현재 시간을 UNIX epoch (초 단위) 정수로 반환
  *
+ * (내부 전용 - API로 호출되지 않음)
+ *
  * @return int 현재 시간의 UNIX timestamp
  *
  * @example
@@ -33,24 +36,47 @@ function now_epoch(): int
 }
 
 // ============================================================================
-// FriendshipRepository 함수들 (친구 관계 관리)
+// FriendshipRepository 함수들 (친구 관계 관리) - API 호출 가능
 // ============================================================================
 
 /**
- * 친구 요청 생성 함수
+ * 친구 요청 생성 함수 (API 호출 가능)
  *
  * 무방향 친구 관계 모델을 사용하여 친구 요청을 생성합니다.
  * 이미 요청이 존재하면 updated_at만 갱신됩니다 (ON DUPLICATE KEY UPDATE).
  *
- * @param int $me 요청을 보내는 사용자 ID
- * @param int $other 요청을 받는 사용자 ID
- * @return void
+ * @param array $input 입력 파라미터
+ *   - int $input['me'] 요청을 보내는 사용자 ID
+ *   - int $input['other'] 요청을 받는 사용자 ID
+ * @return array 성공 메시지
+ * @throws ApiException 에러 발생 시
  *
  * @example
- * request_friend(5, 10); // 사용자 5가 사용자 10에게 친구 요청
+ * // PHP에서 호출
+ * request_friend(['me' => 5, 'other' => 10]);
+ *
+ * // JavaScript에서 API 호출
+ * await func('request_friend', { me: 5, other: 10, auth: true });
  */
-function request_friend(int $me, int $other): void
+function request_friend(array $input): array
 {
+    // 파라미터 추출 및 검증
+    $me = (int)($input['me'] ?? 0);
+    $other = (int)($input['other'] ?? 0);
+
+    if ($me <= 0) {
+        error('invalid-me', '유효하지 않은 사용자 ID입니다');
+    }
+
+    if ($other <= 0) {
+        error('invalid-other', '유효하지 않은 대상 사용자 ID입니다');
+    }
+
+    if ($me === $other) {
+        error('same-user', '자기 자신에게 친구 요청을 보낼 수 없습니다');
+    }
+
+    // 비즈니스 로직 수행
     $pdo = pdo();
     [$a, $b] = friend_pair($me, $other);
     $sql = "INSERT INTO friendships
@@ -62,22 +88,43 @@ function request_friend(int $me, int $other): void
     $stmt = $pdo->prepare($sql);
     $now = now_epoch();
     $stmt->execute([':a' => $a, ':b' => $b, ':req' => $me, ':now' => $now]);
+
+    return ['message' => '친구 요청을 보냈습니다'];
 }
 
 /**
- * 친구 요청 수락 함수
+ * 친구 요청 수락 함수 (API 호출 가능)
  *
  * pending 상태의 친구 요청을 accepted로 변경합니다.
  *
- * @param int $me 요청을 수락하는 사용자 ID
- * @param int $other 요청을 보낸 사용자 ID
- * @return bool 수락 성공 여부 (pending 상태가 아니면 false)
+ * @param array $input 입력 파라미터
+ *   - int $input['me'] 요청을 수락하는 사용자 ID
+ *   - int $input['other'] 요청을 보낸 사용자 ID
+ * @return array 성공 여부 및 메시지
+ * @throws ApiException 에러 발생 시
  *
  * @example
- * $success = accept_friend(10, 5); // 사용자 10이 사용자 5의 친구 요청 수락
+ * // PHP에서 호출
+ * $result = accept_friend(['me' => 10, 'other' => 5]);
+ *
+ * // JavaScript에서 API 호출
+ * const result = await func('accept_friend', { me: 10, other: 5, auth: true });
  */
-function accept_friend(int $me, int $other): bool
+function accept_friend(array $input): array
 {
+    // 파라미터 추출 및 검증
+    $me = (int)($input['me'] ?? 0);
+    $other = (int)($input['other'] ?? 0);
+
+    if ($me <= 0) {
+        error('invalid-me', '유효하지 않은 사용자 ID입니다');
+    }
+
+    if ($other <= 0) {
+        error('invalid-other', '유효하지 않은 대상 사용자 ID입니다');
+    }
+
+    // 비즈니스 로직 수행
     $pdo = pdo();
     [$a, $b] = friend_pair($me, $other);
     $sql = "UPDATE friendships
@@ -85,53 +132,104 @@ function accept_friend(int $me, int $other): bool
              WHERE user_id_a=:a AND user_id_b=:b AND status='pending'";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':a' => $a, ':b' => $b, ':now' => now_epoch()]);
-    return $stmt->rowCount() > 0;
+
+    $success = $stmt->rowCount() > 0;
+
+    if (!$success) {
+        error('no-pending-request', '승인할 친구 요청이 없습니다');
+    }
+
+    return ['message' => '친구 요청을 수락했습니다', 'success' => true];
 }
 
 /**
- * 친구 관계 삭제 함수
+ * 친구 관계 삭제 함수 (API 호출 가능)
  *
  * accepted 상태의 친구 관계를 데이터베이스에서 삭제합니다.
  *
- * @param int $me 친구 관계를 삭제하는 사용자 ID
- * @param int $other 삭제할 친구의 사용자 ID
- * @return bool 삭제 성공 여부 (친구 관계가 없으면 false)
+ * @param array $input 입력 파라미터
+ *   - int $input['me'] 친구 관계를 삭제하는 사용자 ID
+ *   - int $input['other'] 삭제할 친구의 사용자 ID
+ * @return array 성공 여부 및 메시지
+ * @throws ApiException 에러 발생 시
  *
  * @example
- * $removed = remove_friend(5, 10); // 사용자 5와 10의 친구 관계 삭제
+ * // PHP에서 호출
+ * $result = remove_friend(['me' => 5, 'other' => 10]);
+ *
+ * // JavaScript에서 API 호출
+ * const result = await func('remove_friend', { me: 5, other: 10, auth: true });
  */
-function remove_friend(int $me, int $other): bool
+function remove_friend(array $input): array
 {
+    // 파라미터 추출 및 검증
+    $me = (int)($input['me'] ?? 0);
+    $other = (int)($input['other'] ?? 0);
+
+    if ($me <= 0) {
+        error('invalid-me', '유효하지 않은 사용자 ID입니다');
+    }
+
+    if ($other <= 0) {
+        error('invalid-other', '유효하지 않은 대상 사용자 ID입니다');
+    }
+
+    // 비즈니스 로직 수행
     $pdo = pdo();
     [$a, $b] = friend_pair($me, $other);
     $sql = "DELETE FROM friendships
             WHERE user_id_a=:a AND user_id_b=:b AND status='accepted'";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':a' => $a, ':b' => $b]);
-    return $stmt->rowCount() > 0;
+
+    $success = $stmt->rowCount() > 0;
+
+    if (!$success) {
+        error('no-friendship', '삭제할 친구 관계가 없습니다');
+    }
+
+    return ['message' => '친구 관계를 삭제했습니다', 'success' => true];
 }
 
 /**
- * 사용자의 친구 ID 목록 조회 함수
+ * 사용자의 친구 ID 목록 조회 함수 (API 호출 가능)
  *
  * accepted 상태의 친구 관계만 조회하여 친구 ID 배열을 반환합니다.
  * 무방향 1행 모델에서 CASE 문을 사용하여 친구 ID를 추출합니다.
  *
- * @param int $me 친구 목록을 조회할 사용자 ID
- * @return int[] 친구 ID 목록 (친구가 없으면 빈 배열)
+ * @param array $input 입력 파라미터
+ *   - int $input['me'] 친구 목록을 조회할 사용자 ID
+ * @return array 친구 ID 목록 (친구가 없으면 빈 배열)
+ * @throws ApiException 에러 발생 시
  *
  * @example
- * $friends = get_friend_ids(5); // [1, 3, 10, 15]
+ * // PHP에서 호출
+ * $friends = get_friend_ids(['me' => 5]);
+ * // ['friend_ids' => [1, 3, 10, 15]]
+ *
+ * // JavaScript에서 API 호출
+ * const result = await func('get_friend_ids', { me: 5 });
+ * // result.friend_ids = [1, 3, 10, 15]
  */
-function get_friend_ids(int $me): array
+function get_friend_ids(array $input): array
 {
+    // 파라미터 추출 및 검증
+    $me = (int)($input['me'] ?? 0);
+
+    if ($me <= 0) {
+        error('invalid-me', '유효하지 않은 사용자 ID입니다');
+    }
+
+    // 비즈니스 로직 수행
     $pdo = pdo();
     $sql = "SELECT CASE WHEN user_id_a = :me THEN user_id_b ELSE user_id_a END AS friend_id
               FROM friendships
              WHERE (user_id_a = :me OR user_id_b = :me) AND status='accepted'";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([':me' => $me]);
-    return array_map(fn($r) => (int)$r['friend_id'], $stmt->fetchAll());
+    $friend_ids = array_map(fn($r) => (int)$r['friend_id'], $stmt->fetchAll());
+
+    return ['friend_ids' => $friend_ids];
 }
 
 // ============================================================================
@@ -139,10 +237,11 @@ function get_friend_ids(int $me): array
 // ============================================================================
 
 /**
- * 양방향 차단 확인 함수
+ * 양방향 차단 확인 함수 (내부 전용)
  *
  * 두 사용자 중 어느 한쪽이라도 상대방을 차단했는지 확인합니다.
  * (A가 B를 차단했거나, B가 A를 차단한 경우 모두 true 반환)
+ * (내부 전용 - API로 호출되지 않음)
  *
  * @param int $a 첫 번째 사용자 ID
  * @param int $b 두 번째 사용자 ID
@@ -174,6 +273,7 @@ function is_blocked_either_way(int $a, int $b): bool
  *
  * 게시글 ID로 posts 테이블의 단일 행을 연관 배열로 반환합니다.
  * PostModel 객체가 아닌 raw array를 반환합니다.
+ * (내부 전용 - API로 호출되지 않음)
  *
  * @param int $post_id 조회할 게시글 ID
  * @return array|null 게시글 데이터 배열 또는 null
@@ -194,7 +294,7 @@ function get_post_row(int $post_id): ?array
 }
 
 // ============================================================================
-// FeedRepository 함수들 (피드 캐시 관리)
+// FeedRepository 함수들 (피드 캐시 관리) - 일부 API 호출 가능
 // ============================================================================
 
 /**
@@ -202,6 +302,7 @@ function get_post_row(int $post_id): ?array
  *
  * 게시글 작성 시 작성자의 모든 친구에게 feed_entries를 미리 생성합니다.
  * INSERT IGNORE를 사용하여 중복 삽입을 방지합니다.
+ * (내부 전용 - create_post()에서 자동 호출)
  *
  * @param int $author_id 게시글 작성자 ID
  * @param int $post_id 게시글 ID
@@ -238,6 +339,7 @@ function fanout_post_to_friends(int $author_id, int $post_id, int $created_at): 
  *
  * feed_entries 테이블에서 미리 생성된 피드 캐시를 조회합니다.
  * 친구 목록 조인 없이 단일 테이블 스캔으로 고속 조회가 가능합니다.
+ * (내부 전용 - get_hybrid_feed()에서 사용)
  *
  * @param int $me 피드를 조회할 사용자 ID
  * @param int $limit 조회할 최대 개수
@@ -268,6 +370,7 @@ function get_feed_from_cache(int $me, int $limit, int $offset = 0): array
  *
  * feed_entries 캐시가 충분하지 않을 때 posts 테이블에서 직접 조회합니다.
  * 친구 ID 배열을 받아 IN 절로 필터링하며, 선택적으로 차단 사용자를 제외합니다.
+ * (내부 전용 - get_hybrid_feed()에서 사용)
  *
  * @param int $me 피드를 조회할 사용자 ID
  * @param array $friend_ids 친구 ID 배열
@@ -277,7 +380,7 @@ function get_feed_from_cache(int $me, int $limit, int $offset = 0): array
  * @return array 피드 항목 배열 (post_id, post_author_id, created_at)
  *
  * @example
- * $friend_ids = get_friend_ids(10);
+ * $friend_ids = get_friend_ids(['me' => 10])['friend_ids'];
  * $feed = get_feed_from_read_join(10, $friend_ids, 20, 0);
  */
 function get_feed_from_read_join(
@@ -324,13 +427,13 @@ function get_feed_from_read_join(
 }
 
 // ============================================================================
-// FeedService 함수들 (피드 비즈니스 로직)
+// FeedService 함수들 (피드 비즈니스 로직) - API 호출 가능
 // ============================================================================
 // 주의: create_post_and_fanout() 함수는 삭제되었습니다.
 // 이제 lib/post/post.crud.php의 create_post() 함수에서 자동으로 피드 전파를 수행합니다.
 
 /**
- * 하이브리드 피드 조회 함수
+ * 하이브리드 피드 조회 함수 (API 호출 가능)
  *
  * 캐시(feed_entries)와 읽기 조인(posts)을 결합하여 사용자의 피드를 조회합니다.
  * 1. 먼저 캐시에서 조회
@@ -338,16 +441,39 @@ function get_feed_from_read_join(
  * 3. 두 결과를 병합하고 중복 제거
  * 4. visibility 및 차단 관계를 최종 검증
  *
- * @param int $me 피드를 조회할 사용자 ID
- * @param int $limit 조회할 최대 개수 (기본값: 20)
- * @param int $offset 시작 위치 (기본값: 0)
- * @return array 피드 항목 배열 (post_id, author_id, category, title, content, created_at, visibility)
+ * @param array $input 입력 파라미터
+ *   - int $input['me'] 피드를 조회할 사용자 ID
+ *   - int $input['limit'] 조회할 최대 개수 (기본값: 20)
+ *   - int $input['offset'] 시작 위치 (기본값: 0)
+ * @return array 피드 항목 배열
+ * @throws ApiException 에러 발생 시
  *
  * @example
- * $feed = get_hybrid_feed(10, 20, 0); // 사용자 10의 피드 20개 조회
+ * // PHP에서 호출
+ * $feed = get_hybrid_feed(['me' => 10, 'limit' => 20, 'offset' => 0]);
+ *
+ * // JavaScript에서 API 호출
+ * const feed = await func('get_hybrid_feed', { me: 10, limit: 20, offset: 0 });
  */
-function get_hybrid_feed(int $me, int $limit = 20, int $offset = 0): array
+function get_hybrid_feed(array $input): array
 {
+    // 파라미터 추출 및 검증
+    $me = (int)($input['me'] ?? 0);
+    $limit = (int)($input['limit'] ?? 20);
+    $offset = (int)($input['offset'] ?? 0);
+
+    if ($me <= 0) {
+        error('invalid-me', '유효하지 않은 사용자 ID입니다');
+    }
+
+    if ($limit <= 0 || $limit > 100) {
+        $limit = 20; // 기본값 및 최대값 제한
+    }
+
+    if ($offset < 0) {
+        $offset = 0;
+    }
+
     // 1단계: 캐시에서 조회
     $cached = get_feed_from_cache($me, $limit, $offset);
     if (count($cached) >= $limit) {
@@ -355,7 +481,8 @@ function get_hybrid_feed(int $me, int $limit = 20, int $offset = 0): array
     }
 
     // 2단계: 부족분은 읽기 조인으로 보충
-    $friend_ids = get_friend_ids($me);
+    $friend_ids_result = get_friend_ids(['me' => $me]);
+    $friend_ids = $friend_ids_result['friend_ids'] ?? [];
     $need = $limit - count($cached);
     $joined = get_feed_from_read_join($me, $friend_ids, $need, $offset);
 
@@ -385,6 +512,7 @@ function get_hybrid_feed(int $me, int $limit = 20, int $offset = 0): array
  * - friends: 친구에게만 공개
  * - public: 모두에게 공개
  * - 차단된 사용자의 게시글은 제외
+ * (내부 전용 - get_hybrid_feed()에서 사용)
  *
  * @param int $me 피드를 조회하는 사용자 ID
  * @param array $items 피드 항목 배열 (post_id, post_author_id, created_at)
@@ -394,7 +522,8 @@ function finalize_feed_with_visibility(int $me, array $items): array
 {
     $out = [];
     // 친구 목록 캐시(루프 내 DB 호출 줄이기)
-    $friend_ids = get_friend_ids($me);
+    $friend_ids_result = get_friend_ids(['me' => $me]);
+    $friend_ids = $friend_ids_result['friend_ids'] ?? [];
 
     foreach ($items as $r) {
         $post = get_post_row((int)$r['post_id']);
@@ -425,5 +554,5 @@ function finalize_feed_with_visibility(int $me, array $items): array
 
     // 안전하게 최신순 보장
     usort($out, fn($a, $b) => $b['created_at'] <=> $a['created_at']);
-    return $out;
+    return ['feed' => $out];
 }

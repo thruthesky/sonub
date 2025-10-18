@@ -79,6 +79,7 @@ npx playwright test tests/playwright/e2e/user-login.spec.ts
 - `pdo()` 함수로 PDO 직접 사용, 플레이스홀더(?)로 SQL 인젝션 방지
 - `throw error()` 또는 `throw ApiException()` 사용
 - PHPDoc 형식 문서화
+- **API 함수**: 배열 파라미터 하나만 받기 (`function func(array $input): mixed`)
 
 **CSS/JavaScript**:
 - 페이지 파일(`./page/**/*.php`): 외부 `.css`, `.js` 파일로 분리
