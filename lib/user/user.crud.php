@@ -56,8 +56,8 @@ function create_user_record(array $input): array
     $now = time();
 
     // 사용자 레코드 생성 (PDO Prepared Statement 사용)
-    $sql = "INSERT INTO users (firebase_uid, display_name, created_at, updated_at, birthday, gender)
-            VALUES (:firebase_uid, :display_name, :created_at, :updated_at, :birthday, :gender)";
+    $sql = "INSERT INTO users (firebase_uid, display_name, created_at, updated_at, birthday, gender, photo_url)
+            VALUES (:firebase_uid, :display_name, :created_at, :updated_at, :birthday, :gender, :photo_url)";
 
     $stmt = $pdo->prepare($sql);
     $stmt->bindValue(':firebase_uid', $input['firebase_uid'], PDO::PARAM_STR);
@@ -66,6 +66,7 @@ function create_user_record(array $input): array
     $stmt->bindValue(':updated_at', $now, PDO::PARAM_INT);
     $stmt->bindValue(':birthday', (int)($input['birthday'] ?? 0), PDO::PARAM_INT);
     $stmt->bindValue(':gender', $input['gender'] ?? '', PDO::PARAM_STR);
+    $stmt->bindValue(':photo_url', $input['photo_url'] ?? '', PDO::PARAM_STR);
     $stmt->execute();
 
     // 생성된 사용자 ID

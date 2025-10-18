@@ -1,4 +1,5 @@
 <?php
+
 /**
  * 친구 및 피드 기능 테스트
  *
@@ -330,8 +331,8 @@ $result = get_friend_ids(['me' => 1001]);
 assert_true(count($result['friend_ids']) === 3, "친구 목록에 3명 존재");
 assert_true(
     in_array(1003, $result['friend_ids']) &&
-    in_array(1004, $result['friend_ids']) &&
-    in_array(1005, $result['friend_ids']),
+        in_array(1004, $result['friend_ids']) &&
+        in_array(1005, $result['friend_ids']),
     "모든 친구 ID가 올바름"
 );
 
