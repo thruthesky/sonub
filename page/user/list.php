@@ -100,7 +100,6 @@ load_deferred_js('user-search');
                                     </span>
                                     <span v-else>
                                         <i class="bi bi-person-plus me-1"></i>
-                                        <?= t()->친구_추가 ?>
                                     </span>
                                 </button>
                             </div>

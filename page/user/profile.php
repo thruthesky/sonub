@@ -55,6 +55,10 @@ if (!empty($user->created_at)) {
 $is_me = login() && login()->id === $user->id;
 ?>
 
+<div id="profile-app"
+     data-other-user-id="<?= $user->id ?>"
+     data-is-me="<?= $is_me ? 'true' : 'false' ?>"
+     data-my-user-id="<?= login() ? login()->id : 0 ?>">
 <div class="profile-container">
     <div class="profile-card">
         <!-- 프로필 헤더 -->
@@ -115,15 +119,33 @@ $is_me = login() && login()->id === $user->id;
             </div>
         </div>
 
-        <!-- 프로필 액션 버튼 (본인인 경우에만 표시) -->
-        <?php if ($is_me): ?>
-            <div class="profile-actions">
+        <!-- 프로필 액션 버튼 -->
+        <div class="profile-actions">
+            <?php if ($is_me): ?>
+                <!-- 본인인 경우: 프로필 수정 버튼 -->
                 <a href="<?= href()->user->profile_edit ?>" class="btn-edit-profile">
-                    <i class="bi bi-pencil-square me-2"></i><?= tr(['en' => 'Edit Profile', 'ko' => '프로필 수정']) ?>
+                    <i class="bi bi-pencil-square me-2"></i><?= t()->프로필_수정 ?>
                 </a>
-            </div>
-        <?php endif; ?>
+            <?php else: ?>
+                <!-- 다른 사용자인 경우: 친구 추가 버튼 (Vue.js) -->
+                <button @click="requestFriend"
+                        class="btn-add-friend"
+                        :disabled="requesting || isFriend">
+                    <span v-if="requesting">
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        <?= t()->요청_중 ?>
+                    </span>
+                    <span v-else-if="isFriend">
+                        <i class="bi bi-check-circle me-2"></i><?= t()->친구_요청_전송_완료 ?>
+                    </span>
+                    <span v-else>
+                        <i class="bi bi-person-plus me-2"></i><?= t()->친구_추가 ?>
+                    </span>
+                </button>
+            <?php endif; ?>
+        </div>
     </div>
+</div>
 </div>
 
 <?php
@@ -133,16 +155,25 @@ $is_me = login() && login()->id === $user->id;
 function inject_user_profile_language()
 {
     t()->inject([
-        '사용자 프로필' => 'User Profile',
-        '사용자 ID가 필요합니다.' => 'User ID is required.',
-        '사용자를 찾을 수 없습니다.' => 'User not found.',
-        '성별' => 'Gender',
-        '남성' => 'Male',
-        '여성' => 'Female',
-        '생년월일' => 'Birthday',
-        '가입일' => 'Joined',
-        '프로필 수정' => 'Edit Profile',
-        '정보 없음' => 'Not provided',
+        '사용자 프로필' => ['ko' => '사용자 프로필', 'en' => 'User Profile', 'ja' => 'ユーザープロフィール', 'zh' => '用户资料'],
+        '사용자 ID가 필요합니다.' => ['ko' => '사용자 ID가 필요합니다.', 'en' => 'User ID is required.', 'ja' => 'ユーザーIDが必要です。', 'zh' => '需要用户ID。'],
+        '사용자를 찾을 수 없습니다.' => ['ko' => '사용자를 찾을 수 없습니다.', 'en' => 'User not found.', 'ja' => 'ユーザーが見つかりません。', 'zh' => '找不到用户。'],
+        '성별' => ['ko' => '성별', 'en' => 'Gender', 'ja' => '性別', 'zh' => '性别'],
+        '남성' => ['ko' => '남성', 'en' => 'Male', 'ja' => '男性', 'zh' => '男性'],
+        '여성' => ['ko' => '여성', 'en' => 'Female', 'ja' => '女性', 'zh' => '女性'],
+        '생년월일' => ['ko' => '생년월일', 'en' => 'Birthday', 'ja' => '生年月日', 'zh' => '出生日期'],
+        '가입일' => ['ko' => '가입일', 'en' => 'Joined', 'ja' => '登録日', 'zh' => '注册日期'],
+        '프로필_수정' => ['ko' => '프로필 수정', 'en' => 'Edit Profile', 'ja' => 'プロフィール編集', 'zh' => '编辑资料'],
+        '정보 없음' => ['ko' => '정보 없음', 'en' => 'Not provided', 'ja' => '情報なし', 'zh' => '无信息'],
+        '친구_추가' => ['ko' => '친구 추가', 'en' => 'Add Friend', 'ja' => '友達追加', 'zh' => '添加好友'],
+        '요청_중' => ['ko' => '요청 중...', 'en' => 'Requesting...', 'ja' => 'リクエスト中...', 'zh' => '请求中...'],
+        '친구_요청_전송_완료' => ['ko' => '친구 요청을 보냈습니다.', 'en' => 'Friend request sent.', 'ja' => '友達リクエストを送信しました。', 'zh' => '已发送好友请求。'],
+        '오류_발생' => ['ko' => '오류가 발생했습니다.', 'en' => 'An error occurred.', 'ja' => 'エラーが発生しました。', 'zh' => '发生错误。'],
+        '로그인이_필요합니다' => ['ko' => '로그인이 필요합니다.', 'en' => 'Login required.', 'ja' => 'ログインが必要です。', 'zh' => '需要登录。'],
+        '자기_자신에게는_친구_요청을_보낼_수_없습니다' => ['ko' => '자기 자신에게는 친구 요청을 보낼 수 없습니다.', 'en' => 'You cannot send a friend request to yourself.', 'ja' => '自分自身にはフレンドリクエストを送信できません。', 'zh' => '您不能向自己发送好友请求。'],
+        '이미_친구입니다' => ['ko' => '이미 친구입니다.', 'en' => 'Already friends.', 'ja' => 'すでに友達です。', 'zh' => '已经是朋友了。'],
+        '친구_요청에_실패했습니다' => ['ko' => '친구 요청에 실패했습니다.', 'en' => 'Friend request failed.', 'ja' => 'フレンドリクエストに失敗しました。', 'zh' => '好友请求失败。'],
+        '친구_요청_실패' => ['ko' => '친구 요청 실패', 'en' => 'Friend request failed', 'ja' => 'フレンドリクエスト失敗', 'zh' => '好友请求失败'],
     ]);
 }
 ?>

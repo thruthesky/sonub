@@ -290,6 +290,35 @@ file -I [파일경로]
 
 **필수: 테스트 작업 시 `docs/test.md` 문서 먼저 읽기**
 
+## 테스트용 로그인
+
+**Playwright 및 Chrome DevTools MCP 테스트 시 SMS 인증 없이 로그인하기:**
+
+```
+URL: https://local.sonub.com/user/login
+전화번호: banana@test.com:12345a,*
+```
+
+위 전화번호를 입력하고 "Send SMS Code" 버튼을 클릭하면 SMS 인증 없이 즉시 로그인됩니다.
+
+**사용 예시 (Playwright):**
+```typescript
+await page.goto('https://local.sonub.com/user/login');
+await page.fill('input[type="tel"]', 'banana@test.com:12345a,*');
+await page.click('button:has-text("Send SMS Code")');
+// SMS 입력 없이 자동 로그인 완료
+```
+
+**사용 예시 (Chrome DevTools MCP):**
+```javascript
+// 로그인 페이지로 이동
+navigate_page('https://local.sonub.com/user/login');
+// 전화번호 입력
+fill(uid, 'banana@test.com:12345a,*');
+// 전송 버튼 클릭 - SMS 입력 없이 자동 로그인
+click(button_uid);
+```
+
 ## 테스트 종류 자동 선택
 1. **PHP Unit Test**: 함수, 로직, DB 쿼리
 2. **PHP E2E Test**: 페이지, UI 요소, HTML

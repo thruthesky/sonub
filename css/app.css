@@ -101,3 +101,26 @@ body {
   color: #dc3545; /* Bootstrap danger 색상 (빨간색) */
   font-weight: 600;
 }
+
+.xs {
+  font-size: 0.75rem;
+}
+.sm {
+  font-size: 0.875rem;
+}
+.md {
+  font-size: 1rem;
+}
+.lg {
+  font-size: 1.25rem;
+}
+.xl {
+  font-size: 1.5rem;
+}
+
+.xxl {
+  font-size: 2rem;
+}
+.xxxl {
+  font-size: 3rem;
+}

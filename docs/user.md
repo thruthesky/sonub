@@ -11,6 +11,9 @@
     - [페이지네이션](#페이지네이션)
     - [필터링 옵션](#필터링-옵션)
     - [$_GET 직접 전달](#get-직접-전달)
+- [친구 관리](#친구-관리)
+  - [친구 추가 (request_friend)](#친구-추가-request_friend)
+    - [JavaScript에서 친구 추가하기](#javascript에서-친구-추가하기)
 - [사용 예제](#사용-예제)
 - [테스트](#테스트)
 
@@ -840,12 +843,274 @@ $user2 = create_user_record(['firebase_uid' => 'abc123']);
 // 에러: {"error_code": "user-already-exists", "error_message": "이미 존재하는 사용자입니다.", ...}
 ```
 
+## 친구 관리
+
+### 친구 추가 (request_friend)
+
+다른 사용자에게 친구 요청을 보냅니다. 이미 요청이 존재하면 `updated_at`만 갱신됩니다.
+
+**파일 위치**: `lib/friend-and-feed/friend-and-feed.functions.php`
+
+#### 파라미터
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|----------|------|------|------|
+| `me` | int | ✅ | 요청을 보내는 사용자 ID |
+| `other` | int | ✅ | 요청을 받는 사용자 ID |
+| `auth` | bool | ✅ | Firebase 인증 포함 여부 (항상 `true`) |
+
+#### 반환값
+
+- **성공**: `{'message': '친구 요청을 보냈습니다', 'success': true}`
+- **실패**: 에러 배열 (`error_code`, `error_message`)
+
+#### 에러 코드
+
+| 에러 코드 | 설명 |
+|-----------|------|
+| `invalid-me` | me 파라미터가 유효하지 않음 |
+| `invalid-other` | other 파라미터가 유효하지 않음 |
+| `same-user` | 자기 자신에게 친구 요청을 보낼 수 없음 |
+
+#### API 호출 예제
+
+```bash
+# cURL로 친구 요청 보내기
+curl -X POST https://local.sonub.com/api.php \
+  -H "Content-Type: application/json" \
+  -d '{
+    "func": "request_friend",
+    "me": 1,
+    "other": 31,
+    "auth": true
+  }'
+```
+
+#### 응답 예제
+
+**성공 응답** (HTTP 200):
+```json
+{
+  "message": "친구 요청을 보냈습니다",
+  "success": true,
+  "func": "request_friend"
+}
+```
+
+**에러 응답** (HTTP 400):
+```json
+{
+  "error_code": "same-user",
+  "error_message": "자기 자신에게 친구 요청을 보낼 수 없습니다",
+  "error_response_code": 400,
+  "func": "request_friend"
+}
+```
+
+### JavaScript에서 친구 추가하기
+
+JavaScript에서는 `func()` 함수를 사용하여 친구 요청을 보냅니다.
+
+#### Vue.js 예제
+
+```javascript
+// Vue.js 컴포넌트에서 친구 추가
+ready(() => {
+    Vue.createApp({
+        data() {
+            return {
+                myUserId: 1,        // 로그인한 사용자 ID
+                otherUserId: 31,    // 친구 요청을 보낼 사용자 ID
+                requesting: false,  // 요청 중 상태
+                isFriend: false     // 친구 여부
+            };
+        },
+        methods: {
+            async requestFriend() {
+                // 로그인 확인
+                if (!this.myUserId) {
+                    alert('로그인이 필요합니다.');
+                    window.location.href = '/user/login';
+                    return;
+                }
+
+                // 자기 자신에게 친구 요청 방지
+                if (this.otherUserId === this.myUserId) {
+                    alert('자기 자신에게는 친구 요청을 보낼 수 없습니다.');
+                    return;
+                }
+
+                try {
+                    // 요청 중 상태 설정
+                    this.requesting = true;
+
+                    // API 호출: request_friend 함수 사용
+                    await func('request_friend', {
+                        me: this.myUserId,
+                        other: this.otherUserId,
+                        auth: true // Firebase 인증 포함
+                    });
+
+                    // 성공: 친구 상태 업데이트
+                    this.isFriend = true;
+                    alert('친구 요청을 보냈습니다.');
+
+                } catch (error) {
+                    console.error('친구 요청 실패:', error);
+                    const errorMessage = error.message || error.error_message || '친구 요청에 실패했습니다.';
+                    alert(`친구 요청 실패: ${errorMessage}`);
+                } finally {
+                    this.requesting = false;
+                }
+            }
+        }
+    }).mount('#app');
+});
+```
+
+#### 일반 JavaScript 예제
+
+```javascript
+// 일반 JavaScript에서 친구 추가
+ready(async () => {
+    const btnAddFriend = document.getElementById('btn-add-friend');
+
+    btnAddFriend.addEventListener('click', async () => {
+        try {
+            btnAddFriend.disabled = true;
+
+            // 로그인한 사용자 ID (예시)
+            const myUserId = 1;
+            const otherUserId = 31;
+
+            // API 호출
+            const result = await func('request_friend', {
+                me: myUserId,
+                other: otherUserId,
+                auth: true
+            });
+
+            alert(result.message); // "친구 요청을 보냈습니다"
+
+        } catch (error) {
+            console.error('친구 요청 실패:', error);
+            alert('친구 요청에 실패했습니다.');
+            btnAddFriend.disabled = false;
+        }
+    });
+});
+```
+
+#### 프로필 페이지 예제
+
+실제 프로필 페이지에서는 다음과 같이 구현합니다:
+
+**page/user/profile.php** (PHP):
+```php
+<?php
+// 사용자 정보 로드
+$user_id = http_param('id') ?? login()->id ?? 0;
+$user_data = get_user(['id' => $user_id]);
+$user = new UserModel($user_data);
+$is_me = login() && login()->id === $user->id;
+?>
+
+<!-- Vue.js 앱 컨테이너 -->
+<div id="profile-app"
+     data-other-user-id="<?= $user->id ?>"
+     data-is-me="<?= $is_me ? 'true' : 'false' ?>"
+     data-my-user-id="<?= login() ? login()->id : 0 ?>">
+
+    <!-- 프로필 정보 -->
+    <h1><?= htmlspecialchars($user->display_name) ?></h1>
+
+    <!-- 친구 추가 버튼 (다른 사용자인 경우만 표시) -->
+    <?php if (!$is_me): ?>
+        <button @click="requestFriend"
+                class="btn-add-friend"
+                :disabled="requesting || isFriend">
+            <span v-if="requesting">
+                <span class="spinner-border spinner-border-sm"></span>
+                요청 중...
+            </span>
+            <span v-else-if="isFriend">
+                <i class="bi bi-check-circle"></i> 친구 요청을 보냈습니다
+            </span>
+            <span v-else>
+                <i class="bi bi-person-plus"></i> 친구 추가
+            </span>
+        </button>
+    <?php endif; ?>
+</div>
+```
+
+**page/user/profile.js** (JavaScript):
+```javascript
+ready(() => {
+    const appElement = document.getElementById('profile-app');
+    if (!appElement) return;
+
+    // 데이터 속성에서 초기 데이터 가져오기
+    const otherUserId = parseInt(appElement.dataset.otherUserId) || 0;
+    const isMe = appElement.dataset.isMe === 'true';
+    const myUserId = parseInt(appElement.dataset.myUserId) || 0;
+
+    Vue.createApp({
+        data() {
+            return {
+                requesting: false,
+                isFriend: false,
+                otherUserId: otherUserId,
+                myUserId: myUserId,
+                isMe: isMe
+            };
+        },
+        methods: {
+            async requestFriend() {
+                if (!this.myUserId) {
+                    alert('로그인이 필요합니다.');
+                    return;
+                }
+
+                try {
+                    this.requesting = true;
+
+                    await func('request_friend', {
+                        me: this.myUserId,
+                        other: this.otherUserId,
+                        auth: true
+                    });
+
+                    this.isFriend = true;
+                    alert('친구 요청을 보냈습니다.');
+
+                } catch (error) {
+                    console.error('친구 요청 실패:', error);
+                    alert('친구 요청에 실패했습니다.');
+                } finally {
+                    this.requesting = false;
+                }
+            }
+        }
+    }).mount('#profile-app');
+});
+```
+
+#### 주의사항
+
+1. **Firebase 인증 필수**: `auth: true` 파라미터를 항상 포함해야 합니다.
+2. **로그인 확인**: 친구 요청 전에 사용자가 로그인했는지 확인합니다.
+3. **중복 요청 방지**: 요청 중 상태(`requesting`)를 사용하여 버튼을 비활성화합니다.
+4. **에러 처리**: `try-catch`를 사용하여 에러를 적절히 처리합니다.
+5. **자기 자신 확인**: 자기 자신에게는 친구 요청을 보낼 수 없습니다.
+
 ## 테스트
 
 테스트 파일 위치:
 - `tests/user/create_user_record.test.php` - 사용자 생성 테스트
 - `tests/user/get_user.test.php` - 사용자 조회 테스트
 - `tests/user/list_users.test.php` - 사용자 목록 조회 테스트
+- `tests/friend-and-feed/friend-and-feed.test.php` - 친구 관리 테스트
 
 ```bash
 # 사용자 생성 테스트
@@ -856,4 +1121,7 @@ php tests/user/get_user.test.php
 
 # 사용자 목록 조회 테스트 (페이지네이션 및 필터링)
 php tests/user/list_users.test.php
+
+# 친구 관리 테스트
+php tests/friend-and-feed/friend-and-feed.test.php
 ```

@@ -39,9 +39,9 @@ inject_post_list_language();
 ?>
 
 <!-- 페이지 컨테이너 -->
-<div class="container-fluid px-2 py-3">
-    <div class="row justify-content-center">
-        <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+<div class="container-fluid px-0 py-3">
+    <div class="row g-0">
+        <div class="col-12">
 
             <!-- 게시글 작성 위젯 -->
             <?php include WIDGET_DIR . '/post/post-list-create.php'; ?>

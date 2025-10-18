@@ -132,7 +132,8 @@
   border-top: 1px solid #e9ecef;
 }
 
-.btn-edit-profile {
+.btn-edit-profile,
+.btn-add-friend {
   background-color: #667eea;
   color: white;
   border: none;
@@ -142,13 +143,28 @@
   text-decoration: none;
   display: inline-block;
   transition: all 0.2s;
+  cursor: pointer;
 }
 
-.btn-edit-profile:hover {
+.btn-edit-profile:hover,
+.btn-add-friend:hover {
   background-color: #5568d3;
   color: white;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* 친구 추가 버튼 비활성화 상태 */
+.btn-add-friend:disabled {
+  background-color: #adb5bd;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-add-friend:disabled:hover {
+  background-color: #adb5bd;
+  transform: none;
+  box-shadow: none;
 }
 
 /* 반응형 디자인 */
