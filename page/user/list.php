@@ -5,6 +5,7 @@
  *
  * Vue.js를 사용하여 사용자 목록을 표시하고, infinite scroll로 추가 로드합니다.
  * 각 사용자 카드에 친구 맺기 요청 버튼이 포함되어 있습니다.
+ * 친구 검색 기능은 독립적인 user-search 모듈로 분리되어 있습니다.
  */
 
 // 초기 사용자 목록 조회 (첫 페이지, 20명)
@@ -34,8 +35,8 @@ load_deferred_js('infinite-scroll');
         <div class="col-12">
             <h1 class="mb-4"><?= t()->사용자_목록 ?></h1>
 
-            <!-- Friend Search Button -->
-            <button @click="openSearchModal" class="btn btn-primary mb-3">
+            <!-- Friend Search Button (전역 함수 호출) -->
+            <button onclick="window.openFriendSearchModal && window.openFriendSearchModal()" class="btn btn-primary mb-3">
                 <i class="bi bi-search me-2"></i>
                 <?= t()->친구_검색 ?>
             </button>
@@ -48,7 +49,7 @@ load_deferred_js('infinite-scroll');
                         <div class="card h-100">
                             <div class="card-body p-2 d-flex align-items-center">
                                 <!-- Profile Photo -->
-                                <a :href="`<?= href()->user->profile ?>?id=${friend.id}`" 
+                                <a :href="`<?= href()->user->profile ?>?id=${friend.id}`"
                                    class="flex-shrink-0 me-2 text-decoration-none">
                                     <img v-if="friend.photo_url"
                                         :src="friend.photo_url"
@@ -63,7 +64,7 @@ load_deferred_js('infinite-scroll');
                                 </a>
 
                                 <!-- User Info -->
-                                <a :href="`<?= href()->user->profile ?>?id=${friend.id}`" 
+                                <a :href="`<?= href()->user->profile ?>?id=${friend.id}`"
                                    class="flex-grow-1 min-w-0 text-decoration-none">
                                     <h6 class="card-title mb-0 text-truncate text-dark">
                                         {{ friend.display_name }}
@@ -167,122 +168,142 @@ load_deferred_js('infinite-scroll');
     </div>
 </div>
 
-<!-- Friend Search Modal -->
-<div class="modal fade" id="friendSearchModal" tabindex="-1" aria-labelledby="friendSearchModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="friendSearchModalLabel"><?= t()->친구_검색 ?></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="search-modal-body">
-                <!-- Search Input Group -->
-                <div class="input-group mb-3">
-                    <input v-model="searchTerm" 
-                           @keyup.enter="performSearch"
-                           type="text" 
-                           class="form-control" 
-                           :placeholder="'<?= t()->이름을_입력하세요 ?>'"
-                           aria-label="<?= t()->이름을_입력하세요 ?>">
-                    <button @click="performSearch" 
-                            class="btn btn-primary"
-                            :disabled="searchLoading">
-                        <span v-if="searchLoading"><?= t()->검색_중 ?></span>
-                        <span v-else><?= t()->검색 ?></span>
-                    </button>
+<!-- User Search Module (독립적인 Vue.js 앱) -->
+<div id="user-search">
+    <!-- Friend Search Modal -->
+    <div class="modal fade" id="friendSearchModal" tabindex="-1" aria-labelledby="friendSearchModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="friendSearchModalLabel">{{ translations.친구_검색 }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                
-                <!-- Search Results Grid -->
-                <div v-if="searchResults.length > 0" class="row g-3">
-                    <div v-for="user in searchResults" :key="'search-' + user.id" class="col-6">
-                        <div class="card h-100">
-                            <div class="card-body p-2 d-flex align-items-center">
-                                <!-- Profile Photo (clickable link) -->
-                                <a :href="`<?= href()->user->profile ?>?id=${user.id}`" 
-                                   class="flex-shrink-0 me-2 text-decoration-none">
-                                    <img v-if="user.photo_url"
-                                        :src="user.photo_url"
-                                        class="rounded-circle"
-                                        style="width: 50px; height: 50px; object-fit: cover;"
-                                        :alt="user.display_name">
-                                    <div v-else
-                                        class="rounded-circle bg-secondary bg-opacity-25 d-inline-flex align-items-center justify-content-center"
-                                        style="width: 50px; height: 50px;">
-                                        <i class="bi bi-person fs-5 text-secondary"></i>
-                                    </div>
-                                </a>
+                <div class="modal-body" id="search-modal-body">
+                    <!-- Search Input Group -->
+                    <div class="input-group mb-3">
+                        <input v-model="searchTerm"
+                               @keyup.enter="performSearch"
+                               type="text"
+                               class="form-control"
+                               :placeholder="translations.이름을_입력하세요"
+                               :aria-label="translations.이름을_입력하세요">
+                        <button @click="performSearch"
+                                class="btn btn-primary"
+                                :disabled="searchLoading">
+                            <span v-if="searchLoading">{{ translations.검색_중 }}</span>
+                            <span v-else>{{ translations.검색 }}</span>
+                        </button>
+                    </div>
 
-                                <!-- User Info (clickable link) -->
-                                <a :href="`<?= href()->user->profile ?>?id=${user.id}`" 
-                                   class="flex-grow-1 min-w-0 text-decoration-none">
-                                    <h6 class="card-title mb-0 text-truncate text-dark">
-                                        {{ user.display_name }}
-                                    </h6>
-                                    <p class="card-text text-muted mb-0" style="font-size: 0.75rem;">
-                                        {{ formatDate(user.created_at) }}
-                                    </p>
-                                </a>
+                    <!-- Search Results Grid -->
+                    <div v-if="searchResults.length > 0" class="row g-3">
+                        <div v-for="user in searchResults" :key="'search-' + user.id" class="col-6">
+                            <div class="card h-100">
+                                <div class="card-body p-2 d-flex align-items-center">
+                                    <!-- Profile Photo (clickable link) -->
+                                    <a :href="`${profileUrl}?id=${user.id}`"
+                                       class="flex-shrink-0 me-2 text-decoration-none">
+                                        <img v-if="user.photo_url"
+                                            :src="user.photo_url"
+                                            class="rounded-circle"
+                                            style="width: 50px; height: 50px; object-fit: cover;"
+                                            :alt="user.display_name">
+                                        <div v-else
+                                            class="rounded-circle bg-secondary bg-opacity-25 d-inline-flex align-items-center justify-content-center"
+                                            style="width: 50px; height: 50px;">
+                                            <i class="bi bi-person fs-5 text-secondary"></i>
+                                        </div>
+                                    </a>
+
+                                    <!-- User Info (clickable link) -->
+                                    <a :href="`${profileUrl}?id=${user.id}`"
+                                       class="flex-grow-1 min-w-0 text-decoration-none">
+                                        <h6 class="card-title mb-0 text-truncate text-dark">
+                                            {{ user.display_name }}
+                                        </h6>
+                                        <p class="card-text text-muted mb-0" style="font-size: 0.75rem;">
+                                            {{ formatDate(user.created_at) }}
+                                        </p>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- No Results Message -->
+                    <div v-else-if="searchPerformed && searchResults.length === 0 && !searchLoading"
+                         class="alert alert-info">
+                        {{ translations.검색_결과가_없습니다 }}
+                    </div>
+
+                    <!-- Pagination Bar -->
+                    <nav v-if="searchTotalPages > 1" class="mt-4" aria-label="Search results pagination">
+                        <ul class="pagination justify-content-center">
+                            <!-- First Page -->
+                            <li class="page-item" :class="{disabled: searchPage === 1}">
+                                <a class="page-link" href="#" @click.prevent="goToSearchPage(1)" aria-label="First page">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </a>
+                            </li>
+
+                            <!-- Previous Page -->
+                            <li class="page-item" :class="{disabled: searchPage === 1}">
+                                <a class="page-link" href="#" @click.prevent="goToSearchPage(searchPage - 1)" aria-label="Previous page">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+
+                            <!-- Page Numbers (dynamic range) -->
+                            <li v-for="pageNum in visiblePageNumbers"
+                                :key="pageNum"
+                                class="page-item"
+                                :class="{active: pageNum === searchPage}">
+                                <a class="page-link" href="#" @click.prevent="goToSearchPage(pageNum)">
+                                    {{ pageNum }}
+                                </a>
+                            </li>
+
+                            <!-- Next Page -->
+                            <li class="page-item" :class="{disabled: searchPage === searchTotalPages}">
+                                <a class="page-link" href="#" @click.prevent="goToSearchPage(searchPage + 1)" aria-label="Next page">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+
+                            <!-- Last Page -->
+                            <li class="page-item" :class="{disabled: searchPage === searchTotalPages}">
+                                <a class="page-link" href="#" @click.prevent="goToSearchPage(searchTotalPages)" aria-label="Last page">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
                 </div>
-                
-                <!-- No Results Message -->
-                <div v-else-if="searchPerformed && searchResults.length === 0 && !searchLoading" 
-                     class="alert alert-info">
-                    <?= t()->검색_결과가_없습니다 ?>
-                </div>
-                
-                <!-- Pagination Bar -->
-                <nav v-if="searchTotalPages > 1" class="mt-4" aria-label="Search results pagination">
-                    <ul class="pagination justify-content-center">
-                        <!-- First Page -->
-                        <li class="page-item" :class="{disabled: searchPage === 1}">
-                            <a class="page-link" href="#" @click.prevent="goToSearchPage(1)" aria-label="First page">
-                                <i class="bi bi-chevron-double-left"></i>
-                            </a>
-                        </li>
-                        
-                        <!-- Previous Page -->
-                        <li class="page-item" :class="{disabled: searchPage === 1}">
-                            <a class="page-link" href="#" @click.prevent="goToSearchPage(searchPage - 1)" aria-label="Previous page">
-                                <i class="bi bi-chevron-left"></i>
-                            </a>
-                        </li>
-                        
-                        <!-- Page Numbers (dynamic range) -->
-                        <li v-for="pageNum in visiblePageNumbers" 
-                            :key="pageNum"
-                            class="page-item" 
-                            :class="{active: pageNum === searchPage}">
-                            <a class="page-link" href="#" @click.prevent="goToSearchPage(pageNum)">
-                                {{ pageNum }}
-                            </a>
-                        </li>
-                        
-                        <!-- Next Page -->
-                        <li class="page-item" :class="{disabled: searchPage === searchTotalPages}">
-                            <a class="page-link" href="#" @click.prevent="goToSearchPage(searchPage + 1)" aria-label="Next page">
-                                <i class="bi bi-chevron-right"></i>
-                            </a>
-                        </li>
-                        
-                        <!-- Last Page -->
-                        <li class="page-item" :class="{disabled: searchPage === searchTotalPages}">
-                            <a class="page-link" href="#" @click.prevent="goToSearchPage(searchTotalPages)" aria-label="Last page">
-                                <i class="bi bi-chevron-double-right"></i>
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
             </div>
         </div>
     </div>
 </div>
 
+<!-- User Search 모듈을 위한 번역 데이터 (전역 변수로 제공) -->
+<script>
+    // user-search.js에서 사용할 번역 데이터
+    const searchTranslations = {
+        친구_검색: '<?= t()->친구_검색 ?>',
+        이름을_입력하세요: '<?= t()->이름을_입력하세요 ?>',
+        검색: '<?= t()->검색 ?>',
+        검색_중: '<?= t()->검색_중 ?>',
+        검색_결과가_없습니다: '<?= t()->검색_결과가_없습니다 ?>',
+        검색어를_입력해주세요: '<?= t()->검색어를_입력해주세요 ?>',
+        검색에_실패했습니다: '<?= t()->검색에_실패했습니다 ?>',
+        profileUrl: '<?= href()->user->profile ?>'
+    };
+</script>
+
+<script defer src="/js/user-search.js"></script>
+
 <script>
     ready(() => {
-        // Vue.js 앱 생성
+        // Vue.js 사용자 목록 앱 생성
         Vue.createApp({
             data() {
                 return {
@@ -294,154 +315,16 @@ load_deferred_js('infinite-scroll');
                     myFriends: <?= json_encode($hydrationData['myFriends'], JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?>,
                     loading: false,
                     hasMore: true,
-                    myUserId: <?= login() ? login()->id : 'null' ?>, // 로그인한 사용자 ID
-                    
-                    // Search-related properties
-                    searchModalOpen: false,
-                    searchTerm: '',
-                    searchResults: [],
-                    searchPage: 1,
-                    searchTotalPages: 0,
-                    searchTotal: 0,
-                    searchLoading: false,
-                    searchPerformed: false,
-                    modalInstance: null
+                    myUserId: <?= login() ? login()->id : 'null' ?> // 로그인한 사용자 ID
                 };
             },
             computed: {
                 // 더 불러올 데이터가 있는지 계산
                 canLoadMore() {
                     return this.users.length < this.total && !this.loading;
-                },
-                
-                /**
-                 * 검색 결과 페이지네이션에 표시할 페이지 번호 배열 계산
-                 * 현재 페이지를 중심으로 최대 5개의 페이지 번호를 표시
-                 */
-                visiblePageNumbers() {
-                    const displayPages = 5;
-                    const half = Math.floor(displayPages / 2);
-                    let start = Math.max(1, this.searchPage - half);
-                    let end = Math.min(this.searchTotalPages, this.searchPage + half);
-                    
-                    // 항상 5개의 페이지를 표시하도록 범위 조정 (가능한 경우)
-                    if (end - start + 1 < displayPages) {
-                        if (start === 1) {
-                            end = Math.min(this.searchTotalPages, start + displayPages - 1);
-                        } else {
-                            start = Math.max(1, end - displayPages + 1);
-                        }
-                    }
-                    
-                    const pages = [];
-                    for (let i = start; i <= end; i++) {
-                        pages.push(i);
-                    }
-                    return pages;
                 }
             },
             methods: {
-                /**
-                 * 친구 검색 모달 열기
-                 */
-                openSearchModal() {
-                    console.log('친구 검색 모달 열기');
-                    if (this.modalInstance) {
-                        this.modalInstance.show();
-                    }
-                },
-
-                /**
-                 * 친구 검색 모달 닫기
-                 */
-                closeSearchModal() {
-                    console.log('친구 검색 모달 닫기');
-                    if (this.modalInstance) {
-                        this.modalInstance.hide();
-                    }
-                },
-
-                /**
-                 * 친구 검색 수행
-                 */
-                async performSearch() {
-                    // 입력 검증
-                    if (!this.searchTerm || this.searchTerm.trim() === '') {
-                        alert('<?= t()->검색어를_입력해주세요 ?>');
-                        return;
-                    }
-
-                    console.log('검색 수행:', this.searchTerm);
-
-                    // 상태 초기화
-                    this.searchPage = 1;
-                    this.searchPerformed = true;
-
-                    // API 호출
-                    await this.loadSearchResults();
-                },
-
-                /**
-                 * 검색 결과 로드
-                 */
-                async loadSearchResults() {
-                    try {
-                        this.searchLoading = true;
-
-                        console.log(`검색 API 호출: term="${this.searchTerm.trim()}", page=${this.searchPage}`);
-
-                        const result = await func('list_users', {
-                            name: this.searchTerm.trim(),
-                            per_page: 10,
-                            page: this.searchPage
-                        });
-
-                        this.searchResults = result.users || [];
-                        this.searchTotal = result.total || 0;
-                        this.searchTotalPages = result.total_pages || 0;
-
-                        console.log(`검색 결과: ${this.searchResults.length}명 (총 ${this.searchTotal}명, ${this.searchTotalPages}페이지)`);
-
-                    } catch (error) {
-                        console.error('검색 실패:', error);
-                        alert('<?= t()->검색에_실패했습니다 ?>: ' + (error.message || error.error_message || ''));
-                    } finally {
-                        this.searchLoading = false;
-                    }
-                },
-
-                /**
-                 * 검색 결과의 특정 페이지로 이동
-                 * @param {number} pageNum - 이동할 페이지 번호
-                 */
-                async goToSearchPage(pageNum) {
-                    // 유효성 검사: 페이지 번호가 범위 내에 있는지 확인
-                    if (pageNum < 1 || pageNum > this.searchTotalPages) {
-                        console.log(`잘못된 페이지 번호: ${pageNum} (범위: 1-${this.searchTotalPages})`);
-                        return;
-                    }
-                    
-                    // 현재 페이지와 동일하면 중단
-                    if (pageNum === this.searchPage) {
-                        console.log(`이미 ${pageNum}페이지에 있습니다.`);
-                        return;
-                    }
-                    
-                    console.log(`검색 결과 페이지 이동: ${this.searchPage} -> ${pageNum}`);
-                    
-                    // 페이지 번호 업데이트
-                    this.searchPage = pageNum;
-                    
-                    // 검색 결과 다시 로드
-                    await this.loadSearchResults();
-                    
-                    // 모달 본문을 맨 위로 스크롤
-                    const modalBody = document.getElementById('search-modal-body');
-                    if (modalBody) {
-                        modalBody.scrollTop = 0;
-                    }
-                },
-
                 /**
                  * 다음 페이지 로드
                  */
@@ -580,16 +463,7 @@ load_deferred_js('infinite-scroll');
                     initialScrollToBottom: false // 페이지 로드 시 자동 스크롤 안 함
                 });
 
-                // Bootstrap Modal 초기화
-                const modalElement = document.getElementById('friendSearchModal');
-                if (modalElement && typeof bootstrap !== 'undefined') {
-                    this.modalInstance = new bootstrap.Modal(modalElement);
-                    console.log('친구 검색 모달 초기화 완료');
-                } else {
-                    console.error('Bootstrap Modal 초기화 실패');
-                }
-
-                console.log('사용자 목록 페이지 초기화 완료:', {
+                console.log('[user-list] 사용자 목록 페이지 초기화 완료:', {
                     totalUsers: this.users.length,
                     total: this.total,
                     currentPage: this.currentPage,
