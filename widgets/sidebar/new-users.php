@@ -32,15 +32,15 @@ $userCount = count($displayUsers);
                 <a href="<?= href()->user->profile ?>?id=<?= $user['id'] ?>" class="user-item">
                     <div class="user-avatar">
                         <?php if (!empty($user['photo_url'])): ?>
-                            <img src="<?= htmlspecialchars($user['photo_url']) ?>"
-                                alt="<?= htmlspecialchars($user['display_name']) ?>">
+                            <img src="<?= htmlspecialchars($user['photo_url'] ?? '') ?>"
+                                alt="<?= htmlspecialchars($user['display_name'] ?? 'User') ?>">
                         <?php else: ?>
                             <div class="avatar-placeholder">
                                 <i class="fa-solid fa-user"></i>
                             </div>
                         <?php endif; ?>
                     </div>
-                    <div class="user-name"><?= htmlspecialchars($user['display_name']) ?></div>
+                    <div class="user-name"><?= htmlspecialchars($user['display_name'] ?? 'Anonymous') ?></div>
                 </a>
             <?php endforeach; ?>
         </div>
