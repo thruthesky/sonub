@@ -238,6 +238,103 @@ function get_friend_ids(array $input): array
     return ['friend_ids' => $friend_ids];
 }
 
+/**
+ * 사용자의 친구 상세 정보 조회 함수 (API 호출 가능)
+ *
+ * accepted 상태의 친구 관계를 조회하여 친구들의 상세 정보(users 테이블)를 반환합니다.
+ * 최대 개수 제한, 정렬 순서 등을 옵션으로 지정할 수 있습니다.
+ *
+ * @param array $input 입력 파라미터
+ *   - int $input['me'] 친구 목록을 조회할 사용자 ID
+ *   - int $input['limit'] 조회할 최대 친구 수 (기본값: 10, 최대값: 100)
+ *   - int $input['offset'] 시작 위치 (기본값: 0, 페이지네이션용)
+ *   - string $input['order_by'] 정렬 기준 (기본값: 'id', 옵션: 'id', 'display_name', 'created_at')
+ *   - string $input['order'] 정렬 순서 (기본값: 'DESC', 옵션: 'ASC', 'DESC')
+ * @return array 친구 정보 배열 (friends 키에 배열 형태로 반환)
+ * @throws ApiException 에러 발생 시
+ *
+ * @example
+ * // PHP에서 호출 - 기본 (최대 10명, ID 내림차순)
+ * $result = get_friends(['me' => 5]);
+ * // ['friends' => [['id' => 10, 'display_name' => '홍길동', ...], ...]]
+ *
+ * // 최대 5명만 조회
+ * $result = get_friends(['me' => 5, 'limit' => 5]);
+ *
+ * // 이름 오름차순 정렬
+ * $result = get_friends(['me' => 5, 'order_by' => 'display_name', 'order' => 'ASC']);
+ *
+ * // 페이지네이션 (6번째부터 5명)
+ * $result = get_friends(['me' => 5, 'limit' => 5, 'offset' => 5]);
+ *
+ * // JavaScript에서 API 호출
+ * const result = await func('get_friends', { me: 5, limit: 5 });
+ * console.log(result.friends); // 친구 배열
+ */
+function get_friends(array $input): array
+{
+    // 파라미터 추출 및 검증
+    $me = (int)($input['me'] ?? 0);
+    $limit = (int)($input['limit'] ?? 10);
+    $offset = (int)($input['offset'] ?? 0);
+    $order_by = $input['order_by'] ?? 'id';
+    $order = strtoupper($input['order'] ?? 'DESC');
+
+    if ($me <= 0) {
+        error('invalid-me', '유효하지 않은 사용자 ID입니다');
+    }
+
+    // limit 범위 제한 (1-100)
+    if ($limit <= 0 || $limit > 100) {
+        $limit = 10;
+    }
+
+    // offset 음수 방지
+    if ($offset < 0) {
+        $offset = 0;
+    }
+
+    // order_by 화이트리스트 검증 (SQL 인젝션 방지)
+    $allowed_order_by = ['id', 'display_name', 'created_at'];
+    if (!in_array($order_by, $allowed_order_by, true)) {
+        $order_by = 'id';
+    }
+
+    // order 검증
+    if (!in_array($order, ['ASC', 'DESC'], true)) {
+        $order = 'DESC';
+    }
+
+    // 1단계: 친구 ID 목록 가져오기
+    $friend_ids_result = get_friend_ids(['me' => $me]);
+    $friend_ids = $friend_ids_result['friend_ids'] ?? [];
+
+    // 친구가 없으면 빈 배열 반환
+    if (empty($friend_ids)) {
+        return ['friends' => []];
+    }
+
+    // 2단계: 친구 상세 정보 조회 (users 테이블)
+    $pdo = pdo();
+    $placeholders = implode(',', array_fill(0, count($friend_ids), '?'));
+
+    // 동적 ORDER BY 절 (화이트리스트 검증 완료)
+    $sql = "SELECT * FROM users
+            WHERE id IN ($placeholders)
+            ORDER BY {$order_by} {$order}
+            LIMIT ? OFFSET ?";
+
+    $stmt = $pdo->prepare($sql);
+
+    // 바인딩: friend_ids + limit + offset
+    $bind_values = [...$friend_ids, $limit, $offset];
+    $stmt->execute($bind_values);
+
+    $friends = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    return ['friends' => $friends];
+}
+
 // ============================================================================
 // BlockRepository 함수들 (차단 관리)
 // ============================================================================
@@ -327,7 +424,7 @@ function get_post_row(int $post_id): ?array
 function fanout_post_to_friends(int $author_id, int $post_id, int $created_at): int
 {
     $pdo = pdo();
-        $sql = "INSERT IGNORE INTO feed_entries (receiver_id, post_id, post_author_id, created_at)
+    $sql = "INSERT IGNORE INTO feed_entries (receiver_id, post_id, post_author_id, created_at)
                         SELECT
                             CASE WHEN user_id_a = :author_case THEN user_id_b ELSE user_id_a END AS receiver_id,
                             :post_id,
@@ -338,12 +435,12 @@ function fanout_post_to_friends(int $author_id, int $post_id, int $created_at): 
                              AND status='accepted'";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
-                ':author_case' => $author_id,
-                ':post_id' => $post_id,
-                ':author_value' => $author_id,
-                ':created_at' => $created_at,
-                ':author_where_a' => $author_id,
-                ':author_where_b' => $author_id,
+        ':author_case' => $author_id,
+        ':post_id' => $post_id,
+        ':author_value' => $author_id,
+        ':created_at' => $created_at,
+        ':author_where_a' => $author_id,
+        ':author_where_b' => $author_id,
     ]);
     return $stmt->rowCount(); // 실제 삽입된 행 수(IGNORE 영향 있음)
 }
