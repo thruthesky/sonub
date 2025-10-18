@@ -236,8 +236,7 @@ load_deferred_js('infinite-scroll');
                         // API 호출: request_friend 함수 사용
                         await func('request_friend', {
                             me: this.myUserId,
-                            other: user.id
-                        }, {
+                            other: user.id,
                             auth: true // Firebase 인증 포함
                         });
 
