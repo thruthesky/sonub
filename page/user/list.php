@@ -4,6 +4,7 @@
  * 사용자 목록 페이지
  *
  * Vue.js를 사용하여 사용자 목록을 표시하고, infinite scroll로 추가 로드합니다.
+ * 각 사용자 카드에 친구 맺기 요청 버튼이 포함되어 있습니다.
  */
 
 // 초기 사용자 목록 조회 (첫 페이지, 20명)
@@ -27,62 +28,81 @@ load_deferred_js('infinite-scroll');
 <div id="user-list-app" class="container py-4">
     <div class="row">
         <div class="col-12">
-            <h1 class="mb-4">사용자 목록</h1>
+            <h1 class="mb-4"><?= t()->사용자_목록 ?></h1>
 
             <!-- 사용자 목록 그리드 -->
             <div class="row g-3">
                 <!-- 사용자 없음 메시지 -->
                 <div v-if="users.length === 0" class="col-12">
                     <div class="alert alert-info">
-                        등록된 사용자가 없습니다.
+                        <?= t()->등록된_사용자가_없습니다 ?>
                     </div>
                 </div>
 
                 <!-- 사용자 카드 -->
                 <div v-for="user in users" :key="user.id" class="col-6">
-                    <a :href="`<?= href()->user->profile ?>?id=${user.id}`" class="text-decoration-none">
-                        <div class="card h-100">
-                            <div class="card-body p-2 d-flex align-items-center">
-                                <!-- 프로필 사진 -->
-                                <div class="flex-shrink-0 me-2">
-                                    <img v-if="user.photo_url"
-                                        :src="user.photo_url"
-                                        class="rounded-circle"
-                                        style="width: 50px; height: 50px; object-fit: cover;"
-                                        :alt="user.display_name">
-                                    <div v-else
-                                        class="rounded-circle bg-secondary bg-opacity-25 d-inline-flex align-items-center justify-content-center"
-                                        style="width: 50px; height: 50px;">
-                                        <i class="bi bi-person fs-5 text-secondary"></i>
-                                    </div>
+                    <div class="card h-100">
+                        <div class="card-body p-2 d-flex align-items-center">
+                            <!-- 프로필 사진 (클릭하면 프로필 페이지로 이동) -->
+                            <a :href="`<?= href()->user->profile ?>?id=${user.id}`" class="flex-shrink-0 me-2 text-decoration-none">
+                                <img v-if="user.photo_url"
+                                    :src="user.photo_url"
+                                    class="rounded-circle"
+                                    style="width: 50px; height: 50px; object-fit: cover;"
+                                    :alt="user.display_name">
+                                <div v-else
+                                    class="rounded-circle bg-secondary bg-opacity-25 d-inline-flex align-items-center justify-content-center"
+                                    style="width: 50px; height: 50px;">
+                                    <i class="bi bi-person fs-5 text-secondary"></i>
                                 </div>
+                            </a>
 
-                                <!-- 사용자 정보 -->
-                                <div class="flex-grow-1 min-w-0">
-                                    <!-- 사용자 이름 -->
-                                    <h6 class="card-title mb-0 text-truncate">{{ user.display_name }}</h6>
+                            <!-- 사용자 정보 (클릭하면 프로필 페이지로 이동) -->
+                            <a :href="`<?= href()->user->profile ?>?id=${user.id}`" class="flex-grow-1 min-w-0 text-decoration-none">
+                                <!-- 사용자 이름 -->
+                                <h6 class="card-title mb-0 text-truncate text-dark">{{ user.display_name }}</h6>
 
-                                    <!-- 가입일 -->
-                                    <p class="card-text text-muted mb-0" style="font-size: 0.75rem;">
-                                        {{ formatDate(user.created_at) }}
-                                    </p>
-                                </div>
+                                <!-- 가입일 -->
+                                <p class="card-text text-muted mb-0" style="font-size: 0.75rem;">
+                                    {{ formatDate(user.created_at) }}
+                                </p>
+                            </a>
+
+                            <!-- 친구 맺기 버튼 (본인이 아닌 경우에만 표시) -->
+                            <div v-if="myUserId && user.id !== myUserId" class="flex-shrink-0 ms-2">
+                                <button @click="requestFriend(user)"
+                                    class="btn btn-sm"
+                                    :class="user.is_friend ? 'btn-success' : 'btn-primary'"
+                                    :disabled="user.requesting || user.is_friend">
+                                    <span v-if="user.requesting">
+                                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                        <?= t()->요청_중 ?>
+                                    </span>
+                                    <span v-else-if="user.is_friend">
+                                        <i class="bi bi-check-circle me-1"></i>
+                                        <?= t()->친구 ?>
+                                    </span>
+                                    <span v-else>
+                                        <i class="bi bi-person-plus me-1"></i>
+                                        <?= t()->친구_추가 ?>
+                                    </span>
+                                </button>
                             </div>
                         </div>
-                    </a>
+                    </div>
                 </div>
             </div>
 
             <!-- 로딩 인디케이터 -->
             <div v-if="loading" class="text-center mt-4">
                 <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">로딩 중...</span>
+                    <span class="visually-hidden"><?= t()->로딩_중 ?></span>
                 </div>
             </div>
 
             <!-- 모든 사용자 로드 완료 메시지 -->
             <div v-if="!loading && hasMore === false && users.length > 0" class="text-center mt-4 text-muted">
-                모든 사용자를 불러왔습니다.
+                <?= t()->모든_사용자를_불러왔습니다 ?>
             </div>
         </div>
     </div>
@@ -100,7 +120,8 @@ load_deferred_js('infinite-scroll');
                     currentPage: <?= json_encode($hydrationData['currentPage']) ?>,
                     perPage: <?= json_encode($hydrationData['perPage']) ?>,
                     loading: false,
-                    hasMore: true
+                    hasMore: true,
+                    myUserId: <?= login() ? login()->id : 'null' ?> // 로그인한 사용자 ID
                 };
             },
             computed: {
@@ -174,6 +195,66 @@ load_deferred_js('infinite-scroll');
                     const month = String(date.getMonth() + 1).padStart(2, '0');
                     const day = String(date.getDate()).padStart(2, '0');
                     return `${year}-${month}-${day}`;
+                },
+
+                /**
+                 * 친구 맺기 요청
+                 * @param {Object} user - 친구 요청을 보낼 사용자 객체
+                 */
+                async requestFriend(user) {
+                    // 로그인 확인
+                    if (!this.myUserId) {
+                        alert('<?= t()->로그인이_필요합니다 ?>');
+                        window.location.href = '<?= href()->user->login ?>';
+                        return;
+                    }
+
+                    // 자기 자신에게 친구 요청 방지
+                    if (user.id === this.myUserId) {
+                        alert('<?= t()->자기_자신에게는_친구_요청을_보낼_수_없습니다 ?>');
+                        return;
+                    }
+
+                    // 이미 친구인 경우
+                    if (user.is_friend) {
+                        alert('<?= t()->이미_친구입니다 ?>');
+                        return;
+                    }
+
+                    // 확인 창 표시
+                    const confirmed = confirm(`${user.display_name}<?= t()->님에게_친구_맺기_신청을_하시겠습니까 ?>`);
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    try {
+                        // 요청 중 상태 설정
+                        user.requesting = true;
+
+                        console.log(`친구 요청 전송: ${user.display_name} (ID: ${user.id})`);
+
+                        // API 호출: request_friend 함수 사용
+                        await func('request_friend', {
+                            me: this.myUserId,
+                            other: user.id
+                        }, {
+                            auth: true // Firebase 인증 포함
+                        });
+
+                        // 성공: 친구 상태 업데이트
+                        user.is_friend = true;
+                        user.requesting = false;
+
+                        console.log(`친구 요청 성공: ${user.display_name}`);
+                        alert(`${user.display_name}<?= t()->님에게_친구_요청을_보냈습니다 ?>`);
+                    } catch (error) {
+                        console.error('친구 요청 실패:', error);
+                        user.requesting = false;
+
+                        // 에러 메시지 표시
+                        const errorMessage = error.message || error.error_message || '<?= t()->친구_요청에_실패했습니다 ?>';
+                        alert(`<?= t()->친구_요청_실패 ?>: ${errorMessage}`);
+                    }
                 }
             },
             mounted() {
@@ -192,9 +273,108 @@ load_deferred_js('infinite-scroll');
                 console.log('사용자 목록 페이지 초기화 완료:', {
                     totalUsers: this.users.length,
                     total: this.total,
-                    currentPage: this.currentPage
+                    currentPage: this.currentPage,
+                    myUserId: this.myUserId
                 });
             }
         }).mount('#user-list-app');
     });
 </script>
+
+<?php
+/**
+ * 다국어 번역 주입 함수
+ *
+ * 이 페이지에서 사용하는 모든 번역 텍스트를 주입합니다.
+ */
+function inject_list_language()
+{
+    t()->inject([
+        '사용자_목록' => [
+            'ko' => '사용자 목록',
+            'en' => 'User List',
+            'ja' => 'ユーザーリスト',
+            'zh' => '用户列表'
+        ],
+        '등록된_사용자가_없습니다' => [
+            'ko' => '등록된 사용자가 없습니다.',
+            'en' => 'No users registered.',
+            'ja' => '登録されたユーザーがありません。',
+            'zh' => '没有注册用户。'
+        ],
+        '요청_중' => [
+            'ko' => '요청 중...',
+            'en' => 'Requesting...',
+            'ja' => 'リクエスト中...',
+            'zh' => '请求中...'
+        ],
+        '친구' => [
+            'ko' => '친구',
+            'en' => 'Friend',
+            'ja' => '友達',
+            'zh' => '朋友'
+        ],
+        '친구_추가' => [
+            'ko' => '친구 추가',
+            'en' => 'Add Friend',
+            'ja' => '友達追加',
+            'zh' => '添加朋友'
+        ],
+        '로딩_중' => [
+            'ko' => '로딩 중...',
+            'en' => 'Loading...',
+            'ja' => '読み込み中...',
+            'zh' => '加载中...'
+        ],
+        '모든_사용자를_불러왔습니다' => [
+            'ko' => '모든 사용자를 불러왔습니다.',
+            'en' => 'All users loaded.',
+            'ja' => 'すべてのユーザーを読み込みました。',
+            'zh' => '已加载所有用户。'
+        ],
+        '로그인이_필요합니다' => [
+            'ko' => '로그인이 필요합니다.',
+            'en' => 'Login required.',
+            'ja' => 'ログインが必要です。',
+            'zh' => '需要登录。'
+        ],
+        '자기_자신에게는_친구_요청을_보낼_수_없습니다' => [
+            'ko' => '자기 자신에게는 친구 요청을 보낼 수 없습니다.',
+            'en' => 'You cannot send a friend request to yourself.',
+            'ja' => '自分自身にはフレンドリクエストを送信できません。',
+            'zh' => '您不能向自己发送好友请求。'
+        ],
+        '이미_친구입니다' => [
+            'ko' => '이미 친구입니다.',
+            'en' => 'Already friends.',
+            'ja' => 'すでに友達です。',
+            'zh' => '已经是朋友了。'
+        ],
+        '님에게_친구_맺기_신청을_하시겠습니까' => [
+            'ko' => '님에게 친구 맺기 신청을 하시겠습니까?',
+            'en' => ', do you want to send a friend request?',
+            'ja' => 'さんにフレンドリクエストを送信しますか？',
+            'zh' => '，您想发送好友请求吗？'
+        ],
+        '님에게_친구_요청을_보냈습니다' => [
+            'ko' => '님에게 친구 요청을 보냈습니다.',
+            'en' => ', friend request sent.',
+            'ja' => 'さんにフレンドリクエストを送信しました。',
+            'zh' => '，已发送好友请求。'
+        ],
+        '친구_요청에_실패했습니다' => [
+            'ko' => '친구 요청에 실패했습니다.',
+            'en' => 'Friend request failed.',
+            'ja' => 'フレンドリクエストに失敗しました。',
+            'zh' => '好友请求失败。'
+        ],
+        '친구_요청_실패' => [
+            'ko' => '친구 요청 실패',
+            'en' => 'Friend request failed',
+            'ja' => 'フレンドリクエスト失敗',
+            'zh' => '好友请求失败'
+        ],
+    ]);
+}
+
+inject_list_language();
