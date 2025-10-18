@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: sonub-mariadb
--- Generation Time: Oct 12, 2025 at 09:23 AM
+-- Generation Time: Oct 18, 2025 at 11:25 AM
 -- Server version: 11.7.2-MariaDB-ubu2404
 -- PHP Version: 8.3.6
 
@@ -24,6 +24,22 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `comments`
+--
+
+CREATE TABLE `comments` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL,
+  `post_id` int(10) UNSIGNED NOT NULL,
+  `content` longtext NOT NULL DEFAULT '',
+  `files` text NOT NULL DEFAULT '',
+  `created_at` int(10) UNSIGNED NOT NULL,
+  `updated_at` int(10) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_estonian_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `posts`
 --
 
@@ -33,9 +49,9 @@ CREATE TABLE `posts` (
   `category` varchar(64) NOT NULL,
   `title` varchar(255) NOT NULL DEFAULT '',
   `content` longtext NOT NULL DEFAULT '',
+  `files` text NOT NULL DEFAULT '\'\'',
   `created_at` int(10) UNSIGNED NOT NULL DEFAULT 0,
-  `updated_at` int(10) UNSIGNED NOT NULL DEFAULT 0,
-  `files` text NOT NULL DEFAULT ''
+  `updated_at` int(10) UNSIGNED NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -49,7 +65,7 @@ CREATE TABLE `users` (
   `firebase_uid` varchar(128) NOT NULL,
   `created_at` int(10) UNSIGNED NOT NULL,
   `updated_at` int(10) UNSIGNED NOT NULL DEFAULT 0,
-  `display_name` varchar(64) NOT NULL DEFAULT '',
+  `display_name` varchar(64) DEFAULT NULL,
   `birthday` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `gender` char(1) NOT NULL DEFAULT '',
   `photo_url` varchar(255) NOT NULL DEFAULT ''
@@ -58,6 +74,15 @@ CREATE TABLE `users` (
 --
 -- Indexes for dumped tables
 --
+
+--
+-- Indexes for table `comments`
+--
+ALTER TABLE `comments`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `post_id` (`post_id`),
+  ADD KEY `created_at` (`created_at`);
 
 --
 -- Indexes for table `posts`
@@ -80,6 +105,12 @@ ALTER TABLE `users`
 --
 -- AUTO_INCREMENT for dumped tables
 --
+
+--
+-- AUTO_INCREMENT for table `comments`
+--
+ALTER TABLE `comments`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `posts`

@@ -18,8 +18,8 @@ require_once __DIR__ . '/../../../init.php';
 // ========================================================================
 // 1단계: 명령줄 인자 처리
 // ========================================================================
-// 생성할 게시글 개수 (기본값: 50개)
-$count = isset($argv[1]) ? (int)$argv[1] : 50;
+// 각 카테고리당 생성할 게시글 개수 (기본값: 30개)
+$postsPerCategory = isset($argv[1]) ? (int)$argv[1] : 30;
 
 /**
  * 랜덤 이미지를 다운로드하고 업로드하는 함수
@@ -93,18 +93,21 @@ if (!$bananaUser) {
     exit(1);
 }
 
-echo "✅ 테스트 사용자 확인: {$bananaUser['display_name']} (ID: {$bananaUser['id']})\n";
-echo "📝 {$count}개의 랜덤 게시글을 생성합니다...\n\n";
-
 // ========================================================================
 // 3단계: 게시글 템플릿 데이터 정의
 // ========================================================================
 
 // 게시글 카테고리 목록
-// 테스트 데이터는 'my-wall' 카테고리에 생성
+// 테스트 데이터는 'story', 'ai', 'drama' 카테고리에 랜덤 생성
 $categories = [
-    'my-wall',     // 테스트용 카테고리
+    'story',    // 커뮤니티 > 이야기
+    'ai',       // 뉴스 > 인공지능
+    'drama',    // 뉴스 > 드라마
 ];
+
+echo "✅ 테스트 사용자 확인: {$bananaUser['display_name']} (ID: {$bananaUser['id']})\n";
+echo "📝 각 카테고리당 {$postsPerCategory}개씩, 총 " . ($postsPerCategory * count($categories)) . "개의 랜덤 게시글을 생성합니다...\n";
+echo "📸 각 게시글마다 0-10개의 랜덤 이미지를 추가합니다...\n\n";
 
 // 랜덤 제목 템플릿 (30개)
 $titleTemplates = [
@@ -162,119 +165,131 @@ $solutionKeywords = ['applying caching', 'query optimization', 'adding indexes',
 $topicKeywords = ['clean code', 'design patterns', 'test code', 'Git workflow', 'code review'];
 
 // ========================================================================
-// 4단계: 랜덤 게시글 생성 루프
+// 4단계: 랜덤 게시글 생성 루프 - 각 카테고리마다 지정된 개수만큼 생성
 // ========================================================================
 
 // 성공/실패 카운트
 $successCount = 0;
 $failCount = 0;
 
-for ($i = 1; $i <= $count; $i++) {
-    try {
-        // 카테고리 선택 (현재는 'my-wall'만 사용)
-        $category = $categories[array_rand($categories)];
+// 전체 진행 상황 추적
+$totalCount = $postsPerCategory * count($categories);
+$currentIndex = 0;
 
-        // 랜덤 제목 선택
-        $title = $titleTemplates[array_rand($titleTemplates)];
+// 각 카테고리별로 게시글 생성
+foreach ($categories as $category) {
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+    echo "📁 카테고리: {$category} - {$postsPerCategory}개 생성 시작\n";
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
 
-        // 제목에 번호 추가 (중복 방지)
-        $title = $title . " #" . $i;
+    for ($i = 1; $i <= $postsPerCategory; $i++) {
+        $currentIndex++;
+        try {
 
-        // 랜덤 내용 선택 및 키워드 치환
-        $content = $contentTemplates[array_rand($contentTemplates)];
-        $content = str_replace('{tech}', $techKeywords[array_rand($techKeywords)], $content);
-        $content = str_replace('{feature}', $featureKeywords[array_rand($featureKeywords)], $content);
-        $content = str_replace('{problem}', $problemKeywords[array_rand($problemKeywords)], $content);
-        $content = str_replace('{solution}', $solutionKeywords[array_rand($solutionKeywords)], $content);
-        $content = str_replace('{topic}', $topicKeywords[array_rand($topicKeywords)], $content);
+            // 랜덤 제목 선택
+            $title = $titleTemplates[array_rand($titleTemplates)];
 
-        // ====================================================================
-        // login_as_test_user() 함수를 사용한 테스트 사용자 로그인
-        // ====================================================================
-        // lib/test/test.functions.php에 정의된 login_as_test_user() 함수를 사용합니다.
-        // 이 함수는 테스트 환경에서 'banana' 사용자로 로그인 상태를 만듭니다.
-        // 내부적으로 generate_session_id()를 호출하고 $_COOKIE[SESSION_ID]를 설정합니다.
-        // 'banana'는 기본 테스트 사용자입니다.
-        // 이미지 업로드 전에 먼저 로그인 상태를 만들어야 get_file_upload_path()가 작동합니다.
-        login_as_test_user('banana');
+            // 제목에 카테고리와 번호 추가 (중복 방지)
+            $title = "[{$category}] " . $title . " #" . $currentIndex;
 
-        // ====================================================================
-        // 랜덤 이미지 업로드 (50% 확률로 1-3개의 이미지 추가)
-        // ====================================================================
-        $files = [];
-        // 50% 확률로 이미지 추가
-        if (mt_rand(0, 1) === 1) {
-            // 1-3개의 이미지를 랜덤하게 추가
-            $imageCount = mt_rand(1, 3);
-            echo "    📸 이미지 {$imageCount}개 업로드 중...\n";
+            // 랜덤 내용 선택 및 키워드 치환
+            $content = $contentTemplates[array_rand($contentTemplates)];
+            $content = str_replace('{tech}', $techKeywords[array_rand($techKeywords)], $content);
+            $content = str_replace('{feature}', $featureKeywords[array_rand($featureKeywords)], $content);
+            $content = str_replace('{problem}', $problemKeywords[array_rand($problemKeywords)], $content);
+            $content = str_replace('{solution}', $solutionKeywords[array_rand($solutionKeywords)], $content);
+            $content = str_replace('{topic}', $topicKeywords[array_rand($topicKeywords)], $content);
 
-            for ($j = 0; $j < $imageCount; $j++) {
-                // 다양한 크기의 이미지 생성 (가로 400-1200, 세로 300-800)
-                $width = mt_rand(400, 1200);
-                $height = mt_rand(300, 800);
+            // ====================================================================
+            // login_as_test_user() 함수를 사용한 테스트 사용자 로그인
+            // ====================================================================
+            // lib/test/test.functions.php에 정의된 login_as_test_user() 함수를 사용합니다.
+            // 이 함수는 테스트 환경에서 'banana' 사용자로 로그인 상태를 만듭니다.
+            // 내부적으로 generate_session_id()를 호출하고 $_COOKIE[SESSION_ID]를 설정합니다.
+            // 'banana'는 기본 테스트 사용자입니다.
+            // 이미지 업로드 전에 먼저 로그인 상태를 만들어야 get_file_upload_path()가 작동합니다.
+            login_as_test_user('banana');
 
-                $imageUrl = upload_random_image($width, $height);
-                if ($imageUrl !== null) {
-                    $files[] = $imageUrl;
-                    echo "    ✅ 이미지 업로드 성공: " . basename($imageUrl) . "\n";
+            // ====================================================================
+            // 랜덤 이미지 업로드 (0-10개의 이미지 랜덤 추가)
+            // ====================================================================
+            $files = [];
+            // 0-10개의 이미지를 랜덤하게 추가
+            $imageCount = mt_rand(0, 10);
+
+            if ($imageCount > 0) {
+                echo "    📸 이미지 {$imageCount}개 업로드 중...\n";
+
+                for ($j = 0; $j < $imageCount; $j++) {
+                    // 다양한 크기의 이미지 생성 (가로 400-1200, 세로 300-800)
+                    $width = mt_rand(400, 1200);
+                    $height = mt_rand(300, 800);
+
+                    $imageUrl = upload_random_image($width, $height);
+                    if ($imageUrl !== null) {
+                        $files[] = $imageUrl;
+                        echo "    ✅ 이미지 업로드 성공: " . basename($imageUrl) . "\n";
+                    }
                 }
             }
-        }
 
-        // 이미지 URL을 콤마로 구분된 문자열로 변환
-        $filesString = !empty($files) ? implode(',', $files) : '';
+            // 이미지 URL을 콤마로 구분된 문자열로 변환
+            $filesString = !empty($files) ? implode(',', $files) : '';
 
-        // ====================================================================
-        // create_post() 함수를 사용한 게시글 생성
-        // ====================================================================
-        // create_post() 함수는 lib/post/post.crud.php에 정의되어 있습니다.
-        // 이 함수는 다음 작업을 수행합니다:
-        // 1. 로그인 확인 (login() 함수 호출)
-        // 2. 입력값 검증 (category 필수)
-        // 3. PDO prepared statement를 사용한 안전한 DB 삽입
-        // 4. 생성된 게시글의 PostModel 객체 반환
-        $postData = [
-            'category' => $category,
-            'title' => $title,
-            'content' => $content,
-        ];
+            // ====================================================================
+            // create_post() 함수를 사용한 게시글 생성
+            // ====================================================================
+            // create_post() 함수는 lib/post/post.crud.php에 정의되어 있습니다.
+            // 이 함수는 다음 작업을 수행합니다:
+            // 1. 로그인 확인 (login() 함수 호출)
+            // 2. 입력값 검증 (category 필수)
+            // 3. PDO prepared statement를 사용한 안전한 DB 삽입
+            // 4. 생성된 게시글의 PostModel 객체 반환
+            $postData = [
+                'category' => $category,
+                'title' => $title,
+                'content' => $content,
+            ];
 
-        // 이미지가 있으면 files 파라미터 추가
-        if (!empty($filesString)) {
-            $postData['files'] = $filesString;
-        }
-
-        $post = create_post($postData);
-
-        // 생성 성공 여부 확인
-        if ($post instanceof PostModel) {
-            $successCount++;
-
-            // 진행 상황 출력 (모든 게시글 또는 10개마다)
-            // 모든 게시글은 'banana' 사용자로 생성됩니다
-            $imageInfo = !empty($files) ? " [이미지: " . count($files) . "개]" : "";
-            if ($i % 10 == 0 || $i == $count) {
-                echo "✅ {$i}/{$count} (ID: {$post->id}, Author: banana, Category: {$category}{$imageInfo})\n";
+            // 이미지가 있으면 files 파라미터 추가
+            if (!empty($filesString)) {
+                $postData['files'] = $filesString;
             }
-        } else {
-            // create_post()가 PostModel 객체를 반환하지 않으면 실패
-            $failCount++;
-            echo "❌ Failed ({$i}/{$count}): create_post() did not return a PostModel\n";
-        }
 
-        // 임시 세션 정리
-        unset($_COOKIE[SESSION_ID]);
+            $post = create_post($postData);
 
-    } catch (Exception $e) {
-        // 예외 발생 시 에러 메시지 출력 및 실패 카운트 증가
-        $failCount++;
-        echo "❌ Failed ({$i}/{$count}): " . $e->getMessage() . "\n";
+            // 생성 성공 여부 확인
+            if ($post instanceof PostModel) {
+                $successCount++;
 
-        // 임시 세션 정리
-        if (isset($_COOKIE[SESSION_ID])) {
+                // 진행 상황 출력 (10개마다 또는 마지막)
+                // 모든 게시글은 'banana' 사용자로 생성됩니다
+                $imageInfo = !empty($files) ? " [이미지: " . count($files) . "개]" : " [이미지: 0개]";
+                if ($i % 10 == 0 || $i == $postsPerCategory) {
+                    echo "✅ {$category} {$i}/{$postsPerCategory} (전체: {$currentIndex}/{$totalCount}) - ID: {$post->id}{$imageInfo}\n";
+                }
+            } else {
+                // create_post()가 PostModel 객체를 반환하지 않으면 실패
+                $failCount++;
+                echo "❌ Failed ({$currentIndex}/{$totalCount}): create_post() did not return a PostModel\n";
+            }
+
+            // 임시 세션 정리
             unset($_COOKIE[SESSION_ID]);
+
+        } catch (Exception $e) {
+            // 예외 발생 시 에러 메시지 출력 및 실패 카운트 증가
+            $failCount++;
+            echo "❌ Failed ({$currentIndex}/{$totalCount}): " . $e->getMessage() . "\n";
+
+            // 임시 세션 정리
+            if (isset($_COOKIE[SESSION_ID])) {
+                unset($_COOKIE[SESSION_ID]);
+            }
         }
     }
+
+    echo "\n";
 }
 
 // ========================================================================
