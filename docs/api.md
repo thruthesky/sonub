@@ -67,9 +67,75 @@ Sonub는 **API First** 설계 철학을 따르는 웹 애플리케이션입니�
 - ✅ **모든 함수는 에러 발생 시 `error()` 함수를 호출하여 `ApiException`을 throw한다**
 - ✅ **`api.php`에서 try/catch 블록으로 `ApiException`을 catch하여 JSON 에러 응답으로 변환한다**
 - ✅ **Model 객체(UserModel, PostModel 등)를 리턴하는 경우, 반드시 toArray() 메서드를 구현해야 한다**
+- ✅ **함수 반환 형식: 배열/객체는 직접 반환, 스칼라 값은 `['data' => ...]` 형태로 반환**
 - ✅ RESTful 클라이언트가 API를 통해 모든 기능에 접근 가능
 - ✅ 프론트엔드와 백엔드가 명확히 분리됨
 - ✅ 모바일 앱, 웹 앱, 서드파티 서비스 등 다양한 클라이언트 지원
+
+### API 함수 반환 형식 규칙
+
+**배열/객체 반환 (직접 반환):**
+- 여러 데이터를 포함하는 배열: 직접 반환
+- 객체 배열: 직접 반환
+- 복수 필드를 가진 연관 배열: 직접 반환
+
+```php
+// ✅ 올바른 예: 배열 직접 반환
+function get_friends(array $input): array {
+    // ...
+    return $friends;  // [['id' => 1, ...], ['id' => 2, ...]]
+}
+
+// ✅ 올바른 예: 친구 ID 배열 직접 반환
+function get_friend_ids(array $input): array {
+    // ...
+    return $friend_ids;  // [1, 2, 3, 4, 5]
+}
+
+// ✅ 올바른 예: 복수 필드 연관 배열
+function request_friend(array $input): array {
+    // ...
+    return ['message' => '친구 요청을 보냈습니다', 'success' => true];
+}
+```
+
+**스칼라 값 반환 (`['data' => ...]` 형태):**
+- 단일 문자열, 숫자, 불리언 값: `['data' => ...]`로 래핑
+
+```php
+// ✅ 올바른 예: 스칼라 값을 'data' 키로 래핑
+function get_user_count(): array {
+    $count = 42;
+    return ['data' => $count];  // {'data': 42}
+}
+
+// ✅ 올바른 예: 단일 문자열 반환
+function get_app_version(): array {
+    return ['data' => '2025-10-18-17-35-04'];
+}
+
+// ❌ 잘못된 예: 스칼라 값 직접 반환
+function get_user_count(): int {
+    return 42;  // 에러: response-not-array-or-object
+}
+```
+
+**JavaScript에서 사용:**
+```javascript
+// 배열 직접 반환 함수
+const friends = await func('get_friends', { me: 5, limit: 10 });
+console.log(friends);  // 친구 배열
+
+const friendIds = await func('get_friend_ids', { me: 5 });
+console.log(friendIds);  // [1, 2, 3, 4, 5]
+
+// 스칼라 값 반환 함수
+const result = await func('get_user_count');
+console.log(result.data);  // 42
+
+const version = await func('get_app_version');
+console.log(version.data);  // '2025-10-18-17-35-04'
+```
 
 ---
 

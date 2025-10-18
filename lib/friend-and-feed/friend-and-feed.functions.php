@@ -48,15 +48,19 @@ function now_epoch(): int
  * @param array $input 입력 파라미터
  *   - int $input['me'] 요청을 보내는 사용자 ID
  *   - int $input['other'] 요청을 받는 사용자 ID
- * @return array 성공 메시지
+ * @return array 성공 메시지 및 성공 여부
+ *   - string message: 성공 메시지
+ *   - bool success: 항상 true
  * @throws ApiException 에러 발생 시
  *
  * @example
  * // PHP에서 호출
- * request_friend(['me' => 5, 'other' => 10]);
+ * $result = request_friend(['me' => 5, 'other' => 10]);
+ * // ['message' => '친구 요청을 보냈습니다', 'success' => true]
  *
  * // JavaScript에서 API 호출
- * await func('request_friend', { me: 5, other: 10, auth: true });
+ * const result = await func('request_friend', { me: 5, other: 10, auth: true });
+ * console.log(result.message);  // '친구 요청을 보냈습니다'
  */
 function request_friend(array $input): array
 {
@@ -95,7 +99,7 @@ function request_friend(array $input): array
         ':updated' => $now
     ]);
 
-    return ['message' => '친구 요청을 보냈습니다'];
+    return ['message' => '친구 요청을 보냈습니다', 'success' => true];
 }
 
 /**
@@ -205,17 +209,17 @@ function remove_friend(array $input): array
  *
  * @param array $input 입력 파라미터
  *   - int $input['me'] 친구 목록을 조회할 사용자 ID
- * @return array 친구 ID 목록 (친구가 없으면 빈 배열)
+ * @return array 친구 ID 배열 (직접 배열 형태로 반환, 친구가 없으면 빈 배열)
  * @throws ApiException 에러 발생 시
  *
  * @example
  * // PHP에서 호출
- * $friends = get_friend_ids(['me' => 5]);
- * // ['friend_ids' => [1, 3, 10, 15]]
+ * $friend_ids = get_friend_ids(['me' => 5]);
+ * // [1, 3, 10, 15]
  *
  * // JavaScript에서 API 호출
- * const result = await func('get_friend_ids', { me: 5 });
- * // result.friend_ids = [1, 3, 10, 15]
+ * const friend_ids = await func('get_friend_ids', { me: 5 });
+ * console.log(friend_ids);  // [1, 3, 10, 15]
  */
 function get_friend_ids(array $input): array
 {
@@ -235,7 +239,7 @@ function get_friend_ids(array $input): array
     $stmt->execute([':me1' => $me, ':me2' => $me, ':me3' => $me]);
     $friend_ids = array_map(fn($r) => (int)$r['friend_id'], $stmt->fetchAll());
 
-    return ['friend_ids' => $friend_ids];
+    return $friend_ids;
 }
 
 /**
@@ -250,26 +254,26 @@ function get_friend_ids(array $input): array
  *   - int $input['offset'] 시작 위치 (기본값: 0, 페이지네이션용)
  *   - string $input['order_by'] 정렬 기준 (기본값: 'id', 옵션: 'id', 'display_name', 'created_at')
  *   - string $input['order'] 정렬 순서 (기본값: 'DESC', 옵션: 'ASC', 'DESC')
- * @return array 친구 정보 배열 (friends 키에 배열 형태로 반환)
+ * @return array 친구 정보 배열 (직접 배열 형태로 반환, 친구가 없으면 빈 배열)
  * @throws ApiException 에러 발생 시
  *
  * @example
  * // PHP에서 호출 - 기본 (최대 10명, ID 내림차순)
- * $result = get_friends(['me' => 5]);
- * // ['friends' => [['id' => 10, 'display_name' => '홍길동', ...], ...]]
+ * $friends = get_friends(['me' => 5]);
+ * // [['id' => 10, 'display_name' => '홍길동', ...], ...]
  *
  * // 최대 5명만 조회
- * $result = get_friends(['me' => 5, 'limit' => 5]);
+ * $friends = get_friends(['me' => 5, 'limit' => 5]);
  *
  * // 이름 오름차순 정렬
- * $result = get_friends(['me' => 5, 'order_by' => 'display_name', 'order' => 'ASC']);
+ * $friends = get_friends(['me' => 5, 'order_by' => 'display_name', 'order' => 'ASC']);
  *
  * // 페이지네이션 (6번째부터 5명)
- * $result = get_friends(['me' => 5, 'limit' => 5, 'offset' => 5]);
+ * $friends = get_friends(['me' => 5, 'limit' => 5, 'offset' => 5]);
  *
  * // JavaScript에서 API 호출
- * const result = await func('get_friends', { me: 5, limit: 5 });
- * console.log(result.friends); // 친구 배열
+ * const friends = await func('get_friends', { me: 5, limit: 5 });
+ * console.log(friends); // 친구 배열
  */
 function get_friends(array $input): array
 {
@@ -306,12 +310,11 @@ function get_friends(array $input): array
     }
 
     // 1단계: 친구 ID 목록 가져오기
-    $friend_ids_result = get_friend_ids(['me' => $me]);
-    $friend_ids = $friend_ids_result['friend_ids'] ?? [];
+    $friend_ids = get_friend_ids(['me' => $me]);
 
     // 친구가 없으면 빈 배열 반환
     if (empty($friend_ids)) {
-        return ['friends' => []];
+        return [];
     }
 
     // 2단계: 친구 상세 정보 조회 (users 테이블)
@@ -332,7 +335,7 @@ function get_friends(array $input): array
 
     $friends = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    return ['friends' => $friends];
+    return $friends;
 }
 
 // ============================================================================
@@ -556,15 +559,18 @@ function get_feed_from_read_join(
  *   - int $input['me'] 피드를 조회할 사용자 ID
  *   - int $input['limit'] 조회할 최대 개수 (기본값: 20)
  *   - int $input['offset'] 시작 위치 (기본값: 0)
- * @return array 피드 항목 배열
+ * @return array 피드 항목 배열 (직접 배열 형태로 반환)
+ *   - 각 항목: ['post_id', 'author_id', 'category', 'title', 'content', 'created_at', 'visibility']
  * @throws ApiException 에러 발생 시
  *
  * @example
  * // PHP에서 호출
  * $feed = get_hybrid_feed(['me' => 10, 'limit' => 20, 'offset' => 0]);
+ * // [['post_id' => 1, 'title' => '...'], ['post_id' => 2, 'title' => '...'], ...]
  *
  * // JavaScript에서 API 호출
  * const feed = await func('get_hybrid_feed', { me: 10, limit: 20, offset: 0 });
+ * console.log(feed);  // 피드 배열
  */
 function get_hybrid_feed(array $input): array
 {
@@ -592,8 +598,7 @@ function get_hybrid_feed(array $input): array
     }
 
     // 2단계: 부족분은 읽기 조인으로 보충
-    $friend_ids_result = get_friend_ids(['me' => $me]);
-    $friend_ids = $friend_ids_result['friend_ids'] ?? [];
+    $friend_ids = get_friend_ids(['me' => $me]);
     $need = $limit - count($cached);
     $joined = get_feed_from_read_join($me, $friend_ids, $need, $offset);
 
@@ -633,8 +638,7 @@ function finalize_feed_with_visibility(int $me, array $items): array
 {
     $out = [];
     // 친구 목록 캐시(루프 내 DB 호출 줄이기)
-    $friend_ids_result = get_friend_ids(['me' => $me]);
-    $friend_ids = $friend_ids_result['friend_ids'] ?? [];
+    $friend_ids = get_friend_ids(['me' => $me]);
 
     foreach ($items as $r) {
         $post = get_post_row((int)$r['post_id']);
@@ -665,5 +669,5 @@ function finalize_feed_with_visibility(int $me, array $items): array
 
     // 안전하게 최신순 보장
     usort($out, fn($a, $b) => $b['created_at'] <=> $a['created_at']);
-    return ['feed' => $out];
+    return $out;
 }

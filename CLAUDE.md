@@ -18,7 +18,8 @@ Sonub (sonub.com) 웹사이트 개발 가이드라인 및 규칙
 
 ```bash
 # PHP Unit Test 실행
-docker exec sonub-php php /sonub/tests/db/db.connection.test.php
+php tests/db/db.connection.test.php
+php tests/xxx/yyy/zzz.test.php
 
 # Playwright E2E Test 실행 (호스트 환경)
 npx playwright test tests/playwright/e2e/user-login.spec.ts
@@ -292,13 +293,31 @@ file -I [파일경로]
 **필수**: 모든 테스트 파일은 `./tests` 폴더에 저장
 
 ## 테스트 실행
+
+**방법 1: Docker 컨테이너 내부에서 실행 (권장)**
 ```bash
 # PHP Unit Test
 docker exec sonub-php php /sonub/tests/db/db.connection.test.php
+docker exec sonub-php php /sonub/tests/friend-and-feed/get-friends.test.php
+
+# Playwright E2E Test (호스트 환경)
+npx playwright test tests/playwright/e2e/user-login.spec.ts
+```
+
+**방법 2: 호스트 환경에서 직접 실행 (간편)**
+```bash
+# PHP Unit Test
+php tests/xxx/xxx.test.php
+php tests/friend-and-feed/get-friends.test.php
 
 # Playwright E2E Test
 npx playwright test tests/playwright/e2e/user-login.spec.ts
 ```
+
+**주의사항:**
+- Docker 컨테이너 내부: 절대 경로 `/sonub/tests/...` 사용
+- 호스트 환경 직접 실행: 상대 경로 `tests/...` 사용
+- 호스트 환경에서는 DB 연결 설정이 올바르게 되어 있어야 함
 
 상세 예제는 `docs/test.md` 참조
 

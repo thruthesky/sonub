@@ -384,21 +384,21 @@ echo "----------------------------------------\n";
 // 정상 조회
 $hybrid_feed = get_hybrid_feed(['me' => $u2, 'limit' => 20, 'offset' => 0]);
 test_assert(
-    isset($hybrid_feed),
+    isset($hybrid_feed['feed']),
     "get_hybrid_feed는 'feed' 키를 포함한 배열을 반환해야 함"
 );
 test_assert(
-    is_array($hybrid_feed),
+    is_array($hybrid_feed['feed']),
     "'feed'는 배열이어야 함"
 );
 test_assert(
-    count($hybrid_feed) >= 1,
+    count($hybrid_feed['feed']) >= 1,
     "u2의 하이브리드 피드에는 최소 1개 게시글이 있어야 함"
 );
 
 // 첫 항목 구조 확인
-if (count($hybrid_feed) > 0) {
-    $first = $hybrid_feed[0];
+if (count($hybrid_feed['feed']) > 0) {
+    $first = $hybrid_feed['feed'][0];
     test_assert(
         isset($first['post_id']) && isset($first['author_id']) && isset($first['title']),
         "피드 항목은 post_id, author_id, title 필드를 포함해야 함"
@@ -421,20 +421,20 @@ test_throws(
 // LIMIT 범위 테스트 (자동 보정)
 $hybrid_limit_0 = get_hybrid_feed(['me' => $u2, 'limit' => 0]);
 test_assert(
-    is_array($hybrid_limit_0),
+    is_array($hybrid_limit_0['feed']),
     "limit=0일 때 자동으로 기본값(20)으로 보정되어야 함"
 );
 
 $hybrid_limit_200 = get_hybrid_feed(['me' => $u2, 'limit' => 200]);
 test_assert(
-    is_array($hybrid_limit_200),
+    is_array($hybrid_limit_200['feed']),
     "limit=200일 때 자동으로 최대값(20)으로 제한되어야 함"
 );
 
 // OFFSET 테스트
 $hybrid_offset = get_hybrid_feed(['me' => $u2, 'limit' => 1, 'offset' => 0]);
 test_assert(
-    count($hybrid_offset) <= 1,
+    count($hybrid_offset['feed']) <= 1,
     "limit=1, offset=0일 때 최대 1개 반환"
 );
 
@@ -481,11 +481,11 @@ $raw_items = [
 // u2 (친구)가 조회
 $finalized_u2 = finalize_feed_with_visibility($u2, $raw_items);
 test_assert(
-    isset($finalized_u2),
+    isset($finalized_u2['feed']),
     "finalize_feed_with_visibility는 'feed' 키를 포함한 배열 반환"
 );
 
-$feed_items_u2 = $finalized_u2;
+$feed_items_u2 = $finalized_u2['feed'];
 $post_ids_u2 = array_column($feed_items_u2, 'post_id');
 
 test_assert(
@@ -503,7 +503,7 @@ test_assert(
 
 // u4 (비친구)가 조회
 $finalized_u4 = finalize_feed_with_visibility($u4, $raw_items);
-$feed_items_u4 = $finalized_u4;
+$feed_items_u4 = $finalized_u4['feed'];
 $post_ids_u4 = array_column($feed_items_u4, 'post_id');
 
 test_assert(
@@ -521,7 +521,7 @@ test_assert(
 
 // u1 (작성자 본인)이 조회
 $finalized_u1 = finalize_feed_with_visibility($u1, $raw_items);
-$feed_items_u1 = $finalized_u1;
+$feed_items_u1 = $finalized_u1['feed'];
 $post_ids_u1 = array_column($feed_items_u1, 'post_id');
 
 test_assert(
@@ -539,7 +539,7 @@ test_assert(
 
 // 차단된 사용자 테스트 (u5는 u1에게 차단됨)
 $finalized_u5 = finalize_feed_with_visibility($u5, $raw_items);
-$feed_items_u5 = $finalized_u5;
+$feed_items_u5 = $finalized_u5['feed'];
 
 test_assert(
     count($feed_items_u5) === 0,
@@ -565,7 +565,7 @@ $post_scenario = create_test_post(
 
 // u1과 u3는 친구이므로 u1의 피드에 나타나야 함
 $scenario_feed = get_hybrid_feed(['me' => $u1, 'limit' => 50, 'offset' => 0]);
-$scenario_post_ids = array_column($scenario_feed, 'post_id');
+$scenario_post_ids = array_column($scenario_feed['feed'], 'post_id');
 
 test_assert(
     in_array($post_scenario['id'], $scenario_post_ids, true),
@@ -573,10 +573,10 @@ test_assert(
 );
 
 // 정렬 확인 (최신순)
-if (count($scenario_feed) >= 2) {
+if (count($scenario_feed['feed']) >= 2) {
     $is_sorted = true;
-    for ($i = 0; $i < count($scenario_feed) - 1; $i++) {
-        if ($scenario_feed[$i]['created_at'] < $scenario_feed[$i + 1]['created_at']) {
+    for ($i = 0; $i < count($scenario_feed['feed']) - 1; $i++) {
+        if ($scenario_feed['feed'][$i]['created_at'] < $scenario_feed['feed'][$i + 1]['created_at']) {
             $is_sorted = false;
             break;
         }

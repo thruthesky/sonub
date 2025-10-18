@@ -12,20 +12,8 @@ $result = list_users(['per_page' => 20, 'page' => 1]);
 $users = $result['users'] ?? [];
 $total = $result['total'] ?? 0;
 
-// 내 친구 목록 조회 (로그인한 경우에만)
-// get_friends() 함수를 사용하여 친구 상세 정보를 한 번에 조회
-$myFriends = [];
-if (login()) {
-    try {
-        // get_friends() 함수로 친구 상세 정보 조회 (최대 5명)
-        $friendsResult = get_friends(['me' => login()->id, 'limit' => 5]);
-        $myFriends = $friendsResult['friends'] ?? [];
-    } catch (Exception $e) {
-        // 친구 섹션은 선택적 기능이므로 에러 발생 시 조용히 실패
-        // 페이지는 정상적으로 로드되어야 함
-        $myFriends = [];
-    }
-}
+// 내 친구 목록 조회 (로그인한 경우에만, 최대 5명)
+$myFriends = login() ? get_friends(['me' => login()->id, 'limit' => 5]) : [];
 
 // Vue.js hydration을 위한 데이터 준비
 $hydrationData = [

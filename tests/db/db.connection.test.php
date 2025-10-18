@@ -70,6 +70,7 @@ try {
     echo "   - Host: " . DB_HOST . "\n";
     echo "   - Database: " . DB_NAME . "\n";
     echo "   - User: " . DB_USER . "\n";
+    echo "   - Password: " . DB_PASSWORD . "\n";
     exit(1);
 } catch (Exception $e) {
     echo "\n❌ Test failed: " . $e->getMessage() . "\n";

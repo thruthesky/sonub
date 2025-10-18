@@ -130,23 +130,19 @@ echo "✓ u1의 친구 관계 생성 완료: 7명 (u2, u3, u4, u5, u6, u7, u8)\n
 echo "테스트 1: 기본 친구 목록 조회\n";
 echo "----------------------------------------\n";
 
-$result = get_friends(['me' => $u1]);
+$friends = get_friends(['me' => $u1]);
 test_assert(
-    isset($result['friends']),
-    "'friends' 키가 존재해야 함"
+    is_array($friends),
+    "배열을 반환해야 함"
 );
 test_assert(
-    is_array($result['friends']),
-    "'friends'는 배열이어야 함"
-);
-test_assert(
-    count($result['friends']) === 7,
-    "u1의 친구는 7명이어야 함 (실제: " . count($result['friends']) . "명)"
+    count($friends) === 7,
+    "u1의 친구는 7명이어야 함 (실제: " . count($friends) . "명)"
 );
 
 // 첫 번째 친구 정보 구조 확인
-if (count($result['friends']) > 0) {
-    $first_friend = $result['friends'][0];
+if (count($friends) > 0) {
+    $first_friend = $friends[0];
     test_assert(
         isset($first_friend['id']) && isset($first_friend['display_name']),
         "친구 정보에 id와 display_name 필드가 포함되어야 함"
@@ -162,30 +158,30 @@ echo "테스트 2: LIMIT 옵션\n";
 echo "----------------------------------------\n";
 
 // LIMIT 5
-$result_limit_5 = get_friends(['me' => $u1, 'limit' => 5]);
+$friends_limit_5 = get_friends(['me' => $u1, 'limit' => 5]);
 test_assert(
-    count($result_limit_5['friends']) === 5,
+    count($friends_limit_5) === 5,
     "LIMIT 5일 때 5명만 반환해야 함"
 );
 
 // LIMIT 3
-$result_limit_3 = get_friends(['me' => $u1, 'limit' => 3]);
+$friends_limit_3 = get_friends(['me' => $u1, 'limit' => 3]);
 test_assert(
-    count($result_limit_3['friends']) === 3,
+    count($friends_limit_3) === 3,
     "LIMIT 3일 때 3명만 반환해야 함"
 );
 
 // LIMIT 0 (자동 보정 → 10)
-$result_limit_0 = get_friends(['me' => $u1, 'limit' => 0]);
+$friends_limit_0 = get_friends(['me' => $u1, 'limit' => 0]);
 test_assert(
-    count($result_limit_0['friends']) === 7,
+    count($friends_limit_0) === 7,
     "LIMIT 0일 때 기본값(10)으로 보정되어 모든 친구(7명) 반환"
 );
 
 // LIMIT 200 (자동 보정 → 10)
-$result_limit_200 = get_friends(['me' => $u1, 'limit' => 200]);
+$friends_limit_200 = get_friends(['me' => $u1, 'limit' => 200]);
 test_assert(
-    count($result_limit_200['friends']) === 7,
+    count($friends_limit_200) === 7,
     "LIMIT 200일 때 최대값(10)으로 제한되어 모든 친구(7명) 반환"
 );
 
@@ -200,28 +196,28 @@ echo "----------------------------------------\n";
 // OFFSET 0 (처음 5명)
 $page1 = get_friends(['me' => $u1, 'limit' => 5, 'offset' => 0]);
 test_assert(
-    count($page1['friends']) === 5,
+    count($page1) === 5,
     "OFFSET 0, LIMIT 5: 5명 반환"
 );
 
 // OFFSET 5 (6번째부터 2명)
 $page2 = get_friends(['me' => $u1, 'limit' => 5, 'offset' => 5]);
 test_assert(
-    count($page2['friends']) === 2,
+    count($page2) === 2,
     "OFFSET 5, LIMIT 5: 남은 2명 반환 (총 7명 중)"
 );
 
 // OFFSET 7 (범위 초과)
 $page3 = get_friends(['me' => $u1, 'limit' => 5, 'offset' => 7]);
 test_assert(
-    count($page3['friends']) === 0,
+    count($page3) === 0,
     "OFFSET 7, LIMIT 5: 빈 배열 반환 (범위 초과)"
 );
 
 // OFFSET 음수 (자동 보정 → 0)
 $page_negative = get_friends(['me' => $u1, 'limit' => 5, 'offset' => -10]);
 test_assert(
-    count($page_negative['friends']) === 5,
+    count($page_negative) === 5,
     "OFFSET -10일 때 0으로 보정되어 정상 동작"
 );
 
@@ -234,8 +230,8 @@ echo "테스트 4: ORDER_BY 및 ORDER 옵션\n";
 echo "----------------------------------------\n";
 
 // ORDER BY id DESC (기본값)
-$result_id_desc = get_friends(['me' => $u1]);
-$ids_desc = array_column($result_id_desc['friends'], 'id');
+$friends_id_desc = get_friends(['me' => $u1]);
+$ids_desc = array_column($friends_id_desc, 'id');
 $is_desc = true;
 for ($i = 0; $i < count($ids_desc) - 1; $i++) {
     if ($ids_desc[$i] < $ids_desc[$i + 1]) {
@@ -249,8 +245,8 @@ test_assert(
 );
 
 // ORDER BY id ASC
-$result_id_asc = get_friends(['me' => $u1, 'order_by' => 'id', 'order' => 'ASC']);
-$ids_asc = array_column($result_id_asc['friends'], 'id');
+$friends_id_asc = get_friends(['me' => $u1, 'order_by' => 'id', 'order' => 'ASC']);
+$ids_asc = array_column($friends_id_asc, 'id');
 $is_asc = true;
 for ($i = 0; $i < count($ids_asc) - 1; $i++) {
     if ($ids_asc[$i] > $ids_asc[$i + 1]) {
@@ -264,30 +260,30 @@ test_assert(
 );
 
 // ORDER BY display_name ASC
-$result_name_asc = get_friends(['me' => $u1, 'order_by' => 'display_name', 'order' => 'ASC']);
+$friends_name_asc = get_friends(['me' => $u1, 'order_by' => 'display_name', 'order' => 'ASC']);
 test_assert(
-    is_array($result_name_asc['friends']),
+    is_array($friends_name_asc),
     "이름 오름차순 정렬 (display_name ASC): 정상 동작"
 );
 
 // ORDER BY created_at DESC
-$result_created_desc = get_friends(['me' => $u1, 'order_by' => 'created_at', 'order' => 'DESC']);
+$friends_created_desc = get_friends(['me' => $u1, 'order_by' => 'created_at', 'order' => 'DESC']);
 test_assert(
-    is_array($result_created_desc['friends']),
+    is_array($friends_created_desc),
     "생성일 내림차순 정렬 (created_at DESC): 정상 동작"
 );
 
 // 잘못된 order_by (자동 보정 → 'id')
-$result_invalid_order_by = get_friends(['me' => $u1, 'order_by' => 'invalid_column']);
+$friends_invalid_order_by = get_friends(['me' => $u1, 'order_by' => 'invalid_column']);
 test_assert(
-    count($result_invalid_order_by['friends']) === 7,
+    count($friends_invalid_order_by) === 7,
     "잘못된 order_by: 기본값('id')으로 보정되어 정상 동작"
 );
 
 // 잘못된 order (자동 보정 → 'DESC')
-$result_invalid_order = get_friends(['me' => $u1, 'order' => 'INVALID']);
+$friends_invalid_order = get_friends(['me' => $u1, 'order' => 'INVALID']);
 test_assert(
-    count($result_invalid_order['friends']) === 7,
+    count($friends_invalid_order) === 7,
     "잘못된 order: 기본값('DESC')으로 보정되어 정상 동작"
 );
 
@@ -299,17 +295,13 @@ echo "\n";
 echo "테스트 5: 친구가 없는 경우\n";
 echo "----------------------------------------\n";
 
-$result_no_friends = get_friends(['me' => $u9]);
+$friends_no_friends = get_friends(['me' => $u9]);
 test_assert(
-    isset($result_no_friends['friends']),
-    "친구 없는 사용자: 'friends' 키 존재"
+    is_array($friends_no_friends),
+    "친구 없는 사용자: 배열 반환"
 );
 test_assert(
-    is_array($result_no_friends['friends']),
-    "친구 없는 사용자: 'friends'는 배열"
-);
-test_assert(
-    count($result_no_friends['friends']) === 0,
+    count($friends_no_friends) === 0,
     "친구 없는 사용자: 빈 배열 반환"
 );
 
@@ -350,7 +342,7 @@ echo "----------------------------------------\n";
 // 시나리오 1: 사용자 목록 페이지에서 친구 5명 표시
 $scenario1 = get_friends(['me' => $u1, 'limit' => 5]);
 test_assert(
-    count($scenario1['friends']) === 5,
+    count($scenario1) === 5,
     "시나리오 1 (친구 섹션): 최대 5명 조회"
 );
 
@@ -361,14 +353,14 @@ $friends_page1 = get_friends(['me' => $u1, 'limit' => 5, 'offset' => 0]);
 $friends_page2 = get_friends(['me' => $u1, 'limit' => 5, 'offset' => 5]);
 
 test_assert(
-    count($friends_page1['friends']) === 5 && count($friends_page2['friends']) === 2,
+    count($friends_page1) === 5 && count($friends_page2) === 2,
     "시나리오 2 (페이지네이션): 1페이지 5명, 2페이지 2명"
 );
 
 // 시나리오 3: 이름순 정렬된 친구 목록
 $friends_sorted = get_friends(['me' => $u1, 'order_by' => 'display_name', 'order' => 'ASC']);
 test_assert(
-    count($friends_sorted['friends']) === 7,
+    count($friends_sorted) === 7,
     "시나리오 3 (이름순 정렬): 모든 친구 이름순으로 조회"
 );
 
