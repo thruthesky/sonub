@@ -16,13 +16,12 @@ $total = $result['total'] ?? 0;
 // 내 친구 목록 조회 (로그인한 경우에만, 최대 5명)
 $myFriends = login() ? get_friends(['me' => login()->id, 'limit' => 5]) : [];
 
-// Vue.js hydration을 위한 데이터 준비
+// Vue.js hydration을 위한 데이터 준비 (친구 목록 제외)
 $hydrationData = [
     'users' => $users,
     'total' => $total,
     'currentPage' => 1,
-    'perPage' => 20,
-    'myFriends' => $myFriends
+    'perPage' => 20
 ];
 
 // InfiniteScroll 라이브러리 로드
@@ -43,53 +42,20 @@ load_deferred_js('user-search');
             </button>
 
             <!-- My Friends Section (only show if logged in and has friends) -->
-            <div v-if="myUserId && myFriends.length > 0" class="mb-4">
-                <h5 class="mb-3"><?= t()->내_친구_목록 ?></h5>
-                <div class="row g-3">
-                    <div v-for="friend in myFriends" :key="'friend-' + friend.id" class="col-6">
-                        <div class="card h-100">
-                            <div class="card-body p-2 d-flex align-items-center">
-                                <!-- Profile Photo -->
-                                <a :href="`<?= href()->user->profile ?>?id=${friend.id}`"
-                                    class="flex-shrink-0 me-2 text-decoration-none">
-                                    <img v-if="friend.photo_url"
-                                        :src="friend.photo_url"
-                                        class="rounded-circle"
-                                        style="width: 50px; height: 50px; object-fit: cover;"
-                                        :alt="friend.display_name">
-                                    <div v-else
-                                        class="rounded-circle bg-secondary bg-opacity-25 d-inline-flex align-items-center justify-content-center"
-                                        style="width: 50px; height: 50px;">
-                                        <i class="bi bi-person fs-5 text-secondary"></i>
-                                    </div>
-                                </a>
-
-                                <!-- User Info -->
-                                <a :href="`<?= href()->user->profile ?>?id=${friend.id}`"
-                                    class="flex-grow-1 min-w-0 text-decoration-none">
-                                    <h6 class="card-title mb-0 text-truncate text-dark">
-                                        {{ friend.display_name }}
-                                    </h6>
-                                    <p class="card-text text-muted mb-0" style="font-size: 0.75rem;">
-                                        {{ formatDate(friend.created_at) }}
-                                    </p>
-                                </a>
-
-                                <!-- Friend Badge (no button needed) -->
-                                <div class="flex-shrink-0 ms-2">
-                                    <span class="badge bg-success">
-                                        <i class="bi bi-check-circle me-1"></i>
-                                        <?= t()->친구 ?>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            <?php if (login() && !empty($myFriends)): ?>
+                <div class="mb-4">
+                    <h5 class="mb-3"><?= t()->내_친구_목록 ?></h5>
+                    <?php
+                    // 친구 한 줄 표시 위젯 로드
+                    $friends = $myFriends;
+                    $limit = 5;
+                    include __DIR__ . '/../../widgets/user/friend/friend-one-line-display.php';
+                    ?>
                 </div>
-            </div>
 
-            <!-- Divider -->
-            <hr v-if="myUserId && myFriends.length > 0" class="my-4">
+                <!-- Divider -->
+                <hr class="my-4">
+            <?php endif; ?>
 
             <!-- 사용자 목록 그리드 -->
             <div class="row g-3">
@@ -311,7 +277,6 @@ load_deferred_js('user-search');
                     total: <?= json_encode($hydrationData['total']) ?>,
                     currentPage: <?= json_encode($hydrationData['currentPage']) ?>,
                     perPage: <?= json_encode($hydrationData['perPage']) ?>,
-                    myFriends: <?= json_encode($hydrationData['myFriends'], JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS) ?>,
                     loading: false,
                     hasMore: true,
                     myUserId: <?= login() ? login()->id : 'null' ?> // 로그인한 사용자 ID
