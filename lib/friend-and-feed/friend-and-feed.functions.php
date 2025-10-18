@@ -327,20 +327,23 @@ function get_post_row(int $post_id): ?array
 function fanout_post_to_friends(int $author_id, int $post_id, int $created_at): int
 {
     $pdo = pdo();
-    $sql = "INSERT IGNORE INTO feed_entries (receiver_id, post_id, post_author_id, created_at)
-            SELECT
-              CASE WHEN user_id_a = :author THEN user_id_b ELSE user_id_a END AS receiver_id,
-              :post_id,
-              :author,
-              :created_at
-              FROM friendships
-             WHERE (user_id_a=:author OR user_id_b=:author)
-               AND status='accepted'";
+        $sql = "INSERT IGNORE INTO feed_entries (receiver_id, post_id, post_author_id, created_at)
+                        SELECT
+                            CASE WHEN user_id_a = :author_case THEN user_id_b ELSE user_id_a END AS receiver_id,
+                            :post_id,
+                            :author_value,
+                            :created_at
+                            FROM friendships
+                         WHERE (user_id_a = :author_where_a OR user_id_b = :author_where_b)
+                             AND status='accepted'";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
-        ':author' => $author_id,
-        ':post_id' => $post_id,
-        ':created_at' => $created_at
+                ':author_case' => $author_id,
+                ':post_id' => $post_id,
+                ':author_value' => $author_id,
+                ':created_at' => $created_at,
+                ':author_where_a' => $author_id,
+                ':author_where_b' => $author_id,
     ]);
     return $stmt->rowCount(); // 실제 삽입된 행 수(IGNORE 영향 있음)
 }

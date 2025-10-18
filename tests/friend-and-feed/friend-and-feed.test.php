@@ -23,6 +23,8 @@ echo "========================================\n\n";
 // 테스트 결과 카운터
 $passed = 0;
 $failed = 0;
+$testPostIdFanout = 990001;
+$testPostIdNoFriend = 990002;
 
 /**
  * 테스트 헬퍼 함수: 결과 검증
@@ -93,6 +95,35 @@ function ensure_test_user(PDO $pdo, int $userId, int $now): void
     ]);
 }
 
+/**
+ * 테스트용 게시글 레코드 보장
+ */
+function ensure_test_post(PDO $pdo, int $postId, int $authorId, int $createdAt): void
+{
+    $stmt = $pdo->prepare("INSERT INTO posts (id, user_id, category, title, content, visibility, files, created_at, updated_at)
+        VALUES (:id, :user_id, 'discussion', :title, :content, 'public', '', :created_at, :updated_at)
+        ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), updated_at = VALUES(updated_at)");
+    $stmt->execute([
+        ':id' => $postId,
+        ':user_id' => $authorId,
+        ':title' => "테스트 게시글 {$postId}",
+        ':content' => "fanout 테스트 본문 {$postId}",
+        ':created_at' => $createdAt,
+        ':updated_at' => $createdAt,
+    ]);
+}
+
+/**
+ * 테스트 헬퍼 함수: feed_entries 조회
+ */
+function fetch_feed_entries(int $receiverId, int $postId): array
+{
+    $pdo = pdo();
+    $stmt = $pdo->prepare("SELECT * FROM feed_entries WHERE receiver_id = :rid AND post_id = :pid ORDER BY id ASC");
+    $stmt->execute([':rid' => $receiverId, ':pid' => $postId]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
 // ============================================================================
 // 테스트 데이터 준비
 // ============================================================================
@@ -105,11 +136,14 @@ $pdo->exec("DELETE FROM friendships WHERE user_id_a >= 1000 OR user_id_b >= 1000
 $pdo->exec("DELETE FROM feed_entries WHERE receiver_id >= 1000");
 
 // 테스트용 사용자 생성
-$testUserIds = array_merge(range(1001, 1015), [1500, 1501]);
+$testUserIds = array_merge(range(1001, 1015), [1100, 1101, 1102, 1201, 1500, 1501]);
 $now = time();
 foreach ($testUserIds as $testUserId) {
     ensure_test_user($pdo, $testUserId, $now);
 }
+
+ensure_test_post($pdo, $testPostIdFanout, 1100, $now);
+ensure_test_post($pdo, $testPostIdNoFriend, 1201, $now);
 
 echo "테스트 데이터 준비 완료\n\n";
 
@@ -391,6 +425,46 @@ if ($first_post) {
 echo "\n";
 
 // ============================================================================
+// 테스트 9: fanout_post_to_friends() 함수
+// ============================================================================
+
+echo "테스트 9: fanout_post_to_friends() 함수\n";
+echo "----------------------------------------\n";
+
+// 준비: 친구 관계 생성 (작성자 1100, 수신자 1101/1102)
+request_friend(['me' => 1100, 'other' => 1101]);
+accept_friend(['me' => 1101, 'other' => 1100]);
+request_friend(['me' => 1100, 'other' => 1102]);
+accept_friend(['me' => 1102, 'other' => 1100]);
+
+// 기존 feed_entries 정리 (fan-out 검증을 위해 관련 데이터만 삭제)
+$pdo->exec("DELETE FROM feed_entries WHERE post_id IN ({$testPostIdFanout}, {$testPostIdNoFriend})");
+
+// 케이스 1: 친구 2명에게 fan-out
+$createdAt = time();
+$insertedRows = fanout_post_to_friends(1100, $testPostIdFanout, $createdAt);
+assert_true($insertedRows === 2, "친구 2명에게 피드 전파");
+
+$entries1101 = fetch_feed_entries(1101, $testPostIdFanout);
+$entries1102 = fetch_feed_entries(1102, $testPostIdFanout);
+assert_true(count($entries1101) === 1, "수신자 1101의 피드 기록 1개");
+assert_true(count($entries1102) === 1, "수신자 1102의 피드 기록 1개");
+assert_true((int)$entries1101[0]['post_author_id'] === 1100, "1101 레코드 작성자 확인");
+assert_true((int)$entries1102[0]['post_author_id'] === 1100, "1102 레코드 작성자 확인");
+assert_true((int)$entries1101[0]['created_at'] === $createdAt, "created_at 값 일치 (1101)");
+
+// 케이스 2: 중복 fan-out 시 INSERT IGNORE로 인해 0건
+$duplicateRows = fanout_post_to_friends(1100, $testPostIdFanout, $createdAt + 5);
+assert_true($duplicateRows === 0, "중복 fan-out 시 신규 삽입 없음");
+assert_true(count(fetch_feed_entries(1101, $testPostIdFanout)) === 1, "중복 호출 후 1101 피드 레코드 여전히 1개");
+
+// 케이스 3: 친구가 없는 사용자는 0건 반환
+$noFriendRows = fanout_post_to_friends(1201, $testPostIdNoFriend, $createdAt);
+assert_true($noFriendRows === 0, "친구가 없으면 fan-out 결과 0");
+
+echo "\n";
+
+// ============================================================================
 // 테스트 정리
 // ============================================================================
 
@@ -398,6 +472,7 @@ echo "테스트 데이터 정리...\n";
 $pdo->exec("DELETE FROM friendships WHERE user_id_a >= 1000 OR user_id_b >= 1000");
 $pdo->exec("DELETE FROM feed_entries WHERE receiver_id >= 1000");
 $pdo->exec("DELETE FROM blocks WHERE blocker_id >= 1000");
+$pdo->exec("DELETE FROM posts WHERE id IN ({$testPostIdFanout}, {$testPostIdNoFriend})");
 $pdo->exec("DELETE FROM users WHERE id >= 1000");
 echo "테스트 데이터 정리 완료\n\n";
 
