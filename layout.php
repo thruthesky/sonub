@@ -168,20 +168,8 @@ if (file_exists($module_path)) {
             <aside class="d-none d-lg-block col-12 col-md-3 col-lg-3">
 
                 <?php include_once WIDGET_DIR . '/sidebar/latest-posts.php'; ?>
+                <?php include_once WIDGET_DIR . '/sidebar/sidebar-stats.php'; ?>
 
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title">Statistics</h6>
-                        <dl class="row small">
-                            <dt class="col-6">Users</dt>
-                            <dd class="col-6">1,234</dd>
-                            <dt class="col-6">Posts</dt>
-                            <dd class="col-6">567</dd>
-                            <dt class="col-6">Comments</dt>
-                            <dd class="col-6">890</dd>
-                        </dl>
-                    </div>
-                </div>
             </aside>
         </div>
     </div>

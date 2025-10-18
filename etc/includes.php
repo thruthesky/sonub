@@ -30,6 +30,8 @@ include_once ROOT_DIR . '/lib/user/user.model.php';
 include_once ROOT_DIR . '/lib/post/post.model.php';
 include_once ROOT_DIR . '/lib/post/post_list.model.php';
 include_once ROOT_DIR . '/lib/post/post.crud.php';
+include_once ROOT_DIR . '/lib/comments/comment.model.php';
+include_once ROOT_DIR . '/lib/comments/comment.crud.php';
 include_once ROOT_DIR . '/lib/file/file.upload.php';
 include_once ROOT_DIR . '/lib/file/file.delete.php';
 include_once ROOT_DIR . '/lib/file/file.functions.php';

@@ -563,7 +563,7 @@ ready(() => {
     // 1️⃣ 상태 (state)
     const state = reactive({
         count: 0,
-        user: window.__HYDRATE__?.user ?? null  // index.php에서 주입된 로그인 사용자 정보
+        user: window.__HYDRATE__?.user ?? null  // layout.php에서 주입된 로그인 사용자 정보
     });
 
     // 2️⃣ 계산값 (getters)
@@ -588,10 +588,10 @@ ready(() => {
 - 서버(PHP)에서 생성된 데이터를 클라이언트(JavaScript)로 전달하는 기법
 - `window.__HYDRATE__` 객체를 통해 안전하게 데이터 전달
 
-**index.php에서 데이터 주입:**
+**layout.php에서 데이터 주입:**
 
 ```php
-<!-- index.php 상단 - __HYDRATE__ 객체 초기화 -->
+<!-- layout.php 상단 - __HYDRATE__ 객체 초기화 -->
 <head>
     <script>
         // 서버에서 클라이언트로 데이터 전달용 객체 (Hydration)
@@ -599,7 +599,7 @@ ready(() => {
     </script>
 </head>
 
-<!-- index.php 하단 - 사용자 정보 주입 -->
+<!-- layout.php 하단 - 사용자 정보 주입 -->
 <body>
     <!-- 페이지 콘텐츠 -->
 
@@ -673,7 +673,7 @@ ready(() => {
 ```
 
 ```html
-<!-- index.php - 헤더에서 사용 -->
+<!-- layout.php - 헤더에서 사용 -->
 <header>
     <nav>
         <a href="/user/profile">
@@ -1525,7 +1525,7 @@ Sonub는 `lib/page/page.functions.php`에 정의된 두 개의 헬퍼 함수를 
 
 ### 작동 방식
 
-자동 로딩 시스템은 메인 `index.php` 파일에서 호출되는 두 개의 함수를 사용합니다:
+자동 로딩 시스템은 메인 `layout.php` 파일에서 호출되는 두 개의 함수를 사용합니다:
 
 1. **`include_page_css()`** - 페이지의 PHP 파일과 같은 디렉토리에 CSS 파일이 있으면 자동으로 포함
 2. **`include_page_js()`** - 페이지의 PHP 파일과 같은 디렉토리에 JavaScript 파일이 있으면 자동으로 포함
@@ -1696,7 +1696,7 @@ createApp({
 <script defer src="/page/support.js"></script>
 ```
 
-이 태그들은 `index.php`에서 호출되는 함수에 의해 페이지의 `<head>` 섹션에 자동으로 주입됩니다.
+이 태그들은 `layout.php`에서 호출되는 함수에 의해 페이지의 `<head>` 섹션에 자동으로 주입됩니다.
 
 ---
 
@@ -1893,7 +1893,7 @@ load_deferred_js('plugin');
 
 **사용하지 않아도 되는 경우:**
 - 페이지별 JavaScript 파일 (자동 로드됨)
-- 전역 JavaScript 파일 (`/js/app.js` 등, 이미 `index.php`에서 로드됨)
+- 전역 JavaScript 파일 (`/js/app.js` 등, 이미 `layout.php`에서 로드됨)
 - 한 페이지에서만 사용하는 스크립트
 
 ---
@@ -2046,18 +2046,23 @@ createApp({
 Sonub는 Nginx 서버에서 다음과 같이 라우팅이 설정되어 있습니다:
 
 ```nginx
-index index.php;
+index layout.php;
 
 location / {
-    try_files $uri $uri/ /index.php?$query_string;
+    try_files $uri $uri/ /layout.php?$query_string;
 }
 ```
+
+**🔥🔥🔥 중요 변경사항: 시작 페이지가 `index.php`에서 `layout.php`로 변경되었습니다 🔥🔥🔥**
+
+- **이전**: 루트 폴더의 `index.php`가 모든 요청을 처리
+- **현재**: 루트 폴더의 `layout.php`가 모든 요청을 처리하는 메인 진입점
 
 ### 라우팅 동작 방식
 
 1. **존재하는 파일 접근**: 요청한 파일이 존재하면 해당 파일을 반환
-2. **존재하지 않는 파일 접근**: 요청한 파일이 존재하지 않으면 **모든 요청은 `index.php`로 전달**
-3. **페이지 파일 로딩**: `index.php`는 요청 경로를 분석하여 `/page/**/*.php` 폴더 아래의 PHP 스크립트를 로드
+2. **존재하지 않는 파일 접근**: 요청한 파일이 존재하지 않으면 **모든 요청은 `layout.php`로 전달**
+3. **페이지 파일 로딩**: `layout.php`는 요청 경로를 분석하여 `/page/**/*.php` 폴더 아래의 PHP 스크립트를 로드
 
 ### URL과 페이지 파일 매핑
 
@@ -2074,20 +2079,20 @@ location / {
 **예제 1: 사용자 로그인 페이지**
 
 - **URL**: `https://sonub.com/user/login`
-- **Nginx**: 파일 `/user/login`이 존재하지 않음 → `index.php`로 전달
-- **index.php**: 요청 경로 `/user/login`을 분석하여 `/page/user/login.php`를 로드
+- **Nginx**: 파일 `/user/login`이 존재하지 않음 → `layout.php`로 전달
+- **layout.php**: 요청 경로 `/user/login`을 분석하여 `/page/user/login.php`를 로드
 
 **예제 2: 게시글 목록 페이지**
 
 - **URL**: `https://sonub.com/post/list`
-- **Nginx**: 파일 `/post/list`가 존재하지 않음 → `index.php`로 전달
-- **index.php**: 요청 경로 `/post/list`을 분석하여 `/page/post/list.php`를 로드
+- **Nginx**: 파일 `/post/list`가 존재하지 않음 → `layout.php`로 전달
+- **layout.php**: 요청 경로 `/post/list`을 분석하여 `/page/post/list.php`를 로드
 
 **예제 3: 메인 페이지**
 
 - **URL**: `https://sonub.com/`
-- **Nginx**: 디렉토리 인덱스 → `index.php` 실행
-- **index.php**: 요청 경로가 `/`이므로 `/page/index.php`를 로드
+- **Nginx**: 디렉토리 인덱스 → `layout.php` 실행
+- **layout.php**: 요청 경로가 `/`이므로 `/page/index.php`를 로드
 
 ### 중요 사항
 
@@ -2100,9 +2105,9 @@ location / {
 ### 라우팅 시스템의 장점
 
 1. **깔끔한 URL**: 확장자 없는 URL 사용 가능 (`/user/login` 대신 `/user/login.php`)
-2. **단일 진입점**: 모든 요청이 `index.php`를 거쳐 공통 초기화 수행
+2. **단일 진입점**: 모든 요청이 `layout.php`를 거쳐 공통 초기화 수행
 3. **유연한 구조**: 디렉토리 구조에 따라 자유롭게 페이지 구성
-4. **중앙 집중 관리**: `index.php`에서 라우팅, 인증, 설정 등을 통합 관리
+4. **중앙 집중 관리**: `layout.php`에서 라우팅, 인증, 설정 등을 통합 관리
 
 ---
 
@@ -2486,12 +2491,12 @@ function sonub_messages_page()
 - **CSS 분리 규칙**:
   - **✅ 필수**: 레이아웃 관련 Bootstrap CSS 유틸리티 클래스는 HTML에 직접 작성
   - **✅ 필수**: 스타일 관련 CSS는 **반드시** `./page/**/*.css` 파일로 분리
-  - **✅ 자동 로드**: 페이지별 CSS 파일은 `index.php`에서 자동으로 로드됨
+  - **✅ 자동 로드**: 페이지별 CSS 파일은 `layout.php`에서 자동으로 로드됨
   - **❌ 금지**: 페이지 파일 내에 `<style>` 태그 사용 금지 (레이아웃 관련 Bootstrap 클래스 제외)
 
 - **JavaScript 분리 규칙**:
   - **✅ 필수**: JavaScript 코드는 **반드시** `./page/**/*.js` 파일로 분리
-  - **✅ 자동 로드**: 페이지별 JS 파일은 `index.php`에서 자동으로 로드됨
+  - **✅ 자동 로드**: 페이지별 JS 파일은 `layout.php`에서 자동으로 로드됨
   - **❌ 금지**: 페이지 파일 내에 `<script>` 태그로 JavaScript 작성 금지
 
 **올바른 페이지 파일 구조:**
@@ -2651,7 +2656,7 @@ ready(() => {
 |------|---------------------------|---------------------------|
 | **CSS 위치** | ✅ 외부 파일 (`./page/**/*.css`) | ✅ 같은 파일 내 `<style>` 태그 |
 | **JS 위치** | ✅ 외부 파일 (`./page/**/*.js`) | ✅ 같은 파일 내 `<script>` 태그 |
-| **자동 로드** | ✅ `index.php`에서 자동 로드 | ❌ 수동 include 필요 |
+| **자동 로드** | ✅ `layout.php`에서 자동 로드 | ❌ 수동 include 필요 |
 | **Bootstrap 클래스** | ✅ 레이아웃에 사용 | ✅ 레이아웃에 사용 |
 | **`<style>` 태그** | ❌ 절대 금지 | ✅ 필수 사용 |
 | **`<script>` 태그** | ❌ 절대 금지 | ✅ 필수 사용 |
@@ -3009,13 +3014,13 @@ function getUserInfo($user_id) {
 
 - **정의**: 각 페이지 스크립트가 실행되기 이전에 실행되는 코드 파일
 - **용도**: PHP 헤더 설정, 쿠키 처리, 인증 확인 등 각종 전처리 작업 수행
-- **실행 시점**: 페이지 콘텐츠가 로드되기 **이전**에 시작 스크립트(`index.php`)에서 자동으로 로드됨
+- **실행 시점**: 페이지 콘텐츠가 로드되기 **이전**에 시작 스크립트(`layout.php`)에서 자동으로 로드됨
 
 ### 모듈 파일 명명 규칙
 
 - **파일명 패턴**: `*.module.php`
 - **파일 위치**: 페이지 스크립트 파일과 동일한 폴더
-- **자동 로딩**: `index.php`가 페이지 경로를 기반으로 모듈 파일을 자동으로 검색하고 include
+- **자동 로딩**: `layout.php`가 페이지 경로를 기반으로 모듈 파일을 자동으로 검색하고 include
 
 ### 파일 구조 예시
 
@@ -3037,7 +3042,7 @@ page/
 ### 모듈 로딩 동작 방식
 
 1. **모듈 파일이 존재하는 경우**:
-   - `index.php`가 페이지 경로에서 모듈 파일을 검색
+   - `layout.php`가 페이지 경로에서 모듈 파일을 검색
    - 모듈 파일(`*.module.php`)을 먼저 `include`
    - 모듈 코드 실행 (헤더 설정, 쿠키 처리 등)
    - 이후 실제 페이지 파일을 로드하여 화면에 표시

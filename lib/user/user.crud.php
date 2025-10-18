@@ -404,3 +404,14 @@ function search_users(array $input): array
 {
     return list_users($input);
 }
+
+
+function count_users(?array $input = null): int
+{
+    $pdo = pdo();
+    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM users");
+    $stmt->execute();
+    $total_count = (int)$stmt->fetchColumn();
+
+    return $total_count;
+}

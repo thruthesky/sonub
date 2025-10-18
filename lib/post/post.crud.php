@@ -436,7 +436,6 @@ function list_posts(array $filters = []): PostListModel
 
         // PostListModel 객체 생성 및 반환
         return new PostListModel($posts, $total, $page, $per_page);
-
     } catch (PDOException $e) {
         // ====================================================================
         // 9단계: 에러 처리
@@ -473,7 +472,7 @@ function search_posts(array $filters): PostListModel
  * // 특정 사용자의 게시글 개수
  * $count = count_posts(['user_id' => 123]);
  */
-function count_posts(array $filters = []): int
+function count_posts(?array $filters = []): int
 {
     // ========================================================================
     // 1단계: 데이터베이스 연결
