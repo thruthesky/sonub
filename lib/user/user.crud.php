@@ -263,7 +263,7 @@ function update_my_profile(array $input): array
  * - $input['gender'] - (선택) 성별 필터 ('M' 또는 'F')
  * - $input['age_start'] - (선택) 시작 나이 (예: 24)
  * - $input['age_end'] - (선택) 끝 나이 (예: 32)
- * - $input['name'] - (선택) 이름 검색 (LIKE 'name%')
+ * - $input['name'] - (선택) 이름 검색 (정확히 일치하는 display_name만 검색)
  *
  * @return array
  * - 'page' - 현재 페이지 번호
@@ -281,15 +281,15 @@ function update_my_profile(array $input): array
  * @example 나이 범위 필터링
  * $result = list_users(['age_start' => 24, 'age_end' => 32, 'page' => 1]);
  *
- * @example 이름 검색
- * $result = list_users(['name' => '홍', 'page' => 1]);
+ * @example 이름 검색 (정확히 일치)
+ * $result = list_users(['name' => '홍길동', 'page' => 1]);
  *
  * @example 복합 검색
  * $result = list_users([
  *     'gender' => 'F',
  *     'age_start' => 24,
  *     'age_end' => 32,
- *     'name' => '김',
+ *     'name' => '김영희',
  *     'page' => 1
  * ]);
  */
@@ -329,10 +329,10 @@ function list_users(array $input): array
         $params[] = $gender;
     }
 
-    // 이름 검색 (LIKE '%name%' - 부분 일치, display_name에 검색어가 포함된 사용자 검색)
+    // 이름 검색 (정확히 일치하는 사용자만 검색)
     if ($name !== '') {
-        $conditions[] = 'display_name LIKE ?';
-        $params[] = '%' . $name . '%';
+        $conditions[] = 'display_name = ?';
+        $params[] = $name;
     }
 
     // 나이 필터 (birthday Unix timestamp 기반)
