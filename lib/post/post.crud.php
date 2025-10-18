@@ -3,17 +3,26 @@
 declare(strict_types=1);
 
 /**
- * 게시글 생성 함수
+ * 게시글 생성 함수 (Fan-out on Write 자동 적용)
  *
  * 새로운 게시글을 데이터베이스에 생성합니다.
  * MariaDB/MySQL의 PDO prepared statement를 사용하여 SQL 인젝션을 방지합니다.
  * Unix timestamp(초 단위)를 사용하여 시간 정보를 저장합니다.
+ *
+ * **중요: visibility가 'private'가 아니면 자동으로 친구들에게 피드를 전파합니다.**
+ * - public: 모든 친구의 피드에 표시
+ * - friends: 친구들의 피드에만 표시
+ * - private: 피드 전파 안 함 (본인만 조회 가능)
  *
  * @param array $input 게시글 생성 시 전달되는 입력값
  *                     - category: 카테고리 (필수)
  *                     - title: 게시글 제목 (선택)
  *                     - content: 게시글 내용 (선택)
  *                     - files: 첨부 파일 URL (선택, 콤마로 구분된 여러 URL)
+ *                     - visibility: 공개 범위 (선택, 기본값: 'public')
+ *                       * 'public': 모두에게 공개 + 친구 피드 전파
+ *                       * 'friends': 친구에게만 공개 + 친구 피드 전파
+ *                       * 'private': 나만 보기 + 피드 전파 안 함
  *
  * @return PostModel|array 성공 시 생성된 PostModel 객체 반환, 실패 시 에러 배열 반환
  *
@@ -36,6 +45,22 @@ declare(strict_types=1);
  *     'title' => '파일 첨부 게시글',
  *     'files' => 'https://abc.com/def/photo.jpg,/var/uploads/345/another-file.zip'
  * ]);
+ *
+ * // 공개 범위 지정 (친구에게만 공개 + 친구 피드에 전파)
+ * $post = create_post([
+ *     'category' => 'story',
+ *     'title' => '친구들만 보세요',
+ *     'content' => '친구들에게만 공개합니다',
+ *     'visibility' => 'friends'
+ * ]);
+ *
+ * // 비공개 글 (피드 전파 안 함)
+ * $post = create_post([
+ *     'category' => 'diary',
+ *     'title' => '나만 보는 일기',
+ *     'content' => '비밀 내용',
+ *     'visibility' => 'private'
+ * ]);
  */
 function create_post(array $input)
 {
@@ -57,16 +82,22 @@ function create_post(array $input)
     // ========================================================================
     // 2단계: 입력값 정리 및 검증
     // ========================================================================
-    // 입력값에서 title, content, category, files를 추출하고 공백 제거
+    // 입력값에서 title, content, category, files, visibility를 추출하고 공백 제거
     // trim()을 사용하여 앞뒤 공백을 제거합니다.
     // (string) 캐스팅으로 타입을 명확히 합니다.
     $title = isset($input['title']) ? trim((string)$input['title']) : '';
     $content = isset($input['content']) ? trim((string)$input['content']) : '';
     $category = isset($input['category']) ? trim((string)$input['category']) : '';
     $files = isset($input['files']) ? trim((string)$input['files']) : '';
+    $visibility = isset($input['visibility']) ? trim((string)$input['visibility']) : 'public';
+
+    // visibility 값 검증 (public, friends, private만 허용)
+    if (!in_array($visibility, ['public', 'friends', 'private'], true)) {
+        $visibility = 'public'; // 기본값
+    }
 
     // 필수 입력값 검증: category만 필수
-    // title, content, files는 선택사항 (빈 문자열 허용)
+    // title, content, files, visibility는 선택사항 (빈 문자열 허용)
     if ($category === '') {
         // category가 비어있으면 에러 반환
         error('category-required', tr(['en' => 'Category is required.', 'ko' => 'category는 필수 항목입니다.', 'ja' => 'カテゴリは必須項目です。', 'zh' => '类别是必填项。']));
@@ -123,8 +154,8 @@ function create_post(array $input)
         // - :title, :content, :category, :user_id 등은 "명명된 플레이스홀더(named placeholder)"입니다.
         // - 나중에 bindValue()로 실제 값을 연결합니다.
         // - 또 다른 방식: ? (위치 기반 플레이스홀더, positional placeholder)
-        $sql = 'INSERT INTO posts (user_id, title, content, category, files, created_at, updated_at)
-                VALUES (:user_id, :title, :content, :category, :files, :created_at, :updated_at)';
+        $sql = 'INSERT INTO posts (user_id, title, content, category, files, visibility, created_at, updated_at)
+                VALUES (:user_id, :title, :content, :category, :files, :visibility, :created_at, :updated_at)';
 
         // prepare() 메서드:
         // - SQL 쿼리를 데이터베이스에 보내 파싱(구문 분석)합니다.
@@ -164,6 +195,9 @@ function create_post(array $input)
         // - /var/uploads/[n]/... 형식의 로컬 파일 경로
         $stmt->bindValue(':files', $files, PDO::PARAM_STR);
 
+        // visibility: 공개 범위 ('public', 'friends', 'private')
+        $stmt->bindValue(':visibility', $visibility, PDO::PARAM_STR);
+
         // created_at과 updated_at는 Unix timestamp (정수)
         // PDO::PARAM_INT로 타입을 명시하여 정수임을 명확히 합니다.
         $stmt->bindValue(':created_at', $now, PDO::PARAM_INT);
@@ -185,6 +219,17 @@ function create_post(array $input)
 
             // ID가 유효한 경우 (1 이상), 생성된 게시글을 조회하여 반환
             if ($id > 0) {
+                // ============================================================
+                // Fan-out on Write: 친구들에게 피드 전파
+                // ============================================================
+                // visibility가 'private'가 아니면 친구들에게 피드를 전파합니다.
+                // 이렇게 하면 친구들의 피드에 게시글이 자동으로 표시됩니다.
+                if ($visibility !== 'private') {
+                    // fanout_post_to_friends() 함수를 사용하여 피드 캐시 생성
+                    // lib/friend-and-feed/friend-and-feed.functions.php에 정의되어 있음
+                    fanout_post_to_friends($user_id, $id, $now);
+                }
+
                 // get_post_by_id() 함수로 방금 생성된 게시글을 조회합니다.
                 // 이렇게 하면 데이터베이스에 저장된 실제 값(기본값 등)을 포함한
                 // 완전한 PostModel 객체를 얻을 수 있습니다.

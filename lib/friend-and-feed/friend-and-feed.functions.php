@@ -326,69 +326,8 @@ function get_feed_from_read_join(
 // ============================================================================
 // FeedService 함수들 (피드 비즈니스 로직)
 // ============================================================================
-
-/**
- * 게시글 작성 + Fan-out 함수
- *
- * 게시글을 생성하고, visibility가 'private'가 아니면 친구들에게 피드를 전파합니다.
- * 트랜잭션을 사용하여 원자성을 보장합니다.
- *
- * 주의: 이 함수는 lib/post/post.crud.php의 create_post() 함수를 확장한 버전입니다.
- * 기존 create_post()는 피드 전파를 하지 않으므로, 피드 기능이 필요한 경우 이 함수를 사용하세요.
- *
- * @param int $author_id 작성자 ID
- * @param string $category 카테고리
- * @param string $title 게시글 제목
- * @param string $content 게시글 내용
- * @param string $visibility 공개 범위 ('public', 'friends', 'private')
- * @param string $files 첨부 파일 URL (콤마로 구분)
- * @return int 생성된 게시글 ID
- * @throws Throwable 트랜잭션 실패 시 예외
- *
- * @example
- * $post_id = create_post_and_fanout(5, 'story', '제목', '내용', 'friends', '');
- */
-function create_post_and_fanout(
-    int $author_id,
-    string $category,
-    string $title,
-    string $content,
-    string $visibility = 'public',
-    string $files = ''
-): int {
-    $pdo = pdo();
-    $pdo->beginTransaction();
-    try {
-        // lib/post/post.crud.php의 create_post() 로직을 인라인으로 실행
-        $now = now_epoch();
-        $sql = "INSERT INTO posts (user_id, category, title, content, files, visibility, created_at, updated_at)
-                VALUES (:uid, :category, :title, :content, :files, :visibility, :now, :now)";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            ':uid' => $author_id,
-            ':category' => $category,
-            ':title' => $title,
-            ':content' => $content,
-            ':files' => $files,
-            ':visibility' => $visibility,
-            ':now' => $now
-        ]);
-        $post_id = (int)$pdo->lastInsertId();
-
-        // visibility가 'private'가 아니면 피드 전파
-        if ($visibility !== 'private') {
-            $post = get_post_row($post_id);
-            $created_at = (int)($post['created_at'] ?? $now);
-            fanout_post_to_friends($author_id, $post_id, $created_at);
-        }
-
-        $pdo->commit();
-        return $post_id;
-    } catch (Throwable $e) {
-        $pdo->rollBack();
-        throw $e;
-    }
-}
+// 주의: create_post_and_fanout() 함수는 삭제되었습니다.
+// 이제 lib/post/post.crud.php의 create_post() 함수에서 자동으로 피드 전파를 수행합니다.
 
 /**
  * 하이브리드 피드 조회 함수
