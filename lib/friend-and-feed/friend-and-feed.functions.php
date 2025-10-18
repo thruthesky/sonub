@@ -260,11 +260,16 @@ function is_blocked_either_way(int $a, int $b): bool
 {
     $pdo = pdo();
     $sql = "SELECT 1 FROM blocks
-             WHERE (blocker_id=:a AND blocked_id=:b)
-                OR (blocker_id=:b AND blocked_id=:a)
+             WHERE (blocker_id=:ab1 AND blocked_id=:ab2)
+                OR (blocker_id=:ba1 AND blocked_id=:ba2)
              LIMIT 1";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([':a' => $a, ':b' => $b]);
+    $stmt->execute([
+        ':ab1' => $a,
+        ':ab2' => $b,
+        ':ba1' => $b,
+        ':ba2' => $a,
+    ]);
     return (bool)$stmt->fetchColumn();
 }
 
