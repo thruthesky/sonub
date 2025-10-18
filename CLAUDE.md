@@ -14,16 +14,26 @@ Sonub (sonub.com) 웹사이트 개발 가이드라인 및 규칙
 
 ## PHP 명령어 실행
 
-**필수: PHP 명령어는 반드시 `docker exec sonub-php` 명령 사용**
+**🔥🔥🔥 최강력 규칙: PHP 테스트는 반드시 `php` 명령으로 직접 실행 🔥🔥🔥**
 
 ```bash
-# PHP Unit Test 실행
+# ✅ 올바른 방법: PHP 테스트 직접 실행
 php tests/db/db.connection.test.php
+php tests/friend-and-feed/get-friends.test.php
 php tests/xxx/yyy/zzz.test.php
+
+# ❌ 잘못된 방법: docker exec 사용 금지
+docker exec sonub-php php /sonub/tests/db/db.connection.test.php  # 절대 금지!
+docker exec sonub-php php /sonub/tests/xxx/yyy/zzz.test.php      # 절대 금지!
 
 # Playwright E2E Test 실행 (호스트 환경)
 npx playwright test tests/playwright/e2e/user-login.spec.ts
 ```
+
+**중요 사항:**
+- PHP Unit Test와 PHP E2E Test는 **호스트 환경에서 직접 실행**
+- `docker exec` 명령은 사용하지 않음
+- 테스트 파일 경로는 상대 경로 사용 (예: `tests/xxx/yyy.test.php`)
 
 ---
 
@@ -294,30 +304,34 @@ file -I [파일경로]
 
 ## 테스트 실행
 
-**방법 1: Docker 컨테이너 내부에서 실행 (권장)**
-```bash
-# PHP Unit Test
-docker exec sonub-php php /sonub/tests/db/db.connection.test.php
-docker exec sonub-php php /sonub/tests/friend-and-feed/get-friends.test.php
+**🔥🔥🔥 최강력 규칙: PHP 테스트는 호스트 환경에서 `php` 명령으로 직접 실행 🔥🔥🔥**
 
-# Playwright E2E Test (호스트 환경)
-npx playwright test tests/playwright/e2e/user-login.spec.ts
-```
-
-**방법 2: 호스트 환경에서 직접 실행 (간편)**
 ```bash
-# PHP Unit Test
-php tests/xxx/xxx.test.php
+# ✅ 올바른 방법: PHP Unit Test 직접 실행
+php tests/db/db.connection.test.php
 php tests/friend-and-feed/get-friends.test.php
+php tests/user/user.crud.test.php
 
-# Playwright E2E Test
+# ✅ 올바른 방법: PHP E2E Test 직접 실행
+php tests/e2e/homepage.e2e.test.php
+php tests/e2e/user-login.e2e.test.php
+
+# ✅ 올바른 방법: Playwright E2E Test
 npx playwright test tests/playwright/e2e/user-login.spec.ts
 ```
 
-**주의사항:**
-- Docker 컨테이너 내부: 절대 경로 `/sonub/tests/...` 사용
-- 호스트 환경 직접 실행: 상대 경로 `tests/...` 사용
-- 호스트 환경에서는 DB 연결 설정이 올바르게 되어 있어야 함
+**❌ 절대 금지: docker exec 명령 사용 금지**
+```bash
+# ❌ 잘못된 방법 - 절대 사용하지 마세요!
+docker exec sonub-php php /sonub/tests/xxx/xxx.test.php
+docker exec sonub-php php /sonub/tests/friend-and-feed/get-friends.test.php
+```
+
+**중요 사항:**
+- PHP Unit Test와 PHP E2E Test는 **반드시 호스트 환경에서 직접 실행**
+- `docker exec` 명령은 **절대 사용하지 않음**
+- 테스트 파일 경로는 상대 경로 사용 (예: `tests/xxx/yyy.test.php`)
+- 호스트 환경의 PHP가 Docker 컨테이너의 MariaDB에 연결됨
 
 상세 예제는 `docs/test.md` 참조
 

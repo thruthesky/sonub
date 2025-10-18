@@ -19,8 +19,9 @@
 
 - 모든 테스트는 개발 환경 URL `https://local.sonub.com/`에서 수행됩니다
 - **🔥 중요**: Sonub 프로젝트는 Docker 환경에서 동작합니다
-- PHP Unit Test는 `docker exec sonub-php` 명령으로 Docker 컨테이너 내에서 실행합니다
-- PHP E2E Test는 Docker 컨테이너 내에서 실행하며 `https://local.sonub.com/`에 HTTP 요청을 보냅니다
+- **🔥🔥🔥 최강력 규칙: PHP Unit Test와 PHP E2E Test는 호스트 환경에서 `php` 명령으로 직접 실행 🔥🔥🔥**
+- **❌ 절대 금지: `docker exec sonub-php` 명령 사용 금지**
+- PHP E2E Test는 `https://local.sonub.com/`에 HTTP 요청을 보냅니다
 
 ### Docker 컨테이너 구성
 
@@ -426,7 +427,7 @@ function login_as_test_user(string $firebase_uid = 'banana')
 
 ## 테스트 실행 방법
 
-**🔥🔥🔥 최강력 규칙: Sonub 프로젝트는 Docker 환경에서 동작하므로 모든 PHP 테스트는 `docker exec sonub-php` 명령을 통해 실행해야 합니다 🔥🔥🔥**
+**🔥🔥🔥 최강력 규칙: PHP Unit Test와 PHP E2E Test는 호스트 환경에서 `php` 명령으로 직접 실행 🔥🔥🔥**
 
 ### Docker 컨테이너 확인
 
@@ -441,33 +442,45 @@ docker ps
 
 ### PHP Unit Test 실행 방법
 
-**✅ 올바른 방법: Docker 컨테이너 내에서 실행**
+**✅ 올바른 방법: 호스트 환경에서 직접 실행**
 
 ```bash
-# Docker 컨테이너 내에서 PHP Unit Test 실행
-docker exec sonub-php php /sonub/tests/db/db.connection.test.php
-docker exec sonub-php php /sonub/tests/user/user.crud.test.php
-docker exec sonub-php php /sonub/tests/post/post.test.php
+# 호스트 환경에서 PHP Unit Test 직접 실행
+php tests/db/db.connection.test.php
+php tests/user/user.crud.test.php
+php tests/post/post.test.php
+php tests/friend-and-feed/get-friends.test.php
 ```
 
-**❌ 잘못된 방법: 호스트 환경에서 직접 실행 (절대 금지)**
+**❌ 잘못된 방법: docker exec 명령 사용 (절대 금지)**
 
 ```bash
-# ❌ 절대 금지: 호스트 환경의 PHP를 사용하면 안 됨
-php tests/db/db.connection.test.php
+# ❌ 절대 금지: docker exec 명령 사용하지 마세요!
+docker exec sonub-php php /sonub/tests/db/db.connection.test.php
+docker exec sonub-php php /sonub/tests/user/user.crud.test.php
 ```
 
 **이유**:
-- 호스트 환경의 PHP와 Docker 컨테이너의 PHP 설정이 다를 수 있습니다
-- 웹 서버(Nginx)는 Docker 컨테이너의 PHP-FPM을 사용합니다
-- 테스트는 실제 운영 환경과 동일한 환경(Docker)에서 실행해야 정확합니다
+- 호스트 환경의 PHP가 Docker 컨테이너의 MariaDB에 정상적으로 연결됩니다
+- 상대 경로(`tests/xxx/xxx.test.php`)를 사용하여 간편하게 실행 가능
+- `docker exec` 명령은 불필요하게 복잡하고 절대 경로가 필요함
+- 호스트 환경에서 실행하는 것이 더 빠르고 편리함
 
 ### PHP E2E Test 실행 방법
 
-**✅ 올바른 방법: Docker 컨테이너 내에서 실행**
+**✅ 올바른 방법: 호스트 환경에서 직접 실행**
 
 ```bash
-# Docker 컨테이너 내에서 PHP E2E Test 실행
+# 호스트 환경에서 PHP E2E Test 직접 실행
+php tests/e2e/user-login.e2e.test.php
+php tests/e2e/homepage.e2e.test.php
+php tests/e2e/categories.e2e.test.php
+```
+
+**❌ 잘못된 방법: docker exec 명령 사용 (절대 금지)**
+
+```bash
+# ❌ 절대 금지: docker exec 명령 사용하지 마세요!
 docker exec sonub-php php /sonub/tests/e2e/user-login.e2e.test.php
 docker exec sonub-php php /sonub/tests/e2e/homepage.e2e.test.php
 ```

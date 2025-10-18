@@ -215,9 +215,9 @@ echo "테스트 3: get_friend_ids() 함수\n";
 echo "----------------------------------------\n";
 
 // 아직 친구가 없는 경우
-$result = get_friend_ids(['me' => 1001]);
-assert_true(isset($result['friend_ids']), "friend_ids 키 존재");
-assert_true(count($result['friend_ids']) === 0, "친구 없음: 빈 배열 반환");
+$friend_ids = get_friend_ids(['me' => 1001]);
+assert_true(is_array($friend_ids), "배열 반환");
+assert_true(count($friend_ids) === 0, "친구 없음: 빈 배열 반환");
 
 // 에러 케이스: invalid-me
 assert_throws(
@@ -249,14 +249,14 @@ assert_true($friendship['status'] === 'accepted', "친구 요청 상태가 'acce
 assert_true((int)$friendship['updated_at'] >= $beforeUpdatedAt, "수락 시 updated_at 값이 갱신됨");
 
 // 이제 친구 목록 조회하면 친구가 있어야 함
-$result = get_friend_ids(['me' => 1001]);
-assert_true(count($result['friend_ids']) === 1, "친구 목록에 1명 존재");
-assert_true(in_array(1002, $result['friend_ids']), "친구 ID가 올바름");
+$friend_ids_1001 = get_friend_ids(['me' => 1001]);
+assert_true(count($friend_ids_1001) === 1, "친구 목록에 1명 존재");
+assert_true(in_array(1002, $friend_ids_1001), "친구 ID가 올바름");
 
 // 반대편에서도 확인
-$result = get_friend_ids(['me' => 1002]);
-assert_true(count($result['friend_ids']) === 1, "반대편에서도 친구 1명 존재");
-assert_true(in_array(1001, $result['friend_ids']), "반대편 친구 ID가 올바름");
+$friend_ids_1002 = get_friend_ids(['me' => 1002]);
+assert_true(count($friend_ids_1002) === 1, "반대편에서도 친구 1명 존재");
+assert_true(in_array(1001, $friend_ids_1002), "반대편 친구 ID가 올바름");
 
 // 에러 케이스: 이미 수락된 요청 다시 수락 시도
 assert_throws(
@@ -331,8 +331,8 @@ $friendship = $stmt->fetch(PDO::FETCH_ASSOC);
 assert_true($friendship === false, "친구 관계가 DB에서 삭제됨");
 
 // 친구 목록 조회하면 비어있어야 함
-$result = get_friend_ids(['me' => 1001]);
-assert_true(count($result['friend_ids']) === 0, "친구 목록이 비어있음");
+$friend_ids_after_remove = get_friend_ids(['me' => 1001]);
+assert_true(count($friend_ids_after_remove) === 0, "친구 목록이 비어있음");
 
 // 에러 케이스: 존재하지 않는 친구 관계 삭제 시도
 assert_throws(
@@ -361,12 +361,12 @@ accept_friend(['me' => 1004, 'other' => 1001]);
 accept_friend(['me' => 1005, 'other' => 1001]);
 
 // 친구 목록 확인
-$result = get_friend_ids(['me' => 1001]);
-assert_true(count($result['friend_ids']) === 3, "친구 목록에 3명 존재");
+$friend_ids_multiple = get_friend_ids(['me' => 1001]);
+assert_true(count($friend_ids_multiple) === 3, "친구 목록에 3명 존재");
 assert_true(
-    in_array(1003, $result['friend_ids']) &&
-        in_array(1004, $result['friend_ids']) &&
-        in_array(1005, $result['friend_ids']),
+    in_array(1003, $friend_ids_multiple) &&
+        in_array(1004, $friend_ids_multiple) &&
+        in_array(1005, $friend_ids_multiple),
     "모든 친구 ID가 올바름"
 );
 

@@ -84,28 +84,21 @@ echo "\n";
 echo "테스트 2: 피드 항목 생성 및 조회\n";
 echo "----------------------------------------\n";
 
-// 게시글 생성 (u2가 작성)
+// 게시글 생성 (직접 DB INSERT)
 $now = time();
-$post1 = create_post([
-    'user_id' => $u2,
-    'title' => 'TEST_POST_1',
-    'content' => 'Test content 1',
-    'category' => 'discussion',
-]);
 
-$post2 = create_post([
-    'user_id' => $u3,
-    'title' => 'TEST_POST_2',
-    'content' => 'Test content 2',
-    'category' => 'discussion',
-]);
+// post1
+$stmt_insert = $pdo->prepare("INSERT INTO posts (user_id, title, content, category, visibility, files, created_at, updated_at) VALUES (?, ?, ?, ?, 'public', '', ?, ?)");
+$stmt_insert->execute([$u2, 'TEST_POST_1', 'Test content 1', 'discussion', $now, $now]);
+$post1 = ['id' => (int)$pdo->lastInsertId()];
 
-$post3 = create_post([
-    'user_id' => $u4,
-    'title' => 'TEST_POST_3',
-    'content' => 'Test content 3',
-    'category' => 'discussion',
-]);
+// post2
+$stmt_insert->execute([$u3, 'TEST_POST_2', 'Test content 2', 'discussion', $now, $now]);
+$post2 = ['id' => (int)$pdo->lastInsertId()];
+
+// post3
+$stmt_insert->execute([$u4, 'TEST_POST_3', 'Test content 3', 'discussion', $now, $now]);
+$post3 = ['id' => (int)$pdo->lastInsertId()];
 
 echo "✓ 게시글 3개 생성 완료: post1={$post1['id']}, post2={$post2['id']}, post3={$post3['id']}\n";
 
@@ -244,14 +237,12 @@ echo "----------------------------------------\n";
 
 // 추가 피드 항목 생성 (총 10개)
 for ($i = 4; $i <= 10; $i++) {
-    $post = create_post([
-        'user_id' => $u2,
-        'title' => "TEST_POST_{$i}",
-        'content' => "Test content {$i}",
-        'category' => 'discussion',
-    ]);
+    // 게시글 직접 INSERT
+    $stmt_insert->execute([$u2, "TEST_POST_{$i}", "Test content {$i}", 'discussion', $now, $now]);
+    $post_id = (int)$pdo->lastInsertId();
 
-    $stmt->execute([$u1, $post['id'], $u2, $now - (1000 - $i * 10)]);
+    // feed_entries에 추가
+    $stmt->execute([$u1, $post_id, $u2, $now - (1000 - $i * 10)]);
 }
 
 echo "✓ 추가 피드 항목 7개 생성 완료 (총 10개)\n";

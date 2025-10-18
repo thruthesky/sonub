@@ -329,10 +329,10 @@ function list_users(array $input): array
         $params[] = $gender;
     }
 
-    // 이름 검색 (LIKE 'name%' - 앞부분 일치)
+    // 이름 검색 (LIKE '%name%' - 부분 일치, display_name에 검색어가 포함된 사용자 검색)
     if ($name !== '') {
         $conditions[] = 'display_name LIKE ?';
-        $params[] = $name . '%';
+        $params[] = '%' . $name . '%';
     }
 
     // 나이 필터 (birthday Unix timestamp 기반)
