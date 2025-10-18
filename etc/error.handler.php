@@ -57,7 +57,7 @@ register_shutdown_function(function () {
     // 최소한의 HTML 보장 (문서가 전혀 없더라도 alert가 뜨게)
     header('Content-Type: text/html; charset=UTF-8', true);
     echo "<!doctype html><html><head><meta charset='utf-8'>";
-    include __DIR__ . '/hot-reload-client-code.php';
+    include __DIR__ . '/php-hot-reload-client.php';
     echo "</head><body>";
 
     // HTML 에러 메시지 표시

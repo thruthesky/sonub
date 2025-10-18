@@ -190,7 +190,6 @@ if (file_exists($module_path)) {
 
 
     <?php if (show_footer()) : ?>
-
         <footer id="page-footer" class="bg-light border-top mt-5 py-4">
             <div class="container">
                 <div class="row align-items-center">
@@ -234,6 +233,8 @@ if (file_exists($module_path)) {
             </div>
 
         </footer>
+    <?php else: ?>
+        <footer id="page-footer" class="page-footer-placeholder"></footer>
     <?php endif; ?>
 
 
