@@ -3,31 +3,34 @@
 /**
  * 친구 한 줄 표시 위젯
  *
- * 사용자의 친구 목록을 한 줄로 표시합니다.
+ * 로그인한 사용자의 친구 목록을 한 줄로 표시합니다.
  * 각 친구는 프로필 사진(위)과 이름(아래)으로 표시되며, 클릭 시 프로필 페이지로 이동합니다.
+ * 로그인하지 않았거나 친구가 없으면 아무것도 표시하지 않습니다.
  *
- * @param array $friends - 친구 목록 배열
  * @param int $limit - 표시할 최대 친구 수 (기본값: 5)
  *
  * @example
+ * $limit = 5;
  * include __DIR__ . '/widgets/user/friend/friend-one-line-display.php';
- *
- * 필수 데이터 구조:
- * $friends = [
- *     ['id' => 1, 'display_name' => '홍길동', 'photo_url' => 'https://...'],
- *     ['id' => 2, 'display_name' => '김철수', 'photo_url' => ''],
- *     ...
- * ]
  */
 
-// 친구 목록이 없으면 아무것도 표시하지 않음
-if (empty($friends) || !is_array($friends)) {
+// 로그인하지 않았으면 아무것도 표시하지 않음
+if (!login()) {
     return;
 }
 
 // 표시할 최대 친구 수 설정 (기본값: 5)
 $limit = $limit ?? 5;
-$displayFriends = array_slice($friends, 0, $limit);
+
+// 내 친구 목록 조회 (로그인한 경우에만)
+$myFriends = get_friends(['me' => login()->id, 'limit' => $limit]);
+
+// 친구 목록이 없으면 아무것도 표시하지 않음
+if (empty($myFriends)) {
+    return;
+}
+
+$displayFriends = $myFriends;
 
 ?>
 
@@ -104,23 +107,31 @@ $displayFriends = array_slice($friends, 0, $limit);
     }
 </style>
 
-<div class="friend-one-line-display">
-    <?php foreach ($displayFriends as $friend): ?>
-        <a href="<?= href()->user->profile ?>?id=<?= $friend['id'] ?>" class="friend-item">
-            <?php if (!empty($friend['photo_url'])): ?>
-                <!-- 프로필 사진이 있는 경우 -->
-                <img src="<?= htmlspecialchars($friend['photo_url']) ?>"
-                     alt="<?= htmlspecialchars($friend['display_name']) ?>"
-                     class="friend-photo">
-            <?php else: ?>
-                <!-- 프로필 사진이 없는 경우 기본 아이콘 -->
-                <div class="friend-photo-placeholder">
-                    <i class="bi bi-person fs-4 text-secondary"></i>
-                </div>
-            <?php endif; ?>
+<!-- My Friends Section -->
+<div class="mb-4">
+    <h5 class="mb-3"><?= t()->내_친구_목록 ?></h5>
 
-            <!-- 친구 이름 -->
-            <span class="friend-name"><?= htmlspecialchars($friend['display_name']) ?></span>
-        </a>
-    <?php endforeach; ?>
+    <div class="friend-one-line-display">
+        <?php foreach ($displayFriends as $friend): ?>
+            <a href="<?= href()->user->profile ?>?id=<?= $friend['id'] ?>" class="friend-item">
+                <?php if (!empty($friend['photo_url'])): ?>
+                    <!-- 프로필 사진이 있는 경우 -->
+                    <img src="<?= htmlspecialchars($friend['photo_url']) ?>"
+                         alt="<?= htmlspecialchars($friend['display_name']) ?>"
+                         class="friend-photo">
+                <?php else: ?>
+                    <!-- 프로필 사진이 없는 경우 기본 아이콘 -->
+                    <div class="friend-photo-placeholder">
+                        <i class="bi bi-person fs-4 text-secondary"></i>
+                    </div>
+                <?php endif; ?>
+
+                <!-- 친구 이름 -->
+                <span class="friend-name"><?= htmlspecialchars($friend['display_name']) ?></span>
+            </a>
+        <?php endforeach; ?>
+    </div>
 </div>
+
+<!-- Divider -->
+<hr class="my-4">

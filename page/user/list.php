@@ -13,8 +13,7 @@ $result = list_users(['per_page' => 20, 'page' => 1]);
 $users = $result['users'] ?? [];
 $total = $result['total'] ?? 0;
 
-// 내 친구 목록 조회 (로그인한 경우에만, 최대 5명)
-$myFriends = login() ? get_friends(['me' => login()->id, 'limit' => 5]) : [];
+// 내 친구 목록은 위젯 내부에서 조회합니다.
 
 // Vue.js hydration을 위한 데이터 준비 (친구 목록 제외)
 $hydrationData = [
@@ -41,21 +40,11 @@ load_deferred_js('user-search');
                 <?= t()->친구_검색 ?>
             </button>
 
-            <!-- My Friends Section (only show if logged in and has friends) -->
-            <?php if (login() && !empty($myFriends)): ?>
-                <div class="mb-4">
-                    <h5 class="mb-3"><?= t()->내_친구_목록 ?></h5>
-                    <?php
-                    // 친구 한 줄 표시 위젯 로드
-                    $friends = $myFriends;
-                    $limit = 5;
-                    include __DIR__ . '/../../widgets/user/friend/friend-one-line-display.php';
-                    ?>
-                </div>
-
-                <!-- Divider -->
-                <hr class="my-4">
-            <?php endif; ?>
+            <!-- My Friends Section (친구 한 줄 표시 위젯) -->
+            <?php
+            $limit = 5;
+            include __DIR__ . '/../../widgets/user/friend/friend-one-line-display.php';
+            ?>
 
             <!-- 사용자 목록 그리드 -->
             <div class="row g-3">
