@@ -3,18 +3,18 @@
 // etc/config/app.config.php
 class AppConfigApi
 {
-    public string $file_upload_url;
-    public string $file_delete_url;
-    public function __construct(string $file_upload_url, string $file_delete_url)
-    {
-        $this->file_upload_url = $file_upload_url;
-        $this->file_delete_url = $file_delete_url;
-    }
+    public function __construct(
+        public string $file_upload_url,
+        public string $file_delete_url,
+        public string $thumbnail_url = '/thumbnail.php'
+    ) {}
+
     public function toArray(): array
     {
         return [
             'file_upload_url' => $this->file_upload_url,
             'file_delete_url' => $this->file_delete_url,
+            'thumbnail_url' => $this->thumbnail_url,
         ];
     }
 }
@@ -76,7 +76,10 @@ function config(): AppConfig
             url: 'https://local.sonub.com'
         );
         // 개발 환경에서도 footer를 표시
-        $config->pages_without_footer = [];
+        $config->pages_without_footer = [
+            '/page/index.php',
+            '/page/post/list.php'
+        ];
     }
     return $config;
 }
@@ -100,6 +103,11 @@ function get_download_url(string $file_path): string
     return '/var/uploads/' . $file_path;
 }
 
+function get_thumbnail_url(): string
+{
+    return '/thumbnail.php';
+}
+
 
 /**
  * 푸터(홈페이지 맨 하단 정보)를 보여 줄지 결정한다.
@@ -117,6 +125,8 @@ function show_footer(): bool
 
     // 프로덕션 환경에서는 특정 페이지에서만 푸터를 표시
     $page = page();
+
+
 
     // if the page() conatins(not match) any of the config()->pages_without_footer, return false
     foreach (config()->pages_without_footer as $no_footer_page) {

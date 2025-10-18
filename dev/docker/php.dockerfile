@@ -8,6 +8,10 @@ RUN apt-get update && apt-get install -y \
     curl \
     libcurl4-openssl-dev \
     libonig-dev \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libpng-dev \
+    libwebp-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -23,6 +27,11 @@ RUN docker-php-ext-install \
 # Install PHP extensions
 RUN docker-php-ext-install \
     mbstring
+
+
+# Install GD extension with support for JPEG, PNG, WebP, and FreeType
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+    && docker-php-ext-install -j$(nproc) gd
 
 # 환경 설정 파일을 Production 의 것으로 복사한다.
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"

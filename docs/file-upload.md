@@ -89,6 +89,40 @@
   - [기본 예제](#기본-예제)
   - [Hidden Input 포함 예제](#hidden-input-포함-예제)
   - [게시글 수정 시 기본 파일 포함 예제](#게시글-수정-시-기본-파일-포함-예제)
+- [썸네일 (Thumbnails)](#썸네일-thumbnails)
+  - [개요](#개요-2)
+    - [주요 특징](#주요-특징-1)
+    - [파일 구조](#파일-구조)
+  - [URL 파라미터](#url-파라미터)
+    - [리사이즈 모드 설명](#리사이즈-모드-설명)
+  - [사용 방법](#사용-방법)
+    - [기본 사용법](#기본-사용법-2)
+    - [전체 URL로 요청](#전체-url로-요청)
+    - [다양한 옵션 조합](#다양한-옵션-조합)
+    - [Bootstrap 반응형 이미지](#bootstrap-반응형-이미지)
+    - [프로필 사진 예제](#프로필-사진-예제)
+  - [Docker GD 확장 설치](#docker-gd-확장-설치)
+    - [php.dockerfile 설정](#phpdockerfile-설정)
+    - [Docker 이미지 재빌드](#docker-이미지-재빌드)
+    - [GD 확장 설치 확인](#gd-확장-설치-확인)
+  - [테스트](#테스트)
+    - [기본 테스트](#기본-테스트)
+    - [다양한 파라미터 테스트](#다양한-파라미터-테스트)
+    - [PHP 테스트 스크립트](#php-테스트-스크립트)
+  - [캐시 관리](#캐시-관리)
+    - [캐시 디렉토리 구조](#캐시-디렉토리-구조)
+    - [캐시 삭제](#캐시-삭제)
+    - [캐시 동작 방식](#캐시-동작-방식)
+  - [주의사항](#주의사항-3)
+    - [1. 원본 파일 경로](#1-원본-파일-경로)
+    - [2. 보안](#2-보안)
+    - [3. 성능](#3-성능)
+    - [4. WebP 지원](#4-webp-지원)
+    - [5. 애니메이션 GIF](#5-애니메이션-gif)
+  - [에러 처리](#에러-처리-1)
+    - [파일을 찾을 수 없는 경우](#파일을-찾을-수-없는-경우)
+    - [유효하지 않은 경로](#유효하지-않은-경로)
+    - [GD 확장이 설치되지 않은 경우](#gd-확장이-설치되지-않은-경우)
 
 # 파일 업로드 개요
 
@@ -1695,3 +1729,831 @@ $post = PostModel::findByPk($idx);
 - 업로드 진행 상태는 Bootstrap progress-bar로 자동 표시됨
 - 업로드된 파일은 표시 영역에 자동으로 렌더링됨
 - 폼 제출 시 `images` 파라미터로 모든 파일 URL이 전송됨 (기존 파일 + 새 파일)
+
+# 썸네일 (Thumbnails)
+
+## 개요
+
+Sonub 프로젝트는 업로드된 이미지의 썸네일을 즉시 생성하는 `thumbnail.php` 스크립트를 제공합니다.
+
+### 주요 특징
+
+- **즉시 생성 (On-demand)**: 썸네일 URL 요청 시 즉시 생성
+- **WebP 변환**: 모든 이미지를 WebP 포맷으로 변환하여 용량 최적화
+- **캐싱**: 생성된 썸네일은 캐시되어 중복 생성 방지
+- **ETag 지원**: 브라우저 캐시 활용으로 네트워크 트래픽 절감
+- **다양한 리사이즈 모드**: cover, contain, scale 모드 지원
+- **EXIF 회전 자동 처리**: 사진의 회전 정보 자동 보정
+
+### 파일 구조
+
+- **메인 스크립트**: `/thumbnail.php`
+- **원본 업로드 디렉토리**: `ROOT_DIR/var/uploads/`
+- **캐시 디렉토리**: `ROOT_DIR/var/cache/thumbs/`
+
+## URL 파라미터
+
+썸네일 생성 시 URL 파라미터를 사용하여 다양한 옵션을 지정할 수 있습니다.
+
+| 파라미터 | 필수 | 기본값 | 설명 | 예제 |
+|---------|------|--------|------|------|
+| `src` | ✅ | - | 원본 이미지 경로 또는 URL | `533/cat.jpg` 또는 `/var/uploads/533/cat.jpg` |
+| `w` | ❌ | 원본 너비 | 썸네일 너비 (픽셀) | `300` |
+| `h` | ❌ | 원본 높이 | 썸네일 높이 (픽셀) | `200` |
+| `fit` | ❌ | `cover` | 리사이즈 모드 (`cover`, `contain`, `scale`) | `contain` |
+| `q` | ❌ | `85` | WebP 품질 (0-100) | `90` |
+| `bg` | ❌ | `ffffff` | 배경 색상 (HEX, `#` 제외) | `f0f0f0` |
+
+### 리사이즈 모드 설명
+
+- **`cover`**: 이미지를 지정된 크기에 맞추고 넘치는 부분은 자름 (기본값)
+  - 비율 유지하면서 썸네일 크기를 완전히 채움
+  - 이미지 일부가 잘릴 수 있음
+
+- **`contain`**: 이미지 전체를 보여주되 여백 생김
+  - 비율 유지하면서 썸네일 영역 안에 전체 이미지 포함
+  - 빈 공간은 `bg` 파라미터 색상으로 채워짐
+
+- **`scale`**: 비율 유지하면서 지정된 크기 이내로 축소
+  - 이미지가 잘리지 않고 여백도 생기지 않음
+  - 실제 썸네일 크기는 지정값보다 작을 수 있음
+
+## 사용 방법
+
+### 기본 사용법
+
+```html
+<!-- 원본 크기 그대로 WebP 변환 -->
+<img src="/thumbnail.php?src=533/cat.jpg" alt="고양이">
+
+<!-- 너비 300px로 리사이즈 (높이는 비율 유지) -->
+<img src="/thumbnail.php?src=533/cat.jpg&w=300" alt="고양이">
+
+<!-- 너비 300px, 높이 200px, cover 모드 -->
+<img src="/thumbnail.php?src=533/cat.jpg&w=300&h=200&fit=cover" alt="고양이">
+```
+
+### 실전 활용 예제
+
+#### 1. 게시글 목록 썸네일 (정사각형)
+
+```html
+<!-- 게시글 목록에서 200x200 정사각형 썸네일 -->
+<div class="post-thumbnail">
+    <img src="/thumbnail.php?src=<?= $post->image ?>&w=200&h=200&fit=cover"
+         class="img-fluid"
+         alt="게시글 썸네일">
+</div>
+```
+
+**특징**:
+- `fit=cover`: 이미지가 200x200 영역을 완전히 채우며, 넘치는 부분은 잘림
+- 모든 썸네일이 동일한 크기로 일관성 있게 표시됨
+
+#### 2. 프로필 사진 (원형)
+
+```html
+<!-- 프로필 사진: 100x100 원형 -->
+<img src="/thumbnail.php?src=<?= $user->id ?>/profile.jpg&w=200&h=200&fit=cover"
+     style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%;"
+     alt="프로필 사진">
+```
+
+**특징**:
+- 원본은 200x200으로 생성하여 고해상도 디스플레이 대응
+- CSS로 100x100 크기로 표시하여 선명한 화질 유지
+- `border-radius: 50%`로 원형 처리
+
+#### 3. 반응형 이미지 (Bootstrap Grid)
+
+```html
+<div class="row">
+    <div class="col-md-4">
+        <!-- cover 모드: 400x300 고정 비율 -->
+        <img src="/thumbnail.php?src=533/photo1.jpg&w=400&h=300&fit=cover"
+             class="img-fluid rounded"
+             alt="사진 1">
+    </div>
+    <div class="col-md-4">
+        <img src="/thumbnail.php?src=533/photo2.jpg&w=400&h=300&fit=cover"
+             class="img-fluid rounded"
+             alt="사진 2">
+    </div>
+    <div class="col-md-4">
+        <img src="/thumbnail.php?src=533/photo3.jpg&w=400&h=300&fit=cover"
+             class="img-fluid rounded"
+             alt="사진 3">
+    </div>
+</div>
+```
+
+**특징**:
+- Bootstrap `img-fluid` 클래스로 자동 반응형
+- 모든 이미지가 동일한 비율(4:3)로 표시
+- `rounded` 클래스로 둥근 모서리 처리
+
+#### 4. 배너 이미지 (와이드)
+
+```html
+<!-- 배너 이미지: 1200x400 와이드 -->
+<img src="/thumbnail.php?src=533/banner.jpg&w=1200&h=400&fit=cover"
+     class="w-100"
+     alt="배너">
+```
+
+**특징**:
+- 넓은 화면에 맞는 와이드 비율
+- `w-100` 클래스로 전체 너비 사용
+
+#### 5. 상품 이미지 (contain 모드 - 여백 포함)
+
+```html
+<!-- 상품 이미지: 전체를 보여주고 빈 공간은 흰색 배경 -->
+<img src="/thumbnail.php?src=533/product.jpg&w=400&h=400&fit=contain&bg=ffffff"
+     alt="상품 이미지">
+```
+
+**특징**:
+- `fit=contain`: 이미지가 잘리지 않고 전체 표시
+- `bg=ffffff`: 빈 공간은 흰색으로 채움
+- 상품의 전체 모습을 보여줘야 할 때 유용
+
+#### 6. 고품질 이미지
+
+```html
+<!-- 고품질 WebP (품질 95%) -->
+<img src="/thumbnail.php?src=533/artwork.jpg&w=800&q=95"
+     alt="작품 이미지">
+```
+
+**특징**:
+- `q=95`: 높은 품질 설정 (기본값 85보다 높음)
+- 작품, 포트폴리오 등 화질이 중요한 경우 사용
+
+#### 7. 갤러리 그리드
+
+```html
+<div class="gallery-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+    <?php foreach ($images as $image): ?>
+        <a href="/thumbnail.php?src=<?= $image ?>&w=1200" target="_blank">
+            <img src="/thumbnail.php?src=<?= $image ?>&w=200&h=200&fit=cover"
+                 class="w-100"
+                 alt="갤러리 이미지">
+        </a>
+    <?php endforeach; ?>
+</div>
+```
+
+**특징**:
+- 썸네일은 200x200으로 표시
+- 클릭 시 원본 크기(1200px)로 새 탭에서 열림
+- CSS Grid로 자동 반응형 레이아웃
+
+### 전체 URL로 요청
+
+```html
+<!-- /var/uploads/ 포함된 전체 URL -->
+<img src="/thumbnail.php?src=/var/uploads/533/cat.jpg&w=400" alt="고양이">
+```
+
+### 다양한 옵션 조합
+
+```html
+<!-- contain 모드 + 밝은 회색 배경 -->
+<img src="/thumbnail.php?src=533/cat.jpg&w=400&h=400&fit=contain&bg=f0f0f0" alt="고양이">
+
+<!-- 고품질 WebP (95%) -->
+<img src="/thumbnail.php?src=533/dog.jpg&w=500&q=95" alt="강아지">
+
+<!-- scale 모드: 최대 600x600 이내로 축소 -->
+<img src="/thumbnail.php?src=533/landscape.jpg&w=600&h=600&fit=scale" alt="풍경">
+```
+
+### Bootstrap 반응형 이미지
+
+```html
+<!-- Bootstrap img-fluid 클래스 활용 -->
+<div class="col-md-4">
+    <img src="/thumbnail.php?src=533/photo.jpg&w=400&h=300&fit=cover"
+         class="img-fluid rounded"
+         alt="사진">
+</div>
+```
+
+### 프로필 사진 예제
+
+```html
+<!-- 정사각형 프로필 사진 -->
+<div class="profile-photo" style="width: 100px; height: 100px;">
+    <img src="/thumbnail.php?src=<?= $user->id ?>/profile.jpg&w=200&h=200&fit=cover"
+         style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;"
+         alt="프로필 사진">
+</div>
+```
+
+## Docker GD 확장 설치
+
+썸네일 생성을 위해서는 PHP GD 확장이 필요합니다. Docker 환경에서는 다음과 같이 설정합니다.
+
+### php.dockerfile 설정
+
+`dev/docker/php.dockerfile` 파일에 다음 내용이 포함되어야 합니다:
+
+```dockerfile
+# 이미지 처리 라이브러리 설치
+RUN apt-get update && apt-get install -y \
+    curl \
+    libcurl4-openssl-dev \
+    libonig-dev \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libpng-dev \
+    libwebp-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# GD 확장 설치 (JPEG, PNG, WebP, FreeType 지원)
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+    && docker-php-ext-install -j$(nproc) gd
+```
+
+### Docker 이미지 재빌드
+
+```bash
+# Docker 이미지 재빌드
+docker-compose up -d --build
+```
+
+### GD 확장 설치 확인
+
+```bash
+# PHP 컨테이너에서 GD 확장 확인
+docker exec sonub-php php -m | grep -i gd
+
+# 출력: gd
+```
+
+## 테스트
+
+### 기본 테스트
+
+```bash
+# 썸네일 생성 테스트
+curl -I "https://local.sonub.com/thumbnail.php?src=533/cat-191912_1920.jpg"
+
+# 실제 출력 결과:
+# HTTP/2 200
+# server: nginx/1.29.1
+# content-type: image/webp
+# content-length: 19370
+# etag: "9022cd0e8bf38c0e66b81d255a43a5c78651110b"
+# cache-control: public, max-age=31536000, immutable
+```
+
+**테스트 결과**:
+- ✅ HTTP 200 응답 성공
+- ✅ WebP 형식으로 변환됨
+- ✅ 파일 크기: 19KB (원본 326KB에서 약 94% 감소)
+- ✅ 1년간 브라우저 캐시 설정 (`max-age=31536000`)
+- ✅ ETag 헤더로 캐시 검증 가능
+
+### 다양한 파라미터 테스트
+
+```bash
+# 1. 너비 300px만 지정 (높이는 비율 유지)
+curl -I "https://local.sonub.com/thumbnail.php?src=533/cat-191912_1920.jpg&w=300"
+# content-length: 13052 (13KB)
+
+# 2. 너비+높이 지정 (cover 모드)
+curl -I "https://local.sonub.com/thumbnail.php?src=533/cat-191912_1920.jpg&w=300&h=200&fit=cover"
+# content-length: 5554 (5.5KB)
+
+# 3. contain 모드 + 배경색
+curl -I "https://local.sonub.com/thumbnail.php?src=533/cat-191912_1920.jpg&w=400&h=400&fit=contain&bg=f0f0f0"
+# content-length: 10996 (11KB)
+
+# 4. scale 모드 (비율 유지, 여백 없음)
+curl -I "https://local.sonub.com/thumbnail.php?src=533/cat-191912_1920.jpg&w=600&h=600&fit=scale"
+# content-length: 19330 (19KB)
+```
+
+**테스트 결과 분석**:
+- ✅ 모든 모드가 정상 작동
+- ✅ 크기가 작을수록 파일 용량 감소 (300x200: 5.5KB)
+- ✅ 각 파라미터 조합마다 고유한 ETag 생성
+
+### 품질 파라미터 테스트
+
+```bash
+# 낮은 품질 (q=50)
+curl -I "https://local.sonub.com/thumbnail.php?src=533/cat-191912_1920.jpg&w=500&q=50"
+# content-length: 11838 (11.8KB)
+
+# 높은 품질 (q=95)
+curl -I "https://local.sonub.com/thumbnail.php?src=533/cat-191912_1920.jpg&w=500&q=95"
+# content-length: 73754 (73.7KB)
+```
+
+**테스트 결과 분석**:
+- ✅ 품질 파라미터가 정상 작동
+- ✅ 품질 50: 11.8KB (빠른 로딩, 약간의 화질 손실)
+- ✅ 품질 95: 73.7KB (고품질, 용량 약 6배 증가)
+- 💡 **권장**: 일반 웹용은 기본값(85) 사용, 고품질 필요 시 90-95 사용
+
+### 캐시 동작 테스트
+
+```bash
+# 1차 요청: 썸네일 생성
+curl -I "https://local.sonub.com/thumbnail.php?src=533/dog-1192033_1920.jpg&w=300"
+# HTTP/2 200
+# etag: "6d5a5aa3069a9040e4c6032c1850876e00058d19"
+# content-length: 16190
+
+# 2차 요청: ETag로 캐시 검증
+curl -I -H 'If-None-Match: "6d5a5aa3069a9040e4c6032c1850876e00058d19"' \
+     "https://local.sonub.com/thumbnail.php?src=533/dog-1192033_1920.jpg&w=300"
+# HTTP/2 304 Not Modified
+# etag: "6d5a5aa3069a9040e4c6032c1850876e00058d19"
+```
+
+**테스트 결과**:
+- ✅ 1차 요청: 썸네일 생성 및 캐시 저장
+- ✅ 2차 요청: 304 응답으로 대역폭 절약 (본문 전송 안 함)
+- ✅ ETag 기반 캐시 검증이 정상 작동
+- 💡 브라우저가 자동으로 ETag를 사용하여 불필요한 다운로드 방지
+
+### 에러 처리 테스트
+
+```bash
+# 1. 파일이 없는 경우
+curl "https://local.sonub.com/thumbnail.php?src=533/nonexistent.jpg"
+# 출력: file not found: /sonub/var/uploads/533/nonexistent.jpg
+
+# 2. 경로 순회 공격 시도
+curl "https://local.sonub.com/thumbnail.php?src=../../../etc/passwd"
+# 출력: invalid src path: directory traversal detected
+
+# 3. src 파라미터 누락
+curl "https://local.sonub.com/thumbnail.php"
+# 출력: src is required
+```
+
+**테스트 결과**:
+- ✅ 파일 없음 에러 처리 정상
+- ✅ 보안 공격 차단 정상 (`..` 패턴 감지)
+- ✅ 필수 파라미터 검증 정상
+- 💡 모든 에러 케이스에서 명확한 에러 메시지 반환
+
+### PHP 테스트 스크립트
+
+`tests/thumbnail/thumbnail.test.php` 파일을 사용하여 테스트할 수 있습니다:
+
+```bash
+# 테스트 스크립트 실행
+php tests/thumbnail/thumbnail.test.php
+```
+
+## 캐시 관리
+
+### 캐시 디렉토리 구조
+
+```
+ROOT_DIR/var/cache/thumbs/
+└── [해시값]/
+    └── [썸네일파일].webp
+```
+
+### 캐시 삭제
+
+```bash
+# 모든 썸네일 캐시 삭제
+rm -rf /Users/thruthesky/apps/sonub/var/cache/thumbs/*
+
+# 특정 이미지의 캐시만 삭제
+# (해당 원본 이미지 경로의 해시값으로 찾아 삭제)
+```
+
+### 캐시 동작 방식
+
+1. **첫 요청**: 썸네일 생성 → 캐시 저장 → 이미지 반환
+2. **두 번째 요청**: 캐시된 썸네일 즉시 반환 (생성 과정 생략)
+3. **ETag 확인**: 브라우저는 ETag를 사용하여 "304 Not Modified" 응답으로 네트워크 절약
+
+## 주의사항
+
+### 1. 원본 파일 경로
+
+- `src` 파라미터는 `/var/uploads/` 이후의 상대 경로 또는 전체 URL 사용 가능
+- 예: `533/cat.jpg` 또는 `/var/uploads/533/cat.jpg`
+
+### 2. 보안
+
+- `thumbnail.php`는 `ROOT_DIR/var/uploads/` 디렉토리 외부 파일 접근을 차단합니다
+- 경로 순회 공격(Path Traversal) 방지를 위해 `..`를 포함한 경로는 거부됩니다
+
+### 3. 성능
+
+- 첫 요청 시 썸네일 생성으로 인해 약간의 지연이 발생할 수 있습니다
+- 이후 요청은 캐시된 썸네일을 사용하여 빠르게 응답합니다
+- ETag를 사용하여 브라우저 캐시를 최대한 활용합니다
+
+### 4. WebP 지원
+
+- 모든 이미지는 WebP 포맷으로 변환됩니다
+- WebP는 JPEG/PNG 대비 30-50% 더 작은 용량으로 동일한 화질을 제공합니다
+- 구형 브라우저(IE 11 이하)는 WebP를 지원하지 않을 수 있습니다
+
+### 5. 애니메이션 GIF
+
+- 애니메이션 GIF는 첫 프레임만 추출하여 정적 WebP 썸네일로 변환됩니다
+- GD 라이브러리만 사용하며, Imagick이나 gifsicle은 필요하지 않습니다
+
+## 성능 최적화 가이드
+
+### 권장 설정값
+
+**일반 웹 페이지 썸네일**:
+- 크기: 400x300 또는 300x200
+- 품질: 85 (기본값)
+- 모드: cover
+- 예상 용량: 5-15KB
+
+**프로필 사진**:
+- 크기: 200x200 (표시는 100x100)
+- 품질: 85
+- 모드: cover
+- 예상 용량: 3-8KB
+
+**갤러리 썸네일**:
+- 크기: 200x200
+- 품질: 80-85
+- 모드: cover
+- 예상 용량: 3-10KB
+
+**고품질 이미지 (포트폴리오, 작품)**:
+- 크기: 800-1200
+- 품질: 90-95
+- 모드: contain 또는 scale
+- 예상 용량: 50-150KB
+
+### 용량 절감 효과
+
+**실제 테스트 결과** (원본: cat-191912_1920.jpg, 326KB):
+
+| 설정 | 크기 | 품질 | 용량 | 절감률 |
+|------|------|------|------|--------|
+| 원본 | 1920x1440 | - | 326KB | - |
+| 기본 | 400x300 | 85 | 19KB | 94% |
+| 작은 썸네일 | 300x225 | 85 | 13KB | 96% |
+| 정사각형 | 300x200 | 85 | 5.5KB | 98% |
+| 고품질 | 500x375 | 95 | 73.7KB | 77% |
+| 저품질 | 500x375 | 50 | 11.8KB | 96% |
+
+**WebP 변환 효과**:
+- JPEG 대비 평균 30-50% 용량 감소
+- 화질 손실 거의 없음
+- 모바일 환경에서 로딩 속도 크게 향상
+
+### 성능 팁
+
+**1. 적절한 크기 선택**
+```html
+<!-- ❌ 나쁜 예: 불필요하게 큰 썸네일 -->
+<img src="/thumbnail.php?src=533/image.jpg&w=2000&h=1500"
+     style="width: 200px;">
+
+<!-- ✅ 좋은 예: 표시 크기의 2배로 생성 (Retina 대응) -->
+<img src="/thumbnail.php?src=533/image.jpg&w=400&h=300"
+     style="width: 200px;">
+```
+
+**2. 품질 파라미터 활용**
+```html
+<!-- 중요하지 않은 이미지: 품질 낮춤 -->
+<img src="/thumbnail.php?src=533/bg.jpg&w=1200&q=75">
+
+<!-- 중요한 이미지: 기본값 사용 -->
+<img src="/thumbnail.php?src=533/product.jpg&w=600&q=85">
+
+<!-- 포트폴리오: 고품질 -->
+<img src="/thumbnail.php?src=533/artwork.jpg&w=1200&q=95">
+```
+
+**3. Lazy Loading 적용**
+```html
+<!-- 브라우저 네이티브 Lazy Loading -->
+<img src="/thumbnail.php?src=533/image.jpg&w=400&h=300"
+     loading="lazy"
+     alt="이미지">
+```
+
+**4. Responsive Images**
+```html
+<!-- srcset으로 다양한 크기 제공 -->
+<img srcset="/thumbnail.php?src=533/image.jpg&w=400 400w,
+             /thumbnail.php?src=533/image.jpg&w=800 800w,
+             /thumbnail.php?src=533/image.jpg&w=1200 1200w"
+     sizes="(max-width: 600px) 400px, (max-width: 1200px) 800px, 1200px"
+     src="/thumbnail.php?src=533/image.jpg&w=800"
+     alt="반응형 이미지">
+```
+
+### 캐시 최적화
+
+**서버 측 캐시**:
+- 생성된 썸네일은 `ROOT_DIR/var/cache/thumbs/`에 저장
+- 동일한 요청 시 즉시 캐시된 파일 반환
+- 디스크 I/O만 발생, CPU 사용 없음
+
+**브라우저 캐시**:
+- `Cache-Control: public, max-age=31536000, immutable` (1년)
+- ETag 헤더로 캐시 검증
+- 304 Not Modified 응답으로 대역폭 절약
+
+**캐시 삭제가 필요한 경우**:
+```bash
+# 특정 이미지의 모든 썸네일 삭제
+rm -rf /Users/thruthesky/apps/sonub/var/cache/thumbs/
+
+# 전체 썸네일 캐시 삭제 (디스크 공간 확보)
+rm -rf /Users/thruthesky/apps/sonub/var/cache/thumbs/*
+```
+
+## 에러 처리
+
+### 파일을 찾을 수 없는 경우
+
+```
+HTTP/1.1 404 Not Found
+Content-Type: text/plain
+
+File not found: /var/uploads/533/nonexistent.jpg
+```
+
+### 유효하지 않은 경로
+
+```
+HTTP/1.1 400 Bad Request
+Content-Type: text/plain
+
+Invalid file path: ../../../etc/passwd
+```
+
+### GD 확장이 설치되지 않은 경우
+
+```
+HTTP/1.1 500 Internal Server Error
+
+Call to undefined function imagecreatefromjpeg()
+```
+
+**해결 방법**: Docker GD 확장 설치 섹션을 참고하여 GD 확장을 설치하세요.
+
+## PHP thumbnail() 함수 사용법
+
+### 개요
+
+PHP에서 썸네일 URL을 생성할 때는 `thumbnail()` 함수를 사용합니다. 이 함수는 `lib/file/file.functions.php`에 정의되어 있으며, 모든 thumbnail.php 파라미터를 지원합니다.
+
+### 함수 시그니처
+
+```php
+function thumbnail(
+    string $url,
+    ?int $width = null,
+    ?int $height = null,
+    ?string $fit = null,
+    ?int $quality = null,
+    ?string $bg = null
+): string
+```
+
+### 파라미터
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|---------|------|------|--------|------|
+| `$url` | string | ✅ | - | 원본 이미지 URL 또는 경로 |
+| `$width` | int\|null | ❌ | null | 썸네일 너비 (픽셀) |
+| `$height` | int\|null | ❌ | null | 썸네일 높이 (픽셀) |
+| `$fit` | string\|null | ❌ | null | 리사이즈 모드 (`cover`, `contain`, `scale`) |
+| `$quality` | int\|null | ❌ | null | WebP 품질 (10-100) |
+| `$bg` | string\|null | ❌ | null | 배경색 HEX (6자리, `#` 제외) |
+
+**참고**: `null` 값을 전달하면 해당 파라미터는 URL에 포함되지 않으며, thumbnail.php의 기본값이 사용됩니다.
+
+### 기본 사용 예제
+
+#### 1. 기본 사용 (파라미터 없음)
+
+```php
+<!-- 기본 설정으로 썸네일 생성 (400px 너비, cover 모드, 품질 85) -->
+<img src="<?= thumbnail('/var/uploads/533/cat.jpg') ?>" alt="고양이">
+```
+
+**생성된 URL**:
+```
+/thumbnail.php?src=/var/uploads/533/cat.jpg
+```
+
+**중요**: thumbnail() 함수는 URL 인코딩을 하지 않습니다. thumbnail.php에서 자동으로 디코딩 처리합니다.
+
+#### 2. 너비만 지정
+
+```php
+<!-- 300px 너비, 높이는 비율 유지 -->
+<img src="<?= thumbnail('/var/uploads/533/cat.jpg', 300) ?>" alt="고양이">
+```
+
+**생성된 URL**:
+```
+/thumbnail.php?src=/var/uploads/533/cat.jpg&w=300
+```
+
+#### 3. 너비+높이 지정
+
+```php
+<!-- 300x200 썸네일 -->
+<img src="<?= thumbnail('/var/uploads/533/cat.jpg', 300, 200) ?>" alt="고양이">
+```
+
+**생성된 URL**:
+```
+/thumbnail.php?src=/var/uploads/533/cat.jpg&w=300&h=200
+```
+
+### 실전 활용 예제
+
+#### 1. 게시글 목록 썸네일
+
+```php
+<!-- 200x200 정사각형 썸네일 (cover 모드) -->
+<?php foreach ($posts as $post): ?>
+    <div class="post-card">
+        <img src="<?= thumbnail($post->image, 200, 200, 'cover') ?>"
+             class="img-fluid"
+             alt="게시글 썸네일">
+        <h3><?= $post->title ?></h3>
+    </div>
+<?php endforeach; ?>
+```
+
+#### 2. 프로필 사진 (원형)
+
+```php
+<!-- 200x200 고품질 썸네일 (표시는 100x100) -->
+<img src="<?= thumbnail($user->profile_image, 200, 200, 'cover') ?>"
+     style="width: 100px; height: 100px; border-radius: 50%;"
+     alt="프로필 사진">
+```
+
+#### 3. 상품 이미지 (contain 모드)
+
+```php
+<!-- 400x400 contain 모드, 흰색 배경 -->
+<img src="<?= thumbnail($product->image, 400, 400, 'contain', null, 'ffffff') ?>"
+     alt="상품 이미지">
+```
+
+#### 4. 고품질 이미지 (포트폴리오)
+
+```php
+<!-- 800px 너비, 품질 95 -->
+<img src="<?= thumbnail($artwork->image, 800, null, null, 95) ?>"
+     alt="작품 이미지">
+```
+
+#### 5. 모든 옵션 사용
+
+```php
+<!-- 300x200, cover 모드, 품질 90, 흰색 배경 -->
+<img src="<?= thumbnail('/var/uploads/533/banner.jpg', 300, 200, 'cover', 90, 'ffffff') ?>"
+     alt="배너">
+```
+
+### 반응형 이미지 (srcset)
+
+```php
+<!-- 다양한 크기의 썸네일을 srcset으로 제공 -->
+<img srcset="<?= thumbnail($image, 400) ?> 400w,
+             <?= thumbnail($image, 800) ?> 800w,
+             <?= thumbnail($image, 1200) ?> 1200w"
+     sizes="(max-width: 600px) 400px, (max-width: 1200px) 800px, 1200px"
+     src="<?= thumbnail($image, 800) ?>"
+     alt="반응형 이미지">
+```
+
+### 갤러리 그리드
+
+```php
+<div class="gallery-grid">
+    <?php foreach ($images as $image): ?>
+        <a href="<?= thumbnail($image, 1200) ?>" target="_blank">
+            <!-- 썸네일: 200x200 -->
+            <img src="<?= thumbnail($image, 200, 200, 'cover') ?>"
+                 class="w-100"
+                 alt="갤러리 이미지">
+        </a>
+    <?php endforeach; ?>
+</div>
+```
+
+### 주의사항
+
+#### 1. var/uploads/ 경로 확인
+
+thumbnail() 함수는 `var/uploads/` 경로가 포함된 경우에만 썸네일 URL을 생성합니다. 외부 URL이나 다른 경로는 원본 그대로 반환됩니다.
+
+```php
+// ✅ 썸네일 생성됨
+thumbnail('/var/uploads/533/cat.jpg', 300);
+// → /thumbnail.php?src=/var/uploads/533/cat.jpg&w=300
+
+// ❌ 원본 그대로 반환
+thumbnail('https://example.com/image.jpg', 300);
+// → https://example.com/image.jpg
+```
+
+#### 2. URL 인코딩 처리
+
+**중요**: `thumbnail()` 함수는 **URL 인코딩을 하지 않습니다**. `thumbnail.php`에서 자동으로 디코딩 처리합니다.
+
+```php
+// ✅ 올바른 방법: URL 인코딩 없이 사용
+thumbnail('/var/uploads/533/cat.jpg', 300);
+// → /thumbnail.php?src=/var/uploads/533/cat.jpg&w=300
+
+// ❌ 잘못된 방법: 직접 urlencode() 사용
+thumbnail(urlencode('/var/uploads/533/cat.jpg'), 300);
+// → /thumbnail.php?src=%2Fvar%2Fuploads%2F533%2Fcat.jpg&w=300 (이중 인코딩 위험)
+```
+
+**클라이언트 호환성**: `thumbnail.php`는 URL 인코딩 여부와 무관하게 올바르게 동작합니다.
+
+```php
+// 두 방식 모두 정상 동작
+// 1. 인코딩 안된 경로
+/thumbnail.php?src=/var/uploads/533/cat.jpg
+
+// 2. 인코딩된 경로
+/thumbnail.php?src=%2Fvar%2Fuploads%2F533%2Fcat.jpg
+```
+
+#### 3. 유효하지 않은 파라미터 무시
+
+유효하지 않은 값은 자동으로 무시되며 URL에 포함되지 않습니다.
+
+```php
+// 유효하지 않은 fit 모드 → 무시됨
+thumbnail('/var/uploads/533/cat.jpg', 300, 200, 'invalid');
+// → /thumbnail.php?src=/var/uploads/533/cat.jpg&w=300&h=200
+
+// 유효하지 않은 품질 (범위: 10-100) → 무시됨
+thumbnail('/var/uploads/533/cat.jpg', 300, null, null, 150);
+// → /thumbnail.php?src=/var/uploads/533/cat.jpg&w=300
+
+// 유효하지 않은 배경색 (6자리 HEX 필요) → 무시됨
+thumbnail('/var/uploads/533/cat.jpg', 300, null, 'contain', null, 'invalid');
+// → /thumbnail.php?src=/var/uploads/533/cat.jpg&w=300&fit=contain
+```
+
+#### 4. 파라미터 순서
+
+파라미터는 순서대로 전달되므로, 중간 파라미터를 생략하려면 `null`을 사용하세요.
+
+```php
+// ❌ 잘못된 방법: 품질만 지정하려고 해도 순서를 맞춰야 함
+thumbnail('/var/uploads/533/cat.jpg', 95); // w=95로 해석됨!
+
+// ✅ 올바른 방법: 중간 파라미터는 null로 채우기
+thumbnail('/var/uploads/533/cat.jpg', null, null, null, 95);
+// → /thumbnail.php?src=/var/uploads/533/cat.jpg&q=95
+```
+
+### 테스트
+
+thumbnail() 함수의 동작을 테스트하려면:
+
+```bash
+php tests/file/thumbnail-function.test.php
+```
+
+**예상 출력**:
+```
+=== thumbnail() 함수 테스트 시작 ===
+
+✅ PASS: 기본 사용 (파라미터 없음)
+✅ PASS: 너비만 지정 (w=300)
+✅ PASS: 너비+높이 지정 (w=300, h=200)
+✅ PASS: cover 모드
+✅ PASS: contain 모드 + 배경색
+✅ PASS: scale 모드
+✅ PASS: 고품질 이미지 (q=95)
+✅ PASS: 모든 옵션 지정
+
+=== 테스트 결과 요약 ===
+총 테스트: 12
+통과: 12
+실패: 0
+
+✅ 모든 테스트 통과!
+```

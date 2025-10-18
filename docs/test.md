@@ -18,8 +18,32 @@
 **개발 환경 URL**: https://local.sonub.com/
 
 - 모든 테스트는 개발 환경 URL `https://local.sonub.com/`에서 수행됩니다
-- PHP Unit Test는 CLI에서 직접 실행합니다
-- PHP E2E Test는 `https://local.sonub.com/`에 HTTP 요청을 보내 테스트합니다
+- **🔥 중요**: Sonub 프로젝트는 Docker 환경에서 동작합니다
+- PHP Unit Test는 `docker exec sonub-php` 명령으로 Docker 컨테이너 내에서 실행합니다
+- PHP E2E Test는 Docker 컨테이너 내에서 실행하며 `https://local.sonub.com/`에 HTTP 요청을 보냅니다
+
+### Docker 컨테이너 구성
+
+Sonub 프로젝트는 다음 3개의 Docker 컨테이너로 구성됩니다:
+
+- **`sonub-nginx`**: Nginx 웹 서버 (포트 80, 443)
+- **`sonub-php`**: PHP 8.3 FPM 서버
+- **`sonub-mariadb`**: MariaDB 11 데이터베이스 서버 (포트 3306)
+
+### Docker 컨테이너 확인
+
+```bash
+# Docker 컨테이너 상태 확인
+docker ps
+
+# 출력 예시:
+# CONTAINER ID   IMAGE          COMMAND                  STATUS         PORTS                    NAMES
+# xxxxxxxxxx     nginx:latest   "nginx -g 'daemon of…"   Up 2 hours     0.0.0.0:80->80/tcp       sonub-nginx
+# xxxxxxxxxx     php:8.3-fpm    "docker-php-entrypoi…"   Up 2 hours     9000/tcp                 sonub-php
+# xxxxxxxxxx     mariadb:11     "docker-entrypoint.s…"   Up 2 hours     0.0.0.0:3306->3306/tcp   sonub-mariadb
+```
+
+**⚠️ 중요**: 테스트 실행 전에 모든 Docker 컨테이너가 정상적으로 실행 중인지 확인하세요.
 
 ### 라우팅 규칙 (E2E 테스트 필수 숙지!)
 
@@ -402,11 +426,77 @@ function login_as_test_user(string $firebase_uid = 'banana')
 
 ## 테스트 실행 방법
 
-프로젝트 루트 폴더에서 아래와 같이 실행합니다:
+**🔥🔥🔥 최강력 규칙: Sonub 프로젝트는 Docker 환경에서 동작하므로 모든 PHP 테스트는 `docker exec sonub-php` 명령을 통해 실행해야 합니다 🔥🔥🔥**
+
+### Docker 컨테이너 확인
+
+테스트 실행 전에 Docker 컨테이너가 정상적으로 실행 중인지 확인하세요:
 
 ```bash
+# Docker 컨테이너 상태 확인
+docker ps
+
+# sonub-nginx, sonub-php, sonub-mariadb 컨테이너가 모두 실행 중이어야 합니다
+```
+
+### PHP Unit Test 실행 방법
+
+**✅ 올바른 방법: Docker 컨테이너 내에서 실행**
+
+```bash
+# Docker 컨테이너 내에서 PHP Unit Test 실행
+docker exec sonub-php php /sonub/tests/db/db.connection.test.php
+docker exec sonub-php php /sonub/tests/user/user.crud.test.php
+docker exec sonub-php php /sonub/tests/post/post.test.php
+```
+
+**❌ 잘못된 방법: 호스트 환경에서 직접 실행 (절대 금지)**
+
+```bash
+# ❌ 절대 금지: 호스트 환경의 PHP를 사용하면 안 됨
 php tests/db/db.connection.test.php
 ```
+
+**이유**:
+- 호스트 환경의 PHP와 Docker 컨테이너의 PHP 설정이 다를 수 있습니다
+- 웹 서버(Nginx)는 Docker 컨테이너의 PHP-FPM을 사용합니다
+- 테스트는 실제 운영 환경과 동일한 환경(Docker)에서 실행해야 정확합니다
+
+### PHP E2E Test 실행 방법
+
+**✅ 올바른 방법: Docker 컨테이너 내에서 실행**
+
+```bash
+# Docker 컨테이너 내에서 PHP E2E Test 실행
+docker exec sonub-php php /sonub/tests/e2e/user-login.e2e.test.php
+docker exec sonub-php php /sonub/tests/e2e/homepage.e2e.test.php
+```
+
+### Playwright E2E Test 실행 방법
+
+Playwright E2E 테스트는 **호스트 환경에서 직접 실행**합니다 (Docker 불필요):
+
+```bash
+# 모든 Playwright 테스트 실행
+npx playwright test
+
+# 특정 테스트 파일만 실행
+npx playwright test tests/playwright/e2e/user-login.spec.ts
+
+# UI 모드로 실행
+npx playwright test --ui
+```
+
+### 모든 테스트 실행 (일괄 실행)
+
+프로젝트에서 제공하는 테스트 스크립트를 사용하여 모든 PHP E2E 테스트를 일괄 실행할 수 있습니다:
+
+```bash
+# 모든 PHP E2E 테스트 실행
+./run-all-php-e2e-tests.sh
+```
+
+**참고**: 이 스크립트는 내부적으로 `docker exec sonub-php` 명령을 사용하여 테스트를 실행합니다.
 
 ## 데이터베이스 설정 자동 선택
 

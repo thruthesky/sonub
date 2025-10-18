@@ -305,3 +305,17 @@ ready(() => {
     });
 });
 
+
+
+// 썸네일 이미지 생성 함수
+function thumbnail(fileUrl, width, height, fit = 'cover', quality = 85, bgColor = 'ffffff') {
+    // lib/file/file.functions.php의 thumbnail_url()과 동일한 기능
+    const url = new URL(appConfig.api.thumbnail_url, window.location.origin);
+    url.searchParams.set('src', encodeURIComponent(fileUrl));
+    url.searchParams.set('w', width);
+    url.searchParams.set('h', height);
+    url.searchParams.set('fit', fit);
+    url.searchParams.set('q', quality);
+    url.searchParams.set('bg', bgColor);
+    return url.toString();
+}

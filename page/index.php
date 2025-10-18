@@ -78,7 +78,7 @@ $postList = list_posts([
                                     <div class="row g-2">
                                         <div v-for="(fileUrl, index) in getValidPhotos(post.files)" :key="index"
                                              :class="getPhotoColumnClass(getValidPhotos(post.files).length)">
-                                            <img :src="fileUrl"
+                                            <img :src="thumbnail(fileUrl, 400, 400, 'cover', 85, 'ffffff')"
                                                  :alt="'Photo ' + (index + 1)"
                                                  class="img-fluid rounded"
                                                  style="width: 100%; height: 200px; object-fit: cover; cursor: pointer;"
@@ -104,6 +104,7 @@ $postList = list_posts([
                 };
             },
             methods: {
+                thumbnail: thumbnail,
                 async loadNextPage() {
                     if (this.postList.isLastPage) {
                         console.log('마지막 페이지에 도달했습니다.');
