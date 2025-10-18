@@ -27,6 +27,7 @@ $hydrationData = [
 
 // InfiniteScroll 라이브러리 로드
 load_deferred_js('infinite-scroll');
+load_deferred_js('user-search');
 ?>
 
 <!-- Vue.js 앱 컨테이너 -->
@@ -35,7 +36,7 @@ load_deferred_js('infinite-scroll');
         <div class="col-12">
             <h1 class="mb-4"><?= t()->사용자_목록 ?></h1>
 
-            <!-- Friend Search Button (전역 함수 호출) -->
+            <!-- Friend Search Button -->
             <button onclick="window.openFriendSearchModal && window.openFriendSearchModal()" class="btn btn-primary mb-3">
                 <i class="bi bi-search me-2"></i>
                 <?= t()->친구_검색 ?>
@@ -50,7 +51,7 @@ load_deferred_js('infinite-scroll');
                             <div class="card-body p-2 d-flex align-items-center">
                                 <!-- Profile Photo -->
                                 <a :href="`<?= href()->user->profile ?>?id=${friend.id}`"
-                                   class="flex-shrink-0 me-2 text-decoration-none">
+                                    class="flex-shrink-0 me-2 text-decoration-none">
                                     <img v-if="friend.photo_url"
                                         :src="friend.photo_url"
                                         class="rounded-circle"
@@ -65,7 +66,7 @@ load_deferred_js('infinite-scroll');
 
                                 <!-- User Info -->
                                 <a :href="`<?= href()->user->profile ?>?id=${friend.id}`"
-                                   class="flex-grow-1 min-w-0 text-decoration-none">
+                                    class="flex-grow-1 min-w-0 text-decoration-none">
                                     <h6 class="card-title mb-0 text-truncate text-dark">
                                         {{ friend.display_name }}
                                     </h6>
@@ -182,14 +183,14 @@ load_deferred_js('infinite-scroll');
                     <!-- Search Input Group -->
                     <div class="input-group mb-3">
                         <input v-model="searchTerm"
-                               @keyup.enter="performSearch"
-                               type="text"
-                               class="form-control"
-                               :placeholder="translations.이름을_입력하세요"
-                               :aria-label="translations.이름을_입력하세요">
+                            @keyup.enter="performSearch"
+                            type="text"
+                            class="form-control"
+                            :placeholder="translations.이름을_입력하세요"
+                            :aria-label="translations.이름을_입력하세요">
                         <button @click="performSearch"
-                                class="btn btn-primary"
-                                :disabled="searchLoading">
+                            class="btn btn-primary"
+                            :disabled="searchLoading">
                             <span v-if="searchLoading">{{ translations.검색_중 }}</span>
                             <span v-else>{{ translations.검색 }}</span>
                         </button>
@@ -202,7 +203,7 @@ load_deferred_js('infinite-scroll');
                                 <div class="card-body p-2 d-flex align-items-center">
                                     <!-- Profile Photo (clickable link) -->
                                     <a :href="`${profileUrl}?id=${user.id}`"
-                                       class="flex-shrink-0 me-2 text-decoration-none">
+                                        class="flex-shrink-0 me-2 text-decoration-none">
                                         <img v-if="user.photo_url"
                                             :src="user.photo_url"
                                             class="rounded-circle"
@@ -217,7 +218,7 @@ load_deferred_js('infinite-scroll');
 
                                     <!-- User Info (clickable link) -->
                                     <a :href="`${profileUrl}?id=${user.id}`"
-                                       class="flex-grow-1 min-w-0 text-decoration-none">
+                                        class="flex-grow-1 min-w-0 text-decoration-none">
                                         <h6 class="card-title mb-0 text-truncate text-dark">
                                             {{ user.display_name }}
                                         </h6>
@@ -232,7 +233,7 @@ load_deferred_js('infinite-scroll');
 
                     <!-- No Results Message -->
                     <div v-else-if="searchPerformed && searchResults.length === 0 && !searchLoading"
-                         class="alert alert-info">
+                        class="alert alert-info">
                         {{ translations.검색_결과가_없습니다 }}
                     </div>
 
@@ -298,8 +299,6 @@ load_deferred_js('infinite-scroll');
         profileUrl: '<?= href()->user->profile ?>'
     };
 </script>
-
-<script defer src="/js/user-search.js"></script>
 
 <script>
     ready(() => {
