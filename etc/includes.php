@@ -36,6 +36,8 @@ include_once ROOT_DIR . '/lib/file/file.upload.php';
 include_once ROOT_DIR . '/lib/file/file.delete.php';
 include_once ROOT_DIR . '/lib/file/file.functions.php';
 
+include_once ROOT_DIR . '/lib/friend-and-feed/friend-and-feed.functions.php';
+
 include_once ROOT_DIR . '/etc/config/app.config.php';
 include_once ROOT_DIR . '/lib/pagination/basic.pagination.php';
 include_once ROOT_DIR . '/etc/config/category.config.php';
