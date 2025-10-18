@@ -13,39 +13,32 @@ ready(() => {
         return;
     }
 
-    // 데이터 속성에서 초기 데이터 가져오기
-    const otherUserId = parseInt(appElement.dataset.otherUserId) || 0;
-    const isMe = appElement.dataset.isMe === 'true';
-    const myUserId = parseInt(appElement.dataset.myUserId) || 0;
-
     // Vue.js 프로필 앱 생성
     Vue.createApp({
         data() {
             return {
                 // 친구 요청 상태
                 requesting: false,
-                isFriend: false,
-
-                // 사용자 ID
-                otherUserId: otherUserId,
-                myUserId: myUserId,
-                isMe: isMe
+                isFriend: false
             };
         },
         methods: {
             /**
              * 친구 추가 요청
+             * @param {number} otherUserId - 친구 요청을 보낼 사용자 ID
              */
-            async requestFriend() {
-                // 로그인 확인
-                if (!this.myUserId) {
+            async requestFriend(otherUserId) {
+                // 로그인 확인 - window.AppStore.user에서 로그인한 사용자 정보 가져오기
+                if (!window.AppStore || !window.AppStore.user || !window.AppStore.user.id) {
                     alert(t.로그인이_필요합니다);
                     window.location.href = '<?= href()->user->login ?>';
                     return;
                 }
 
+                const myUserId = window.AppStore.user.id;
+
                 // 자기 자신에게 친구 요청 방지
-                if (this.otherUserId === this.myUserId) {
+                if (otherUserId === myUserId) {
                     alert(t.자기_자신에게는_친구_요청을_보낼_수_없습니다);
                     return;
                 }
@@ -60,12 +53,12 @@ ready(() => {
                     // 요청 중 상태 설정
                     this.requesting = true;
 
-                    console.log(`친구 요청 전송: 사용자 ID ${this.otherUserId}`);
+                    console.log(`친구 요청 전송: 사용자 ID ${otherUserId}`);
 
                     // API 호출: request_friend 함수 사용
                     await func('request_friend', {
-                        me: this.myUserId,
-                        other: this.otherUserId,
+                        me: myUserId,
+                        other: otherUserId,
                         auth: true // Firebase 인증 포함
                     });
 
@@ -73,7 +66,7 @@ ready(() => {
                     this.isFriend = true;
                     this.requesting = false;
 
-                    console.log(`친구 요청 성공: 사용자 ID ${this.otherUserId}`);
+                    console.log(`친구 요청 성공: 사용자 ID ${otherUserId}`);
                     alert(t.친구_요청_전송_완료);
 
                 } catch (error) {
@@ -87,11 +80,7 @@ ready(() => {
             }
         },
         mounted() {
-            console.log('[profile] Vue.js 프로필 페이지 초기화 완료:', {
-                otherUserId: this.otherUserId,
-                myUserId: this.myUserId,
-                isMe: this.isMe
-            });
+            console.log('[profile] Vue.js 프로필 페이지 초기화 완료');
         }
     }).mount('#profile-app');
 });

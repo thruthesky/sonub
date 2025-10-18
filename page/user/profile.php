@@ -55,10 +55,7 @@ if (!empty($user->created_at)) {
 $is_me = login() && login()->id === $user->id;
 ?>
 
-<div id="profile-app"
-     data-other-user-id="<?= $user->id ?>"
-     data-is-me="<?= $is_me ? 'true' : 'false' ?>"
-     data-my-user-id="<?= login() ? login()->id : 0 ?>">
+<div id="profile-app">
 <div class="profile-container">
     <div class="profile-card">
         <!-- 프로필 헤더 -->
@@ -128,7 +125,7 @@ $is_me = login() && login()->id === $user->id;
                 </a>
             <?php else: ?>
                 <!-- 다른 사용자인 경우: 친구 추가 버튼 (Vue.js) -->
-                <button @click="requestFriend"
+                <button @click="requestFriend(<?= $user->id ?>)"
                         class="btn-add-friend"
                         :disabled="requesting || isFriend">
                     <span v-if="requesting">

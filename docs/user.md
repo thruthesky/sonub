@@ -1016,17 +1016,13 @@ $is_me = login() && login()->id === $user->id;
 ?>
 
 <!-- Vue.js 앱 컨테이너 -->
-<div id="profile-app"
-     data-other-user-id="<?= $user->id ?>"
-     data-is-me="<?= $is_me ? 'true' : 'false' ?>"
-     data-my-user-id="<?= login() ? login()->id : 0 ?>">
-
+<div id="profile-app">
     <!-- 프로필 정보 -->
     <h1><?= htmlspecialchars($user->display_name) ?></h1>
 
     <!-- 친구 추가 버튼 (다른 사용자인 경우만 표시) -->
     <?php if (!$is_me): ?>
-        <button @click="requestFriend"
+        <button @click="requestFriend(<?= $user->id ?>)"
                 class="btn-add-friend"
                 :disabled="requesting || isFriend">
             <span v-if="requesting">
@@ -1050,25 +1046,27 @@ ready(() => {
     const appElement = document.getElementById('profile-app');
     if (!appElement) return;
 
-    // 데이터 속성에서 초기 데이터 가져오기
-    const otherUserId = parseInt(appElement.dataset.otherUserId) || 0;
-    const isMe = appElement.dataset.isMe === 'true';
-    const myUserId = parseInt(appElement.dataset.myUserId) || 0;
-
     Vue.createApp({
         data() {
             return {
                 requesting: false,
-                isFriend: false,
-                otherUserId: otherUserId,
-                myUserId: myUserId,
-                isMe: isMe
+                isFriend: false
             };
         },
         methods: {
-            async requestFriend() {
-                if (!this.myUserId) {
+            async requestFriend(otherUserId) {
+                // 로그인 확인 - window.AppStore.user에서 로그인한 사용자 정보 가져오기
+                if (!window.AppStore || !window.AppStore.user || !window.AppStore.user.id) {
                     alert('로그인이 필요합니다.');
+                    window.location.href = '/user/login';
+                    return;
+                }
+
+                const myUserId = window.AppStore.user.id;
+
+                // 자기 자신에게 친구 요청 방지
+                if (otherUserId === myUserId) {
+                    alert('자기 자신에게는 친구 요청을 보낼 수 없습니다.');
                     return;
                 }
 
@@ -1076,8 +1074,8 @@ ready(() => {
                     this.requesting = true;
 
                     await func('request_friend', {
-                        me: this.myUserId,
-                        other: this.otherUserId,
+                        me: myUserId,
+                        other: otherUserId,
                         auth: true
                     });
 
@@ -1096,13 +1094,149 @@ ready(() => {
 });
 ```
 
+#### window.AppStore 사용하기
+
+**🔥 중요**: Sonub에서는 **로그인한 사용자 정보를 `window.AppStore.user`에서 가져옵니다**.
+
+##### AppStore 구조
+
+```javascript
+window.AppStore = {
+    user: {
+        id: 1,                    // 사용자 ID
+        firebase_uid: 'abc123',   // Firebase UID
+        display_name: '홍길동',   // 표시 이름
+        gender: 'M',              // 성별
+        birthday: 631152000,      // 생년월일 (Unix timestamp)
+        photo_url: '/uploads/...' // 프로필 사진 URL
+        // ... 기타 사용자 정보
+    }
+};
+```
+
+##### AppStore 사용 예제
+
+**로그인 확인:**
+```javascript
+// ✅ 올바른 방법: window.AppStore.user 사용
+if (!window.AppStore || !window.AppStore.user || !window.AppStore.user.id) {
+    alert('로그인이 필요합니다.');
+    window.location.href = '/user/login';
+    return;
+}
+
+const myUserId = window.AppStore.user.id;
+```
+
+**❌ 잘못된 방법:**
+```javascript
+// ❌ data 속성으로 전달하지 마세요
+const myUserId = parseInt(appElement.dataset.myUserId) || 0;
+
+// ❌ PHP에서 직접 출력하지 마세요
+const myUserId = <?= login() ? login()->id : 0 ?>;
+```
+
+##### AppStore 사용의 장점
+
+1. **중앙 관리**: 모든 페이지에서 일관된 방식으로 사용자 정보 접근
+2. **간단한 코드**: data 속성이나 초기화 코드가 필요 없음
+3. **동적 업데이트**: 사용자 정보가 변경되면 자동으로 반영
+4. **타입 안정성**: 항상 동일한 구조의 객체 사용
+
+##### 프로필 페이지 구현 비교
+
+**❌ 잘못된 방법 (data 속성 사용):**
+```php
+<!-- PHP: 복잡한 data 속성 -->
+<div id="profile-app"
+     data-other-user-id="<?= $user->id ?>"
+     data-my-user-id="<?= login() ? login()->id : 0 ?>">
+    <button @click="requestFriend">친구 추가</button>
+</div>
+```
+
+```javascript
+// JavaScript: data 속성에서 값 추출 (불필요한 코드)
+const appElement = document.getElementById('profile-app');
+const otherUserId = parseInt(appElement.dataset.otherUserId) || 0;
+const myUserId = parseInt(appElement.dataset.myUserId) || 0;
+
+Vue.createApp({
+    data() {
+        return {
+            otherUserId: otherUserId,  // 불필요한 data
+            myUserId: myUserId         // 불필요한 data
+        };
+    },
+    methods: {
+        async requestFriend() {
+            await func('request_friend', {
+                me: this.myUserId,      // data에서 가져옴
+                other: this.otherUserId
+            });
+        }
+    }
+});
+```
+
+**✅ 올바른 방법 (AppStore 사용):**
+```php
+<!-- PHP: 간단한 구조, data 속성 불필요 -->
+<div id="profile-app">
+    <button @click="requestFriend(<?= $user->id ?>)">친구 추가</button>
+</div>
+```
+
+```javascript
+// JavaScript: 간단하고 명확한 코드
+Vue.createApp({
+    data() {
+        return {
+            requesting: false,
+            isFriend: false
+            // otherUserId, myUserId 불필요!
+        };
+    },
+    methods: {
+        async requestFriend(otherUserId) {
+            // window.AppStore.user에서 직접 가져옴
+            const myUserId = window.AppStore.user.id;
+
+            await func('request_friend', {
+                me: myUserId,
+                other: otherUserId
+            });
+        }
+    }
+});
+```
+
+##### 사용 시 주의사항
+
+1. **항상 null 체크**: `window.AppStore`와 `window.AppStore.user`가 존재하는지 확인
+2. **로그인 여부 확인**: `window.AppStore.user.id`가 있는지 확인
+3. **파라미터 전달**: 다른 사용자 ID는 함수 파라미터로 전달
+
+```javascript
+// ✅ 올바른 null 체크
+if (!window.AppStore || !window.AppStore.user || !window.AppStore.user.id) {
+    alert('로그인이 필요합니다.');
+    return;
+}
+
+// ✅ 안전하게 사용자 ID 가져오기
+const myUserId = window.AppStore.user.id;
+```
+
 #### 주의사항
 
 1. **Firebase 인증 필수**: `auth: true` 파라미터를 항상 포함해야 합니다.
-2. **로그인 확인**: 친구 요청 전에 사용자가 로그인했는지 확인합니다.
+2. **로그인 확인**: `window.AppStore.user`를 사용하여 로그인 상태를 확인합니다.
 3. **중복 요청 방지**: 요청 중 상태(`requesting`)를 사용하여 버튼을 비활성화합니다.
 4. **에러 처리**: `try-catch`를 사용하여 에러를 적절히 처리합니다.
 5. **자기 자신 확인**: 자기 자신에게는 친구 요청을 보낼 수 없습니다.
+6. **AppStore 사용**: 로그인한 사용자 정보는 항상 `window.AppStore.user`에서 가져옵니다.
 
 ## 테스트
 
