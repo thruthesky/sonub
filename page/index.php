@@ -1,5 +1,5 @@
 <?php
-$category = 'my-wall';
+$category = 'story';
 $per_page = 20;
 $page = 1;
 inject_index_language();
@@ -16,7 +16,6 @@ load_deferred_js('infinite-scroll');
 <?php
 $offset = ($page - 1) * $per_page;
 $postList = list_posts([
-    'category' => $category,
     'user_id' => login() ? login()->id : null,
     'limit' => $per_page,
     'offset' => $offset,
