@@ -76,7 +76,7 @@ fi
 
 # SSH update
 echo "🚀 SSH를 통한 실제 배포 시작..."
-ssh sonub@68.183.185.185 'cd sonub && git pull'
+ssh sonub@167.88.45.173 'cd sonub && git pull'
 
 echo "✅ 배포 완료!"
 
