@@ -264,6 +264,16 @@ if (file_exists($module_path)) {
     <script>
         __HYDRATE__.user = <?php echo login() ? json_encode(login()->data(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : 'null'; ?>;
     </script>
+
+
+    <script>
+        window.t = <?= json_encode(t()->toDefaultArray(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+        window.hrefs = {
+            home: "<?= href()->home ?>",
+            login: "<?= href()->user->login ?>",
+            userProfile: "<?= href()->user->profile ?>"
+        };
+    </script>
 </body>
 
 </html>

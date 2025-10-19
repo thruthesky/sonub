@@ -19,7 +19,8 @@ ready(() => {
             return {
                 // 친구 요청 상태
                 requesting: false,
-                isFriend: false
+                isFriend: false,
+                state: window.AppStore.state
             };
         },
         methods: {
@@ -28,14 +29,15 @@ ready(() => {
              * @param {number} otherUserId - 친구 요청을 보낼 사용자 ID
              */
             async requestFriend(otherUserId) {
+                console.log(window.AppStore);
                 // 로그인 확인 - window.AppStore.user에서 로그인한 사용자 정보 가져오기
-                if (!window.AppStore || !window.AppStore.user || !window.AppStore.user.id) {
+                if (!this.state?.user?.id) {
                     alert(t.로그인이_필요합니다);
-                    window.location.href = '<?= href()->user->login ?>';
+                    window.location.href = window.hrefs.login;
                     return;
                 }
 
-                const myUserId = window.AppStore.user.id;
+                const myUserId = this.state.user.id;
 
                 // 자기 자신에게 친구 요청 방지
                 if (otherUserId === myUserId) {

@@ -4,7 +4,7 @@ Sonub (sonub.com) 웹사이트 개발 가이드라인 및 규칙
 
 # 개발 환경
 
-**필수: Sonub 프로젝트는 Docker 기반으로 동작합니다**
+Sonub 프로젝트는 Docker 기반에 LEMP(Linux, Nginx, MySQL, PHP) 스택으로 동작합니다.
 
 ## Docker 컨테이너 구성
 

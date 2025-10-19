@@ -4,7 +4,7 @@
 class T
 {
 
-    public $texts = TEXTS;
+    public $texts = DEFAULT_TEXTS;
     private array $params = [];
 
     /**
@@ -90,6 +90,23 @@ class T
         }
         return $this;
     }
+
+    public function toArray(): array
+    {
+        $result = [];
+        foreach ($this->texts as $key => $value) {
+            $result[$key] = tr($value);
+        }
+        return $result;
+    }
+    public function toDefaultArray(): array
+    {
+        $result = [];
+        foreach (DEFAULT_TEXTS as $key => $value) {
+            $result[$key] = tr($value);
+        }
+        return $result;
+    }
 }
 
 function t(): T
@@ -99,18 +116,4 @@ function t(): T
         $t = new T();
     }
     return $t;
-}
-
-/**
- * TEXTS 배열에 $key 에 해당하는 텍스트가 있는지 확인
- * 
- * 용도:
- * - 번역된 텍스트가 있는지 확인해서, 있으면 출력하고, 없으면 출력하지 않는 경우에 사용
- * 
- * @param string $key 번역 키
- * @return bool 텍스트
- */
-function has_text(string $key): bool
-{
-    return isset(TEXTS[$key]);
 }
