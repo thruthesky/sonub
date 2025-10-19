@@ -35,7 +35,12 @@ function login(): ?UserModel
             // You can add additional checks here, e.g., verifying user ID or token
             // $key = $session_parts[0];
             $id = $session_parts[1];
-            $_user = get_user(['id' => (int) $id]);
+            try {
+                // 로그인을 했지만, 로그인한 사용자 자신의 정보가 없는 경우, null 을 리턴. 다시 로그인하도록 유도.
+                $_user = get_user(['id' => (int) $id]);
+            } catch (Exception $e) {
+                return null;
+            }
             if (empty($_user)) return null;
 
 

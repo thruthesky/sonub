@@ -785,11 +785,12 @@ function get_post_row(int $post_id): ?array
 // ============================================================================
 
 /**
- * Fan-out on Write: 작성자의 친구들에게 피드 캐시 일괄 삽입 함수
+ * Fan-out on Write: 작성자의 친구들과 본인에게 피드 캐시 일괄 삽입 함수
  *
  * 게시글 작성 시 작성자의 모든 친구에게 feed_entries를 미리 생성합니다.
  * INSERT IGNORE를 사용하여 중복 삽입을 방지합니다.
  * accepted 상태뿐만 아니라 pending 상태의 친구에게도 전파합니다.
+ * **중요**: 본인에게도 피드를 전파하여 index.php에서 본인 게시글이 표시되도록 합니다.
  * (내부 전용 - create_post()에서 자동 호출)
  *
  * @param int $author_id 게시글 작성자 ID
@@ -799,7 +800,7 @@ function get_post_row(int $post_id): ?array
  *
  * @example
  * $count = fanout_post_to_friends(5, 100, time());
- * // 사용자 5의 친구들(accepted + pending)에게 게시글 100을 피드에 전파
+ * // 사용자 5의 친구들(accepted + pending) + 본인에게 게시글 100을 피드에 전파
  */
 function fanout_post_to_friends(int $author_id, int $post_id, int $created_at): int
 {
@@ -811,6 +812,7 @@ function fanout_post_to_friends(int $author_id, int $post_id, int $created_at): 
     //   → 작성자(author)가 요청을 보낸 경우(requested_by = author): 전파 안 함 (스팸 방지)
     //   → 작성자(author)가 요청을 받은 경우(requested_by != author): 전파함 (요청자가 내 글 볼 수 있음)
 
+    // 1단계: 친구들에게 전파
     $sql = "INSERT IGNORE INTO feed_entries (receiver_id, post_id, post_author_id, created_at)
                         SELECT
                             CASE WHEN user_id_a = :author_case THEN user_id_b ELSE user_id_a END AS receiver_id,
@@ -836,7 +838,21 @@ function fanout_post_to_friends(int $author_id, int $post_id, int $created_at): 
         ':author_where_b' => $author_id,
         ':author_spam_check' => $author_id,
     ]);
-    return $stmt->rowCount(); // 실제 삽입된 행 수(IGNORE 영향 있음)
+    $count = $stmt->rowCount();
+
+    // 2단계: 본인에게도 전파 (본인 게시글이 본인 피드에 표시되도록)
+    $sql_self = "INSERT IGNORE INTO feed_entries (receiver_id, post_id, post_author_id, created_at)
+                 VALUES (:receiver_id, :post_id, :author_id, :created_at)";
+    $stmt_self = $pdo->prepare($sql_self);
+    $stmt_self->execute([
+        ':receiver_id' => $author_id,
+        ':post_id' => $post_id,
+        ':author_id' => $author_id,
+        ':created_at' => $created_at,
+    ]);
+    $count += $stmt_self->rowCount();
+
+    return $count; // 실제 삽입된 행 수(IGNORE 영향 있음)
 }
 
 /**
@@ -942,9 +958,11 @@ function get_feed_from_read_join(
  *
  * 캐시(feed_entries)와 읽기 조인(posts)을 결합하여 사용자의 피드를 조회합니다.
  * 1. 먼저 캐시에서 조회
- * 2. 캐시가 부족하면 posts 테이블에서 직접 조회
+ * 2. 캐시가 부족하면 posts 테이블에서 직접 조회 (본인 게시글 포함)
  * 3. 두 결과를 병합하고 중복 제거
  * 4. visibility 및 차단 관계를 최종 검증
+ *
+ * **중요**: friend_ids에 본인 ID를 추가하여 캐시가 비어있을 때도 본인 게시글을 조회합니다.
  *
  * @param array $input 입력 파라미터
  *   - int $input['me'] 피드를 조회할 사용자 ID
@@ -988,8 +1006,10 @@ function get_hybrid_feed(array $input): array
         return finalize_feed_with_visibility($me, $cached);
     }
 
-    // 2단계: 부족분은 읽기 조인으로 보충
+    // 2단계: 부족분은 읽기 조인으로 보충 (본인 ID 포함)
     $friend_ids = get_friend_ids(['me' => $me]);
+    $friend_ids[] = $me; // ✅ 본인 ID 추가 (캐시 누락 시에도 본인 게시글 조회)
+    $friend_ids = array_unique($friend_ids); // 중복 제거
     $need = $limit - count($cached);
     $joined = get_feed_from_read_join($me, $friend_ids, $need, $offset);
 
@@ -1016,9 +1036,11 @@ function get_hybrid_feed(array $input): array
  *
  * visibility 및 차단 관계를 최종 검증하고, 게시글 본문을 붙입니다.
  * - private: 작성자 본인만 조회 가능
- * - friends: 친구에게만 공개
+ * - friends: 친구에게만 공개 (accepted + pending 상태 포함)
  * - public: 모두에게 공개
  * - 차단된 사용자의 게시글은 제외
+ *
+ * **중요**: pending 상태의 친구도 포함하여 visibility 검증을 수행합니다.
  * (내부 전용 - get_hybrid_feed()에서 사용)
  *
  * @param int $me 피드를 조회하는 사용자 ID
@@ -1029,7 +1051,22 @@ function finalize_feed_with_visibility(int $me, array $items): array
 {
     $out = [];
     // 친구 목록 캐시(루프 내 DB 호출 줄이기)
+    // accepted 상태의 친구만 조회
     $friend_ids = get_friend_ids(['me' => $me]);
+
+    // pending 상태에서 내가 요청한 사용자 ID 목록 조회 (내가 요청자인 경우 상대방 글을 볼 수 있음)
+    $pdo = pdo();
+    $sql = "SELECT CASE WHEN user_id_a = :me1 THEN user_id_b ELSE user_id_a END AS friend_id
+            FROM friendships
+            WHERE (user_id_a = :me2 OR user_id_b = :me3)
+              AND status = 'pending'
+              AND requested_by = :me4";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([':me1' => $me, ':me2' => $me, ':me3' => $me, ':me4' => $me]);
+    $pending_ids = array_map(fn($r) => (int)$r['friend_id'], $stmt->fetchAll());
+
+    // 전체 허용 ID 목록 (accepted + pending 요청자)
+    $allowed_author_ids = array_unique([...$friend_ids, ...$pending_ids]);
 
     foreach ($items as $r) {
         $post = get_post_row((int)$r['post_id']);
@@ -1045,7 +1082,8 @@ function finalize_feed_with_visibility(int $me, array $items): array
 
         // visibility 검증
         if ($vis === 'private' && $author !== $me) continue;
-        if ($vis === 'friends' && $author !== $me && !in_array($author, $friend_ids, true)) continue;
+        // friends: 본인 또는 accepted 친구 또는 내가 요청한 pending 상태의 사용자
+        if ($vis === 'friends' && $author !== $me && !in_array($author, $allowed_author_ids, true)) continue;
 
         // files 필드를 배열로 변환 (콤마로 구분된 문자열 → 배열)
         $files = [];

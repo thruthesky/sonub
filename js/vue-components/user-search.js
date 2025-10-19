@@ -29,7 +29,7 @@ window.UserSearchComponent = {
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" :id="modalId + '-label'">{{ t.친구_검색 }}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close" @click="closeSearchModal" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body" :id="modalBodyId">
                         <!-- Search Input Group -->

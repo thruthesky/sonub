@@ -371,6 +371,7 @@ $post = create_post([
 
 - `posts.visibility` 가 `public` 또는 `friends` 면 전파 가능
 - `private` 글은 피드에 전파하지 않음
+- **중요**: 본인에게도 피드가 전파되어 본인이 작성한 글이 본인의 피드에 표시됩니다
 
 ### 2단계: 친구 수신자 계산 (Friendships)
 
@@ -428,6 +429,7 @@ User A ↔ User B (status = 'accepted')
 
 ### 3단계: 피드 캐시 삽입 (Feed Entries)
 
+**3-1. 친구들에게 전파:**
 ```sql
 INSERT IGNORE INTO feed_entries (receiver_id, post_id, post_author_id, created_at)
 SELECT
@@ -452,14 +454,22 @@ WHERE (user_id_a = :author OR user_id_b = :author)
   );
 ```
 
+**3-2. 본인에게도 전파:**
+```sql
+INSERT IGNORE INTO feed_entries (receiver_id, post_id, post_author_id, created_at)
+VALUES (:author, :post_id, :author, :created_at);
+```
+
 **동작:**
 1. 작성자의 친구 목록 조회 (accepted + pending 단방향)
 2. **스팸 방지**: pending 상태에서는 작성자가 요청을 받은 경우만 전파
 3. 차단된 사용자 제외
 4. 각 친구의 피드에 게시글 전파
+5. **본인에게도 전파** (본인 피드에 본인 게시글 표시)
 
 ### 4단계: 피드 조회 (사용자별 타임라인)
 
+**4-1. 피드 캐시 조회 (feed_entries):**
 ```sql
 -- 사용자 ID 10의 피드 조회 (최신 20개)
 SELECT
@@ -477,6 +487,40 @@ WHERE fe.receiver_id = 10
 ORDER BY fe.created_at DESC
 LIMIT 20 OFFSET 0;
 ```
+
+**4-2. Visibility 최종 검증:**
+
+피드 조회 시 `visibility='friends'` 게시글에 대해 다음과 같이 검증합니다:
+
+```php
+// accepted 친구 목록 조회
+$friend_ids = get_friend_ids(['me' => $me]);
+
+// pending 상태에서 내가 요청한 사용자 목록 조회
+$sql = "SELECT CASE WHEN user_id_a = :me THEN user_id_b ELSE user_id_a END AS friend_id
+        FROM friendships
+        WHERE (user_id_a = :me OR user_id_b = :me)
+          AND status = 'pending'
+          AND requested_by = :me";
+$pending_ids = ...; // 실행 결과
+
+// 전체 허용 ID 목록 (accepted + pending 요청자)
+$allowed_author_ids = array_unique([...$friend_ids, ...$pending_ids]);
+
+// visibility 검증
+if ($visibility === 'friends' && $author !== $me && !in_array($author, $allowed_author_ids)) {
+    // 피드에서 제외
+}
+```
+
+**Visibility 검증 규칙:**
+- **public**: 모두에게 표시
+- **friends**: 본인 + accepted 친구 + 내가 요청한 pending 상태 사용자에게만 표시
+- **private**: 본인에게만 표시
+
+**중요:**
+- `feed_entries`에 캐시되어 있어도, 최종적으로 visibility 검증을 통과해야 피드에 표시됨
+- pending 상태에서는 **요청자만** 수신자의 `friends` 게시글을 볼 수 있음
 
 **성능:**
 - `ix_receiver_created` 인덱스로 매우 빠른 조회
@@ -758,15 +802,90 @@ LIMIT 20 OFFSET 0;
 
 ---
 
+## 본인 게시글 피드 전파 및 검증
+
+### 문제 상황
+
+초기 구현에서는 본인이 작성한 게시글이 본인의 피드에 표시되지 않았습니다:
+- ❌ fanout_post_to_friends(): 친구들에게만 전파, 본인은 제외
+- ❌ get_hybrid_feed(): friend_ids에 본인 ID 미포함
+
+### 해결 방법
+
+**1. fanout_post_to_friends() 함수 수정**
+```php
+// 1단계: 친구들에게 전파 (기존 쿼리)
+INSERT IGNORE INTO feed_entries (receiver_id, post_id, post_author_id, created_at)
+SELECT ...
+FROM friendships
+WHERE ...;
+
+// 2단계: 본인에게도 전파 (추가)
+INSERT IGNORE INTO feed_entries (receiver_id, post_id, post_author_id, created_at)
+VALUES (:author_id, :post_id, :author_id, :created_at);
+```
+
+**2. get_hybrid_feed() 함수 수정**
+```php
+// 2단계: 부족분은 읽기 조인으로 보충 (본인 ID 포함)
+$friend_ids = get_friend_ids(['me' => $me]);
+$friend_ids[] = $me; // ✅ 본인 ID 추가 (캐시 누락 시에도 본인 게시글 조회)
+$friend_ids = array_unique($friend_ids);
+```
+
+**3. finalize_feed_with_visibility() 함수 수정**
+```php
+// accepted 친구 목록
+$friend_ids = get_friend_ids(['me' => $me]);
+
+// pending 상태에서 내가 요청한 사용자 목록
+$sql = "SELECT CASE WHEN user_id_a = :me THEN user_id_b ELSE user_id_a END AS friend_id
+        FROM friendships
+        WHERE (user_id_a = :me OR user_id_b = :me)
+          AND status = 'pending'
+          AND requested_by = :me";
+$pending_ids = ...; // 실행 결과
+
+// 전체 허용 ID 목록 (accepted + pending 요청자)
+$allowed_author_ids = array_unique([...$friend_ids, ...$pending_ids]);
+
+// visibility 검증 (본인 + accepted + pending 요청자)
+if ($visibility === 'friends' && $author !== $me && !in_array($author, $allowed_author_ids)) {
+    continue; // 피드에서 제외
+}
+```
+
+### 결과
+
+✅ **Fan-out on Write + 읽기 보충 하이브리드 패턴 완성**
+1. **캐시 경로 (Fan-out on Write)**: 본인 게시글 즉시 노출 (1초 미만)
+2. **읽기 조인 경로 (Fan-out on Read)**: 캐시 누락 시에도 본인 게시글 조회
+3. **Visibility 검증**: pending 상태의 친구 게시글도 정확히 필터링
+
+### 테스트 검증
+
+모든 시나리오가 정상 작동함을 확인:
+1. ✅ 본인 게시글이 본인 피드에 표시
+2. ✅ accepted 친구 게시글이 양방향 표시
+3. ✅ 내가 친구 요청한 pending: 상대방 글이 내 피드에 표시
+4. ✅ 상대방이 나에게 친구 요청한 pending: 상대방 글이 내 피드에 표시 안 됨 (스팸 방지)
+5. ✅ pending 상태에서 요청자의 글이 수신자 피드에 표시 안 됨 (스팸 방지)
+
+**테스트 파일**: `tests/friend-and-feed/pending-feed-propagation.test.php`
+
+---
+
 ## 요약
 
 **Sonub 커뮤니티 데이터베이스 설계의 핵심:**
 
 1. **무방향 친구 관계**: 중복 없는 효율적 설계
-2. **Fan-out on Write 피드**: 읽기 속도 극대화
+2. **Fan-out on Write 피드**: 읽기 속도 극대화 + 본인 게시글 포함
 3. **차단 시스템 분리**: 명확한 정책 관리
 4. **UNIX Timestamp**: 시간대 독립적 설계
 5. **인덱스 최적화**: 복합 인덱스로 쿼리 성능 향상
 6. **ON DELETE CASCADE**: 자동 데이터 정리
+7. **Pending 상태 스팸 방지**: 요청자만 수신자의 글을 볼 수 있음
+8. **Visibility 최종 검증**: accepted + pending 요청자 모두 포함하여 검증
 
-이 설계는 소셜 네트워크의 핵심 기능을 고성능으로 제공하면서도 데이터 무결성을 보장합니다.
+이 설계는 소셜 네트워크의 핵심 기능을 고성능으로 제공하면서도 데이터 무결성과 스팸 방지를 보장합니다.
