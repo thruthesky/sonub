@@ -15,13 +15,18 @@ $total = $result['total'] ?? 0;
 
 // 내 친구 목록은 위젯 내부에서 조회합니다.
 
-// 친구 요청 수 조회 (로그인한 경우에만)
+// 친구 요청 수 및 친구 수 조회 (로그인한 경우에만)
 $friendRequestsSentCount = 0;
 $friendRequestsReceivedCount = 0;
+$friendsCount = 0;
 if (login()) {
     $myUserId = login()->id;
     $friendRequestsSentCount = count_friend_requests_sent(['me' => $myUserId]);
     $friendRequestsReceivedCount = count_friend_requests_received(['me' => $myUserId]);
+
+    // 친구 ID 목록을 가져와서 개수 계산
+    $friendIds = get_friend_ids(['me' => $myUserId]);
+    $friendsCount = count($friendIds);
 }
 
 // Vue.js hydration을 위한 데이터 준비 (친구 목록 제외)
@@ -66,6 +71,18 @@ load_deferred_js('infinite-scroll');
                     <i class="bi bi-search me-2"></i>
                     <?= t()->친구_검색 ?>
                 </button>
+
+                <!-- Friends List Button -->
+                <a href="<?= href()->friend->list ?>" class="btn btn-outline-primary position-relative">
+                    <i class="bi bi-people me-2"></i>
+                    <?= t()->친구_목록 ?>
+                    <?php if ($friendsCount > 0): ?>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
+                            <?= $friendsCount ?>
+                            <span class="visually-hidden"><?= t()->전체_친구_수 ?></span>
+                        </span>
+                    <?php endif; ?>
+                </a>
 
                 <!-- Received Requests Button -->
                 <a href="<?= href()->friend->request_received ?>" class="btn btn-outline-success position-relative">
@@ -628,6 +645,18 @@ function inject_list_language()
             'en' => 'Sent friend requests',
             'ja' => '送信したフレンドリクエスト',
             'zh' => '发送的好友请求'
+        ],
+        '친구_목록' => [
+            'ko' => '친구 목록',
+            'en' => 'Friends List',
+            'ja' => '友達リスト',
+            'zh' => '朋友列表'
+        ],
+        '전체_친구_수' => [
+            'ko' => '전체 친구 수',
+            'en' => 'Total friends',
+            'ja' => '友達の総数',
+            'zh' => '好友总数'
         ],
     ]);
 }
