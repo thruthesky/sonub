@@ -2,26 +2,182 @@
 
 ## 목차
 
-- [개요](#개요)
-- [window.AppStore.state - 전역 상태 관리](#windowappstorestate---전역-상태-관리)
-  - [로그인 사용자 정보](#로그인-사용자-정보)
-  - [Vue.js Reactivity 사용](#vuejs-reactivity-사용)
-  - [사용 예제 모음](#사용-예제-모음)
-- [window.t - 다국어 번역](#windowt---다국어-번역)
-- [window.hrefs - 페이지 URL 라우팅](#windowhrefs---페이지-url-라우팅)
-- [ready() 함수](#ready-함수)
+- [JavaScript](#javascript)
+  - [목차](#목차)
+  - [개요](#개요)
+  - [window.AppStore.state - 전역 상태 관리](#windowappstorestate---전역-상태-관리)
+    - [로그인 사용자 정보](#로그인-사용자-정보)
+      - [window.AppStore.state 예제](#windowappstorestate-예제)
+    - [Vue.js Reactivity 사용](#vuejs-reactivity-사용)
+      - [올바른 패턴](#올바른-패턴)
+    - [사용 예제 모음](#사용-예제-모음)
+      - [예제 1: Optional Chaining 사용 (권장)](#예제-1-optional-chaining-사용-권장)
+      - [예제 2: Computed Property 사용](#예제-2-computed-property-사용)
+      - [예제 3: Template에서 직접 조건부 렌더링](#예제-3-template에서-직접-조건부-렌더링)
+    - [실제 예제 - 프로필 페이지](#실제-예제---프로필-페이지)
+    - [안티패턴](#안티패턴)
+    - [Reactivity의 장점](#reactivity의-장점)
+    - [요약](#요약)
+  - [다국어 번역](#다국어-번역)
+    - [PHP 함수로 번역 텍스트 주입 (권장)](#php-함수로-번역-텍스트-주입-권장)
+    - [window.t 객체 (레거시)](#windowt-객체-레거시)
+  - [페이지 URL 라우팅](#페이지-url-라우팅)
+    - [PHP href() 함수로 URL 생성 (권장)](#php-href-함수로-url-생성-권장)
+    - [window.hrefs 객체 (레거시)](#windowhrefs-객체-레거시)
+  - [ready() 함수](#ready-함수)
+    - [올바른 사용 예제](#올바른-사용-예제)
+    - [로딩 순서](#로딩-순서)
 
 ---
 
 ## 개요
 
-Sonub의 JavaScript는 다음과 같이 **3가지 전역 객체**를 통해 주요 기능을 제공합니다:
+Sonub의 JavaScript는 **PHP MPA (Multi-Page Application)** 방식으로 동작하며, 다음과 같은 방식으로 JavaScript 코드를 작성합니다:
 
-- **window.AppStore.state**: Vue.js Reactivity Proxy로 구현된 전역 상태 관리
-- **window.t**: 다국어 번역 객체
-- **window.hrefs**: 페이지 URL 라우팅 객체
+### JavaScript 파일 분리 방식
 
-**중요 사항**: 모든 전역 객체는 **반드시 `ready()` 함수 내부에서** 사용해야 합니다.
+**🔥🔥🔥 최강력 규칙: 페이지 파일 내부에 JavaScript가 길어지면 *.javascript.php 파일로 분리해야 합니다 🔥🔥🔥**
+
+- **페이지 내 인라인**: 짧은 JavaScript는 `page/**/*.php` 내부에 `<script>` 태그로 작성
+- **별도 파일 분리**: 긴 JavaScript는 `page/**/*.javascript.php` 파일로 분리
+- **확장자 .php 사용**: `.javascript.php` 확장자를 사용하여 PHP 함수를 직접 사용 가능
+
+### *.javascript.php 파일의 장점
+
+**✅ PHP 함수 직접 사용:**
+- `<?= tr('텍스트') ?>`: 인라인 번역 함수 사용 가능
+- `<?= href()->user->profile ?>`: 페이지 URL 라우팅 직접 사용
+- `<?= t()->검색 ?>`: 다국어 번역 텍스트 주입
+- `<?= login()->id ?>`: 로그인 사용자 정보 접근
+
+**✅ 목적:**
+- JavaScript를 별도 PHP 파일로 분리
+- PHP 함수를 통해 JavaScript에 필요한 텍스트, URL, 기타 정보 주입
+- 긴 JavaScript 코드를 페이지 파일에서 분리하여 가독성 향상
+
+### 전역 객체 (레거시)
+
+다음 전역 객체들은 **레거시**이며, 새로운 코드에서는 **PHP 함수를 직접 사용**하는 것을 권장합니다:
+
+- **window.AppStore.state**: Vue.js Reactivity Proxy로 구현된 전역 상태 관리 (계속 사용)
+- ~~**window.t**: 다국어 번역 객체~~ → `<?= tr('텍스트') ?>` 또는 `<?= t()->키 ?>` 사용 권장
+- ~~**window.hrefs**: 페이지 URL 라우팅 객체~~ → `<?= href()->페이지->경로 ?>` 사용 권장
+
+### 실제 예제 - page/user/list.php
+
+**page/user/list.php** 파일은 JavaScript를 페이지 파일 내부에 `<script>` 태그로 포함하는 예제입니다:
+
+```php
+<!-- page/user/list.php -->
+<div id="user-list-app">
+    <!-- 사용자 목록 HTML -->
+    <div v-for="user in users" :key="user.id">
+        <!-- ✅ PHP 함수로 URL 직접 주입 -->
+        <a :href="`<?= href()->user->profile ?>?id=${user.id}`">
+            {{ user.display_name }}
+        </a>
+    </div>
+</div>
+
+<script>
+ready(() => {
+    Vue.createApp({
+        data() {
+            return {
+                users: <?= json_encode($users) ?>,
+                myUserId: <?= login() ? login()->id : 'null' ?>
+            };
+        },
+        methods: {
+            async loadUsers() {
+                // ✅ PHP 함수로 alert 메시지 직접 주입
+                if (!this.myUserId) {
+                    alert('<?= tr('로그인이 필요합니다') ?>');
+                    // ✅ PHP 함수로 URL 직접 주입
+                    window.location.href = '<?= href()->user->login ?>';
+                    return;
+                }
+
+                // API 호출
+                const result = await func('list_users', {
+                    page: 1,
+                    per_page: 20
+                });
+            }
+        }
+    }).mount('#user-list-app');
+});
+</script>
+```
+
+**장점:**
+- ✅ `<?= href()->user->profile ?>`: URL을 PHP에서 직접 생성하여 주입
+- ✅ `<?= tr('로그인이 필요합니다') ?>`: 번역 텍스트를 PHP에서 직접 주입
+- ✅ `<?= login()->id ?>`: 로그인 사용자 정보를 PHP에서 직접 접근
+- ✅ `<?= json_encode($users) ?>`: 서버 데이터를 JavaScript로 Hydration
+
+### *.javascript.php 파일로 분리하는 경우
+
+JavaScript 코드가 길어지면 `*.javascript.php` 파일로 분리할 수 있습니다:
+
+**page/user/list.php:**
+```php
+<div id="user-list-app">
+    <!-- 사용자 목록 HTML -->
+</div>
+
+<?php include __DIR__ . '/list.javascript.php'; ?>
+```
+
+**page/user/list.javascript.php:**
+```php
+<script>
+ready(() => {
+    Vue.createApp({
+        data() {
+            return {
+                users: <?= json_encode($users) ?>,
+                myUserId: <?= login() ? login()->id : 'null' ?>
+            };
+        },
+        methods: {
+            async requestFriend(user) {
+                // ✅ PHP 함수로 번역 텍스트 주입
+                alert('<?= tr('친구 요청을 보냈습니다') ?>');
+
+                // API 호출
+                await func('request_friend', {
+                    me: this.myUserId,
+                    other: user.id,
+                    auth: true
+                });
+            }
+        }
+    }).mount('#user-list-app');
+});
+</script>
+
+<?php
+// 다국어 번역 주입 함수
+function inject_list_language() {
+    t()->inject([
+        '사용자_목록' => [
+            'ko' => '사용자 목록',
+            'en' => 'User List',
+            'ja' => 'ユーザーリスト',
+            'zh' => '用户列表'
+        ]
+    ]);
+}
+inject_list_language();
+?>
+```
+
+**핵심 포인트:**
+- ✅ `.javascript.php` 확장자 사용 → PHP로 실행됨
+- ✅ `<?= tr(...) ?>`, `<?= href()->... ?>`, `<?= login()->id ?>` 직접 사용 가능
+- ✅ 긴 JavaScript 코드를 별도 파일로 분리하여 가독성 향상
+- ✅ 페이지별 번역은 `t()->inject()` 함수 사용
 
 ---
 
@@ -73,8 +229,8 @@ ready(() => {
             async requestFriend(otherUserId) {
                 // ✅ this.state.user로 접근 - 반응형!
                 if (!this.state?.user?.id) {
-                    alert(window.t.로그인이_필요합니다);
-                    window.location.href = window.hrefs.login;
+                    alert('<?= tr('로그인이 필요합니다') ?>');
+                    window.location.href = '<?= href()->user->login ?>';
                     return;
                 }
 
@@ -82,7 +238,7 @@ ready(() => {
 
                 // 자기 자신에게 친구 요청 방지
                 if (otherUserId === myUserId) {
-                    alert(window.t.자기_자신에게는_친구_요청을_보낼_수_없습니다);
+                    alert('<?= tr('자기 자신에게는 친구 요청을 보낼 수 없습니다') ?>');
                     return;
                 }
 
@@ -93,11 +249,11 @@ ready(() => {
                         auth: true
                     });
 
-                    alert(window.t.친구_요청_전송_완료);
+                    alert('<?= tr('친구 요청을 보냈습니다') ?>');
 
                 } catch (error) {
                     console.error('친구 요청 실패:', error);
-                    alert(`${window.t.친구_요청_실패}: ${error.message}`);
+                    alert(`<?= tr('친구 요청 실패') ?>: ${error.message}`);
                 }
             }
         },
@@ -124,8 +280,8 @@ ready(() => {
             doSomething() {
                 // ✅ Optional Chaining으로 안전하게 사용
                 if (!this.state?.user?.id) {
-                    alert(window.t.로그인이_필요합니다);
-                    window.location.href = window.hrefs.login;
+                    alert('<?= tr('로그인이 필요합니다') ?>');
+                    window.location.href = '<?= href()->user->login ?>';
                     return;
                 }
 
@@ -161,8 +317,8 @@ ready(() => {
         methods: {
             doSomething() {
                 if (!this.isLoggedIn) {
-                    alert(window.t.로그인이_필요합니다);
-                    window.location.href = window.hrefs.login;
+                    alert('<?= tr('로그인이 필요합니다') ?>');
+                    window.location.href = '<?= href()->user->login ?>';
                     return;
                 }
 
@@ -202,7 +358,7 @@ ready(() => {
     </div>
     <div v-else>
         <p>로그인이 필요합니다.</p>
-        <a :href="window.hrefs.login">로그인</a>
+        <a href="<?= href()->user->login ?>">로그인</a>
     </div>
 </div>
 ```
@@ -238,9 +394,6 @@ $is_me = login() && login()->id === $user->id;
 
 ```javascript
 ready(() => {
-    const t = window.t;
-    const hrefs = window.hrefs;
-
     Vue.createApp({
         data() {
             return {
@@ -262,9 +415,9 @@ ready(() => {
             async requestFriend(otherUserId) {
                 // ✅ 로그인 사용
                 if (!this.state?.user?.id) {
-                    alert(t.로그인이_필요합니다);
+                    alert('<?= tr('로그인이 필요합니다') ?>');
                     const currentUrl = encodeURIComponent(window.location.href);
-                    window.location.href = `${hrefs.login}?return=${currentUrl}`;
+                    window.location.href = `<?= href()->user->login ?>?return=${currentUrl}`;
                     return;
                 }
 
@@ -272,12 +425,12 @@ ready(() => {
 
                 // 자기 자신에게 친구 요청 방지
                 if (otherUserId === myUserId) {
-                    alert(t.자기_자신에게는_친구_요청을_보낼_수_없습니다);
+                    alert('<?= tr('자기 자신에게는 친구 요청을 보낼 수 없습니다') ?>');
                     return;
                 }
 
                 if (this.isFriend) {
-                    alert(t.이미_친구입니다);
+                    alert('<?= t()->이미_친구입니다 ?>');
                     return;
                 }
 
@@ -291,12 +444,12 @@ ready(() => {
                     });
 
                     this.isFriend = true;
-                    alert(t.친구_요청_전송_완료);
+                    alert('<?= t()->친구_요청_전송_완료 ?>');
 
                 } catch (error) {
                     console.error('친구 요청 실패:', error);
                     this.requesting = false;
-                    alert(`${t.친구_요청_실패}: ${error.message}`);
+                    alert(`<?= tr('친구 요청 실패') ?>: ${error.message}`);
                 }
             }
         },
@@ -431,77 +584,130 @@ ready(() => {
 
 ---
 
-## window.t - 다국어 번역
+## 다국어 번역
 
-자세한 내용은 [docs/coding-guideline.md - JavaScript에서 다국어 번역 사용](./coding-guideline.md#javascript에서-다국어-번역-사용---windowt)를 참조하세요.
+**🔥🔥🔥 중요: window.t는 레거시입니다. PHP 함수를 직접 사용하세요 🔥🔥🔥**
 
-**간단 예제:**
+### PHP 함수로 번역 텍스트 주입 (권장)
 
-```javascript
+**✅ 권장 방법 1: tr() 인라인 번역**
+
+```php
+<script>
 ready(() => {
-    const t = window.t;
-
     Vue.createApp({
         methods: {
             showAlert() {
-                alert(t.로그인이_필요합니다);
+                // ✅ PHP tr() 함수로 직접 주입
+                alert('<?= tr('로그인이 필요합니다') ?>');
             }
         }
     }).mount('#app');
 });
+</script>
 ```
+
+**✅ 권장 방법 2: t()->키 사용**
+
+```php
+<script>
+ready(() => {
+    Vue.createApp({
+        methods: {
+            showAlert() {
+                // ✅ PHP t()->키로 직접 주입
+                alert('<?= t()->로그인이_필요합니다 ?>');
+            }
+        }
+    }).mount('#app');
+});
+</script>
+```
+
+**장점:**
+- ✅ PHP 실행 시점에 번역 텍스트 주입
+- ✅ window.t 객체 불필요 (JavaScript 번들 크기 감소)
+- ✅ 서버 사이드 번역으로 SEO 개선
+
+### window.t 객체 (레거시)
+
+**❌ 레거시 방법 - 사용하지 마세요:**
+
+```javascript
+// ❌ 레거시 - 새 코드에서는 사용하지 마세요
+alert(window.t.로그인이_필요합니다);
+```
+
+**문제점:**
+- ❌ JavaScript 번들 크기 증가 (모든 번역 텍스트를 클라이언트로 전송)
+- ❌ ready() 함수 내부에서만 사용 가능
+- ❌ 서버 사이드 렌더링 불가
+
+자세한 내용은 [docs/coding-guideline.md - 다국어 번역](./coding-guideline.md#다국어-번역)을 참조하세요.
 
 ---
 
-## window.hrefs - 페이지 URL 라우팅
+## 페이지 URL 라우팅
 
-자세한 내용은 [docs/coding-guideline.md - JavaScript에서 페이지 URL 라우팅](./coding-guideline.md#javascript에서-페이지-url-라우팅---windowhrefs)를 참조하세요.
+**🔥🔥🔥 중요: window.hrefs는 레거시입니다. PHP href() 함수를 직접 사용하세요 🔥🔥🔥**
 
-**간단 예제:**
+### PHP href() 함수로 URL 생성 (권장)
 
-```javascript
+**✅ 권장 방법:**
+
+```php
+<script>
 ready(() => {
-    const hrefs = window.hrefs;
-
     Vue.createApp({
         methods: {
             goToLogin() {
-                window.location.href = hrefs.login;
+                // ✅ PHP href() 함수로 직접 주입
+                window.location.href = '<?= href()->user->login ?>';
             },
             goToProfile(userId) {
-                window.location.href = `${hrefs.profile}?id=${userId}`;
+                // ✅ PHP href() 함수로 URL 생성
+                window.location.href = `<?= href()->user->profile ?>?id=${userId}`;
             }
         }
     }).mount('#app');
 });
+</script>
 ```
+
+**장점:**
+- ✅ PHP 실행 시점에 URL 생성
+- ✅ window.hrefs 객체 불필요 (JavaScript 번들 크기 감소)
+- ✅ 서버 사이드 URL 생성으로 안정성 향상
+
+### window.hrefs 객체 (레거시)
+
+**❌ 레거시 방법 - 사용하지 마세요:**
+
+```javascript
+// ❌ 레거시 - 새 코드에서는 사용하지 마세요
+window.location.href = window.hrefs.login;
+```
+
+**문제점:**
+- ❌ JavaScript 번들 크기 증가
+- ❌ ready() 함수 내부에서만 사용 가능
+- ❌ 서버 사이드 렌더링 불가
+
+자세한 내용은 [docs/coding-guideline.md - URL 라우팅](./coding-guideline.md#url-및-페이지-링크-관리-규칙)을 참조하세요.
 
 ---
 
 ## ready() 함수
 
-**중요 사항**: 모든 전역 객체(`window.AppStore.state`, `window.t`, `window.hrefs`)는 **반드시 `ready()` 함수 내부에서** 사용해야 합니다.
+**중요 사항**: `window.AppStore.state`는 **반드시 `ready()` 함수 내부에서** 사용해야 합니다.
 
-**로딩 순서:**
+### 올바른 사용 예제
 
-```
-1. Vue.js, Firebase 등 라이브러리 로드
-2. 페이지별 JavaScript 파일 로드 (defer)
-3. 페이지 콘텐츠 렌더링
-4. window.t 객체 생성 (HTML 맨 아래)
-5. window.hrefs 객체 생성 (HTML 맨 아래)
-6. window.AppStore.state 초기화 (HTML 맨 아래)
-7. ready() 함수 실행 (DOM 준비 완료 후)
-```
+**✅ 권장 패턴 - PHP 함수 직접 사용:**
 
-**예제:**
-
-```javascript
-// ✅ 올바른 패턴
+```php
+<script>
 ready(() => {
-    const t = window.t;
-    const hrefs = window.hrefs;
-
     Vue.createApp({
         data() {
             return {
@@ -509,13 +715,27 @@ ready(() => {
             };
         },
         methods: {
-            // ...
+            doSomething() {
+                // ✅ PHP 함수로 번역 텍스트 주입
+                alert('<?= tr('작업 완료') ?>');
+
+                // ✅ PHP 함수로 URL 주입
+                window.location.href = '<?= href()->home ?>';
+            }
         }
     }).mount('#app');
 });
-
-// ❌ 잘못된 패턴 - ready() 밖에서 사용
-const t = window.t;  // ❌ undefined!
-const hrefs = window.hrefs;  // ❌ undefined!
-const state = window.AppStore.state;  // ❌ undefined!
+</script>
 ```
+
+### 로딩 순서
+
+```
+1. Vue.js, Firebase 등 라이브러리 로드
+2. 페이지별 JavaScript 파일 로드 (defer)
+3. 페이지 콘텐츠 렌더링 (PHP 실행, tr(), href() 등 주입)
+4. window.AppStore.state 초기화 (HTML 맨 아래)
+5. ready() 함수 실행 (DOM 준비 완료 후)
+```
+
+**중요**: `tr()`, `href()`, `t()->키` 등 PHP 함수는 서버 실행 시점에 처리되므로 ready() 불필요합니다.

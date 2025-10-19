@@ -241,11 +241,7 @@ if (file_exists($module_path)) {
     <?php include_once ROOT_DIR . '/etc/php-hot-reload-client.php'; ?>
     <link href="/css/app.css?v=<?= APP_VERSION ?>" rel="stylesheet">
     <script src="/js/app.js" defer></script>
-    <?php if (is_index_page()) { ?>
-    <?php } else { ?>
-        <?php include_page_css() ?>
-        <?php include_page_js() ?>
-    <?php } ?>
+
 
 
     <script src="/etc/frameworks/bootstrap/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js"></script>
@@ -265,15 +261,6 @@ if (file_exists($module_path)) {
         __HYDRATE__.user = <?php echo login() ? json_encode(login()->data(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : 'null'; ?>;
     </script>
 
-
-    <script>
-        window.t = <?= json_encode(t()->toDefaultArray(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-        window.hrefs = {
-            home: "<?= href()->home ?>",
-            login: "<?= href()->user->login ?>",
-            userProfile: "<?= href()->user->profile ?>"
-        };
-    </script>
 </body>
 
 </html>

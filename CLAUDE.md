@@ -12,29 +12,6 @@ Sonub 프로젝트는 Docker 기반에 LEMP(Linux, Nginx, MySQL, PHP) 스택으�
 - `sonub-php`: PHP-FPM 서버
 - `sonub-mariadb`: MariaDB 데이터베이스 서버
 
-## PHP 명령어 실행
-
-**🔥🔥🔥 최강력 규칙: PHP 테스트는 반드시 `php` 명령으로 직접 실행 🔥🔥🔥**
-
-```bash
-# ✅ 올바른 방법: PHP 테스트 직접 실행
-php tests/db/db.connection.test.php
-php tests/friend-and-feed/get-friends.test.php
-php tests/xxx/yyy/zzz.test.php
-
-# ❌ 잘못된 방법: docker exec 사용 금지
-docker exec sonub-php php /sonub/tests/db/db.connection.test.php  # 절대 금지!
-docker exec sonub-php php /sonub/tests/xxx/yyy/zzz.test.php      # 절대 금지!
-
-# Playwright E2E Test 실행 (호스트 환경)
-npx playwright test tests/playwright/e2e/user-login.spec.ts
-```
-
-**중요 사항:**
-- PHP Unit Test와 PHP E2E Test는 **호스트 환경에서 직접 실행**
-- `docker exec` 명령은 사용하지 않음
-- 테스트 파일 경로는 상대 경로 사용 (예: `tests/xxx/yyy.test.php`)
-
 ---
 
 # 표준 워크플로우
@@ -287,6 +264,28 @@ file -I [파일경로]
 ---
 
 # 테스트 가이드라인
+
+- 중요: PHP 테스트는 반드시 `php` 명령으로 직접 실행한다.
+
+```bash
+# ✅ 올바른 방법: PHP 테스트 직접 실행
+php tests/db/db.connection.test.php
+php tests/friend-and-feed/get-friends.test.php
+php tests/xxx/yyy/zzz.test.php
+
+# ❌ 잘못된 방법: docker exec 사용 금지
+docker exec sonub-php php /sonub/tests/db/db.connection.test.php  # 절대 금지!
+docker exec sonub-php php /sonub/tests/xxx/yyy/zzz.test.php      # 절대 금지!
+
+# Playwright E2E Test 실행 (호스트 환경)
+npx playwright test tests/playwright/e2e/user-login.spec.ts
+```
+
+**중요 사항:**
+- PHP Unit Test와 PHP E2E Test는 **호스트 환경에서 직접 실행**
+- `docker exec` 명령은 사용하지 않음
+- 테스트 파일 경로는 상대 경로 사용 (예: `tests/xxx/yyy.test.php`)
+
 
 **필수: 테스트 작업 시 `docs/test.md` 문서 먼저 읽기**
 

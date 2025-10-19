@@ -4,7 +4,7 @@
 class T
 {
 
-    public $texts = DEFAULT_TEXTS;
+    public $texts = TEXTS;
     private array $params = [];
 
     /**
@@ -95,14 +95,6 @@ class T
     {
         $result = [];
         foreach ($this->texts as $key => $value) {
-            $result[$key] = tr($value);
-        }
-        return $result;
-    }
-    public function toDefaultArray(): array
-    {
-        $result = [];
-        foreach (DEFAULT_TEXTS as $key => $value) {
             $result[$key] = tr($value);
         }
         return $result;

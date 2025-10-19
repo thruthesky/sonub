@@ -40,7 +40,7 @@ function get_module_path()
  * - "https://local.sonub.com/about" -> '<link href="/page/about.css" rel="stylesheet">' if the file exists, otherwise ''
  * - "https://local.sonub.com/user/login" -> '<link href="/page/user/login.css" rel="stylesheet">' if the file exists, otherwise ''
  */
-function include_page_css()
+function load_page_css()
 {
     $script = page();
     $path = str_replace('.php', '.css', $script);
@@ -59,7 +59,7 @@ function include_page_css()
  * - "https://local.sonub.com/about" -> '<script defer src="/page/about.js"></script>' if the file exists, otherwise ''
  * - "https://local.sonub.com/user/login" -> '<script defer src="/page/user/login.js"></script>' if the file exists, otherwise ''
  */
-function include_page_js()
+function load_page_js()
 {
     $script = page();
     $path = str_replace('.php', '.js', $script);
