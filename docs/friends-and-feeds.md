@@ -11,6 +11,10 @@
   - [Feed Entries (피드 캐시)](#feed-entries-피드-캐시)
 - [엔터티 간 연관 관계](#엔터티-간-연관-관계)
 - [피드 전송(팬아웃) 흐름](#피드-전송팬아웃-흐름)
+- [친구 요청 상태 변경 및 피드 관리](#친구-요청-상태-변경-및-피드-관리)
+  - [1. 친구 요청 거절 (reject_friend)](#1-친구-요청-거절-reject_friend)
+  - [2. 친구 요청 취소 (cancel_friend_request)](#2-친구-요청-취소-cancel_friend_request)
+  - [3. 친구 관계 삭제 (remove_friend)](#3-친구-관계-삭제-remove_friend)
 - [성능 최적화 전략](#성능-최적화-전략)
 - [실전 쿼리 예제](#실전-쿼리-예제)
 
@@ -370,6 +374,8 @@ $post = create_post([
 
 ### 2단계: 친구 수신자 계산 (Friendships)
 
+**⭐ 핵심 전략: pending 상태도 피드 전파 대상에 포함**
+
 작성자의 친구 목록을 무방향 1행에서 조회:
 
 ```sql
@@ -379,13 +385,22 @@ SELECT CASE
 END AS receiver_id
 FROM friendships
 WHERE (user_id_a = :author OR user_id_b = :author)
-  AND status = 'accepted';
+  AND status IN ('accepted', 'pending'); -- ✅ pending도 포함!
 ```
 
 **예제:**
 - 사용자 ID 5가 글 작성
-- 친구: 1, 3, 10, 15
-- → receiver_id = [1, 3, 10, 15]
+- 친구 (accepted): 1, 3
+- 친구 요청 중 (pending): 10, 15
+- → receiver_id = [1, 3, 10, 15] (모두 피드 전파 대상)
+
+**왜 pending도 포함하나요?**
+
+사이트 운영 초기에는 사용자가 적어서 친구 요청을 보내도 수락까지 시간이 걸릴 수 있습니다.
+pending 상태에서도 피드를 공유하면:
+- 사용자 경험 향상 (즉시 콘텐츠 공유)
+- 활동 유도 (친구 요청만 해도 글을 볼 수 있음)
+- 친구 수락 유도 (상대방의 글을 보고 관심 생김)
 
 ### 3단계: 피드 캐시 삽입 (Feed Entries)
 
@@ -398,7 +413,7 @@ SELECT
   :created_at
 FROM friendships
 WHERE (user_id_a = :author OR user_id_b = :author)
-  AND status = 'accepted'
+  AND status IN ('accepted', 'pending') -- ✅ pending도 포함!
   AND NOT EXISTS (
     -- 양방향 차단 체크
     SELECT 1 FROM blocks
@@ -408,7 +423,7 @@ WHERE (user_id_a = :author OR user_id_b = :author)
 ```
 
 **동작:**
-1. 작성자의 친구 목록 조회
+1. 작성자의 친구 목록 조회 (accepted + pending)
 2. 차단된 사용자 제외
 3. 각 친구의 피드에 게시글 전파
 
@@ -436,6 +451,83 @@ LIMIT 20 OFFSET 0;
 - `ix_receiver_created` 인덱스로 매우 빠른 조회
 - JOIN은 최종 결과 표시를 위한 최소한의 JOIN만 수행
 - 페이지네이션 지원 (LIMIT/OFFSET)
+
+---
+
+## 친구 요청 상태 변경 및 피드 관리
+
+### 1. 친구 요청 거절 (reject_friend)
+
+**동작:**
+```php
+reject_friend(['me' => 10, 'other' => 5]);
+```
+
+**처리 과정:**
+1. friendships 테이블에서 `status='pending'` → `status='rejected'` 변경
+2. **기존 feed_entries는 유지** (삭제하지 않음)
+3. **새로운 글은 전파 안 됨** (fanout_post_to_friends에서 status IN ('accepted', 'pending')만 전파)
+
+**결과:**
+- ✅ reject 이전에 작성된 글은 계속 볼 수 있음
+- ❌ reject 이후 작성된 글은 피드에 전파되지 않음
+
+**사용 시나리오:**
+- 사용자 A가 사용자 B에게 친구 요청을 보냄 (pending)
+- B가 A의 글을 피드에서 볼 수 있음
+- B가 친구 요청을 거절 (rejected)
+- B는 여전히 A의 과거 글을 볼 수 있지만, 새 글은 안 보임
+
+### 2. 친구 요청 취소 (cancel_friend_request)
+
+**동작:**
+```php
+cancel_friend_request(['me' => 5, 'other' => 10]);
+```
+
+**처리 과정:**
+1. 내가 보낸 요청인지 확인 (`requested_by = me`)
+2. friendships 테이블에서 해당 행 **삭제**
+3. **관련 feed_entries 모두 삭제**:
+   - 내가 작성한 글이 상대방 피드에 전파된 것 삭제
+   - 상대방이 작성한 글이 내 피드에 전파된 것 삭제
+
+**SQL:**
+```sql
+-- 1단계: friendship 삭제
+DELETE FROM friendships WHERE user_id_a=:a AND user_id_b=:b;
+
+-- 2단계: 관련 피드 캐시 삭제
+DELETE FROM feed_entries
+WHERE (receiver_id = :me AND post_author_id = :other)
+   OR (receiver_id = :other AND post_author_id = :me);
+```
+
+**결과:**
+- ❌ friendship 관계 완전 삭제
+- ❌ 모든 피드 캐시 삭제
+- ✅ 다시 친구 요청을 보낼 수 있음
+
+**사용 시나리오:**
+- 사용자 A가 사용자 B에게 친구 요청을 보냄 (pending)
+- A와 B 모두 상대방의 글을 피드에서 볼 수 있음
+- A가 친구 요청을 취소 (cancel)
+- A와 B 모두 상대방의 글이 피드에서 사라짐
+
+### 3. 친구 관계 삭제 (remove_friend)
+
+**동작:**
+```php
+remove_friend(['me' => 5, 'other' => 10]);
+```
+
+**처리 과정:**
+1. friendships 테이블에서 `status='accepted'` 행 **삭제**
+2. **feed_entries는 자동 삭제되지 않음** (수동 삭제 필요)
+
+**주의:**
+- 현재는 friendship만 삭제하고 feed_entries는 유지됨
+- 필요 시 cancel_friend_request와 동일하게 feed_entries 삭제 로직 추가 가능
 
 ---
 

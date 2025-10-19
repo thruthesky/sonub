@@ -1,2 +1,2 @@
 <?php
-const APP_VERSION = '2025-10-19-11-24-51';
+const APP_VERSION = '2025-10-19-11-58-30';

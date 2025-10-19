@@ -202,6 +202,130 @@ function remove_friend(array $input): array
 }
 
 /**
+ * 친구 요청 거절 함수 (API 호출 가능)
+ *
+ * pending 상태의 친구 요청을 rejected로 변경합니다.
+ * 기존 feed_entries는 유지되며, 새로운 글만 전파가 중단됩니다.
+ *
+ * @param array $input 입력 파라미터
+ *   - int $input['me'] 요청을 거절하는 사용자 ID
+ *   - int $input['other'] 요청을 보낸 사용자 ID
+ * @return array 성공 여부 및 메시지
+ * @throws ApiException 에러 발생 시
+ *
+ * @example
+ * // PHP에서 호출
+ * $result = reject_friend(['me' => 10, 'other' => 5]);
+ *
+ * // JavaScript에서 API 호출
+ * const result = await func('reject_friend', { me: 10, other: 5, auth: true });
+ */
+function reject_friend(array $input): array
+{
+    // 파라미터 추출 및 검증
+    $me = (int)($input['me'] ?? 0);
+    $other = (int)($input['other'] ?? 0);
+
+    if ($me <= 0) {
+        error('invalid-me', '유효하지 않은 사용자 ID입니다');
+    }
+
+    if ($other <= 0) {
+        error('invalid-other', '유효하지 않은 대상 사용자 ID입니다');
+    }
+
+    // 비즈니스 로직 수행
+    $pdo = pdo();
+    [$a, $b] = friend_pair($me, $other);
+    $sql = "UPDATE friendships
+               SET status='rejected', updated_at=:now
+             WHERE user_id_a=:a AND user_id_b=:b AND status='pending'";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([':a' => $a, ':b' => $b, ':now' => now_epoch()]);
+
+    $success = $stmt->rowCount() > 0;
+
+    if (!$success) {
+        error('no-pending-request', '거절할 친구 요청이 없습니다');
+    }
+
+    // 주의: 기존 feed_entries는 삭제하지 않음 (reject 이전 글은 계속 볼 수 있음)
+    // 새로운 글만 전파가 중단됨 (fanout_post_to_friends에서 status IN ('accepted', 'pending')만 전파)
+
+    return ['message' => '친구 요청을 거절했습니다', 'success' => true];
+}
+
+/**
+ * 친구 요청 취소 함수 (API 호출 가능)
+ *
+ * 내가 보낸 친구 요청을 취소하고, 관련 피드 캐시도 삭제합니다.
+ * friendships 테이블에서 행을 삭제하며, 해당 friendship으로 전파된 feed_entries도 삭제합니다.
+ *
+ * @param array $input 입력 파라미터
+ *   - int $input['me'] 요청을 취소하는 사용자 ID (요청을 보낸 사람)
+ *   - int $input['other'] 요청을 받은 사용자 ID
+ * @return array 성공 여부 및 메시지
+ * @throws ApiException 에러 발생 시
+ *
+ * @example
+ * // PHP에서 호출
+ * $result = cancel_friend_request(['me' => 5, 'other' => 10]);
+ *
+ * // JavaScript에서 API 호출
+ * const result = await func('cancel_friend_request', { me: 5, other: 10, auth: true });
+ */
+function cancel_friend_request(array $input): array
+{
+    // 파라미터 추출 및 검증
+    $me = (int)($input['me'] ?? 0);
+    $other = (int)($input['other'] ?? 0);
+
+    if ($me <= 0) {
+        error('invalid-me', '유효하지 않은 사용자 ID입니다');
+    }
+
+    if ($other <= 0) {
+        error('invalid-other', '유효하지 않은 대상 사용자 ID입니다');
+    }
+
+    // 비즈니스 로직 수행
+    $pdo = pdo();
+    [$a, $b] = friend_pair($me, $other);
+
+    // 1단계: 내가 보낸 요청인지 확인 (requested_by = me)
+    $sql = "SELECT id FROM friendships
+            WHERE user_id_a=:a AND user_id_b=:b AND status='pending' AND requested_by=:me";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([':a' => $a, ':b' => $b, ':me' => $me]);
+    $friendship = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$friendship) {
+        error('no-pending-request', '취소할 친구 요청이 없습니다 (내가 보낸 요청이 아니거나 이미 처리되었습니다)');
+    }
+
+    // 2단계: friendship 삭제
+    $sql = "DELETE FROM friendships WHERE user_id_a=:a AND user_id_b=:b";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([':a' => $a, ':b' => $b]);
+
+    // 3단계: 해당 friendship으로 전파된 feed_entries 삭제
+    // - 내가 작성한 글이 상대방 피드에 전파된 것 삭제
+    // - 상대방이 작성한 글이 내 피드에 전파된 것 삭제
+    $sql = "DELETE FROM feed_entries
+            WHERE (receiver_id = :me1 AND post_author_id = :other1)
+               OR (receiver_id = :other2 AND post_author_id = :me2)";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        ':me1' => $me,
+        ':other1' => $other,
+        ':other2' => $other,
+        ':me2' => $me
+    ]);
+
+    return ['message' => '친구 요청을 취소했습니다', 'success' => true];
+}
+
+/**
  * 사용자의 친구 ID 목록 조회 함수 (API 호출 가능)
  *
  * accepted 상태의 친구 관계만 조회하여 친구 ID 배열을 반환합니다.
@@ -665,6 +789,7 @@ function get_post_row(int $post_id): ?array
  *
  * 게시글 작성 시 작성자의 모든 친구에게 feed_entries를 미리 생성합니다.
  * INSERT IGNORE를 사용하여 중복 삽입을 방지합니다.
+ * accepted 상태뿐만 아니라 pending 상태의 친구에게도 전파합니다.
  * (내부 전용 - create_post()에서 자동 호출)
  *
  * @param int $author_id 게시글 작성자 ID
@@ -674,7 +799,7 @@ function get_post_row(int $post_id): ?array
  *
  * @example
  * $count = fanout_post_to_friends(5, 100, time());
- * // 사용자 5의 친구들에게 게시글 100을 피드에 전파
+ * // 사용자 5의 친구들(accepted + pending)에게 게시글 100을 피드에 전파
  */
 function fanout_post_to_friends(int $author_id, int $post_id, int $created_at): int
 {
@@ -687,7 +812,7 @@ function fanout_post_to_friends(int $author_id, int $post_id, int $created_at): 
                             :created_at
                             FROM friendships
                          WHERE (user_id_a = :author_where_a OR user_id_b = :author_where_b)
-                             AND status='accepted'";
+                             AND status IN ('accepted', 'pending')";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':author_case' => $author_id,
@@ -908,12 +1033,19 @@ function finalize_feed_with_visibility(int $me, array $items): array
         if ($vis === 'private' && $author !== $me) continue;
         if ($vis === 'friends' && $author !== $me && !in_array($author, $friend_ids, true)) continue;
 
+        // files 필드를 배열로 변환 (콤마로 구분된 문자열 → 배열)
+        $files = [];
+        if (!empty($post['files'])) {
+            $files = array_map('trim', explode(',', $post['files']));
+        }
+
         $out[] = [
             'post_id'    => (int)$post['id'],
             'author_id'  => $author,
             'category'   => $post['category'],
             'title'      => $post['title'],
             'content'    => $post['content'],
+            'files'      => $files,
             'created_at' => (int)$post['created_at'],
             'visibility' => $vis,
         ];

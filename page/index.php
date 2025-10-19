@@ -15,17 +15,32 @@ load_page_css();
 </div>
 
 <?php
-$offset = ($page - 1) * $per_page;
-$postList = list_posts([
-    'user_id' => login() ? login()->id : null,
-    'limit' => $per_page,
-    'offset' => $offset,
-    'page' => $page
-]);
+// 로그인한 사용자의 피드 조회 (내 글 + 친구 글 + pending 상태 친구 글)
+// get_hybrid_feed()는 feed_entries 캐시를 사용하여 고속 조회
+if (login()) {
+    $offset = ($page - 1) * $per_page;
+    $feedItems = get_hybrid_feed([
+        'me' => login()->id,
+        'limit' => $per_page,
+        'offset' => $offset
+    ]);
 
-
-
-
+    // get_hybrid_feed()는 배열을 직접 반환하므로, list_posts() 형식으로 변환
+    $postList = [
+        'posts' => $feedItems,
+        'page' => $page,
+        'isEmpty' => empty($feedItems),
+        'isLastPage' => count($feedItems) < $per_page
+    ];
+} else {
+    // 비로그인 사용자: 빈 피드 표시
+    $postList = [
+        'posts' => [],
+        'page' => 1,
+        'isEmpty' => true,
+        'isLastPage' => true
+    ];
+}
 ?>
 
 <style>
@@ -70,12 +85,15 @@ $postList = list_posts([
 
                     <!-- 게시물 목록 -->
                     <div v-else>
-                        <article v-for="post in postList.posts" :key="post.id" class="post-card card mb-3">
+                        <article v-for="post in postList.posts" :key="post.post_id" class="post-card card mb-3">
                             <div class="card-body">
+                                <!-- 게시물 제목 (있는 경우) -->
+                                <h5 v-if="post.title" class="card-title mb-2">{{ post.title }}</h5>
+
                                 <!-- 게시물 내용 -->
                                 <div v-if="post.content" class="post-content mb-3" v-html="formatContent(post.content)"></div>
 
-                                <!-- 게시물 사진들 -->
+                                <!-- 게시물 사진들 (향후 files 필드 추가 시) -->
                                 <div v-if="hasPhotos(post.files)" class="post-photos mb-3">
                                     <div class="row g-2">
                                         <div v-for="(fileUrl, index) in getValidPhotos(post.files)" :key="index"
@@ -91,8 +109,10 @@ $postList = list_posts([
 
                                 <!-- 게시물 메타 정보 -->
                                 <div class="post-meta text-muted small mt-2">
-                                    <span>작성자: {{ post.user_display_name || '익명' }}</span>
+                                    <span>작성자 ID: {{ post.author_id }}</span>
+                                    <span class="ms-3">카테고리: {{ post.category }}</span>
                                     <span class="ms-3">작성일: {{ formatDate(post.created_at) }}</span>
+                                    <span class="ms-3 badge bg-secondary">{{ post.visibility }}</span>
                                 </div>
                             </div>
                         </article>
@@ -114,18 +134,19 @@ $postList = list_posts([
                     }
                     const nextPage = this.postList.page + 1;
                     try {
-                        const obj = await func('list_posts', {
-                            category: '<?= $category ?>',
-                            user_id: <?= login() ? login()->id : 'null' ?>,
+                        // get_hybrid_feed() API 호출로 변경
+                        const offset = nextPage * <?= $per_page ?>;
+                        const feedItems = await func('get_hybrid_feed', {
+                            me: <?= login() ? login()->id : 'null' ?>,
                             limit: <?= $per_page ?>,
-                            page: nextPage,
+                            offset: offset,
                             alertOnError: true,
                         });
-                        console.log('다음 페이지 데이터:', obj);
-                        if (obj.posts && obj.posts.length > 0) {
-                            this.postList.posts.push(...obj.posts);
+                        console.log('다음 페이지 데이터:', feedItems);
+                        if (feedItems && feedItems.length > 0) {
+                            this.postList.posts.push(...feedItems);
                             this.postList.page = nextPage;
-                            this.postList.isLastPage = obj.posts.length < <?= $per_page ?>;
+                            this.postList.isLastPage = feedItems.length < <?= $per_page ?>;
                             console.log(nextPage + '번 째 페이지 로드 완료, 총 게시물 수:', this.postList.posts.length);
                         } else {
                             this.postList.isLastPage = true;
