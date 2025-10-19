@@ -287,6 +287,88 @@ function count_friend_requests_sent(array $input): int
 }
 
 /**
+ * 내가 보낸 친구 요청 목록 조회 함수 (API 호출 가능)
+ *
+ * pending 상태의 친구 요청 중 내가 요청을 보낸 항목을 상세 정보와 함께 반환합니다.
+ *
+ * @param array $input 입력 파라미터
+ *   - int $input['me'] 요청 목록을 조회할 사용자 ID
+ *   - int $input['limit'] 조회할 최대 건수 (기본값 20, 최대 100)
+ *   - int $input['offset'] 시작 위치 (기본값 0)
+ *   - string $input['order_by'] 정렬 기준 (updated_at, created_at, display_name)
+ *   - string $input['order'] 정렬 순서 (ASC, DESC)
+ * @return array 보낸 친구 요청 목록
+ * @throws ApiException 에러 발생 시
+ */
+function get_friend_requests_sent(array $input): array
+{
+    $me = (int)($input['me'] ?? 0);
+    if ($me <= 0) {
+        error('invalid-me', '유효하지 않은 사용자 ID입니다');
+    }
+
+    $limit = (int)($input['limit'] ?? 20);
+    if ($limit <= 0 || $limit > 100) {
+        $limit = 20;
+    }
+
+    $offset = (int)($input['offset'] ?? 0);
+    if ($offset < 0) {
+        $offset = 0;
+    }
+
+    $orderBy = $input['order_by'] ?? 'updated_at';
+    $order = strtoupper($input['order'] ?? 'DESC');
+
+    $orderByWhitelist = [
+        'updated_at' => 'f.updated_at',
+        'created_at' => 'f.created_at',
+        'display_name' => 'u.display_name',
+    ];
+    $orderBySql = $orderByWhitelist[$orderBy] ?? $orderByWhitelist['updated_at'];
+    $orderSql = $order === 'ASC' ? 'ASC' : 'DESC';
+
+    $pdo = pdo();
+    $sql = "SELECT
+                CASE WHEN f.user_id_a = :me_case THEN f.user_id_b ELSE f.user_id_a END AS receiver_id,
+                u.display_name,
+                u.photo_url,
+                f.requested_by,
+                f.created_at,
+                f.updated_at
+            FROM friendships f
+            INNER JOIN users u ON u.id = CASE WHEN f.user_id_a = :me_join THEN f.user_id_b ELSE f.user_id_a END
+            WHERE (f.user_id_a = :me_where_a OR f.user_id_b = :me_where_b)
+              AND f.status = 'pending'
+              AND f.requested_by = :me_requester
+            ORDER BY {$orderBySql} {$orderSql}
+            LIMIT :limit OFFSET :offset";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(':me_case', $me, PDO::PARAM_INT);
+    $stmt->bindValue(':me_join', $me, PDO::PARAM_INT);
+    $stmt->bindValue(':me_where_a', $me, PDO::PARAM_INT);
+    $stmt->bindValue(':me_where_b', $me, PDO::PARAM_INT);
+    $stmt->bindValue(':me_requester', $me, PDO::PARAM_INT);
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    return array_map(static function (array $row): array {
+        return [
+            'user_id' => (int)$row['receiver_id'],
+            'display_name' => $row['display_name'] ?? '',
+            'photo_url' => $row['photo_url'] ?? '',
+            'requested_by' => (int)$row['requested_by'],
+            'created_at' => (int)$row['created_at'],
+            'updated_at' => (int)$row['updated_at'],
+        ];
+    }, $rows);
+}
+
+/**
  * 내가 받은 친구 요청 수 카운트 함수 (API 호출 가능)
  *
  * pending 상태의 친구 요청 중에서 상대방이 나에게 요청을 보낸 건수를 카운트합니다.

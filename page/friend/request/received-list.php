@@ -49,9 +49,9 @@ if ($user) {
                             <div class="list-group-item list-group-item-action py-3">
                                 <div class="d-flex align-items-center">
                                     <?php if (!empty($request['photo_url'])): ?>
-                                        <img src="<?= htmlspecialchars($request['photo_url']) ?>" alt="<?= htmlspecialchars($request['display_name']) ?>" class="rounded-circle flex-shrink-0" width="48" height="48">
+                                        <img src="<?= htmlspecialchars($request['photo_url']) ?>" alt="<?= htmlspecialchars($request['display_name']) ?>" class="rounded-circle flex-shrink-0 friend-request-avatar object-fit-cover">
                                     <?php else: ?>
-                                        <div class="rounded-circle bg-light border d-flex align-items-center justify-content-center flex-shrink-0" style="width:48px;height:48px;">
+                                        <div class="rounded-circle bg-light border d-flex align-items-center justify-content-center flex-shrink-0 friend-request-avatar">
                                             <i class="bi bi-person fs-4 text-secondary"></i>
                                         </div>
                                     <?php endif; ?>

@@ -435,10 +435,38 @@ assert_throws(
 echo "\n";
 
 // ============================================================================
-// 테스트 9: get_post_row() 내부 함수
+// 테스트 9: get_friend_requests_sent() 함수
 // ============================================================================
 
-echo "테스트 9: get_post_row() 함수\n";
+echo "테스트 9: get_friend_requests_sent() 함수\n";
+echo "----------------------------------------\n";
+
+$sentRequests = get_friend_requests_sent(['me' => 1500]);
+assert_true(is_array($sentRequests) && count($sentRequests) === 1, "1500이 보낸 친구 요청 1건 반환");
+$firstSent = $sentRequests[0];
+assert_true($firstSent['user_id'] === 1501, "요청 대상 사용자 ID가 올바름");
+assert_true($firstSent['display_name'] === 'TestUser1501', "요청 대상 사용자 이름이 올바름");
+assert_true($firstSent['requested_by'] === 1500, "requested_by 값이 요청자와 일치");
+
+$noSent = get_friend_requests_sent(['me' => 1501]);
+assert_true(count($noSent) === 0, "요청 받은 사용자는 보낸 요청 목록이 비어 있음");
+
+$sentCount = count_friend_requests_sent(['me' => 1500]);
+assert_true($sentCount === 1, "보낸 요청 수 카운트와 목록 길이가 일치");
+
+assert_throws(
+    fn() => get_friend_requests_sent(['me' => 0]),
+    'invalid-me',
+    "me가 0일 때 'invalid-me' 에러 발생"
+);
+
+echo "\n";
+
+// ============================================================================
+// 테스트 10: get_post_row() 내부 함수
+// ============================================================================
+
+echo "테스트 10: get_post_row() 함수\n";
 echo "----------------------------------------\n";
 
 // 존재하지 않는 게시글
@@ -460,10 +488,10 @@ if ($first_post) {
 echo "\n";
 
 // ============================================================================
-// 테스트 10: fanout_post_to_friends() 함수
+// 테스트 11: fanout_post_to_friends() 함수
 // ============================================================================
 
-echo "테스트 10: fanout_post_to_friends() 함수\n";
+echo "테스트 11: fanout_post_to_friends() 함수\n";
 echo "----------------------------------------\n";
 
 // 준비: 친구 관계 생성 (작성자 1100, 수신자 1101/1102)
