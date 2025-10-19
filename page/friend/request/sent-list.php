@@ -44,9 +44,9 @@ if ($user) {
                         <?= t()->보낸_친구_요청이_없습니다 ?>
                     </div>
                 <?php else: ?>
-                    <div class="list-group">
+                    <div class="list-group" id="sent-requests-list">
                         <?php foreach ($requests as $request): ?>
-                            <div class="list-group-item list-group-item-action py-3">
+                            <div class="list-group-item list-group-item-action py-3" data-request-id="<?= $request['user_id'] ?>">
                                 <div class="d-flex align-items-center">
                                     <?php if (!empty($request['photo_url'])): ?>
                                         <img src="<?= htmlspecialchars($request['photo_url']) ?>" alt="<?= htmlspecialchars($request['display_name']) ?>" class="rounded-circle flex-shrink-0 friend-request-avatar object-fit-cover">
@@ -64,6 +64,11 @@ if ($user) {
                                             <?= date('Y-m-d H:i', $request['updated_at'] ?: $request['created_at']) ?>
                                         </div>
                                     </div>
+                                    <div class="ms-3">
+                                        <button class="btn btn-sm btn-outline-danger cancel-btn" data-user-id="<?= $request['user_id'] ?>" title="<?= t()->취소 ?>">
+                                            <i class="bi bi-x-circle"></i> <?= t()->취소 ?>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -73,6 +78,55 @@ if ($user) {
         </div>
     </div>
 </div>
+
+<script>
+ready(() => {
+    // 취소 버튼 이벤트
+    document.querySelectorAll('.cancel-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const userId = parseInt(this.dataset.userId);
+            const listItem = this.closest('[data-request-id]');
+
+            if (!confirm('<?= t()->친구_요청을_취소하시겠습니까 ?>')) {
+                return;
+            }
+
+            try {
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> <?= t()->처리중 ?>';
+
+                // 친구 요청 취소 (cancel_friend_request 함수 사용)
+                await func('cancel_friend_request', {
+                    me: <?= $user ? $user->id : 0 ?>,
+                    other: userId,
+                    auth: true
+                });
+
+                // 리스트에서 제거 (애니메이션)
+                listItem.style.transition = 'opacity 0.3s, transform 0.3s';
+                listItem.style.opacity = '0';
+                listItem.style.transform = 'translateX(-100%)';
+
+                setTimeout(() => {
+                    listItem.remove();
+
+                    // 남은 요청이 없으면 페이지 새로고침
+                    const remainingRequests = document.querySelectorAll('#sent-requests-list [data-request-id]');
+                    if (remainingRequests.length === 0) {
+                        location.reload();
+                    }
+                }, 300);
+
+                alert('<?= t()->친구_요청을_취소했습니다 ?>');
+            } catch (error) {
+                console.error('친구 요청 취소 오류:', error);
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-x-circle"></i> <?= t()->취소 ?>';
+            }
+        });
+    });
+});
+</script>
 
 <?php
 /**
@@ -122,6 +176,30 @@ function inject_friend_request_sent_list_language(): void
             'en' => 'Requested at',
             'ja' => '申請時間',
             'zh' => '请求时间',
+        ],
+        '취소' => [
+            'ko' => '취소',
+            'en' => 'Cancel',
+            'ja' => 'キャンセル',
+            'zh' => '取消',
+        ],
+        '처리중' => [
+            'ko' => '처리중...',
+            'en' => 'Processing...',
+            'ja' => '処理中...',
+            'zh' => '处理中...',
+        ],
+        '친구_요청을_취소하시겠습니까' => [
+            'ko' => '친구 요청을 취소하시겠습니까?',
+            'en' => 'Do you want to cancel this friend request?',
+            'ja' => '友達申請をキャンセルしますか？',
+            'zh' => '您要取消此好友请求吗？',
+        ],
+        '친구_요청을_취소했습니다' => [
+            'ko' => '친구 요청을 취소했습니다',
+            'en' => 'Friend request cancelled',
+            'ja' => '友達申請をキャンセルしました',
+            'zh' => '已取消好友请求',
         ],
     ]);
 }

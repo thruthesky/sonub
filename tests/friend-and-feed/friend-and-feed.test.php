@@ -136,7 +136,7 @@ $pdo->exec("DELETE FROM friendships WHERE user_id_a >= 1000 OR user_id_b >= 1000
 $pdo->exec("DELETE FROM feed_entries WHERE receiver_id >= 1000");
 
 // 테스트용 사용자 생성
-$testUserIds = array_merge(range(1001, 1015), [1100, 1101, 1102, 1201, 1500, 1501]);
+$testUserIds = array_merge(range(1001, 1019), [1100, 1101, 1102, 1201, 1500, 1501]);
 $now = time();
 foreach ($testUserIds as $testUserId) {
     ensure_test_user($pdo, $testUserId, $now);
@@ -314,10 +314,57 @@ assert_throws(
 echo "\n";
 
 // ============================================================================
-// 테스트 5: remove_friend() 함수
+// 테스트 5: cancel_friend_request() 함수
 // ============================================================================
 
-echo "테스트 5: remove_friend() 함수\n";
+echo "테스트 5: cancel_friend_request() 함수\n";
+echo "----------------------------------------\n";
+
+request_friend(['me' => 1016, 'other' => 1017]);
+$cancelResult = cancel_friend_request(['me' => 1016, 'other' => 1017]);
+assert_true($cancelResult['success'] === true, "친구 요청 취소 성공");
+
+$canceled = fetch_friendship(1016, 1017);
+assert_true($canceled === null, "친구 요청 취소 후 friendships 행 삭제");
+
+$sentPending = count_friend_requests_sent(['me' => 1016]);
+assert_true($sentPending === 0, "취소 후 보낸 요청 수가 0");
+
+assert_throws(
+    fn() => cancel_friend_request(['me' => 1016, 'other' => 1017]),
+    'no-pending-request',
+    "이미 취소된 요청은 다시 취소할 수 없음"
+);
+
+echo "\n";
+
+// ============================================================================
+// 테스트 6: reject_friend() 함수
+// ============================================================================
+
+echo "테스트 6: reject_friend() 함수\n";
+echo "----------------------------------------\n";
+
+request_friend(['me' => 1018, 'other' => 1019]);
+$rejectResult = reject_friend(['me' => 1019, 'other' => 1018]);
+assert_true($rejectResult['success'] === true, "친구 요청 거절 성공");
+
+$rejectedFriendship = fetch_friendship(1018, 1019);
+assert_true($rejectedFriendship !== null && $rejectedFriendship['status'] === 'rejected', "거절 후 상태가 'rejected'");
+
+assert_throws(
+    fn() => reject_friend(['me' => 1019, 'other' => 1018]),
+    'no-pending-request',
+    "이미 거절된 요청은 다시 거절할 수 없음"
+);
+
+echo "\n";
+
+// ============================================================================
+// 테스트 7: remove_friend() 함수
+// ============================================================================
+
+echo "테스트 7: remove_friend() 함수\n";
 echo "----------------------------------------\n";
 
 // 정상 케이스: 친구 관계 삭제
@@ -344,10 +391,10 @@ assert_throws(
 echo "\n";
 
 // ============================================================================
-// 테스트 6: 복합 시나리오 - 여러 친구
+// 테스트 8: 복합 시나리오 - 여러 친구
 // ============================================================================
 
-echo "테스트 6: 복합 시나리오 - 여러 친구\n";
+echo "테스트 8: 복합 시나리오 - 여러 친구\n";
 echo "----------------------------------------\n";
 
 // 사용자 1001이 여러 명에게 친구 요청
@@ -373,10 +420,10 @@ assert_true(
 echo "\n";
 
 // ============================================================================
-// 테스트 7: is_blocked_either_way() 내부 함수 (차단 기능)
+// 테스트 9: is_blocked_either_way() 내부 함수 (차단 기능)
 // ============================================================================
 
-echo "테스트 7: is_blocked_either_way() 함수\n";
+echo "테스트 9: is_blocked_either_way() 함수\n";
 echo "----------------------------------------\n";
 
 // 차단 없음
@@ -400,10 +447,10 @@ $pdo->exec("DELETE FROM blocks WHERE blocker_id >= 1000");
 echo "\n";
 
 // ============================================================================
-// 테스트 8: get_friend_requests_received() 함수
+// 테스트 10: get_friend_requests_received() 함수
 // ============================================================================
 
-echo "테스트 8: get_friend_requests_received() 함수\n";
+echo "테스트 10: get_friend_requests_received() 함수\n";
 echo "----------------------------------------\n";
 
 // 기존 데이터 초기화 후 요청 생성
@@ -435,10 +482,10 @@ assert_throws(
 echo "\n";
 
 // ============================================================================
-// 테스트 9: get_friend_requests_sent() 함수
+// 테스트 11: get_friend_requests_sent() 함수
 // ============================================================================
 
-echo "테스트 9: get_friend_requests_sent() 함수\n";
+echo "테스트 11: get_friend_requests_sent() 함수\n";
 echo "----------------------------------------\n";
 
 $sentRequests = get_friend_requests_sent(['me' => 1500]);
@@ -463,10 +510,10 @@ assert_throws(
 echo "\n";
 
 // ============================================================================
-// 테스트 10: get_post_row() 내부 함수
+// 테스트 12: get_post_row() 내부 함수
 // ============================================================================
 
-echo "테스트 10: get_post_row() 함수\n";
+echo "테스트 12: get_post_row() 함수\n";
 echo "----------------------------------------\n";
 
 // 존재하지 않는 게시글
@@ -488,10 +535,10 @@ if ($first_post) {
 echo "\n";
 
 // ============================================================================
-// 테스트 11: fanout_post_to_friends() 함수
+// 테스트 13: fanout_post_to_friends() 함수
 // ============================================================================
 
-echo "테스트 11: fanout_post_to_friends() 함수\n";
+echo "테스트 13: fanout_post_to_friends() 함수\n";
 echo "----------------------------------------\n";
 
 // 준비: 친구 관계 생성 (작성자 1100, 수신자 1101/1102)

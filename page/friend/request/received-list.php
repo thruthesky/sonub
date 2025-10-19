@@ -44,9 +44,9 @@ if ($user) {
                         <?= t()->받은_친구_요청이_없습니다 ?>
                     </div>
                 <?php else: ?>
-                    <div class="list-group">
+                    <div class="list-group" id="received-requests-list">
                         <?php foreach ($requests as $request): ?>
-                            <div class="list-group-item list-group-item-action py-3">
+                            <div class="list-group-item list-group-item-action py-3" data-request-id="<?= $request['user_id'] ?>">
                                 <div class="d-flex align-items-center">
                                     <?php if (!empty($request['photo_url'])): ?>
                                         <img src="<?= htmlspecialchars($request['photo_url']) ?>" alt="<?= htmlspecialchars($request['display_name']) ?>" class="rounded-circle flex-shrink-0 friend-request-avatar object-fit-cover">
@@ -64,6 +64,14 @@ if ($user) {
                                             <?= date('Y-m-d H:i', $request['updated_at'] ?: $request['created_at']) ?>
                                         </div>
                                     </div>
+                                    <div class="ms-3 d-flex gap-2">
+                                        <button class="btn btn-sm btn-success accept-btn" data-user-id="<?= $request['user_id'] ?>" title="<?= t()->수락 ?>">
+                                            <i class="bi bi-check-circle"></i> <?= t()->수락 ?>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger reject-btn" data-user-id="<?= $request['user_id'] ?>" title="<?= t()->거절 ?>">
+                                            <i class="bi bi-x-circle"></i> <?= t()->거절 ?>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -73,6 +81,96 @@ if ($user) {
         </div>
     </div>
 </div>
+
+<script>
+ready(() => {
+    // 수락 버튼 이벤트
+    document.querySelectorAll('.accept-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const userId = parseInt(this.dataset.userId);
+            const listItem = this.closest('[data-request-id]');
+
+            try {
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> <?= t()->처리중 ?>';
+
+                // 친구 요청 수락
+                await func('accept_friend', {
+                    me: <?= $user ? $user->id : 0 ?>,
+                    other: userId,
+                    auth: true
+                });
+
+                // 리스트에서 제거 (애니메이션)
+                listItem.style.transition = 'opacity 0.3s, transform 0.3s';
+                listItem.style.opacity = '0';
+                listItem.style.transform = 'translateX(100%)';
+
+                setTimeout(() => {
+                    listItem.remove();
+
+                    // 남은 요청이 없으면 메시지 표시
+                    const remainingRequests = document.querySelectorAll('#received-requests-list [data-request-id]');
+                    if (remainingRequests.length === 0) {
+                        location.reload();
+                    }
+                }, 300);
+
+                alert('<?= t()->친구_요청을_수락했습니다 ?>');
+            } catch (error) {
+                console.error('친구 요청 수락 오류:', error);
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-check-circle"></i> <?= t()->수락 ?>';
+            }
+        });
+    });
+
+    // 거절 버튼 이벤트
+    document.querySelectorAll('.reject-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const userId = parseInt(this.dataset.userId);
+            const listItem = this.closest('[data-request-id]');
+
+            if (!confirm('<?= t()->친구_요청을_거절하시겠습니까 ?>')) {
+                return;
+            }
+
+            try {
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> <?= t()->처리중 ?>';
+
+                // 친구 요청 거절
+                await func('reject_friend', {
+                    me: <?= $user ? $user->id : 0 ?>,
+                    other: userId,
+                    auth: true
+                });
+
+                // 리스트에서 제거 (애니메이션)
+                listItem.style.transition = 'opacity 0.3s, transform 0.3s';
+                listItem.style.opacity = '0';
+                listItem.style.transform = 'translateX(-100%)';
+
+                setTimeout(() => {
+                    listItem.remove();
+
+                    // 남은 요청이 없으면 메시지 표시
+                    const remainingRequests = document.querySelectorAll('#received-requests-list [data-request-id]');
+                    if (remainingRequests.length === 0) {
+                        location.reload();
+                    }
+                }, 300);
+
+                alert('<?= t()->친구_요청을_거절했습니다 ?>');
+            } catch (error) {
+                console.error('친구 요청 거절 오류:', error);
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-x-circle"></i> <?= t()->거절 ?>';
+            }
+        });
+    });
+});
+</script>
 
 <?php
 /**
@@ -122,6 +220,42 @@ function inject_friend_request_received_list_language(): void
             'en' => 'Requested at',
             'ja' => '申請時間',
             'zh' => '请求时间',
+        ],
+        '수락' => [
+            'ko' => '수락',
+            'en' => 'Accept',
+            'ja' => '承認',
+            'zh' => '接受',
+        ],
+        '거절' => [
+            'ko' => '거절',
+            'en' => 'Reject',
+            'ja' => '拒否',
+            'zh' => '拒绝',
+        ],
+        '처리중' => [
+            'ko' => '처리중...',
+            'en' => 'Processing...',
+            'ja' => '処理中...',
+            'zh' => '处理中...',
+        ],
+        '친구_요청을_수락했습니다' => [
+            'ko' => '친구 요청을 수락했습니다',
+            'en' => 'Friend request accepted',
+            'ja' => '友達申請を承認しました',
+            'zh' => '已接受好友请求',
+        ],
+        '친구_요청을_거절하시겠습니까' => [
+            'ko' => '친구 요청을 거절하시겠습니까?',
+            'en' => 'Do you want to reject this friend request?',
+            'ja' => '友達申請を拒否しますか？',
+            'zh' => '您要拒绝此好友请求吗？',
+        ],
+        '친구_요청을_거절했습니다' => [
+            'ko' => '친구 요청을 거절했습니다',
+            'en' => 'Friend request rejected',
+            'ja' => '友達申請を拒否しました',
+            'zh' => '已拒绝好友请求',
         ],
     ]);
 }
