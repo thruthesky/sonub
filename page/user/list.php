@@ -59,15 +59,25 @@ load_deferred_js('infinite-scroll');
                 </button>
 
                 <!-- Received Requests Button -->
-                <a href="<?= href()->friend->request_received ?>" class="btn btn-outline-success">
+                <a href="<?= href()->friend->request_received ?>" class="btn btn-outline-success position-relative">
                     <i class="bi bi-inbox me-2"></i>
                     <?= t()->받은_요청 ?>
+                    <span v-if="friendRequestsReceivedCount > 0"
+                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {{ friendRequestsReceivedCount }}
+                        <span class="visually-hidden"><?= t()->받은_친구_요청 ?></span>
+                    </span>
                 </a>
 
                 <!-- Sent Requests Button -->
-                <a href="<?= href()->friend->request_sent ?>" class="btn btn-outline-info">
+                <a href="<?= href()->friend->request_sent ?>" class="btn btn-outline-info position-relative">
                     <i class="bi bi-send me-2"></i>
                     <?= t()->보낸_요청 ?>
+                    <span v-if="friendRequestsSentCount > 0"
+                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
+                        {{ friendRequestsSentCount }}
+                        <span class="visually-hidden"><?= t()->보낸_친구_요청 ?></span>
+                    </span>
                 </a>
             </div>
 
@@ -284,7 +294,10 @@ load_deferred_js('infinite-scroll');
                     perPage: <?= json_encode($hydrationData['perPage']) ?>,
                     loading: false,
                     hasMore: true,
-                    myUserId: <?= login() ? login()->id : 'null' ?> // 로그인한 사용자 ID
+                    myUserId: <?= login() ? login()->id : 'null' ?>, // 로그인한 사용자 ID
+                    // 친구 요청 수
+                    friendRequestsSentCount: 0,
+                    friendRequestsReceivedCount: 0
                 };
             },
             computed: {
@@ -417,6 +430,40 @@ load_deferred_js('infinite-scroll');
                         const errorMessage = error.message || error.error_message || '<?= t()->친구_요청에_실패했습니다 ?>';
                         alert(`<?= t()->친구_요청_실패 ?>: ${errorMessage}`);
                     }
+                },
+
+                /**
+                 * 친구 요청 수 카운트 조회
+                 * 로그인한 사용자의 보낸/받은 친구 요청 수를 조회합니다.
+                 */
+                async loadFriendRequestCounts() {
+                    // 로그인 확인
+                    if (!this.myUserId) {
+                        return;
+                    }
+
+                    try {
+                        // 보낸 친구 요청 수 조회
+                        const sentCount = await func('count_friend_requests_sent', {
+                            me: this.myUserId
+                        });
+
+                        // 받은 친구 요청 수 조회
+                        const receivedCount = await func('count_friend_requests_received', {
+                            me: this.myUserId
+                        });
+
+                        // 데이터 업데이트
+                        this.friendRequestsSentCount = sentCount;
+                        this.friendRequestsReceivedCount = receivedCount;
+
+                        console.log('[user-list] 친구 요청 수 로드 완료:', {
+                            sent: sentCount,
+                            received: receivedCount
+                        });
+                    } catch (error) {
+                        console.error('친구 요청 수 조회 실패:', error);
+                    }
                 }
             },
             mounted() {
@@ -431,6 +478,9 @@ load_deferred_js('infinite-scroll');
                     debounceDelay: 200, // 200ms 디바운스
                     initialScrollToBottom: false // 페이지 로드 시 자동 스크롤 안 함
                 });
+
+                // 친구 요청 수 로드
+                this.loadFriendRequestCounts();
 
                 console.log('[user-list] 사용자 목록 페이지 초기화 완료:', {
                     totalUsers: this.users.length,
@@ -595,6 +645,18 @@ function inject_list_language()
             'en' => 'Sent Requests',
             'ja' => '送信したリクエスト',
             'zh' => '发送的请求'
+        ],
+        '받은_친구_요청' => [
+            'ko' => '받은 친구 요청',
+            'en' => 'Received friend requests',
+            'ja' => '受信したフレンドリクエスト',
+            'zh' => '收到的好友请求'
+        ],
+        '보낸_친구_요청' => [
+            'ko' => '보낸 친구 요청',
+            'en' => 'Sent friend requests',
+            'ja' => '送信したフレンドリクエスト',
+            'zh' => '发送的好友请求'
         ],
     ]);
 }

@@ -243,6 +243,94 @@ function get_friend_ids(array $input): array
 }
 
 /**
+ * 내가 보낸 친구 요청 수 카운트 함수 (API 호출 가능)
+ *
+ * pending 상태의 친구 요청 중에서 내가 요청을 보낸 건수를 카운트합니다.
+ * 무방향 1행 모델에서 requested_by 필드를 사용하여 내가 요청을 보낸 경우만 카운트합니다.
+ *
+ * @param array $input 입력 파라미터
+ *   - int $input['me'] 요청 수를 조회할 사용자 ID
+ * @return int 보낸 친구 요청 수
+ * @throws ApiException 에러 발생 시
+ *
+ * @example
+ * // PHP에서 호출
+ * $count = count_friend_requests_sent(['me' => 5]);
+ * // 3 (내가 보낸 친구 요청이 3건)
+ *
+ * // JavaScript에서 API 호출
+ * const count = await func('count_friend_requests_sent', { me: 5 });
+ * console.log(count);  // 3
+ */
+function count_friend_requests_sent(array $input): int
+{
+    // 파라미터 추출 및 검증
+    $me = (int)($input['me'] ?? 0);
+
+    if ($me <= 0) {
+        error('invalid-me', '유효하지 않은 사용자 ID입니다');
+    }
+
+    // 비즈니스 로직 수행
+    // pending 상태이면서 내가 요청을 보낸 경우 (requested_by = me)
+    $pdo = pdo();
+    $sql = "SELECT COUNT(*) as count
+              FROM friendships
+             WHERE (user_id_a = :me1 OR user_id_b = :me2)
+               AND status = 'pending'
+               AND requested_by = :me3";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([':me1' => $me, ':me2' => $me, ':me3' => $me]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    return (int)($result['count'] ?? 0);
+}
+
+/**
+ * 내가 받은 친구 요청 수 카운트 함수 (API 호출 가능)
+ *
+ * pending 상태의 친구 요청 중에서 상대방이 나에게 요청을 보낸 건수를 카운트합니다.
+ * 무방향 1행 모델에서 requested_by 필드를 사용하여 상대방이 요청을 보낸 경우만 카운트합니다.
+ *
+ * @param array $input 입력 파라미터
+ *   - int $input['me'] 요청 수를 조회할 사용자 ID
+ * @return int 받은 친구 요청 수
+ * @throws ApiException 에러 발생 시
+ *
+ * @example
+ * // PHP에서 호출
+ * $count = count_friend_requests_received(['me' => 5]);
+ * // 2 (내가 받은 친구 요청이 2건)
+ *
+ * // JavaScript에서 API 호출
+ * const count = await func('count_friend_requests_received', { me: 5 });
+ * console.log(count);  // 2
+ */
+function count_friend_requests_received(array $input): int
+{
+    // 파라미터 추출 및 검증
+    $me = (int)($input['me'] ?? 0);
+
+    if ($me <= 0) {
+        error('invalid-me', '유효하지 않은 사용자 ID입니다');
+    }
+
+    // 비즈니스 로직 수행
+    // pending 상태이면서 상대방이 요청을 보낸 경우 (requested_by != me)
+    $pdo = pdo();
+    $sql = "SELECT COUNT(*) as count
+              FROM friendships
+             WHERE (user_id_a = :me1 OR user_id_b = :me2)
+               AND status = 'pending'
+               AND requested_by != :me3";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([':me1' => $me, ':me2' => $me, ':me3' => $me]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    return (int)($result['count'] ?? 0);
+}
+
+/**
  * 사용자의 친구 상세 정보 조회 함수 (API 호출 가능)
  *
  * accepted 상태의 친구 관계를 조회하여 친구들의 상세 정보(users 테이블)를 반환합니다.
