@@ -39,82 +39,67 @@ $hydrationData = [
 
 // InfiniteScroll 라이브러리 로드
 load_deferred_js('infinite-scroll');
+
+// 사용자 검색 컴포넌트 자동 로드
+load_deferred_js('vue-components/user-search');
 ?>
 
-<!-- User Search 모듈을 위한 번역 데이터 (전역 변수로 제공) -->
-<script>
-    // user-search.js에서 사용할 번역 데이터
-    const searchTranslations = {
-        친구_검색: '<?= tr('친구 검색') ?>',
-        이름을_입력하세요: '<?= tr('이름을 입력하세요') ?>',
-        검색: '<?= tr('검색') ?>',
-        검색_중: '<?= tr('검색 중...') ?>',
-        검색_결과가_없습니다: '<?= tr('검색 결과가 없습니다.') ?>',
-        검색어를_입력해주세요: '<?= tr('검색어를 입력해주세요') ?>',
-        검색에_실패했습니다: '<?= tr('검색에 실패했습니다') ?>',
-        profileUrl: '<?= href()->user->profile ?>'
-    };
-</script>
+<div class="container py-4">
+    <h1 class="mb-4"><?= t()->사용자_목록 ?></h1>
 
-<?php include __DIR__ . '/list.js.php'; ?>
+    <!-- Friend Action Buttons -->
+    <div class="mb-3 d-flex gap-2 flex-wrap">
+        <!-- 사용자 검색 컴포넌트 (자동 마운트) -->
+        <div class="user-search-app"></div>
+
+        <!-- Friends List Button -->
+        <a href="<?= href()->friend->list ?>" class="btn btn-outline-primary position-relative">
+            <i class="bi bi-people me-2"></i>
+            <?= t()->친구_목록 ?>
+            <?php if ($friendsCount > 0): ?>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
+                    <?= $friendsCount ?>
+                    <span class="visually-hidden"><?= t()->전체_친구_수 ?></span>
+                </span>
+            <?php endif; ?>
+        </a>
+
+        <!-- Received Requests Button -->
+        <a href="<?= href()->friend->request_received ?>" class="btn btn-outline-success position-relative">
+            <i class="bi bi-inbox me-2"></i>
+            <?= t()->받은_요청 ?>
+            <?php if ($friendRequestsReceivedCount > 0): ?>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    <?= $friendRequestsReceivedCount ?>
+                    <span class="visually-hidden"><?= t()->받은_친구_요청 ?></span>
+                </span>
+            <?php endif; ?>
+        </a>
+
+        <!-- Sent Requests Button -->
+        <a href="<?= href()->friend->request_sent ?>" class="btn btn-outline-info position-relative">
+            <i class="bi bi-send me-2"></i>
+            <?= t()->보낸_요청 ?>
+            <?php if ($friendRequestsSentCount > 0): ?>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
+                    <?= $friendRequestsSentCount ?>
+                    <span class="visually-hidden"><?= t()->보낸_친구_요청 ?></span>
+                </span>
+            <?php endif; ?>
+        </a>
+    </div>
+
+    <!-- My Friends Section (친구 한 줄 표시 위젯) -->
+    <?php
+    $limit = 5;
+    include __DIR__ . '/../../widgets/user/friend/friend-one-line-display.php';
+    ?>
+</div>
 
 <!-- Vue.js 앱 컨테이너 -->
 <div id="user-list-app" class="container py-4">
     <div class="row">
         <div class="col-12">
-            <h1 class="mb-4"><?= t()->사용자_목록 ?></h1>
-
-            <!-- Friend Action Buttons -->
-            <div class="mb-3 d-flex gap-2 flex-wrap">
-                <!-- Friend Search Button -->
-                <button onclick="window.openFriendSearchModal && window.openFriendSearchModal()" class="btn btn-primary">
-                    <i class="bi bi-search me-2"></i>
-                    <?= t()->친구_검색 ?>
-                </button>
-
-                <!-- Friends List Button -->
-                <a href="<?= href()->friend->list ?>" class="btn btn-outline-primary position-relative">
-                    <i class="bi bi-people me-2"></i>
-                    <?= t()->친구_목록 ?>
-                    <?php if ($friendsCount > 0): ?>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
-                            <?= $friendsCount ?>
-                            <span class="visually-hidden"><?= t()->전체_친구_수 ?></span>
-                        </span>
-                    <?php endif; ?>
-                </a>
-
-                <!-- Received Requests Button -->
-                <a href="<?= href()->friend->request_received ?>" class="btn btn-outline-success position-relative">
-                    <i class="bi bi-inbox me-2"></i>
-                    <?= t()->받은_요청 ?>
-                    <?php if ($friendRequestsReceivedCount > 0): ?>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                            <?= $friendRequestsReceivedCount ?>
-                            <span class="visually-hidden"><?= t()->받은_친구_요청 ?></span>
-                        </span>
-                    <?php endif; ?>
-                </a>
-
-                <!-- Sent Requests Button -->
-                <a href="<?= href()->friend->request_sent ?>" class="btn btn-outline-info position-relative">
-                    <i class="bi bi-send me-2"></i>
-                    <?= t()->보낸_요청 ?>
-                    <?php if ($friendRequestsSentCount > 0): ?>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
-                            <?= $friendRequestsSentCount ?>
-                            <span class="visually-hidden"><?= t()->보낸_친구_요청 ?></span>
-                        </span>
-                    <?php endif; ?>
-                </a>
-            </div>
-
-            <!-- My Friends Section (친구 한 줄 표시 위젯) -->
-            <?php
-            $limit = 5;
-            include __DIR__ . '/../../widgets/user/friend/friend-one-line-display.php';
-            ?>
-
             <!-- 사용자 목록 그리드 -->
             <div class="row g-3">
                 <!-- 사용자 없음 메시지 -->
@@ -192,125 +177,9 @@ load_deferred_js('infinite-scroll');
     </div>
 </div>
 
-<!-- User Search Module (독립적인 Vue.js 앱) -->
-<div id="user-search">
-    <!-- Friend Search Modal -->
-    <div class="modal fade" id="friendSearchModal" tabindex="-1" aria-labelledby="friendSearchModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="friendSearchModalLabel">{{ translations.친구_검색 }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="search-modal-body">
-                    <!-- Search Input Group -->
-                    <div class="input-group mb-3">
-                        <input v-model="searchTerm"
-                            @keyup.enter="performSearch"
-                            type="text"
-                            class="form-control"
-                            :placeholder="translations.이름을_입력하세요"
-                            :aria-label="translations.이름을_입력하세요">
-                        <button @click="performSearch"
-                            class="btn btn-primary"
-                            :disabled="searchLoading">
-                            <span v-if="searchLoading">{{ translations.검색_중 }}</span>
-                            <span v-else>{{ translations.검색 }}</span>
-                        </button>
-                    </div>
-
-                    <!-- Search Results Grid -->
-                    <div v-if="searchResults.length > 0" class="row g-3">
-                        <div v-for="user in searchResults" :key="'search-' + user.id" class="col-6">
-                            <div class="card h-100">
-                                <div class="card-body p-2 d-flex align-items-center">
-                                    <!-- Profile Photo (clickable link) -->
-                                    <a :href="`${profileUrl}?id=${user.id}`"
-                                        class="flex-shrink-0 me-2 text-decoration-none">
-                                        <img v-if="user.photo_url"
-                                            :src="user.photo_url"
-                                            class="rounded-circle"
-                                            style="width: 50px; height: 50px; object-fit: cover;"
-                                            :alt="user.display_name">
-                                        <div v-else
-                                            class="rounded-circle bg-secondary bg-opacity-25 d-inline-flex align-items-center justify-content-center"
-                                            style="width: 50px; height: 50px;">
-                                            <i class="bi bi-person fs-5 text-secondary"></i>
-                                        </div>
-                                    </a>
-
-                                    <!-- User Info (clickable link) -->
-                                    <a :href="`${profileUrl}?id=${user.id}`"
-                                        class="flex-grow-1 min-w-0 text-decoration-none">
-                                        <h6 class="card-title mb-0 text-truncate text-dark">
-                                            {{ user.display_name }}
-                                        </h6>
-                                        <p class="card-text text-muted mb-0" style="font-size: 0.75rem;">
-                                            {{ formatDate(user.created_at) }}
-                                        </p>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- No Results Message -->
-                    <div v-else-if="searchPerformed && searchResults.length === 0 && !searchLoading"
-                        class="alert alert-info">
-                        {{ translations.검색_결과가_없습니다 }}
-                    </div>
-
-                    <!-- Pagination Bar -->
-                    <nav v-if="searchTotalPages > 1" class="mt-4" aria-label="Search results pagination">
-                        <ul class="pagination justify-content-center">
-                            <!-- First Page -->
-                            <li class="page-item" :class="{disabled: searchPage === 1}">
-                                <a class="page-link" href="#" @click.prevent="goToSearchPage(1)" aria-label="First page">
-                                    <i class="bi bi-chevron-double-left"></i>
-                                </a>
-                            </li>
-
-                            <!-- Previous Page -->
-                            <li class="page-item" :class="{disabled: searchPage === 1}">
-                                <a class="page-link" href="#" @click.prevent="goToSearchPage(searchPage - 1)" aria-label="Previous page">
-                                    <i class="bi bi-chevron-left"></i>
-                                </a>
-                            </li>
-
-                            <!-- Page Numbers (dynamic range) -->
-                            <li v-for="pageNum in visiblePageNumbers"
-                                :key="pageNum"
-                                class="page-item"
-                                :class="{active: pageNum === searchPage}">
-                                <a class="page-link" href="#" @click.prevent="goToSearchPage(pageNum)">
-                                    {{ pageNum }}
-                                </a>
-                            </li>
-
-                            <!-- Next Page -->
-                            <li class="page-item" :class="{disabled: searchPage === searchTotalPages}">
-                                <a class="page-link" href="#" @click.prevent="goToSearchPage(searchPage + 1)" aria-label="Next page">
-                                    <i class="bi bi-chevron-right"></i>
-                                </a>
-                            </li>
-
-                            <!-- Last Page -->
-                            <li class="page-item" :class="{disabled: searchPage === searchTotalPages}">
-                                <a class="page-link" href="#" @click.prevent="goToSearchPage(searchTotalPages)" aria-label="Last page">
-                                    <i class="bi bi-chevron-double-right"></i>
-                                </a>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-
 <script>
     ready(() => {
+
         // Vue.js 사용자 목록 앱 생성
         Vue.createApp({
             data() {

@@ -1234,14 +1234,13 @@ function sonub_messages_page()
 - **CSS 작성 규칙**:
   - **✅ 최우선**: Bootstrap Utility 클래스를 `class="..."` 속성에 인라인으로 지정
   - **✅ 권장**: 레이아웃, 색상, 간격, 크기 등 모든 스타일을 Bootstrap Utility로 작성
-  - **✅ 필요시**: Bootstrap으로 표현 불가능한 스타일만 `./page/**/*.css` 파일로 분리
-  - **✅ 자동 로드**: 페이지별 CSS 파일은 `load_page_css()` 함수로 자동 로드
-  - **❌ 최소화**: 별도 CSS 파일은 최소화 (Bootstrap으로 불가능한 경우에만)
+  - **✅ 필요시**: Bootstrap으로 표현 불가능한 스타일만 `<style>` 태그 내에 작성
+  - **❌ 금지**: 외부 CSS 파일 분리 금지
 
 - **JavaScript 작성 규칙**:
-  - **✅ 페이지 내**: 짧은 JavaScript는 `<script>` 태그로 페이지 파일 내에 작성
-  - **✅ 파일 분리**: 긴 JavaScript는 `*.js.php` 파일로 분리
-  - **✅ 자동 로드**: 페이지별 JS 파일은 `layout.php`에서 자동으로 로드됨
+  - **✅ 필수**: 모든 JavaScript는 `<script>` 태그로 페이지 파일 내에 작성
+  - **✅ 필수**: Vue 앱은 `ready()` 래퍼 내부에서 초기화
+  - **❌ 금지**: 외부 JS 파일 분리 금지
 
 **올바른 페이지 파일 구조:**
 
@@ -1253,7 +1252,7 @@ $user = login();
 ?>
 
 <!-- ✅ 최고의 방법: Bootstrap Utility 클래스만 사용 -->
-<div class="container py-5">
+<div id="profile-app" class="container py-5">
     <div class="card shadow-sm">
         <div class="card-body p-4">
             <div class="d-flex align-items-center mb-3">
@@ -1272,16 +1271,9 @@ $user = login();
     </div>
 </div>
 
-<?php
-// CSS 파일 자동 로드 (Bootstrap으로 불가능한 스타일이 있는 경우만)
-load_page_css();
-?>
-```
-
-```css
-/* ./page/user/profile.css - Bootstrap으로 불가능한 스타일만 */
-
-/* 예: 특수 애니메이션 */
+<!-- ✅ Bootstrap으로 불가능한 스타일만 작성 -->
+<style>
+/* 특수 애니메이션 */
 @keyframes profileFadeIn {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -1291,10 +1283,29 @@ load_page_css();
   animation: profileFadeIn 0.3s ease-out;
 }
 
-/* 예: 복잡한 그라디언트 */
+/* 복잡한 그라디언트 */
 .profile-header-gradient {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
+</style>
+
+<!-- ✅ 페이지별 JavaScript -->
+<script>
+ready(() => {
+    Vue.createApp({
+        data() {
+            return {
+                state: window.AppStore.state
+            };
+        },
+        methods: {
+            showProfile() {
+                console.log('프로필 표시');
+            }
+        }
+    }).mount('#profile-app');
+});
+</script>
 ```
 
 자세한 내용은 [docs/css.md](./css.md)를 참조하세요.
@@ -1372,26 +1383,21 @@ ready(() => {
 
 | 항목 | 페이지 (`./page/**/*.php`) | 위젯 (`./widgets/**/*.php`) |
 |------|---------------------------|---------------------------|
-| **CSS 위치** | ✅ 외부 파일 (`./page/**/*.css`) | ✅ 같은 파일 내 `<style>` 태그 |
-| **JS 위치** | ✅ 외부 파일 (`./page/**/*.js`) | ✅ 같은 파일 내 `<script>` 태그 |
-| **자동 로드** | ✅ `layout.php`에서 자동 로드 | ❌ 수동 include 필요 |
+| **CSS 위치** | ✅ 같은 파일 내 `<style>` 태그 | ✅ 같은 파일 내 `<style>` 태그 |
+| **JS 위치** | ✅ 같은 파일 내 `<script>` 태그 | ✅ 같은 파일 내 `<script>` 태그 |
+| **외부 파일 분리** | ❌ 금지 | ❌ 금지 |
 | **Bootstrap 클래스** | ✅ 레이아웃에 사용 | ✅ 레이아웃에 사용 |
-| **`<style>` 태그** | ❌ 절대 금지 | ✅ 필수 사용 |
-| **`<script>` 태그** | ❌ 절대 금지 | ✅ 필수 사용 |
+| **`<style>` 태그** | ✅ 필요시 사용 | ✅ 필요시 사용 |
+| **`<script>` 태그** | ✅ 필수 사용 | ✅ 필수 사용 |
 | **용도** | 전체 페이지 콘텐츠 | 재사용 가능한 컴포넌트 |
 
 #### 위반 시 결과
 
-**페이지 파일에서 `<style>` 또는 `<script>` 태그 사용 시:**
-- 자동 로딩 시스템과 충돌
-- CSS/JS 파일이 중복 로드됨
+**외부 CSS/JS 파일로 분리 시:**
+- 파일 관리 복잡도 증가
+- 페이지/위젯을 다른 곳으로 이동할 때 여러 파일을 함께 이동해야 함
+- 코드 가독성 저하 (HTML과 CSS/JS가 분리됨)
 - 유지보수 어려움
-- 코드 구조가 일관되지 않음
-
-**위젯 파일에서 외부 CSS/JS 파일 사용 시:**
-- 위젯을 다른 페이지에서 재사용할 때 CSS/JS 파일도 함께 관리해야 함
-- 위젯의 독립성 저하
-- 파일 관리가 복잡해짐
 
 ### 올바른 CSS 사용 예제
 

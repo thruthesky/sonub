@@ -1238,6 +1238,259 @@ const myUserId = window.AppStore.user.id;
 5. **자기 자신 확인**: 자기 자신에게는 친구 요청을 보낼 수 없습니다.
 6. **AppStore 사용**: 로그인한 사용자 정보는 항상 `window.AppStore.user`에서 가져옵니다.
 
+## 사용자 검색 컴포넌트
+
+**🔥🔥🔥 최강력 규칙: 사용자 검색 UI가 필요한 경우 `<div class="user-search"></div>`만 추가하면 됩니다 🔥🔥🔥**
+
+### 개요
+
+사용자 검색 컴포넌트는 독립적인 Vue.js 컴포넌트로, 페이지에 `<div class="user-search"></div>` 한 줄만 추가하면 자동으로 **검색 버튼**과 **Bootstrap 모달 검색 UI**가 모두 생성됩니다.
+
+**파일 위치**: `js/user-search.js`
+
+### 특징
+
+- ✅ **완전한 독립 컴포넌트**: 검색 버튼 + 모달 HTML 템플릿, Vue.js 로직, 다국어 번역이 모두 포함됨
+- ✅ **간단한 사용법**: `<div class="user-search"></div>` 한 줄만 추가
+- ✅ **여러 개 사용 가능**: 한 페이지에 여러 개의 검색 컴포넌트를 독립적으로 사용 가능
+- ✅ **자동 UI 생성**: 검색 버튼 + Bootstrap 모달, 검색 폼, 페이지네이션 자동 생성
+- ✅ **다국어 지원**: JavaScript `tr()` 함수로 4개 국어 지원 (ko, en, ja, zh)
+
+### 사용 방법
+
+#### 1단계: HTML에 컨테이너 추가
+
+페이지 아무 곳에나 `<div class="user-search"></div>`를 추가하면 자동으로 검색 버튼과 모달이 생성됩니다:
+
+```php
+<!-- page/user/list.php -->
+<div id="user-list-app" class="container py-4">
+    <!-- 사용자 목록 UI -->
+    <h1>사용자 목록</h1>
+    <!-- ... -->
+</div>
+
+<!-- 사용자 검색 컴포넌트 추가 (한 줄만!) -->
+<!-- 이 한 줄이 자동으로 "친구 검색" 버튼과 모달 UI를 모두 생성합니다 -->
+<div class="user-search"></div>
+```
+
+**여러 개 사용하기:**
+
+```php
+<!-- 페이지 상단에 하나 -->
+<div class="user-search"></div>
+
+<!-- 사용자 목록 -->
+<div class="row g-3">
+    <!-- ... -->
+</div>
+
+<!-- 페이지 하단에 또 하나 -->
+<div class="user-search"></div>
+```
+
+각 `<div class="user-search"></div>`는 독립적인 Vue.js 앱으로 마운트되며, 각각 고유한 검색 버튼과 모달을 가집니다.
+
+#### 2단계: 스크립트 로드 (자동)
+
+`js/user-search.js` 스크립트가 자동으로 로드되면 다음이 자동으로 실행됩니다:
+
+1. 모든 `.user-search` 요소 감지
+2. 각 요소에 대해 독립적인 Vue.js 앱 생성 및 마운트
+3. **검색 버튼 자동 생성** (버튼 클릭 시 모달 열림)
+4. Bootstrap 모달 UI 자동 생성 (각 인스턴스마다 고유 ID 부여)
+
+#### 3단계: 검색 사용
+
+자동 생성된 "친구 검색" 버튼을 클릭하면 모달이 열립니다.
+
+### 완전한 예제
+
+**예제 1: 자동 생성된 버튼 사용 (가장 간단)**
+
+```php
+<?php
+// page/user/find-friend.php
+
+$result = list_users(['per_page' => 20, 'page' => 1]);
+$users = $result['users'];
+?>
+
+<div class="container py-4">
+    <h1>친구 찾기</h1>
+
+    <!-- 사용자 검색 컴포넌트 (한 줄만 추가!) -->
+    <!-- 자동으로 "친구 검색" 버튼이 생성되며, 클릭 시 모달이 열립니다 -->
+    <div class="user-search"></div>
+
+    <!-- 사용자 목록 -->
+    <div class="row g-3 mt-4">
+        <?php foreach ($users as $user_data): ?>
+            <?php $user = new UserModel($user_data); ?>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5><?= htmlspecialchars($user->display_name) ?></h5>
+                    </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+```
+
+**예제 2: 커스텀 버튼과 함께 사용**
+
+```php
+<?php
+// page/user/list.php
+?>
+
+<div class="container py-4">
+    <!-- 페이지 헤더 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>친구 목록</h1>
+        <!-- 커스텀 검색 버튼 -->
+        <button class="btn btn-success" onclick="window.openFriendSearchModal()">
+            <i class="bi bi-search"></i> 친구 검색
+        </button>
+    </div>
+
+    <!-- 사용자 목록 -->
+    <div class="row g-3">
+        <!-- ... -->
+    </div>
+</div>
+
+<!-- 사용자 검색 컴포넌트 (모달만 생성, 버튼은 위에서 커스텀 버튼 사용) -->
+<div class="user-search"></div>
+```
+
+### 생성되는 UI
+
+`js/user-search.js` 스크립트가 자동으로 다음 UI를 생성합니다:
+
+1. **검색 버튼**: "친구 검색" 버튼 (클릭 시 모달 열림)
+2. **Bootstrap 모달**: 검색 인터페이스
+3. **검색 입력 폼**: 이름 검색 input + 검색 버튼
+4. **검색 결과 그리드**: 2열 그리드로 사용자 카드 표시
+5. **페이지네이션**: 검색 결과가 10개를 넘으면 자동으로 페이지네이션 표시
+6. **다국어 지원**: 사용자 언어에 맞게 자동 번역
+
+### 다국어 지원
+
+컴포넌트는 JavaScript `tr()` 함수를 사용하여 4개 국어를 지원합니다:
+
+```javascript
+// js/user-search.js 내부
+computed: {
+    t() {
+        return {
+            친구_검색: tr({ ko: '친구 검색', en: 'Find Friends', ja: '友達検索', zh: '查找朋友' }),
+            이름을_입력하세요: tr({ ko: '이름을 입력하세요', en: 'Enter name', ja: '名前を入力してください', zh: '输入姓名' }),
+            검색: tr({ ko: '검색', en: 'Search', ja: '検索', zh: '搜索' }),
+            검색_중: tr({ ko: '검색 중...', en: 'Searching...', ja: '検索中...', zh: '搜索中...' }),
+            검색_결과가_없습니다: tr({ ko: '검색 결과가 없습니다.', en: 'No results found.', ja: '検索結果がありません。', zh: '未找到结果。' }),
+            검색어를_입력해주세요: tr({ ko: '검색어를 입력해주세요', en: 'Please enter a search term', ja: '検索キーワードを入力してください', zh: '请输入搜索关键词' }),
+            검색에_실패했습니다: tr({ ko: '검색에 실패했습니다', en: 'Search failed', ja: '検索に失敗しました', zh: '搜索失败' })
+        };
+    }
+}
+```
+
+### 전역 함수
+
+컴포넌트가 마운트되면 자동으로 전역 함수를 등록합니다:
+
+#### window.openFriendSearchModal()
+
+검색 모달을 엽니다.
+
+**사용 예제:**
+
+```html
+<!-- HTML 버튼 -->
+<button onclick="window.openFriendSearchModal()">친구 검색</button>
+```
+
+```javascript
+// JavaScript에서 호출
+document.getElementById('btn-search').addEventListener('click', () => {
+    window.openFriendSearchModal();
+});
+```
+
+```javascript
+// Vue.js에서 호출
+Vue.createApp({
+    methods: {
+        openSearch() {
+            window.openFriendSearchModal();
+        }
+    }
+}).mount('#app');
+```
+
+### 검색 동작
+
+1. **검색 수행**: 사용자가 이름을 입력하고 검색 버튼 클릭
+2. **API 호출**: `list_users()` 함수 호출하여 결과 조회
+3. **결과 표시**: 2열 그리드로 사용자 카드 표시
+4. **페이지네이션**: 검색 결과가 10개를 넘으면 자동으로 페이지네이션 표시
+5. **프로필 이동**: 사용자 카드를 클릭하면 프로필 페이지로 이동 (`/user/profile?id=...`)
+
+### 주의사항
+
+1. **✅ 필수**: `<div class="user-search"></div>` 요소가 페이지에 존재해야 함
+2. **✅ 필수**: `js/user-search.js` 스크립트가 로드되어야 함 (자동 로드)
+3. **✅ 권장**: Bootstrap 5.x 및 Bootstrap Icons 사용
+4. **✅ 여러 개 사용 가능**: 한 페이지에 여러 개의 `<div class="user-search"></div>` 추가 가능 (각각 독립적으로 동작)
+5. **❌ 금지**: `<div class="user-search">` 요소 내부에 다른 HTML 추가 금지 (컴포넌트가 자동으로 생성)
+
+### 장점
+
+1. **✅ 간단한 사용법**: HTML 한 줄만 추가하면 완전한 검색 UI 생성
+2. **✅ 재사용 가능**: 여러 페이지에서 동일한 검색 UI 사용 가능
+3. **✅ 독립성**: 다른 Vue.js 앱과 충돌 없이 독립적으로 동작
+4. **✅ 유지보수 용이**: UI 수정이 필요하면 `js/user-search.js` 파일만 수정
+5. **✅ 다국어 지원**: 사용자 언어에 맞게 자동 번역
+
+### 실전 사용 예제
+
+#### 예제 1: 단일 컴포넌트
+
+```php
+<!-- page/friend/find-friend.php -->
+<div class="container">
+    <h1>친구 찾기</h1>
+</div>
+
+<!-- 사용자 검색 컴포넌트 -->
+<div class="user-search"></div>
+```
+
+#### 예제 2: 여러 개의 컴포넌트
+
+```php
+<!-- page/user/list.php -->
+
+<!-- 페이지 상단 검색 -->
+<div class="user-search"></div>
+
+<div id="user-list-app" class="container">
+    <!-- Vue.js 사용자 목록 앱 -->
+    <div v-for="user in users" :key="user.id">
+        <h5>{{ user.display_name }}</h5>
+    </div>
+</div>
+
+<!-- 페이지 하단 검색 (독립적으로 동작) -->
+<div class="user-search"></div>
+```
+
+---
+
 ## 테스트
 
 테스트 파일 위치:

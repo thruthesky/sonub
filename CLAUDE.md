@@ -21,12 +21,11 @@ Sonub 프로젝트는 Docker 기반에 LEMP(Linux, Nginx, MySQL, PHP) 스택으�
 1. **관련 문서 검색**: `docs/**/*.md` 내의 관련 문서를 즉시 검색
 2. **개발자에게 통보**:
    ```
-   📋 참고 문서: docs/xxx.md
+   📋 참고 문서: 개발자가 요청을 하면, 항상 그리고 반드시 [llms-txt.md](./docs/llms-txt.md) 문서를 먼저 읽고, 이 문서에서 제시하는 docs/xxx.md 세부 문서의 요약과 예제를 보고, 개발자가 요청하는 내용과 관련이 있는 문서를 1개 이상 참고하여 그 문서의 지침을 따른다.
+      - 그리고 어떤 문서를 참고하는지 개발자에게 알려준다.
    🔤 인코딩: UTF-8로 모든 파일 생성/수정
    🌐 언어: 모든 주석 및 문서는 한국어로 작성
    ```
-3. **문서 읽기 및 분석**: 기존 패턴, 규칙 및 요구사항 이해
-4. **개발 중 참조**: 개발하는 동안 문서 지속적으로 참조
 
 ## 2단계: UTF-8 인코딩 확인 및 선언 (필수)
 
@@ -38,6 +37,7 @@ Sonub 프로젝트는 Docker 기반에 LEMP(Linux, Nginx, MySQL, PHP) 스택으�
 ## 3단계: 개발 작업 수행
 
 위의 1단계와 2단계를 완료한 후에만 실제 개발 작업을 진행합니다.
+특히, 반드시 [llms-txt.md](./docs/llms-txt.md) 를 먼저 참고로 개발자의 질문과 관련이 있는 문서를 찾아 읽고, 그 문서의 지침을 따라야 합니다.
 
 ---
 
@@ -71,12 +71,22 @@ Sonub 프로젝트는 Docker 기반에 LEMP(Linux, Nginx, MySQL, PHP) 스택으�
 - **API 함수**: 배열 파라미터 하나만 받기 (`function func(array $input): mixed`)
 
 **CSS/JavaScript**:
-- 페이지 파일(`./page/**/*.php`): 가능한 Bootstrap CSS Utility 클래스를 써서 인라인으로 디자인. 외부 `.css`, `.js.php` 파일로 분리
-- 위젯 파일(`./widgets/**/*.php`): `<style>`, `<script>` 태그 내 작성
-- `Vue.createApp()` 등 Vue 객체 직접 사용
-- `Vue` 구조를 만드시 `Options API` 로 사용
+- **스타일 디자인**: Bootstrap CSS Utility 클래스를 사용하여 **인라인 디자인** 필수
+  - 페이지 파일(`./page/**/*.php`): Bootstrap utility 클래스로 인라인 스타일 작성
+  - Bootstrap으로 불가능한 스타일만 `<style>` 태그 내에 작성 (가능한 Bootstrap 클래스 우선 사용)
+- **JavaScript**: 모든 JavaScript는 해당 PHP 파일의 `<script>` 태그 내에 작성
+  - 페이지 파일(`./page/**/*.php`): `<script>` 태그 내에 작성
+  - 위젯 파일(`./widgets/**/*.php`): `<script>` 태그 내에 작성
+  - **❌ 금지**: 외부 JavaScript 파일 분리 금지
+- `Vue.createApp()` 등 Vue 객체 직접 사용하되, 컴포넌트는 별도의 변수로 분리해서 `Options API`로 작성
 - `ready(() => { ... })` 래퍼 필수
 - API 호출 시 `func()` 함수 사용
+- JavaScript 에서 다국어 번역 시 `tr()` 함수 사용
+
+**디자인 작업 시 참고 문서**:
+- `docs/design/design.md` - 전체 디자인 가이드라인 및 원칙
+- `docs/design/bootstrap.md` - Bootstrap CSS Utility 클래스 사용법 및 예제
+- 디자인 관련 작업 시 위 문서들을 **반드시 먼저 읽고** 참고할 것
 
 **다국어 번역**:
 - 파일 하단에 `inject_[php_file_name]_language()` 함수 정의
@@ -124,6 +134,7 @@ file -I [파일경로]
 ### 1단계: 문서 검색 및 분석
 - 요청 내용 분석: 주제, 카테고리 파악
 - 관련 문서 검색 및 내용 읽기
+- **문서 크기 확인**: 현재 라인 수 체크 (1,000 라인 제한)
 - 적절한 위치 선정
 
 ### 2단계: 개발자 통보
@@ -144,11 +155,16 @@ file -I [파일경로]
 - 한국어로 작성
 - 목차 업데이트
 
-### 5단계: UTF-8 인코딩 확인
+### 5단계: 문서 크기 재확인
+- **필수**: 수정 후 최종 라인 수 확인
+- **1,000 라인 초과 시**: 개발자에게 강력 경고 및 분리 권장
 
-### 6단계: 완료 보고
+### 6단계: UTF-8 인코딩 확인
+
+### 7단계: 완료 보고
 ```
 ✅ 문서 수정 완료
+✅ 문서 크기: [현재 라인 수] / 1,000 라인
 ✅ 배포 생략 (문서 파일만 수정)
 ```
 
@@ -162,8 +178,9 @@ file -I [파일경로]
 - `docs/design-guideline.md` 문서 읽기
 - 심플하고 단조로운 디자인
 - Bootstrap 레이아웃 작성
-- 페이지 파일: CSS 외부 파일 분리
-- 위젯/함수: `<style>` 태그 내 작성
+- 페이지 파일: Bootstrap으로 불가능한 스타일만 `<style>` 태그 내 작성
+- 위젯/함수: Bootstrap으로 불가능한 스타일만 `<style>` 태그 내 작성
+- **❌ 금지**: 외부 CSS/JS 파일 분리 금지
 
 ## 워크플로우 단계
 
@@ -206,11 +223,16 @@ file -I [파일경로]
 
 ## 자동 로드 항목
 - `init.php`, Bootstrap, Vue.js, Axios, Firebase, Font Awesome, `/css/app.css`, `/js/app.js`
-- 페이지별 CSS/JS: 자동 로드됨
+
+**CSS/JavaScript 작성 규칙**:
+- ✅ 모든 CSS는 `<style>` 태그 내에 작성 (Bootstrap으로 불가능한 경우만)
+- ✅ 모든 JavaScript는 `<script>` 태그 내에 작성
+- ❌ 외부 CSS/JS 파일 분리 금지
 
 **절대 금지**:
 - 페이지 파일에서 `init.php`, Bootstrap, Vue.js 등 중복 로드 금지
 - `<!DOCTYPE html>`, `<html>`, `<head>`, `<body>` 태그 금지
+- 외부 CSS/JS 파일 분리 금지
 
 ## href() 함수 필수 사용
 모든 페이지 링크는 `href()` 함수 사용:
@@ -233,17 +255,20 @@ file -I [파일경로]
 
 ---
 
-# CSS 및 JavaScript 파일 분리 규칙
+# CSS 및 JavaScript 작성 규칙
+
+**🔥🔥🔥 최강력 규칙: 모든 CSS/JavaScript는 페이지 파일 내부에 작성해야 합니다 🔥🔥🔥**
 
 ## 페이지 파일 (`./page/**/*.php`)
-- CSS: 외부 `.css` 파일로 분리 (Bootstrap Layout Utility 클래스 제외)
-- JavaScript: 외부 `.js` 파일로 분리
-- `layout.php`에서 자동 로드
+- **CSS**: Bootstrap Utility 클래스 우선 사용, 불가능한 경우만 `<style>` 태그 내 작성
+- **JavaScript**: `<script>` 태그 내 작성
+- **❌ 금지**: 외부 CSS/JS 파일 분리 금지
 
 ## 위젯 파일 (`./widgets/**/*.php`)
-- CSS: `<style>` 태그 내 작성
-- JavaScript: `<script>` 태그 내 작성
-- CSS 클래스명은 위젯별로 고유하게 작성
+- **CSS**: Bootstrap Utility 클래스 우선 사용, 불가능한 경우만 `<style>` 태그 내 작성
+- **JavaScript**: `<script>` 태그 내 작성
+- **CSS 클래스명**: 위젯별로 고유하게 작성
+- **❌ 금지**: 외부 CSS/JS 파일 분리 금지
 
 상세 예제는 `docs/coding-guideline.md` 참조
 
@@ -254,14 +279,6 @@ file -I [파일경로]
 - PHP MPA 방식으로 Vue.js 3.x CDN 사용
 - 페이지 이동 시 자동 정리 (MPA 장점)
 - 각 페이지의 Vue 인스턴스는 독립적
-
----
-
-# 문서 및 목차 관리
-
-- `*.md` 파일 편집 시 문서 상단에 목차(ToC) 추가
-- 문서 구조 변경 시 목차 업데이트
-- 목차는 모든 주요 제목(##)과 부제목(###) 반영
 
 ---
 
@@ -428,6 +445,36 @@ await func('create_post', {
 ```
 
 **절대 금지**: `axios.post('/api.php')` 또는 `fetch('/api.php')` 직접 호출
+
+## tr() 함수로 다국어 번역
+**필수**: JavaScript에서 다국어 번역이 필요한 경우 `tr()` 함수 사용
+
+```javascript
+// JavaScript에서 동적 번역
+const message = tr({
+    ko: '환영합니다',
+    en: 'Welcome',
+    ja: 'ようこそ',
+    zh: '欢迎'
+});
+alert(message);
+```
+
+**장점:**
+- ✅ 사용자 언어(`window.AppStore.state.lang`)에 맞게 자동 번역
+- ✅ 동적 언어 전환 지원 (언어 변경 시 자동 업데이트)
+- ✅ Vue.js computed property에서 사용 가능
+
+**사용 시나리오:**
+- JavaScript에서 동적으로 생성되는 메시지
+- 사용자 액션에 따라 변경되는 텍스트
+- Vue.js computed property에서 반응형 번역
+
+**PHP tr() vs JavaScript tr():**
+- PHP `tr()`: 서버 실행 시점 번역 (정적 텍스트)
+- JavaScript `tr()`: 클라이언트 실행 시점 번역 (동적 텍스트)
+
+상세 예제는 `docs/javascript.md` 참조
 
 ## JavaScript defer 로딩 및 ready() 래퍼
 **필수**: 모든 JavaScript는 defer 로딩, `ready()` 래퍼 필수

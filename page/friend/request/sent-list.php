@@ -32,10 +32,15 @@ if ($user) {
                     </div>
                 </div>
             <?php else: ?>
-                <div class="card mb-4">
-                    <div class="card-body d-flex justify-content-between align-items-center">
-                        <span class="fw-semibold"><?= t()->총_보낸_요청 ?></span>
-                        <span class="fs-5"><?= number_format($sentCount) ?></span>
+                <div class="card border-0 shadow-sm mb-4 bg-gradient" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <div class="card-body d-flex justify-content-between align-items-center py-4">
+                        <div class="text-white">
+                            <div class="small opacity-75 mb-1"><?= t()->총_보낸_요청 ?></div>
+                            <div class="fs-3 fw-bold"><?= number_format($sentCount) ?></div>
+                        </div>
+                        <div class="text-white opacity-75">
+                            <i class="bi bi-send fs-1"></i>
+                        </div>
                     </div>
                 </div>
 
@@ -44,29 +49,44 @@ if ($user) {
                         <?= t()->보낸_친구_요청이_없습니다 ?>
                     </div>
                 <?php else: ?>
-                    <div class="list-group" id="sent-requests-list">
+                    <div class="list-group shadow-sm" id="sent-requests-list">
                         <?php foreach ($requests as $request): ?>
-                            <div class="list-group-item list-group-item-action py-3" data-request-id="<?= $request['user_id'] ?>">
-                                <div class="d-flex align-items-center">
-                                    <?php if (!empty($request['photo_url'])): ?>
-                                        <img src="<?= htmlspecialchars($request['photo_url']) ?>" alt="<?= htmlspecialchars($request['display_name']) ?>" class="rounded-circle flex-shrink-0 friend-request-avatar object-fit-cover">
-                                    <?php else: ?>
-                                        <div class="rounded-circle bg-light border d-flex align-items-center justify-content-center flex-shrink-0 friend-request-avatar">
-                                            <i class="bi bi-person fs-4 text-secondary"></i>
-                                        </div>
-                                    <?php endif; ?>
-                                    <div class="ms-3 flex-grow-1">
-                                        <a href="<?= href()->user->profile ?>?id=<?= $request['user_id'] ?>" class="text-decoration-none fw-semibold">
+                            <div class="list-group-item border-0 border-bottom py-3 px-4 hover-bg-light" data-request-id="<?= $request['user_id'] ?>" style="transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center flex-wrap gap-3">
+                                    <!-- 프로필 이미지 -->
+                                    <div class="flex-shrink-0">
+                                        <?php if (!empty($request['photo_url'])): ?>
+                                            <img src="<?= htmlspecialchars($request['photo_url']) ?>"
+                                                 alt="<?= htmlspecialchars($request['display_name']) ?>"
+                                                 class="rounded-circle border border-2 border-white shadow-sm"
+                                                 style="width: 56px; height: 56px; object-fit: cover;">
+                                        <?php else: ?>
+                                            <div class="rounded-circle bg-light border border-2 border-white shadow-sm d-flex align-items-center justify-content-center"
+                                                 style="width: 56px; height: 56px;">
+                                                <i class="bi bi-person fs-4 text-secondary"></i>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <!-- 사용자 정보 -->
+                                    <div class="flex-grow-1 min-w-0">
+                                        <a href="<?= href()->user->profile ?>?id=<?= $request['user_id'] ?>"
+                                           class="text-decoration-none fw-semibold text-dark d-block mb-1 text-truncate">
                                             <?= htmlspecialchars($request['display_name'] ?: t()->이름_정보_없음) ?>
                                         </a>
-                                        <div class="text-muted small mt-1">
-                                            <?= t()->요청_시간 ?>:
+                                        <div class="text-muted small">
+                                            <i class="bi bi-clock me-1"></i>
                                             <?= date('Y-m-d H:i', $request['updated_at'] ?: $request['created_at']) ?>
                                         </div>
                                     </div>
-                                    <div class="ms-3">
-                                        <button class="btn btn-sm btn-outline-danger cancel-btn" data-user-id="<?= $request['user_id'] ?>" title="<?= t()->취소 ?>">
-                                            <i class="bi bi-x-circle"></i> <?= t()->취소 ?>
+
+                                    <!-- 취소 버튼 -->
+                                    <div class="flex-shrink-0">
+                                        <button class="btn btn-sm btn-outline-danger cancel-btn d-flex align-items-center gap-1 px-3"
+                                                data-user-id="<?= $request['user_id'] ?>"
+                                                title="<?= t()->취소 ?>">
+                                            <i class="bi bi-x-circle"></i>
+                                            <span class="d-none d-sm-inline"><?= t()->취소 ?></span>
                                         </button>
                                     </div>
                                 </div>

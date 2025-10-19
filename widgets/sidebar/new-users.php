@@ -11,8 +11,14 @@ $result = list_users(['page' => 1, 'per_page' => 16]);
 $users = $result['users'] ?? [];
 $displayUsers = array_slice($users, 0, 16);
 $userCount = count($displayUsers);
+
+// 사용자 검색 컴포넌트 자동 로드
+load_deferred_js('vue-components/user-search');
 ?>
 
+<!-- 사용자 검색 컴포넌트 (자동 마운트) -->
+<div class="user-search-app"></div>
+-------
 <div class="new-users-widget mb-3">
     <div class="widget-header">
         <div class="widget-heading">

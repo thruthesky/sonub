@@ -34,15 +34,15 @@
 
 Sonub의 JavaScript는 **PHP MPA (Multi-Page Application)** 방식으로 동작하며, 다음과 같은 방식으로 JavaScript 코드를 작성합니다:
 
-### JavaScript 파일 분리 방식
+### JavaScript 작성 방식
 
-**🔥🔥🔥 최강력 규칙: 페이지 파일 내부에 JavaScript가 길어지면 *.js.php 파일로 분리해야 합니다 🔥🔥🔥**
+**🔥🔥🔥 최강력 규칙: 모든 JavaScript는 페이지 파일 내부에 `<script>` 태그로 작성해야 합니다 🔥🔥🔥**
 
-- **페이지 내 인라인**: 짧은 JavaScript는 `page/**/*.php` 내부에 `<script>` 태그로 작성
-- **별도 파일 분리**: 긴 JavaScript는 `page/**/*.js.php` 파일로 분리
-- **확장자 .php 사용**: `.js.php` 확장자를 사용하여 PHP 함수를 직접 사용 가능
+- **✅ 필수**: 모든 JavaScript는 `page/**/*.php` 또는 `widgets/**/*.php` 내부에 `<script>` 태그로 작성
+- **✅ 필수**: `ready()` 래퍼 함수 사용
+- **❌ 금지**: 외부 JavaScript 파일로 분리 금지
 
-### *.js.php 파일의 장점
+### PHP 함수 직접 사용
 
 **✅ PHP 함수 직접 사용:**
 - `<?= tr('텍스트') ?>`: 인라인 번역 함수 사용 가능
@@ -50,10 +50,10 @@ Sonub의 JavaScript는 **PHP MPA (Multi-Page Application)** 방식으로 동작�
 - `<?= t()->검색 ?>`: 다국어 번역 텍스트 주입
 - `<?= login()->id ?>`: 로그인 사용자 정보 접근
 
-**✅ 목적:**
-- JavaScript를 별도 PHP 파일로 분리
+**✅ 장점:**
+- HTML, CSS, JavaScript가 한 파일에 모여 있어 가독성 향상
 - PHP 함수를 통해 JavaScript에 필요한 텍스트, URL, 기타 정보 주입
-- 긴 JavaScript 코드를 페이지 파일에서 분리하여 가독성 향상
+- 파일 관리 간소화
 
 ### 전역 객체 (레거시)
 
@@ -116,9 +116,9 @@ ready(() => {
 - ✅ `<?= login()->id ?>`: 로그인 사용자 정보를 PHP에서 직접 접근
 - ✅ `<?= json_encode($users) ?>`: 서버 데이터를 JavaScript로 Hydration
 
-### *.js.php 파일로 분리하는 경우
+### 긴 JavaScript 코드 관리
 
-JavaScript 코드가 길어지면 `*.js.php` 파일로 분리할 수 있습니다:
+JavaScript 코드가 길어지더라도 **반드시 페이지 파일 내부에 `<script>` 태그로 작성**해야 합니다:
 
 **page/user/list.php:**
 ```php
@@ -126,11 +126,7 @@ JavaScript 코드가 길어지면 `*.js.php` 파일로 분리할 수 있습니�
     <!-- 사용자 목록 HTML -->
 </div>
 
-<?php include __DIR__ . '/list.js.php'; ?>
-```
-
-**page/user/list.js.php:**
-```php
+<!-- ✅ 긴 JavaScript도 페이지 내부에 작성 -->
 <script>
 ready(() => {
     Vue.createApp({
@@ -156,28 +152,13 @@ ready(() => {
     }).mount('#user-list-app');
 });
 </script>
-
-<?php
-// 다국어 번역 주입 함수
-function inject_list_language() {
-    t()->inject([
-        '사용자_목록' => [
-            'ko' => '사용자 목록',
-            'en' => 'User List',
-            'ja' => 'ユーザーリスト',
-            'zh' => '用户列表'
-        ]
-    ]);
-}
-inject_list_language();
-?>
 ```
 
 **핵심 포인트:**
-- ✅ `.js.php` 확장자 사용 → PHP로 실행됨
+- ✅ 모든 JavaScript는 `<script>` 태그 내에 작성
 - ✅ `<?= tr(...) ?>`, `<?= href()->... ?>`, `<?= login()->id ?>` 직접 사용 가능
-- ✅ 긴 JavaScript 코드를 별도 파일로 분리하여 가독성 향상
-- ✅ 페이지별 번역은 `t()->inject()` 함수 사용
+- ✅ HTML, CSS, JavaScript가 한 파일에 모여 있어 가독성 향상
+- ✅ 페이지별 번역은 파일 하단에 `inject_[파일명]_language()` 함수 정의
 
 ---
 
@@ -586,20 +567,70 @@ ready(() => {
 
 ## 다국어 번역
 
-**🔥🔥🔥 중요: window.t는 레거시입니다. PHP 함수를 직접 사용하세요 🔥🔥🔥**
+### 번역 방식 개요
 
-### PHP 함수로 번역 텍스트 주입 (권장)
+Sonub에서는 **모든 JavaScript 코드를 PHP 페이지 파일 내부의 `<script>` 태그로 작성**하므로, 다음 두 가지 번역 방식을 사용할 수 있습니다:
 
-**✅ 권장 방법 1: tr() 인라인 번역**
+1. **PHP `tr()` 함수**: 서버 실행 시점에 번역 텍스트 주입 (정적 번역)
+2. **JavaScript `tr()` 함수**: 클라이언트 실행 시점에 동적 번역 (동적 언어 전환)
+
+**🔥🔥🔥 중요: JavaScript는 외부 `.js` 파일로 분리하지 않고 페이지 내 `<script>` 태그로 작성합니다 🔥🔥🔥**
+
+### JavaScript tr() 함수 (페이지 내 `<script>` 태그에서만 사용 가능)
+
+**⚠️ 중요 제한 사항:**
+- **✅ 사용 가능**: PHP 페이지 파일 내부의 `<script>` 태그에서만 사용 가능
+- **❌ 사용 불가**: 외부 `.js` 파일에서는 사용 불가 (Sonub는 외부 JS 파일 분리를 권장하지 않음)
+
+JavaScript의 `tr()` 함수는 PHP의 `tr()` 함수와 유사한 방식으로 동작하며, 클라이언트 사이드에서 동적으로 언어를 전환할 때 사용합니다.
+
+**함수 위치**: `/js/app.js`
+
+```javascript
+// 다국어 번역 함수
+// 예제: tr({ en: 'Hello', ko: '안녕하세요' });
+function tr(texts = {}) {
+    const lang = window.AppStore.state.lang;
+    return texts[lang] || texts['en'] || '';
+}
+```
+
+**✅ 사용 방법 (페이지 내 `<script>` 태그):**
 
 ```php
+<!-- page/user/profile.php -->
+<div id="app">
+    <!-- HTML 내용 -->
+</div>
+
 <script>
 ready(() => {
     Vue.createApp({
+        data() {
+            return {
+                state: window.AppStore.state
+            };
+        },
         methods: {
-            showAlert() {
-                // ✅ PHP tr() 함수로 직접 주입
-                alert('<?= tr('로그인이 필요합니다') ?>');
+            showWelcomeMessage() {
+                // ✅ JavaScript tr() 함수 사용 (페이지 내 <script>에서만 사용 가능)
+                const message = tr({
+                    ko: '환영합니다',
+                    en: 'Welcome',
+                    ja: 'ようこそ',
+                    zh: '欢迎'
+                });
+                alert(message);
+            },
+            showLoginRequiredAlert() {
+                // ✅ 동적 번역 - 사용자 언어에 맞게 자동 표시
+                const message = tr({
+                    ko: '로그인이 필요합니다',
+                    en: 'Login required',
+                    ja: 'ログインが必要です',
+                    zh: '需要登录'
+                });
+                alert(message);
             }
         }
     }).mount('#app');
@@ -607,15 +638,124 @@ ready(() => {
 </script>
 ```
 
-**✅ 권장 방법 2: t()->키 사용**
+**장점:**
+- ✅ 사용자 언어(`window.AppStore.state.lang`)에 맞게 자동 번역
+- ✅ 동적 언어 전환 지원 (언어 변경 시 자동 업데이트)
+- ✅ PHP의 `tr()` 함수와 유사한 인터페이스
+- ✅ 페이지 파일 내부에 모든 코드가 모여 있어 관리 편리
+
+**사용 시나리오:**
+- JavaScript에서 동적으로 생성되는 메시지
+- 사용자 액션에 따라 변경되는 텍스트
+- Vue.js computed property에서 사용
+- 클라이언트 사이드에서 언어를 동적으로 전환해야 하는 경우
+
+**실제 예제 - 동적 에러 메시지:**
 
 ```php
+<!-- page/user/submit.php -->
+<div id="app">
+    <div v-if="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+    <p>{{ welcomeText }}</p>
+    <button @click="submitForm">제출</button>
+</div>
+
+<script>
+ready(() => {
+    Vue.createApp({
+        data() {
+            return {
+                state: window.AppStore.state,
+                errorMessage: ''
+            };
+        },
+        computed: {
+            // ✅ computed에서 tr() 사용 - 언어 변경 시 자동 업데이트
+            welcomeText() {
+                return tr({
+                    ko: '환영합니다',
+                    en: 'Welcome',
+                    ja: 'ようこそ',
+                    zh: '欢迎'
+                });
+            }
+        },
+        methods: {
+            async submitForm() {
+                try {
+                    await func('submit_data', { auth: true });
+
+                    // ✅ 성공 메시지 - 사용자 언어로 표시
+                    alert(tr({
+                        ko: '제출이 완료되었습니다',
+                        en: 'Submission completed',
+                        ja: '送信が完了しました',
+                        zh: '提交完成'
+                    }));
+                } catch (error) {
+                    // ✅ 에러 메시지 - 사용자 언어로 표시
+                    this.errorMessage = tr({
+                        ko: '제출 중 오류가 발생했습니다',
+                        en: 'An error occurred during submission',
+                        ja: '送信中にエラーが発生しました',
+                        zh: '提交时发生错误'
+                    });
+                }
+            }
+        }
+    }).mount('#app');
+});
+</script>
+```
+
+### PHP 함수로 번역 텍스트 주입 (정적 번역 - 권장)
+
+**🔥🔥🔥 최강력 권장: 대부분의 경우 PHP `tr()` 함수를 사용하세요 🔥🔥🔥**
+
+PHP의 `tr()` 함수는 서버 실행 시점에 번역 텍스트를 주입하므로, **대부분의 경우 이 방법을 사용하는 것이 권장됩니다**.
+
+**✅ 사용 방법 1: PHP tr() 함수 (가장 권장)**
+
+```php
+<!-- page/user/profile.php -->
+<div id="app">
+    <!-- HTML 내용 -->
+</div>
+
 <script>
 ready(() => {
     Vue.createApp({
         methods: {
             showAlert() {
-                // ✅ PHP t()->키로 직접 주입
+                // ✅ PHP tr() 함수로 직접 주입 (서버 실행 시점)
+                alert('<?= tr('로그인이 필요합니다') ?>');
+            },
+            goToLogin() {
+                // ✅ PHP tr() 함수로 confirm 메시지 주입
+                if (confirm('<?= tr('로그인 페이지로 이동하시겠습니까?') ?>')) {
+                    window.location.href = '<?= href()->user->login ?>';
+                }
+            }
+        }
+    }).mount('#app');
+});
+</script>
+```
+
+**✅ 사용 방법 2: t()->키 사용**
+
+```php
+<!-- page/user/profile.php -->
+<div id="app">
+    <!-- HTML 내용 -->
+</div>
+
+<script>
+ready(() => {
+    Vue.createApp({
+        methods: {
+            showAlert() {
+                // ✅ PHP t()->키로 직접 주입 (서버 실행 시점)
                 alert('<?= t()->로그인이_필요합니다 ?>');
             }
         }
@@ -625,9 +765,41 @@ ready(() => {
 ```
 
 **장점:**
-- ✅ PHP 실행 시점에 번역 텍스트 주입
-- ✅ window.t 객체 불필요 (JavaScript 번들 크기 감소)
+- ✅ PHP 실행 시점에 번역 텍스트 주입 (서버 사이드 렌더링)
 - ✅ 서버 사이드 번역으로 SEO 개선
+- ✅ 정적 텍스트에 가장 적합
+- ✅ 페이지 로드 시 이미 번역된 텍스트 제공 (성능 향상)
+- ✅ 외부 `.js` 파일로 분리할 필요 없음 (Sonub 표준 패턴)
+
+### JavaScript tr() vs PHP tr() 비교
+
+| 항목 | JavaScript `tr()` | PHP `tr()` / `t()->키` |
+|------|------------------|----------------------|
+| **실행 시점** | 클라이언트 (브라우저) | 서버 (PHP 실행 시점) |
+| **사용 위치** | 페이지 내 `<script>` 태그만 | 페이지 내 `<script>` 태그 및 HTML |
+| **외부 `.js` 파일** | ❌ 사용 불가 | ❌ 사용 불가 (외부 JS 파일 분리 금지) |
+| **사용 시나리오** | 동적 번역 필요한 경우 | 정적 텍스트 번역 (대부분의 경우) |
+| **언어 전환** | ✅ 실시간 언어 전환 가능 | ❌ 페이지 새로고침 필요 |
+| **Vue computed** | ✅ 사용 가능 (반응형) | ✅ 사용 가능 (PHP 실행 후 고정) |
+| **SEO** | ❌ 클라이언트 렌더링 | ✅ 서버 사이드 렌더링 |
+| **성능** | 클라이언트 처리 (약간 느림) | ✅ 서버 처리 (빠름) |
+| **권장 사용처** | JavaScript 동적 메시지, computed | **HTML 템플릿 정적 텍스트 (우선 권장)** |
+
+**🔥🔥🔥 사용 가이드라인:**
+
+1. **✅ PHP `tr()` 함수 우선 사용** (대부분의 경우)
+   - HTML 템플릿의 정적 텍스트
+   - JavaScript `<script>` 태그 내부의 alert, confirm 메시지
+   - 서버 사이드 렌더링이 필요한 모든 텍스트
+
+2. **✅ JavaScript `tr()` 함수는 특별한 경우에만 사용**
+   - JavaScript에서 동적으로 생성되는 메시지
+   - Vue.js computed property에서 언어 전환이 필요한 경우
+   - 클라이언트 사이드에서 실시간 언어 전환이 필요한 경우
+
+3. **❌ 외부 `.js` 파일에서는 둘 다 사용 불가**
+   - Sonub는 JavaScript를 외부 파일로 분리하지 않음
+   - 모든 JavaScript는 페이지 내 `<script>` 태그로 작성
 
 ### window.t 객체 (레거시)
 

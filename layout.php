@@ -259,6 +259,7 @@ if (file_exists($module_path)) {
 
     <script>
         __HYDRATE__.user = <?php echo login() ? json_encode(login()->data(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : 'null'; ?>;
+        __HYDRATE__.lang = "<?php echo get_user_lang(); ?>";
     </script>
 
 </body>

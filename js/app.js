@@ -264,7 +264,8 @@ ready(() => {
     // 1️⃣ 상태 (state)
     const state = reactive({
         count: 0,
-        user: window.__HYDRATE__?.user ?? null  // index.php에서 주입된 로그인 사용자 정보
+        user: window.__HYDRATE__?.user ?? null,  // index.php에서 주입된 로그인 사용자 정보
+        lang: window.__HYDRATE__?.lang || 'en'  // index.php에서 주입된 사용자 언어 정보
     });
 
     // 2️⃣ 계산값 (getters)
@@ -318,4 +319,12 @@ function thumbnail(fileUrl, width, height, fit = 'cover', quality = 85, bgColor 
     url.searchParams.set('q', quality);
     url.searchParams.set('bg', bgColor);
     return url.toString();
+}
+
+
+// 다국어 번역 함수
+// 예제: tr({ en: 'Hello', ko: '안녕하세요' });
+function tr(texts = {}) {
+    const lang = window.AppStore.state.lang;
+    return texts[lang] || texts['en'] || '';
 }

@@ -98,7 +98,11 @@ function load_deferred_js(string $path, int $priority = 0)
     if (!isset($global_deferred_scripts[$priority])) {
         $global_deferred_scripts[$priority] = [];
     }
-    $global_deferred_scripts[$priority][] = $path;
+
+    // 중복 로드 방지: 같은 경로가 이미 추가되어 있으면 추가하지 않음
+    if (!in_array($path, $global_deferred_scripts[$priority], true)) {
+        $global_deferred_scripts[$priority][] = $path;
+    }
 }
 
 
