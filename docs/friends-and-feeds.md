@@ -374,7 +374,7 @@ $post = create_post([
 
 ### 2단계: 친구 수신자 계산 (Friendships)
 
-**⭐ 핵심 전략: pending 상태도 피드 전파 대상에 포함**
+**⭐ 핵심 전략: pending 상태의 단방향 전파 (스팸 방지)**
 
 작성자의 친구 목록을 무방향 1행에서 조회:
 
@@ -385,22 +385,46 @@ SELECT CASE
 END AS receiver_id
 FROM friendships
 WHERE (user_id_a = :author OR user_id_b = :author)
-  AND status IN ('accepted', 'pending'); -- ✅ pending도 포함!
+  AND (
+      -- accepted: 양방향 전파 (서로 친구)
+      status = 'accepted'
+      OR
+      -- pending: 단방향 전파 (요청자만 수신자 글 볼 수 있음)
+      (status = 'pending' AND requested_by != :author)
+  );
 ```
 
-**예제:**
-- 사용자 ID 5가 글 작성
-- 친구 (accepted): 1, 3
-- 친구 요청 중 (pending): 10, 15
-- → receiver_id = [1, 3, 10, 15] (모두 피드 전파 대상)
+**예제 1: User A가 User B에게 친구 요청 (pending)**
+```
+User A (requested_by = A) → User B
+```
 
-**왜 pending도 포함하나요?**
+**피드 전파:**
+- A가 글 작성 → B 피드에 전파 안 됨 ❌ (스팸 방지)
+- B가 글 작성 → A 피드에 전파됨 ✅ (요청자가 수신자 글 볼 수 있음)
 
-사이트 운영 초기에는 사용자가 적어서 친구 요청을 보내도 수락까지 시간이 걸릴 수 있습니다.
-pending 상태에서도 피드를 공유하면:
-- 사용자 경험 향상 (즉시 콘텐츠 공유)
-- 활동 유도 (친구 요청만 해도 글을 볼 수 있음)
-- 친구 수락 유도 (상대방의 글을 보고 관심 생김)
+**예제 2: User A와 User B가 accepted (친구)**
+```
+User A ↔ User B (status = 'accepted')
+```
+
+**피드 전파:**
+- A가 글 작성 → B 피드에 전파됨 ✅
+- B가 글 작성 → A 피드에 전파됨 ✅
+
+**왜 pending에서 단방향 전파인가요?**
+
+**스팸 방지 (Anti-Spam)**:
+- 악의적인 사용자가 무작위로 친구 요청을 보내서 자신의 글을 강제로 노출시키는 스팸 행위 방지
+- 요청자(requester)만 수신자(receiver)의 글을 볼 수 있음
+
+**사용자 경험 향상**:
+- 사이트 초기에 사용자가 적을 때, 친구 요청만 해도 상대방의 콘텐츠를 즉시 볼 수 있음
+- 친구 수락 유도: 상대방의 글을 보고 관심이 생기면 수락 가능성 증가
+
+**핵심 규칙**:
+- **요청을 보낸 사람(requester)**: 상대방 글만 볼 수 있음 (단방향)
+- **요청을 받은 사람(receiver)**: 요청자 글을 볼 수 없음 (스팸 방지)
 
 ### 3단계: 피드 캐시 삽입 (Feed Entries)
 
@@ -413,7 +437,13 @@ SELECT
   :created_at
 FROM friendships
 WHERE (user_id_a = :author OR user_id_b = :author)
-  AND status IN ('accepted', 'pending') -- ✅ pending도 포함!
+  AND (
+      -- accepted: 양방향 전파
+      status = 'accepted'
+      OR
+      -- pending: 작성자가 요청을 받은 경우만 전파 (스팸 방지)
+      (status = 'pending' AND requested_by != :author)
+  )
   AND NOT EXISTS (
     -- 양방향 차단 체크
     SELECT 1 FROM blocks
@@ -423,9 +453,10 @@ WHERE (user_id_a = :author OR user_id_b = :author)
 ```
 
 **동작:**
-1. 작성자의 친구 목록 조회 (accepted + pending)
-2. 차단된 사용자 제외
-3. 각 친구의 피드에 게시글 전파
+1. 작성자의 친구 목록 조회 (accepted + pending 단방향)
+2. **스팸 방지**: pending 상태에서는 작성자가 요청을 받은 경우만 전파
+3. 차단된 사용자 제외
+4. 각 친구의 피드에 게시글 전파
 
 ### 4단계: 피드 조회 (사용자별 타임라인)
 

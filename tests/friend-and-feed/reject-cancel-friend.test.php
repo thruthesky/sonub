@@ -123,63 +123,89 @@ echo "  - User1 ID: {$user1['id']}, Display Name: {$user1['display_name']}\n";
 echo "  - User2 ID: {$user2['id']}, Display Name: {$user2['display_name']}\n\n";
 
 // =============================================================================
-// 테스트 1: reject_friend() - 친구 요청 거절
+// 테스트 1: pending 스팸 방지 로직 검증
 // =============================================================================
-echo "--- 테스트 1: reject_friend() ---\n";
+echo "--- 테스트 1: pending 스팸 방지 로직 ---\n";
 
-// 1단계: User1이 User2에게 친구 요청
+// 1단계: User1이 User2에게 친구 요청 (User1 = 요청자, User2 = 수신자)
 request_friend(['me' => $user1['id'], 'other' => $user2['id']]);
-echo "✅ User1이 User2에게 친구 요청 보냄 (pending)\n";
+echo "✅ User1이 User2에게 친구 요청 보냄 (pending, requested_by={$user1['id']})\n";
 
-// 2단계: User1이 글 작성 (User2 피드에 전파됨)
+// 2단계: User1이 글 작성 (User2 피드에 전파되면 안 됨 - 스팸 방지)
 $post1 = create_test_post([
     'category' => 'test',
     'title' => '테스트 글 1',
-    'content' => 'reject 테스트용 글',
+    'content' => 'User1(요청자)의 글',
     'user_id' => $user1['id'],
     'visibility' => 'public'
 ]);
-echo "✅ User1이 글 작성 (post_id: {$post1['id']})\n";
+echo "✅ User1(요청자)이 글 작성 (post_id: {$post1['id']})\n";
 
-// 3단계: User2 피드에 User1의 글이 있는지 확인
+// 3단계: User2 피드에 User1의 글이 없는지 확인 (스팸 방지)
 $pdo = pdo();
 $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM feed_entries WHERE receiver_id = ? AND post_id = ?");
 $stmt->execute([$user2['id'], $post1['id']]);
 $result = $stmt->fetch(PDO::FETCH_ASSOC);
-if ($result['count'] > 0) {
-    echo "✅ User2 피드에 User1의 글 전파 확인 (pending 상태에서도 전파됨)\n";
+if ($result['count'] == 0) {
+    echo "✅ 스팸 방지 확인: User1(요청자)의 글이 User2 피드에 전파 안 됨\n";
 } else {
-    die("❌ 오류: User2 피드에 User1의 글이 전파되지 않음\n");
+    die("❌ 오류: User1(요청자)의 글이 User2 피드에 전파됨 (스팸!)\n");
 }
 
-// 4단계: User2가 친구 요청 거절
+// 4단계: User2가 글 작성 (User1 피드에 전파되어야 함 - 요청자가 볼 수 있음)
+$post1_user2 = create_test_post([
+    'category' => 'test',
+    'title' => '테스트 글 1-2',
+    'content' => 'User2(수신자)의 글',
+    'user_id' => $user2['id'],
+    'visibility' => 'public'
+]);
+echo "✅ User2(수신자)가 글 작성 (post_id: {$post1_user2['id']})\n";
+
+// 5단계: User1 피드에 User2의 글이 있는지 확인 (요청자가 수신자 글 볼 수 있음)
+$stmt->execute([$user1['id'], $post1_user2['id']]);
+$result = $stmt->fetch(PDO::FETCH_ASSOC);
+if ($result['count'] > 0) {
+    echo "✅ User1(요청자) 피드에 User2(수신자)의 글 전파 확인 (요청자가 수신자 글 볼 수 있음)\n";
+} else {
+    die("❌ 오류: User1 피드에 User2의 글이 전파되지 않음\n");
+}
+
+echo "\n";
+
+// =============================================================================
+// 테스트 2: reject_friend() - 친구 요청 거절
+// =============================================================================
+echo "--- 테스트 2: reject_friend() ---\n";
+
+// 1단계: User2가 친구 요청 거절
 reject_friend(['me' => $user2['id'], 'other' => $user1['id']]);
 echo "✅ User2가 User1의 친구 요청 거절 (rejected)\n";
 
-// 5단계: 기존 feed_entries는 유지되는지 확인
-$stmt->execute([$user2['id'], $post1['id']]);
+// 2단계: 기존 feed_entries는 유지되는지 확인 (User1 피드에 User2 글)
+$stmt->execute([$user1['id'], $post1_user2['id']]);
 $result = $stmt->fetch(PDO::FETCH_ASSOC);
 if ($result['count'] > 0) {
-    echo "✅ reject 후에도 기존 피드 캐시는 유지됨\n";
+    echo "✅ reject 후에도 기존 피드 캐시는 유지됨 (User1 피드에 User2 글 남아있음)\n";
 } else {
     die("❌ 오류: reject 후 기존 피드 캐시가 삭제됨\n");
 }
 
-// 6단계: User1이 새 글 작성
+// 3단계: User2가 새 글 작성
 $post2 = create_test_post([
     'category' => 'test',
     'title' => '테스트 글 2',
-    'content' => 'reject 후 작성한 글',
-    'user_id' => $user1['id'],
+    'content' => 'reject 후 User2가 작성한 글',
+    'user_id' => $user2['id'],
     'visibility' => 'public'
 ]);
-echo "✅ User1이 reject 후 새 글 작성 (post_id: {$post2['id']})\n";
+echo "✅ User2가 reject 후 새 글 작성 (post_id: {$post2['id']})\n";
 
-// 7단계: User2 피드에 새 글이 전파되지 않았는지 확인
-$stmt->execute([$user2['id'], $post2['id']]);
+// 4단계: User1 피드에 새 글이 전파되지 않았는지 확인 (rejected 상태)
+$stmt->execute([$user1['id'], $post2['id']]);
 $result = $stmt->fetch(PDO::FETCH_ASSOC);
 if ($result['count'] == 0) {
-    echo "✅ reject 후 새 글은 User2 피드에 전파되지 않음\n";
+    echo "✅ reject 후 새 글은 User1 피드에 전파되지 않음\n";
 } else {
     die("❌ 오류: reject 후에도 새 글이 전파됨\n");
 }
@@ -187,9 +213,9 @@ if ($result['count'] == 0) {
 echo "\n";
 
 // =============================================================================
-// 테스트 2: cancel_friend_request() - 친구 요청 취소 및 피드 삭제
+// 테스트 3: cancel_friend_request() - 친구 요청 취소 및 피드 삭제
 // =============================================================================
-echo "--- 테스트 2: cancel_friend_request() ---\n";
+echo "--- 테스트 3: cancel_friend_request() ---\n";
 
 // 테스트 사용자 추가 생성
 $user3 = create_test_user('cancel_test_user3_' . time());
@@ -223,18 +249,21 @@ $post4 = create_test_post([
 ]);
 echo "✅ User4도 글 작성 (post_id: {$post4['id']})\n";
 
-// 4단계: 서로의 피드에 글이 전파되었는지 확인
+// 4단계: 피드 전파 확인 (스팸 방지 로직 적용)
 $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM feed_entries WHERE receiver_id = ? AND post_author_id = ?");
 
+// User4 피드에 User3 글이 없는지 확인 (User3이 요청자이므로 전파 안 됨)
 $stmt->execute([$user4['id'], $user3['id']]);
 $result1 = $stmt->fetch(PDO::FETCH_ASSOC);
 
+// User3 피드에 User4 글이 있는지 확인 (User3이 요청자이므로 User4 글 볼 수 있음)
 $stmt->execute([$user3['id'], $user4['id']]);
 $result2 = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if ($result1['count'] > 0 && $result2['count'] > 0) {
-    echo "✅ User3과 User4의 피드에 서로의 글이 전파됨\n";
+if ($result1['count'] == 0 && $result2['count'] > 0) {
+    echo "✅ 스팸 방지 확인: User3(요청자) 글은 User4 피드에 전파 안 됨, User4 글은 User3 피드에 전파됨\n";
 } else {
+    echo "❌ 오류: User4 피드에 User3 글 count: {$result1['count']}, User3 피드에 User4 글 count: {$result2['count']}\n";
     die("❌ 오류: 피드 전파 실패\n");
 }
 
@@ -256,12 +285,13 @@ if ($result['count'] == 0) {
 }
 
 // 7단계: feed_entries가 삭제되었는지 확인
+// User3 피드에 User4 글만 있었으므로 (User3이 요청자, 스팸 방지), 이것만 삭제 확인
 $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM feed_entries WHERE (receiver_id = ? AND post_author_id = ?) OR (receiver_id = ? AND post_author_id = ?)");
 $stmt->execute([$user3['id'], $user4['id'], $user4['id'], $user3['id']]);
 $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if ($result['count'] == 0) {
-    echo "✅ feed_entries 삭제 확인 (서로의 피드에서 모두 삭제됨)\n";
+    echo "✅ feed_entries 삭제 확인 (User3 피드에서 User4 글 삭제됨)\n";
 } else {
     die("❌ 오류: feed_entries가 삭제되지 않음 (count: {$result['count']})\n");
 }
@@ -275,6 +305,7 @@ echo "--- 테스트 정리 ---\n";
 
 // 테스트 게시글 삭제
 delete_test_post($post1['id']);
+delete_test_post($post1_user2['id']);
 delete_test_post($post2['id']);
 delete_test_post($post3['id']);
 delete_test_post($post4['id']);

@@ -804,6 +804,13 @@ function get_post_row(int $post_id): ?array
 function fanout_post_to_friends(int $author_id, int $post_id, int $created_at): int
 {
     $pdo = pdo();
+
+    // 스팸 방지 로직:
+    // - accepted: 양방향 전파 (서로 친구)
+    // - pending: 단방향 전파 (요청자만 상대방 글 볼 수 있음)
+    //   → 작성자(author)가 요청을 보낸 경우(requested_by = author): 전파 안 함 (스팸 방지)
+    //   → 작성자(author)가 요청을 받은 경우(requested_by != author): 전파함 (요청자가 내 글 볼 수 있음)
+
     $sql = "INSERT IGNORE INTO feed_entries (receiver_id, post_id, post_author_id, created_at)
                         SELECT
                             CASE WHEN user_id_a = :author_case THEN user_id_b ELSE user_id_a END AS receiver_id,
@@ -812,7 +819,13 @@ function fanout_post_to_friends(int $author_id, int $post_id, int $created_at): 
                             :created_at
                             FROM friendships
                          WHERE (user_id_a = :author_where_a OR user_id_b = :author_where_b)
-                             AND status IN ('accepted', 'pending')";
+                             AND (
+                                 -- accepted: 양방향 전파
+                                 status = 'accepted'
+                                 OR
+                                 -- pending: 작성자가 요청을 받은 경우만 전파 (스팸 방지)
+                                 (status = 'pending' AND requested_by != :author_spam_check)
+                             )";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':author_case' => $author_id,
@@ -821,6 +834,7 @@ function fanout_post_to_friends(int $author_id, int $post_id, int $created_at): 
         ':created_at' => $created_at,
         ':author_where_a' => $author_id,
         ':author_where_b' => $author_id,
+        ':author_spam_check' => $author_id,
     ]);
     return $stmt->rowCount(); // 실제 삽입된 행 수(IGNORE 영향 있음)
 }
