@@ -25,8 +25,24 @@ $hydrationData = [
 
 // InfiniteScroll 라이브러리 로드
 load_deferred_js('infinite-scroll');
-load_deferred_js('user-search');
 ?>
+
+<!-- User Search 모듈을 위한 번역 데이터 (전역 변수로 제공) -->
+<script>
+    // user-search.js에서 사용할 번역 데이터
+    const searchTranslations = {
+        친구_검색: '<?= tr('친구 검색') ?>',
+        이름을_입력하세요: '<?= tr('이름을 입력하세요') ?>',
+        검색: '<?= tr('검색') ?>',
+        검색_중: '<?= tr('검색 중...') ?>',
+        검색_결과가_없습니다: '<?= tr('검색 결과가 없습니다.') ?>',
+        검색어를_입력해주세요: '<?= tr('검색어를 입력해주세요') ?>',
+        검색에_실패했습니다: '<?= tr('검색에 실패했습니다') ?>',
+        profileUrl: '<?= href()->user->profile ?>'
+    };
+</script>
+
+<?php include __DIR__ . '/list.js.php'; ?>
 
 <!-- Vue.js 앱 컨테이너 -->
 <div id="user-list-app" class="container py-4">
@@ -34,11 +50,26 @@ load_deferred_js('user-search');
         <div class="col-12">
             <h1 class="mb-4"><?= t()->사용자_목록 ?></h1>
 
-            <!-- Friend Search Button -->
-            <button onclick="window.openFriendSearchModal && window.openFriendSearchModal()" class="btn btn-primary mb-3">
-                <i class="bi bi-search me-2"></i>
-                <?= t()->친구_검색 ?>
-            </button>
+            <!-- Friend Action Buttons -->
+            <div class="mb-3 d-flex gap-2 flex-wrap">
+                <!-- Friend Search Button -->
+                <button onclick="window.openFriendSearchModal && window.openFriendSearchModal()" class="btn btn-primary">
+                    <i class="bi bi-search me-2"></i>
+                    <?= t()->친구_검색 ?>
+                </button>
+
+                <!-- Received Requests Button -->
+                <a href="<?= href()->friend->request_received ?>" class="btn btn-outline-success">
+                    <i class="bi bi-inbox me-2"></i>
+                    <?= t()->받은_요청 ?>
+                </a>
+
+                <!-- Sent Requests Button -->
+                <a href="<?= href()->friend->request_sent ?>" class="btn btn-outline-info">
+                    <i class="bi bi-send me-2"></i>
+                    <?= t()->보낸_요청 ?>
+                </a>
+            </div>
 
             <!-- My Friends Section (친구 한 줄 표시 위젯) -->
             <?php
@@ -239,20 +270,6 @@ load_deferred_js('user-search');
     </div>
 </div>
 
-<!-- User Search 모듈을 위한 번역 데이터 (전역 변수로 제공) -->
-<script>
-    // user-search.js에서 사용할 번역 데이터
-    const searchTranslations = {
-        친구_검색: '<?= t()->친구_검색 ?>',
-        이름을_입력하세요: '<?= t()->이름을_입력하세요 ?>',
-        검색: '<?= t()->검색 ?>',
-        검색_중: '<?= t()->검색_중 ?>',
-        검색_결과가_없습니다: '<?= t()->검색_결과가_없습니다 ?>',
-        검색어를_입력해주세요: '<?= t()->검색어를_입력해주세요 ?>',
-        검색에_실패했습니다: '<?= t()->검색에_실패했습니다 ?>',
-        profileUrl: '<?= href()->user->profile ?>'
-    };
-</script>
 
 <script>
     ready(() => {
@@ -566,6 +583,18 @@ function inject_list_language()
             'en' => 'Friend request failed',
             'ja' => 'フレンドリクエスト失敗',
             'zh' => '好友请求失败'
+        ],
+        '받은_요청' => [
+            'ko' => '받은 요청',
+            'en' => 'Received Requests',
+            'ja' => '受信したリクエスト',
+            'zh' => '收到的请求'
+        ],
+        '보낸_요청' => [
+            'ko' => '보낸 요청',
+            'en' => 'Sent Requests',
+            'ja' => '送信したリクエスト',
+            'zh' => '发送的请求'
         ],
     ]);
 }

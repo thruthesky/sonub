@@ -89,6 +89,11 @@ class CommentHref
 class FriendHref
 {
     public string $find_friend = '/friend/find-friend';
+    public string $add_friend_submit = '/friend/add-friend-submit';
+    public string $remove_friend_submit = '/friend/remove-friend-submit';
+    public string $request_sent = '/friend/request/sent-list';
+    public string $request_received = '/friend/request/received-list';
+    public string $followers = '/friend/follower-list';
 }
 
 

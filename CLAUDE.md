@@ -60,6 +60,7 @@ Sonub 프로젝트는 Docker 기반에 LEMP(Linux, Nginx, MySQL, PHP) 스택으�
 - `docs/database.md` - 데이터베이스 쿼리 작성 가이드라인
 - `docs/test.md` - 테스트 작성 및 실행 가이드라인
 - `docs/translation.md` - 다국어 번역 가이드라인
+
 - `docs/design-guideline.md` - 디자인 및 UI 가이드라인
 
 ### 2단계: 코드 업데이트
@@ -70,9 +71,10 @@ Sonub 프로젝트는 Docker 기반에 LEMP(Linux, Nginx, MySQL, PHP) 스택으�
 - **API 함수**: 배열 파라미터 하나만 받기 (`function func(array $input): mixed`)
 
 **CSS/JavaScript**:
-- 페이지 파일(`./page/**/*.php`): 외부 `.css`, `.js` 파일로 분리
+- 페이지 파일(`./page/**/*.php`): 가능한 Bootstrap CSS Utility 클래스를 써서 인라인으로 디자인. 외부 `.css`, `.js.php` 파일로 분리
 - 위젯 파일(`./widgets/**/*.php`): `<style>`, `<script>` 태그 내 작성
-- `Vue.createApp()`, `Vue.ref()` 등 Vue 객체 직접 사용
+- `Vue.createApp()` 등 Vue 객체 직접 사용
+- `Vue` 구조를 만드시 `Options API` 로 사용
 - `ready(() => { ... })` 래퍼 필수
 - API 호출 시 `func()` 함수 사용
 

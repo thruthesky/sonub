@@ -36,13 +36,13 @@ Sonub의 JavaScript는 **PHP MPA (Multi-Page Application)** 방식으로 동작�
 
 ### JavaScript 파일 분리 방식
 
-**🔥🔥🔥 최강력 규칙: 페이지 파일 내부에 JavaScript가 길어지면 *.javascript.php 파일로 분리해야 합니다 🔥🔥🔥**
+**🔥🔥🔥 최강력 규칙: 페이지 파일 내부에 JavaScript가 길어지면 *.js.php 파일로 분리해야 합니다 🔥🔥🔥**
 
 - **페이지 내 인라인**: 짧은 JavaScript는 `page/**/*.php` 내부에 `<script>` 태그로 작성
-- **별도 파일 분리**: 긴 JavaScript는 `page/**/*.javascript.php` 파일로 분리
-- **확장자 .php 사용**: `.javascript.php` 확장자를 사용하여 PHP 함수를 직접 사용 가능
+- **별도 파일 분리**: 긴 JavaScript는 `page/**/*.js.php` 파일로 분리
+- **확장자 .php 사용**: `.js.php` 확장자를 사용하여 PHP 함수를 직접 사용 가능
 
-### *.javascript.php 파일의 장점
+### *.js.php 파일의 장점
 
 **✅ PHP 함수 직접 사용:**
 - `<?= tr('텍스트') ?>`: 인라인 번역 함수 사용 가능
@@ -116,9 +116,9 @@ ready(() => {
 - ✅ `<?= login()->id ?>`: 로그인 사용자 정보를 PHP에서 직접 접근
 - ✅ `<?= json_encode($users) ?>`: 서버 데이터를 JavaScript로 Hydration
 
-### *.javascript.php 파일로 분리하는 경우
+### *.js.php 파일로 분리하는 경우
 
-JavaScript 코드가 길어지면 `*.javascript.php` 파일로 분리할 수 있습니다:
+JavaScript 코드가 길어지면 `*.js.php` 파일로 분리할 수 있습니다:
 
 **page/user/list.php:**
 ```php
@@ -126,10 +126,10 @@ JavaScript 코드가 길어지면 `*.javascript.php` 파일로 분리할 수 있
     <!-- 사용자 목록 HTML -->
 </div>
 
-<?php include __DIR__ . '/list.javascript.php'; ?>
+<?php include __DIR__ . '/list.js.php'; ?>
 ```
 
-**page/user/list.javascript.php:**
+**page/user/list.js.php:**
 ```php
 <script>
 ready(() => {
@@ -174,7 +174,7 @@ inject_list_language();
 ```
 
 **핵심 포인트:**
-- ✅ `.javascript.php` 확장자 사용 → PHP로 실행됨
+- ✅ `.js.php` 확장자 사용 → PHP로 실행됨
 - ✅ `<?= tr(...) ?>`, `<?= href()->... ?>`, `<?= login()->id ?>` 직접 사용 가능
 - ✅ 긴 JavaScript 코드를 별도 파일로 분리하여 가독성 향상
 - ✅ 페이지별 번역은 `t()->inject()` 함수 사용

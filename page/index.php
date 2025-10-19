@@ -4,6 +4,7 @@ $per_page = 20;
 $page = 1;
 inject_index_language();
 load_deferred_js('infinite-scroll');
+load_page_css();
 ?>
 
 <div>

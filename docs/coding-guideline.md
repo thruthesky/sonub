@@ -1229,93 +1229,83 @@ function sonub_messages_page()
 
 #### 페이지 파일 (`./page/**/*.php`)
 
-**✅ 필수: 페이지 파일에서는 CSS를 반드시 외부 파일로 분리해야 합니다**
+**✅ 권장: Bootstrap Utility CSS 클래스를 적극적으로 활용하세요**
 
-- **CSS 분리 규칙**:
-  - **✅ 필수**: 레이아웃 관련 Bootstrap CSS 유틸리티 클래스는 HTML에 직접 작성
-  - **✅ 필수**: 스타일 관련 CSS는 **반드시** `./page/**/*.css` 파일로 분리
-  - **✅ 자동 로드**: 페이지별 CSS 파일은 `layout.php`에서 자동으로 로드됨
-  - **❌ 금지**: 페이지 파일 내에 `<style>` 태그 사용 금지 (레이아웃 관련 Bootstrap 클래스 제외)
+- **CSS 작성 규칙**:
+  - **✅ 최우선**: Bootstrap Utility 클래스를 `class="..."` 속성에 인라인으로 지정
+  - **✅ 권장**: 레이아웃, 색상, 간격, 크기 등 모든 스타일을 Bootstrap Utility로 작성
+  - **✅ 필요시**: Bootstrap으로 표현 불가능한 스타일만 `./page/**/*.css` 파일로 분리
+  - **✅ 자동 로드**: 페이지별 CSS 파일은 `load_page_css()` 함수로 자동 로드
+  - **❌ 최소화**: 별도 CSS 파일은 최소화 (Bootstrap으로 불가능한 경우에만)
 
-- **JavaScript 분리 규칙**:
-  - **✅ 필수**: JavaScript 코드는 **반드시** `./page/**/*.js` 파일로 분리
+- **JavaScript 작성 규칙**:
+  - **✅ 페이지 내**: 짧은 JavaScript는 `<script>` 태그로 페이지 파일 내에 작성
+  - **✅ 파일 분리**: 긴 JavaScript는 `*.js.php` 파일로 분리
   - **✅ 자동 로드**: 페이지별 JS 파일은 `layout.php`에서 자동으로 로드됨
-  - **❌ 금지**: 페이지 파일 내에 `<script>` 태그로 JavaScript 작성 금지
 
 **올바른 페이지 파일 구조:**
 
 ```php
 <!-- ./page/user/profile.php -->
 <?php
-// 페이지 고유 로직만 작성
+// 페이지 고유 로직
 $user = login();
 ?>
 
-<!-- ✅ 올바른 방법: 레이아웃은 Bootstrap 클래스, 스타일은 CSS 파일로 분리 -->
-<div class="container my-5">  <!-- Bootstrap 유틸리티 클래스 -->
-    <div class="d-flex flex-column gap-3">  <!-- Bootstrap 유틸리티 클래스 -->
-        <div class="profile-card">  <!-- 스타일은 profile.css에 정의 -->
-            <h1 class="profile-title"><?= $user->name ?></h1>
-            <p class="profile-bio"><?= $user->bio ?></p>
+<!-- ✅ 최고의 방법: Bootstrap Utility 클래스만 사용 -->
+<div class="container py-5">
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center mb-3">
+                <img src="<?= $user->photo ?>"
+                     class="rounded-circle me-3"
+                     style="width: 80px; height: 80px; object-fit: cover;">
+                <div>
+                    <h1 class="mb-1 text-primary"><?= $user->name ?></h1>
+                    <p class="mb-0 text-muted"><?= $user->email ?></p>
+                </div>
+            </div>
+            <div class="border-top pt-3">
+                <p class="mb-0"><?= $user->bio ?></p>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- ❌ 금지: <style> 태그 사용 금지 -->
-<!-- ❌ 금지: <script> 태그 사용 금지 -->
+<?php
+// CSS 파일 자동 로드 (Bootstrap으로 불가능한 스타일이 있는 경우만)
+load_page_css();
+?>
 ```
 
 ```css
-/* ./page/user/profile.css */
-/* ✅ 올바른 방법: 스타일은 외부 CSS 파일에 정의 */
+/* ./page/user/profile.css - Bootstrap으로 불가능한 스타일만 */
 
-.profile-card {
-  background-color: var(--bs-light);
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+/* 예: 특수 애니메이션 */
+@keyframes profileFadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.profile-title {
-  color: var(--bs-primary);
-  font-weight: bold;
-  margin-bottom: 10px;
+.profile-card-animated {
+  animation: profileFadeIn 0.3s ease-out;
 }
 
-.profile-bio {
-  color: var(--bs-body-color);
-  line-height: 1.6;
+/* 예: 복잡한 그라디언트 */
+.profile-header-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 ```
 
-```javascript
-// ./page/user/profile.js
-// ✅ 올바른 방법: JavaScript는 외부 JS 파일에 정의
-
-Vue.createApp({
-  data() {
-    return {
-      user: null,
-    };
-  },
-  methods: {
-    async loadProfile() {
-      // 프로필 로드 로직
-    },
-  },
-  mounted() {
-    this.loadProfile();
-  },
-}).mount("#profile-app");
-```
+자세한 내용은 [docs/css.md](./css.md)를 참조하세요.
 
 #### 위젯 파일 (`./widgets/**/*.php`)
 
-**✅ 필수: 위젯 파일에서는 CSS와 JS를 모두 같은 PHP 파일 내에 작성합니다**
+**✅ 권장: 위젯에서도 Bootstrap Utility CSS 클래스를 최대한 활용하세요**
 
 - **CSS 작성 규칙**:
-  - **✅ 필수**: 위젯의 CSS는 `<style>` 태그 내에 작성
-  - **✅ 권장**: 위젯 고유의 스타일만 작성 (전역 스타일 금지)
+  - **✅ 최우선**: Bootstrap Utility 클래스를 `class="..."` 속성에 인라인으로 지정
+  - **✅ 필요시**: Bootstrap으로 표현 불가능한 스타일만 `<style>` 태그 내에 작성
   - **✅ 권장**: 위젯별로 고유한 CSS 클래스 이름 사용 (충돌 방지)
 
 - **JavaScript 작성 규칙**:
@@ -1335,63 +1325,48 @@ Vue.createApp({
  */
 ?>
 
-<!-- ✅ 올바른 방법: 레이아웃은 Bootstrap 클래스 사용 -->
-<div class="d-flex flex-column gap-2 post-card-widget" id="post-card-<?= $post['id'] ?>">
-    <div class="post-card-header">
-        <h3 class="post-card-title"><?= $post['title'] ?></h3>
-    </div>
-    <div class="post-card-body">
-        <p class="post-card-content"><?= $post['content'] ?></p>
+<!-- ✅ 최고의 방법: Bootstrap Utility 클래스로 디자인 -->
+<div class="card shadow-sm mb-3 post-card-widget" id="post-card-<?= $post['id'] ?>">
+    <div class="card-body p-3">
+        <!-- 헤더 -->
+        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+            <h5 class="mb-0 text-primary"><?= $post['title'] ?></h5>
+            <span class="badge bg-secondary"><?= $post['category'] ?></span>
+        </div>
+
+        <!-- 본문 -->
+        <div class="mb-2">
+            <p class="mb-0 text-dark" style="line-height: 1.6;"><?= $post['content'] ?></p>
+        </div>
+
+        <!-- 푸터 -->
+        <div class="d-flex justify-content-between align-items-center">
+            <span class="text-muted" style="font-size: 0.875rem;"><?= $post['date'] ?></span>
+            <button class="btn btn-sm btn-outline-primary">자세히 보기</button>
+        </div>
     </div>
 </div>
 
-<!-- ✅ 올바른 방법: 위젯의 CSS는 <style> 태그 내에 작성 -->
+<!-- ✅ Bootstrap으로 불가능한 스타일만 작성 -->
 <style>
-/* 위젯 고유 스타일 */
-.post-card-widget {
-    background-color: var(--bs-light);
-    padding: 15px;
-    border-radius: 6px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.post-card-header {
-    border-bottom: 1px solid var(--bs-border-color);
-    padding-bottom: 10px;
-    margin-bottom: 10px;
-}
-
-.post-card-title {
-    color: var(--bs-primary);
-    font-size: 1.2rem;
-    font-weight: bold;
-}
-
-.post-card-content {
-    color: var(--bs-body-color);
-    line-height: 1.5;
+/* 위젯 고유 스타일 - Bootstrap으로 불가능한 경우만 */
+.post-card-widget:hover {
+    transform: translateY(-2px);
+    transition: transform 0.2s ease-out;
 }
 </style>
 
-<!-- ✅ 올바른 방법: 위젯의 JavaScript는 <script> 태그 내에 작성 -->
+<!-- ✅ 위젯의 JavaScript -->
 <script>
 ready(() => {
-    Vue.createApp({
-        data() {
-            return {
-                likes: <?= $post['likes'] ?>,
-            };
-        },
-        methods: {
-            async likePost() {
-                // 좋아요 로직
-                this.likes++;
-            },
-        },
-    }).mount('#post-card-<?= $post['id'] ?>');
+    // 위젯 고유 JavaScript 로직
+    const card = document.getElementById('post-card-<?= $post['id'] ?>');
+    console.log('Post card loaded:', card);
 });
 </script>
 ```
+
+자세한 내용은 [docs/css.md](./css.md)를 참조하세요.
 
 #### 페이지 vs 위젯 비교표
 

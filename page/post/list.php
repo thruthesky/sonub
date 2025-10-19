@@ -36,6 +36,7 @@ load_deferred_js('infinite-scroll');
 
 // 번역 함수 호출
 inject_post_list_language();
+load_page_css();
 ?>
 
 <!-- 페이지 컨테이너 -->

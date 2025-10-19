@@ -1,4 +1,5 @@
 <?php
+
 /**
  * 카테고리 목록 페이지
  *
@@ -12,6 +13,7 @@
 
 // 번역 함수 호출
 inject_categories_language();
+load_page_css();
 
 // 카테고리 데이터 로드
 $categories = get_all_categories();
@@ -44,7 +46,7 @@ $categories = get_all_categories();
                 <div class="d-flex flex-wrap gap-2">
                     <?php foreach ($group->getCategories() as $category): ?>
                         <a href="<?= href()->post->list(category: $category->category) ?>"
-                           class="category-item">
+                            class="category-item">
                             <i class="fa-solid fa-angle-right me-1"></i>
                             <?= htmlspecialchars($category->name) ?>
                         </a>
