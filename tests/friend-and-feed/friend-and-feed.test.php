@@ -400,10 +400,45 @@ $pdo->exec("DELETE FROM blocks WHERE blocker_id >= 1000");
 echo "\n";
 
 // ============================================================================
-// 테스트 8: get_post_row() 내부 함수
+// 테스트 8: get_friend_requests_received() 함수
 // ============================================================================
 
-echo "테스트 8: get_post_row() 함수\n";
+echo "테스트 8: get_friend_requests_received() 함수\n";
+echo "----------------------------------------\n";
+
+// 기존 데이터 초기화 후 요청 생성
+$stmt = $pdo->prepare("DELETE FROM friendships WHERE (user_id_a = :a AND user_id_b = :b)");
+[$fa, $fb] = friend_pair(1500, 1501);
+$stmt->execute([':a' => $fa, ':b' => $fb]);
+
+request_friend(['me' => 1500, 'other' => 1501]);
+
+$receivedRequests = get_friend_requests_received(['me' => 1501]);
+assert_true(is_array($receivedRequests) && count($receivedRequests) === 1, "1501이 받은 친구 요청 1건 반환");
+$firstRequest = $receivedRequests[0];
+assert_true($firstRequest['user_id'] === 1500, "요청 보낸 사용자 ID가 올바름");
+assert_true($firstRequest['display_name'] === 'TestUser1500', "요청 보낸 사용자 이름이 올바름");
+assert_true($firstRequest['requested_by'] === 1500, "requested_by 값이 보낸 사용자 ID와 일치");
+
+$noRequests = get_friend_requests_received(['me' => 1500]);
+assert_true(count($noRequests) === 0, "요청 보낸 사용자는 받은 요청 목록이 비어 있음");
+
+$receivedCount = count_friend_requests_received(['me' => 1501]);
+assert_true($receivedCount === 1, "받은 요청 수 카운트와 목록 길이가 일치");
+
+assert_throws(
+    fn() => get_friend_requests_received(['me' => 0]),
+    'invalid-me',
+    "me가 0일 때 'invalid-me' 에러 발생"
+);
+
+echo "\n";
+
+// ============================================================================
+// 테스트 9: get_post_row() 내부 함수
+// ============================================================================
+
+echo "테스트 9: get_post_row() 함수\n";
 echo "----------------------------------------\n";
 
 // 존재하지 않는 게시글
@@ -425,10 +460,10 @@ if ($first_post) {
 echo "\n";
 
 // ============================================================================
-// 테스트 9: fanout_post_to_friends() 함수
+// 테스트 10: fanout_post_to_friends() 함수
 // ============================================================================
 
-echo "테스트 9: fanout_post_to_friends() 함수\n";
+echo "테스트 10: fanout_post_to_friends() 함수\n";
 echo "----------------------------------------\n";
 
 // 준비: 친구 관계 생성 (작성자 1100, 수신자 1101/1102)
