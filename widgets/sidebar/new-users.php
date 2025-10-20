@@ -1,12 +1,15 @@
 <?php
 
 /**
- * New Users Widget
+ * New Users Widget (신규 회원 위젯)
  *
- * Displays the 16 most recently registered users in a compact 4x4 grid.
+ * 최근 가입한 16명의 사용자를 4x4 그리드로 표시합니다.
  */
 
-// Get 16 most recent users
+// 다국어 번역 함수 호출 (반드시 페이지 로직 전에 호출)
+inject_new_users_widget_language();
+
+// 최근 가입한 사용자 16명 가져오기
 $result = list_users(['page' => 1, 'per_page' => 16]);
 $users = $result['users'] ?? [];
 $displayUsers = array_slice($users, 0, 16);
@@ -22,15 +25,15 @@ load_deferred_js('vue-components/user-search');
 <div class="new-users-widget mb-3">
     <div class="widget-header">
         <div class="widget-heading">
-            <h5 class="widget-title">New Members</h5>
-            <p class="widget-subtitle">Latest arrivals</p>
+            <h5 class="widget-title"><?= t()->신규_회원 ?></h5>
+            <p class="widget-subtitle"><?= t()->최근_가입자 ?></p>
         </div>
     </div>
 
     <?php if ($userCount === 0): ?>
         <div class="empty-state">
             <i class="fa-regular fa-circle-user"></i>
-            <p>No members yet.<br><span>Check back soon.</span></p>
+            <p><?= t()->아직_회원이_없습니다 ?><br><span><?= t()->곧_다시_확인해주세요 ?></span></p>
         </div>
     <?php else: ?>
         <div class="users-grid">
@@ -39,14 +42,14 @@ load_deferred_js('vue-components/user-search');
                     <div class="user-avatar">
                         <?php if (!empty($user['photo_url'])): ?>
                             <img src="<?= htmlspecialchars($user['photo_url'] ?? '') ?>"
-                                alt="<?= htmlspecialchars($user['display_name'] ?? 'User') ?>">
+                                alt="<?= htmlspecialchars($user['display_name'] ?? t()->사용자) ?>">
                         <?php else: ?>
                             <div class="avatar-placeholder">
                                 <i class="fa-solid fa-user"></i>
                             </div>
                         <?php endif; ?>
                     </div>
-                    <div class="user-name"><?= htmlspecialchars($user['display_name'] ?? 'Anonymous') ?></div>
+                    <div class="user-name"><?= htmlspecialchars($user['display_name'] ?? t()->익명) ?></div>
                 </a>
             <?php endforeach; ?>
         </div>
@@ -247,3 +250,50 @@ load_deferred_js('vue-components/user-search');
         }
     }
 </style>
+
+<?php
+/**
+ * 신규 회원 위젯 다국어 번역 주입
+ */
+function inject_new_users_widget_language(): void
+{
+    t()->inject([
+        '신규_회원' => [
+            'ko' => '신규 회원',
+            'en' => 'New Members',
+            'ja' => '新規メンバー',
+            'zh' => '新会员',
+        ],
+        '최근_가입자' => [
+            'ko' => '최근 가입자',
+            'en' => 'Latest arrivals',
+            'ja' => '最新メンバー',
+            'zh' => '最新成员',
+        ],
+        '아직_회원이_없습니다' => [
+            'ko' => '아직 회원이 없습니다.',
+            'en' => 'No members yet.',
+            'ja' => 'まだメンバーがいません。',
+            'zh' => '还没有会员。',
+        ],
+        '곧_다시_확인해주세요' => [
+            'ko' => '곧 다시 확인해주세요.',
+            'en' => 'Check back soon.',
+            'ja' => 'もう一度確認してください。',
+            'zh' => '请稍后再查看。',
+        ],
+        '사용자' => [
+            'ko' => '사용자',
+            'en' => 'User',
+            'ja' => 'ユーザー',
+            'zh' => '用户',
+        ],
+        '익명' => [
+            'ko' => '익명',
+            'en' => 'Anonymous',
+            'ja' => '匿名',
+            'zh' => '匿名',
+        ],
+    ]);
+}
+?>

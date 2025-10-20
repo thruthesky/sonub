@@ -5,6 +5,9 @@
  *
  * 사용자가 접근할 수 있는 모든 메뉴를 표시합니다.
  */
+// 다국어 번역 함수 호출 (반드시 페이지 로직 전에 호출)
+inject_menu_intro_language();
+
 load_page_css();
 $user = login();
 ?>
