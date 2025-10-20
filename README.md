@@ -24,3 +24,8 @@ Sonub Website Development Guidelines
   - This approach respects user privacy and choice while maintaining a non-intrusive experience.
 
 
+# Server and Account
+
+- Server is in Hostinger
+- Connectng: `ssh  -o "ServerAliveInterval 60" -o "ServerAliveCountMax 120" sonub@167.88.45.173`
+- Password: `Wc~8603,*`
