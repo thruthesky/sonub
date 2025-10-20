@@ -9,3 +9,5 @@ Sonub Website Development Guidelines
 - Password: `Wc~8603,*`
 - Deploying: `./deploy.sh fast` to deploy fast (without building assets)
 
+
+-- test
