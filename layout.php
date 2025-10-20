@@ -144,7 +144,7 @@ if (file_exists($module_path)) {
     <div class="sonub-container">
         <div class="row">
             <!-- Left Sidebar -->
-            <aside class="d-none d-lg-flex flex-column gap-4 col-12 col-md-3 col-lg-3">
+            <aside class="sticky-sidebar d-none d-lg-flex flex-column gap-4 col-12 col-md-3 col-lg-3">
                 <?php include_once WIDGET_DIR . '/sidebar/quick-user-menu.php'; ?>
                 <?php include_once WIDGET_DIR . '/sidebar/new-users.php'; ?>
                 <?php include_once WIDGET_DIR . '/sidebar/quick-links.php'; ?>
@@ -156,11 +156,9 @@ if (file_exists($module_path)) {
             </main>
 
             <!-- Right Sidebar -->
-            <aside class="d-none d-lg-flex flex-column gap-4 col-12 col-md-3 col-lg-3 ">
-
+            <aside class="sticky-sidebar d-none d-lg-flex flex-column gap-4 col-12 col-md-3 col-lg-3">
                 <?php include_once WIDGET_DIR . '/sidebar/latest-posts.php'; ?>
                 <?php include_once WIDGET_DIR . '/sidebar/sidebar-stats.php'; ?>
-
             </aside>
         </div>
     </div>
@@ -232,6 +230,17 @@ if (file_exists($module_path)) {
     <?php include_once ROOT_DIR . '/etc/php-hot-reload-client.php'; ?>
     <link href="/css/app.css?v=<?= APP_VERSION ?>" rel="stylesheet">
     <script src="/js/app.js" defer></script>
+
+    <style>
+        /* Sticky sidebars */
+        .sticky-sidebar {
+            position: sticky;
+            top: 100px; /* Offset for fixed header (80-88px) + spacing */
+            align-self: flex-start; /* Prevent stretching */
+            max-height: calc(100vh - 120px); /* Prevent sidebar from being taller than viewport */
+            overflow-y: auto; /* Allow scrolling if sidebar content is too long */
+        }
+    </style>
 
 
 

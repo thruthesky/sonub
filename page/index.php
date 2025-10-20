@@ -45,7 +45,8 @@ if (login()) {
 
 <style>
     #my-wall {
-        height: calc(100vh - 200px);
+        min-height: 50vh;
+        /* Allow natural growth for infinite scroll */
     }
 
     /* 게시물 카드 스타일 */
