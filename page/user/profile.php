@@ -250,7 +250,8 @@ $is_me = login() && login()->id === $user->id;
                     <!-- 다른 사용자인 경우: 친구 추가 버튼 (Vue.js) -->
                     <button @click="requestFriend(<?= $user->id ?>)"
                         class="btn btn-primary"
-                        :disabled="requesting || isFriend">
+                        :disabled="requesting || isFriend"
+                        v-cloak>
                         <span v-if="requesting">
                             <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                             <?= t()->요청_중 ?>
@@ -320,14 +321,6 @@ $is_me = login() && login()->id === $user->id;
      */
 
     ready(() => {
-        // Vue.js 앱이 마운트될 요소 확인
-        const appElement = document.getElementById('profile-app');
-
-        // 앱 요소가 없으면 종료
-        if (!appElement) {
-            return;
-        }
-
         // Vue.js 프로필 앱 생성
         Vue.createApp({
             data() {
