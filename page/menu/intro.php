@@ -14,9 +14,8 @@ $user = login();
 
 <div class="container py-4">
     <div class="row justify-content-center">
-        <div class="col-12 col-xl-8">
+        <div class="col-12">
             <h1 class="menu-intro__title"><?= t()->메뉴 ?></h1>
-
             <section class="menu-section">
                 <h2 class="menu-section__heading"><?= t()->주요_메뉴 ?></h2>
                 <div class="menu-tiles">

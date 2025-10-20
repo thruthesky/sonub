@@ -1,6 +1,6 @@
 <?php
 $category = 'story';
-$per_page = 20;
+$per_page = 10;
 $page = 1;
 inject_index_language();
 load_deferred_js('infinite-scroll');
@@ -47,9 +47,275 @@ if (login()) {
     #my-wall {
         height: calc(100vh - 200px);
     }
+
+    /* 게시물 카드 스타일 */
+    .post-card {
+        background-color: white;
+        border-radius: 8px;
+        border: 1px solid #e4e6eb;
+        margin-bottom: 16px;
+    }
+
+    /* 게시물 헤더 */
+    .post-header {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        border-bottom: 1px solid #e4e6eb;
+    }
+
+    .post-header-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 12px;
+        background-color: #e4e6eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .post-header-avatar i {
+        font-size: 20px;
+        color: #65676b;
+    }
+
+    .post-header-info {
+        flex: 1;
+    }
+
+    .post-header-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: #050505;
+        line-height: 1.3;
+    }
+
+    .post-header-meta {
+        font-size: 13px;
+        color: #65676b;
+        line-height: 1.3;
+    }
+
+    /* 게시물 본문 */
+    .post-body {
+        padding: 16px;
+    }
+
+    .post-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #050505;
+        margin-bottom: 8px;
+    }
+
+    .post-content {
+        font-size: 15px;
+        color: #050505;
+        line-height: 1.5;
+        margin-bottom: 12px;
+    }
+
+    /* 게시물 이미지 */
+    .post-images {
+        margin-top: 12px;
+    }
+
+    .post-images img {
+        width: 100%;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .post-images-placeholder {
+        background-color: #f0f2f5;
+        border-radius: 8px;
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #65676b;
+    }
+
+    /* 게시물 액션 버튼 */
+    .post-actions {
+        display: flex;
+        border-top: 1px solid #e4e6eb;
+        padding: 4px 16px;
+    }
+
+    .post-action-btn {
+        flex: 1;
+        background: none;
+        border: none;
+        padding: 8px;
+        color: #65676b;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        border-radius: 4px;
+        transition: background-color 0.15s ease;
+    }
+
+    .post-action-btn:hover {
+        background-color: #f0f2f5;
+    }
+
+    .post-action-btn i {
+        font-size: 18px;
+    }
+
+    /* 댓글 섹션 */
+    .post-comments-section {
+        border-top: 1px solid #e4e6eb;
+        padding: 12px 16px;
+    }
+
+    /* 댓글 입력 박스 */
+    .comment-input-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .comment-input-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        background-color: #e4e6eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .comment-input-avatar i {
+        font-size: 16px;
+        color: #65676b;
+    }
+
+    .comment-input-wrapper {
+        flex: 1;
+        display: flex;
+        gap: 8px;
+    }
+
+    .comment-input {
+        flex: 1;
+        border: 1px solid #ccc;
+        border-radius: 18px;
+        padding: 8px 12px;
+        font-size: 15px;
+        outline: none;
+        background-color: #f0f2f5;
+    }
+
+    .comment-input:focus {
+        background-color: white;
+        border-color: #0866ff;
+    }
+
+    .comment-submit-btn {
+        background: none;
+        border: none;
+        color: #0866ff;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 8px 12px;
+    }
+
+    .comment-submit-btn:disabled {
+        color: #bcc0c4;
+        cursor: not-allowed;
+    }
+
+    /* 댓글 목록 */
+    .comments-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .comment-item {
+        display: flex;
+        gap: 8px;
+    }
+
+    .comment-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        background-color: #e4e6eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .comment-avatar i {
+        font-size: 16px;
+        color: #65676b;
+    }
+
+    .comment-content-wrapper {
+        flex: 1;
+    }
+
+    .comment-bubble {
+        background-color: #f0f2f5;
+        border-radius: 18px;
+        padding: 8px 12px;
+        display: inline-block;
+    }
+
+    .comment-author {
+        font-size: 13px;
+        font-weight: 600;
+        color: #050505;
+        margin-bottom: 2px;
+    }
+
+    .comment-text {
+        font-size: 15px;
+        color: #050505;
+        line-height: 1.3333;
+    }
+
+    .comment-meta {
+        font-size: 12px;
+        color: #65676b;
+        margin-top: 4px;
+        padding-left: 12px;
+    }
+
+    /* 반응형 디자인 */
+    @media (max-width: 768px) {
+        .post-header-avatar {
+            width: 36px;
+            height: 36px;
+        }
+
+        .post-action-btn {
+            font-size: 13px;
+        }
+
+        .comment-input {
+            font-size: 14px;
+        }
+    }
 </style>
 
-<div id="my-wall" class="container mt-4">
+<div id="my-wall" class="mt-4">
     <!-- Vue 앱이 여기에 렌더링됩니다 -->
 </div>
 
@@ -75,7 +341,6 @@ if (login()) {
         // Vue 앱 초기화
         const app = Vue.createApp({
             template: `
-                <div>
                     <!-- 게시물이 없을 때 -->
                     <div v-if="postList.isEmpty" class="text-center py-5">
                         <p class="text-muted">아직 게시물이 없습니다.</p>
@@ -83,44 +348,128 @@ if (login()) {
 
                     <!-- 게시물 목록 -->
                     <div v-else>
-                        <article v-for="post in postList.posts" :key="post.post_id" class="post-card card mb-3">
-                            <div class="card-body">
-                                <!-- 게시물 제목 (있는 경우) -->
-                                <h5 v-if="post.title" class="card-title mb-2">{{ post.title }}</h5>
+                        <article v-for="post in postList.posts" :key="post.post_id" class="post-card">
+                            <!-- 게시물 헤더 (사용자 정보) -->
+                            <div class="post-header">
+                                <!-- 프로필 사진 -->
+                                <div class="post-header-avatar">
+                                    <img v-if="getAuthorPhoto(post)"
+                                         :src="getAuthorPhoto(post)"
+                                         :alt="getAuthorName(post)"
+                                         style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                                    <i v-else class="fa-solid fa-user"></i>
+                                </div>
 
-                                <!-- 게시물 내용 -->
-                                <div v-if="post.content" class="post-content mb-3" v-html="formatContent(post.content)"></div>
+                                <!-- 사용자 이름, 날짜, 공개범위 -->
+                                <div class="post-header-info">
+                                    <div class="post-header-name">{{ getAuthorName(post) }}</div>
+                                    <div class="post-header-meta">
+                                        {{ formatDate(post.created_at) }} ·
+                                        <span class="badge bg-secondary">{{ post.visibility || 'public' }}</span>
+                                    </div>
+                                </div>
+                            </div>
 
-                                <!-- 게시물 사진들 (향후 files 필드 추가 시) -->
-                                <div v-if="hasPhotos(post.files)" class="post-photos mb-3">
-                                    <div class="row g-2">
+                            <!-- 게시물 본문 -->
+                            <div class="post-body">
+                                <!-- 제목 -->
+                                <div v-if="post.title" class="post-title">{{ post.title }}</div>
+
+                                <!-- 내용 -->
+                                <div v-if="post.content" class="post-content" v-html="formatContent(post.content)"></div>
+
+                                <!-- 이미지 -->
+                                <div class="post-images">
+                                    <div v-if="hasPhotos(post.files)" class="row g-2">
                                         <div v-for="(fileUrl, index) in getValidPhotos(post.files)" :key="index"
                                              :class="getPhotoColumnClass(getValidPhotos(post.files).length)">
                                             <img :src="thumbnail(fileUrl, 400, 400, 'cover', 85, 'ffffff')"
                                                  :alt="'Photo ' + (index + 1)"
-                                                 class="img-fluid rounded"
-                                                 style="width: 100%; height: 200px; object-fit: cover; cursor: pointer;"
+                                                 style="width: 100%; height: 200px; object-fit: cover;"
                                                  @click="openPhotoModal(fileUrl)">
                                         </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                <!-- 게시물 메타 정보 -->
-                                <div class="post-meta text-muted small mt-2">
-                                    <span>작성자 ID: {{ post.author_id }}</span>
-                                    <span class="ms-3">카테고리: {{ post.category }}</span>
-                                    <span class="ms-3">작성일: {{ formatDate(post.created_at) }}</span>
-                                    <span class="ms-3 badge bg-secondary">{{ post.visibility }}</span>
+                            <!-- 게시물 액션 버튼 -->
+                            <div class="post-actions">
+                                <button class="post-action-btn" @click="handleLike(post)">
+                                    <i class="fa-regular fa-thumbs-up"></i>
+                                    <span>Like</span>
+                                </button>
+                                <button class="post-action-btn" @click="toggleCommentBox(post)">
+                                    <i class="fa-regular fa-comment"></i>
+                                    <span>Comment</span>
+                                </button>
+                                <button class="post-action-btn" @click="handleShare(post)">
+                                    <i class="fa-regular fa-share-from-square"></i>
+                                    <span>Share</span>
+                                </button>
+                            </div>
+
+                            <!-- 댓글 섹션 -->
+                            <div v-if="post.showComments" class="post-comments-section">
+                                <!-- 댓글 입력 박스 -->
+                                <div class="comment-input-box">
+                                    <div class="comment-input-avatar">
+                                        <img v-if="currentUserPhoto"
+                                             :src="currentUserPhoto"
+                                             alt="My avatar"
+                                             style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                                        <i v-else class="fa-solid fa-user"></i>
+                                    </div>
+                                    <div class="comment-input-wrapper">
+                                        <input
+                                            type="text"
+                                            class="comment-input"
+                                            placeholder="Write a comment..."
+                                            v-model="post.newComment"
+                                            @keyup.enter="submitComment(post)">
+                                        <button
+                                            class="comment-submit-btn"
+                                            :disabled="!post.newComment || !post.newComment.trim()"
+                                            @click="submitComment(post)">
+                                            Post
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 댓글 목록 -->
+                                <div v-if="post.comments && post.comments.length > 0" class="comments-list">
+                                    <div v-for="comment in post.comments" :key="comment.comment_id" class="comment-item">
+                                        <!-- 댓글 작성자 아바타 -->
+                                        <div class="comment-avatar">
+                                            <img v-if="comment.author_photo_url"
+                                                 :src="comment.author_photo_url"
+                                                 :alt="comment.author_name"
+                                                 style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                                            <i v-else class="fa-solid fa-user"></i>
+                                        </div>
+
+                                        <!-- 댓글 내용 -->
+                                        <div class="comment-content-wrapper">
+                                            <div class="comment-bubble">
+                                                <div class="comment-author">{{ comment.author_name || 'Anonymous' }}</div>
+                                                <div class="comment-text">{{ comment.content }}</div>
+                                            </div>
+                                            <div class="comment-meta">
+                                                {{ formatDate(comment.created_at) }}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </article>
                     </div>
-                </div>
             `,
             data() {
                 return {
                     // 서버에서 hydrate된 게시물 목록
-                    postList: <?= json_encode($postList, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>
+                    postList: <?= json_encode($postList, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+                    toogleCommentBox: false,
+                    // 현재 로그인한 사용자 프로필 사진
+                    currentUserPhoto: <?= login() && login()->photo_url ? json_encode(login()->photo_url) : 'null' ?>
                 };
             },
             methods: {
@@ -216,6 +565,100 @@ if (login()) {
                         return [];
                     }
                     return files.filter(url => url && url.trim() !== '');
+                },
+                /**
+                 * 작성자 이름 반환 (없으면 기본값)
+                 * @param {Object} post - 게시물 객체
+                 * @returns {string} 작성자 이름
+                 */
+                getAuthorName(post) {
+                    return post.author_display_name || post.display_name || 'Anonymous User';
+                },
+                /**
+                 * 작성자 프로필 사진 URL 반환
+                 * @param {Object} post - 게시물 객체
+                 * @returns {string|null} 프로필 사진 URL 또는 null
+                 */
+                getAuthorPhoto(post) {
+                    return post.author_photo_url || post.photo_url || null;
+                },
+                /**
+                 * 좋아요 버튼 클릭 핸들러
+                 * @param {Object} post - 게시물 객체
+                 */
+                handleLike(post) {
+                    console.log('Like clicked:', post.post_id);
+                    // TODO: API 호출로 좋아요 추가/제거
+                },
+                /**
+                 * 댓글 박스 토글
+                 * @param {Object} post - 게시물 객체
+                 */
+                toggleCommentBox(post) {
+                    post.showComments = !post.showComments;
+                    if (post.showComments && (!post.comments || post.comments.length === 0)) {
+                        this.loadComments(post);
+                    }
+
+                },
+                /**
+                 * 댓글 목록 로드
+                 * @param {Object} post - 게시물 객체
+                 */
+                async loadComments(post) {
+                    try {
+                        // TODO: API 호출로 댓글 목록 가져오기
+                        // const comments = await func('get_comments', { post_id: post.post_id });
+                        // post.comments = comments;
+
+                        // 임시 데이터 (실제로는 API에서 가져옴)
+                        console.log('Loading comments for post:', post.post_id);
+                    } catch (error) {
+                        console.error('댓글 로드 오류:', error);
+                    }
+                },
+                /**
+                 * 댓글 작성
+                 * @param {Object} post - 게시물 객체
+                 */
+                async submitComment(post) {
+                    if (!post.newComment || !post.newComment.trim()) {
+                        return;
+                    }
+
+                    try {
+                        // TODO: API 호출로 댓글 저장
+                        // const result = await func('create_comment', {
+                        //     post_id: post.post_id,
+                        //     content: post.newComment.trim(),
+                        //     auth: true
+                        // });
+
+                        // 임시: 댓글을 로컬에 추가 (실제로는 API 응답 사용)
+                        const newComment = {
+                            comment_id: Date.now(),
+                            author_name: '<?= login() ? login()->display_name : "Guest" ?>',
+                            author_photo_url: this.currentUserPhoto,
+                            content: post.newComment.trim(),
+                            created_at: new Date().toISOString()
+                        };
+
+                        post.comments.push(newComment);
+                        post.newComment = '';
+
+                        console.log('Comment submitted:', newComment);
+                    } catch (error) {
+                        console.error('댓글 작성 오류:', error);
+                        alert('댓글 작성 중 오류가 발생했습니다.');
+                    }
+                },
+                /**
+                 * 공유 버튼 클릭 핸들러
+                 * @param {Object} post - 게시물 객체
+                 */
+                handleShare(post) {
+                    console.log('Share clicked:', post.post_id);
+                    // TODO: 공유 모달 표시
                 }
             },
             mounted() {

@@ -10,6 +10,32 @@
  * @since 1.0
  */
 
+/**
+ * 다국어 번역 주입
+ *
+ * 이 함수는 위젯에서 사용하는 모든 텍스트를 4개 국어로 번역합니다.
+ *
+ * @return void
+ */
+function inject_latest_posts_language(): void
+{
+    t()->inject([
+        '최신_게시글' => [
+            'ko' => '최신 게시글',
+            'en' => 'Latest Posts',
+            'ja' => '最新の投稿',
+            'zh' => '最新帖子'
+        ],
+        '게시글이_없습니다' => [
+            'ko' => '게시글이 없습니다',
+            'en' => 'No posts yet',
+            'ja' => '投稿がありません',
+            'zh' => '暂无帖子'
+        ],
+    ]);
+}
+inject_latest_posts_language();
+
 // 최신 10개 게시글 조회
 $result = list_posts(['limit' => 10]);
 ?>
@@ -138,30 +164,3 @@ $result = list_posts(['limit' => 10]);
     }
 }
 </style>
-
-<?php
-/**
- * 다국어 번역 주입
- *
- * 이 함수는 위젯에서 사용하는 모든 텍스트를 4개 국어로 번역합니다.
- *
- * @return void
- */
-function inject_latest_posts_language(): void
-{
-    t()->inject([
-        '최신_게시글' => [
-            'ko' => '최신 게시글',
-            'en' => 'Latest Posts',
-            'ja' => '最新投稿',
-            'zh' => '最新帖子'
-        ],
-        '게시글이_없습니다' => [
-            'ko' => '게시글이 없습니다',
-            'en' => 'No posts yet',
-            'ja' => '投稿がありません',
-            'zh' => '暂无帖子'
-        ],
-    ]);
-}
-inject_latest_posts_language();

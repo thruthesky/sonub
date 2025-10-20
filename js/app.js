@@ -298,9 +298,9 @@ ready(() => {
                 <img v-if="state.user?.photo_url"
                      :src="state.user.photo_url"
                      class="rounded-circle"
-                     style="width: 32px; height: 32px; object-fit: cover;"
+                     style="width: 28px; height: 28px; object-fit: cover;"
                      alt="프로필 사진">
-                <i v-else class="bi bi-person-circle fs-5"></i>
+                <i v-else class="bi bi-person-circle fs-3"></i>
             `,
         }).mount(element);
     });

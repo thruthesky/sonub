@@ -124,3 +124,7 @@ body {
 .xxxl {
   font-size: 3rem;
 }
+
+[v-cloak] { 
+  display: none;
+}

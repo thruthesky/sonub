@@ -105,45 +105,35 @@ if (file_exists($module_path)) {
                 <!-- 우측 아이콘 메뉴 (모바일 & 데스크톱 공통) -->
                 <div class="d-flex align-items-center ms-auto">
                     <!-- 아이콘 메뉴 (모든 화면 크기에서 표시) -->
-                    <div class="d-flex align-items-center">
+                    <div class="d-flex align-items-center gap-3">
 
                         <!-- 게시판 카테고리 아이콘 -->
-                        <a href="<?= href()->post->categories ?>" class="me-3 text-dark" title="Posts">
-                            <i class="bi bi-grid fs-4"></i>
+                        <a href="<?= href()->post->categories ?>" class="text-dark" title="Posts">
+                            <i class="bi bi-grid fs-3"></i>
                         </a>
 
                         <!-- 사용자 목록 아이콘 -->
-                        <a href="<?= href()->user->list ?>" class="me-3 text-dark" title="Users">
-                            <i class="bi bi-people fs-4"></i>
+                        <a href="<?= href()->user->list ?>" class="text-dark" title="Users">
+                            <i class="bi bi-people fs-3"></i>
                         </a>
 
                         <!-- 채팅 아이콘 -->
-                        <a href="<?= href()->chat->rooms ?>" class="me-3 text-dark" title="Chat">
-                            <i class="bi bi-chat-dots fs-4"></i>
-                        </a>
-
-                        <!-- About 아이콘 -->
-                        <a href="/about" class="me-3 text-dark" title="About">
-                            <i class="bi bi-info-circle fs-4"></i>
+                        <a href="<?= href()->chat->rooms ?>" class="text-dark" title="Chat">
+                            <i class="bi bi-chat-dots fs-3"></i>
                         </a>
 
                         <!-- 로그인 상태에 따른 아이콘 -->
-                        <?php if (login() == null) { ?>
-                            <!-- 로그인 아이콘 -->
-                            <a href="<?= href()->menu->intro ?>" class="me-3 text-dark" title="Sign in">
-                                <i class="bi bi-list fs-4"></i>
+                        <!-- Temporarily change to icon instead of profile picture -->
+                        <?php if (login()) : ?>
+                            <a href="<?= href()->user->profile ?>" class="text-dark" title="Profile">
+                                <i class="bi bi-person-circle fs-3"></i>
                             </a>
-                        <?php } else { ?>
-                            <!-- 프로필 아이콘 -->
-                            <a href="<?= href()->user->profile ?>" class="me-3 text-dark" title="Profile">
-                                <i class="user-profile-icon"></i>
-                            </a>
+                        <?php endif; ?>
 
-                            <!-- 메뉴 아이콘 (로그아웃 대신) -->
-                            <a href="<?= href()->menu->intro ?>" class="text-dark" title="Menu">
-                                <i class="bi bi-list fs-4"></i>
-                            </a>
-                        <?php } ?>
+                        <!-- 메뉴 아이콘 (로그아웃 대신) -->
+                        <a href="<?= href()->menu->intro ?>" class="text-dark" title="Menu">
+                            <i class="bi bi-list fs-3"></i>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -154,7 +144,8 @@ if (file_exists($module_path)) {
     <div class="sonub-container">
         <div class="row">
             <!-- Left Sidebar -->
-            <aside class="d-none d-lg-block col-12 col-md-3 col-lg-3 px-0">
+            <aside class="d-none d-lg-flex flex-column gap-4 col-12 col-md-3 col-lg-3 px-0">
+                <?php include_once WIDGET_DIR . '/sidebar/quick-user-menu.php'; ?>
                 <?php include_once WIDGET_DIR . '/sidebar/new-users.php'; ?>
                 <?php include_once WIDGET_DIR . '/sidebar/quick-links.php'; ?>
             </aside>
@@ -165,7 +156,7 @@ if (file_exists($module_path)) {
             </main>
 
             <!-- Right Sidebar -->
-            <aside class="d-none d-lg-block col-12 col-md-3 col-lg-3">
+            <aside class="d-none d-lg-flex flex-column gap-4 col-12 col-md-3 col-lg-3 ">
 
                 <?php include_once WIDGET_DIR . '/sidebar/latest-posts.php'; ?>
                 <?php include_once WIDGET_DIR . '/sidebar/sidebar-stats.php'; ?>

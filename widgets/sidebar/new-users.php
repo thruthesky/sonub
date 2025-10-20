@@ -21,7 +21,7 @@ load_deferred_js('vue-components/user-search');
 
 <!-- 사용자 검색 컴포넌트 (자동 마운트) -->
 <div class="user-search-app"></div>
--------
+
 <div class="new-users-widget mb-3">
     <div class="widget-header">
         <div class="widget-heading">
