@@ -19,8 +19,8 @@
 window.UserSearchComponent = {
     template: `
         <!-- Friend Search Button -->
-        <button @click="openSearchModal" class="btn btn-primary">
-            <i class="bi bi-search me-2"></i>{{ t.친구_검색 }}
+        <button @click="openSearchModal" class="user-search-btn">
+            <i class="bi bi-search"></i>{{ t.친구_검색 }}
         </button>
 
         <!-- Friend Search Modal -->

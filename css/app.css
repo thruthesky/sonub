@@ -125,6 +125,31 @@ body {
   font-size: 3rem;
 }
 
-[v-cloak] { 
+[v-cloak] {
   display: none;
+}
+
+/* 사용자 검색 버튼 - Facebook 스타일 */
+.user-search-btn {
+  background-color: #e4e6eb;
+  border: none;
+  color: #050505;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 20px;
+  transition: background-color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.user-search-btn:hover {
+  background-color: #d8dadf;
+  color: #050505;
+}
+
+.user-search-btn i {
+  font-size: 16px;
 }
