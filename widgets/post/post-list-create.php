@@ -39,7 +39,7 @@ $category = http_param('category') ?? 'story';
             <data class="row">
                 <aside class="col-6">
                     <select name="category" v-model="visibility" class="form-select form-select-sm my-2">
-                        <option value="private" <?= $category === 'private' ? 'selected' : '' ?>>My Wall (Private)</option>
+                        <option value="private" <?= $category === 'private' ? 'selected' : '' ?>>My Wall Only (Private)</option>
                         <option value="public" <?= $category === 'public' ? 'selected' : '' ?>>Public</option>
                         <option value="friends" <?= $category === 'friends' ? 'selected' : '' ?>>Friends</option>
                     </select>
@@ -140,6 +140,7 @@ $category = http_param('category') ?? 'story';
                     // API 호출하여 게시물 작성
                     const post = await func('create_post', {
                         category: '<?= $category ?>',
+                        visibility: this.visibility,
                         content: content,
                         files: filesValue,
                         alertOnError: true,

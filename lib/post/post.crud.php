@@ -87,9 +87,13 @@ function create_post(array $input)
     // (string) 캐스팅으로 타입을 명확히 합니다.
     $title = isset($input['title']) ? trim((string)$input['title']) : '';
     $content = isset($input['content']) ? trim((string)$input['content']) : '';
-    $category = isset($input['category']) ? trim((string)$input['category']) : '';
     $files = isset($input['files']) ? trim((string)$input['files']) : '';
     $visibility = isset($input['visibility']) ? trim((string)$input['visibility']) : 'public';
+    if ($visibility === 'public') {
+        $category = isset($input['category']) ? trim((string)$input['category']) : '';
+    } else {
+        $category = $visibility;
+    }
 
     // visibility 값 검증 (public, friends, private만 허용)
     if (!in_array($visibility, ['public', 'friends', 'private'], true)) {

@@ -1,5 +1,5 @@
 <?php
-$category = 'story';
+
 $per_page = 10;
 $page = 1;
 inject_index_language();
