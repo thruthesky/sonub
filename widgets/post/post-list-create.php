@@ -13,88 +13,261 @@ inject_post_list_create_language();
 
 $category = http_param('category') ?? 'story';
 
+// 로그인한 사용자 정보 가져오기
+$user = login();
+$user_photo = $user && isset($user->photo_url) ? $user->photo_url : '/images/default-user.png';
+$user_name = $user && isset($user->display_name) ? $user->display_name : 'Guest';
+
 ?>
-<section id="post-list-create" class="mb-4 px-2">
-    <form @submit.prevent="submit_post" :class="{ 'expanded': expanded}">
-        <nav class="d-flex">
-            <label v-show="!expanded" class="flex-shrink-1 pointer">
-                <i class="fa-solid fa-camera" style="font-size: 2em;"></i>
-                <input type="file" multiple style="display: none;" onchange="handle_file_change(event, { id: 'files', on_uploaded: (data) => { console.log('파일 업로드 완료:', data); if (window.postListCreateVm) { window.postListCreateVm.expanded = true; } } })">
-            </label>
-            <textarea
-                ref="textarea"
-                v-model="content"
-                class="form-control flex-grow-1"
-                name="content"
-                placeholder="<?= t()->당신의_이야기를_들려주세요 ?>..."
-                :style="{ height: expanded ? '6em' : '1em' }"
-                @focus="expand"
-                @click="expand"
-                @input="expand"
-                @touchstart="expand"
-                @keydown="expand"></textarea>
-        </nav>
-        <nav v-show="expanded">
+<section id="post-list-create" class="mb-3">
+    <!-- 게시물 작성 카드 (post-card 스타일 적용) -->
+    <article class="post-card">
+        <div class="post-body">
+            <form @submit.prevent="submit_post">
+                <!-- 축소된 상태: 프로필 + 클릭 가능한 버튼 -->
+                <div v-if="!expanded" class="d-flex align-items-center">
+                    <!-- 프로필 사진 -->
+                    <div class="post-header-avatar">
+                        <img v-if="userPhoto"
+                            :src="userPhoto"
+                            :alt="userName"
+                            style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                        <i v-else class="fa-solid fa-user"></i>
+                    </div>
 
-            <data class="row">
-                <aside class="col-6">
-                    <select name="category" v-model="visibility" class="form-select form-select-sm my-2">
-                        <option value="private" <?= $category === 'private' ? 'selected' : '' ?>>My Wall Only (Private)</option>
-                        <option value="public" <?= $category === 'public' ? 'selected' : '' ?>>Public</option>
-                        <option value="friends" <?= $category === 'friends' ? 'selected' : '' ?>>Friends</option>
-                    </select>
-                </aside>
-                <aside class="col-6" v-show="visibility === 'public'">
-                    <select name="category" v-model="category" class="form-select form-select-sm my-2">
-                        <?php foreach (config()->categories->getRootCategories() as $root) : ?>
-                            <optgroup label="<?= $root->display_name ?>">
-                                <?php foreach ($root->getCategories() as $sub) : ?>
-                                    <option value="<?= $sub->category ?>" <?= $category === $sub->category ? 'selected' : '' ?>><?= $sub->name ?></option>
-                                <?php endforeach; ?>
-                            </optgroup>
-                        <?php endforeach; ?>
-                    </select>
-                </aside>
-            </data>
+                    <!-- 클릭 가능한 버튼 -->
+                    <button type="button"
+                        @click="expand"
+                        class="post-create-trigger">
+                        {{ placeholder }}
+                    </button>
+                </div>
 
-            <div class="d-flex justify-content-between align-items-center my-2">
-                <label class="flex-shrink-1 pointer">
-                    <i class="fa-solid fa-camera" style="font-size: 2em;"></i>
-                    <input type="file" multiple style="display: none;" onchange="handle_file_change(event, { id: 'files', on_uploaded: (data) => { console.log('파일 업로드 완료:', data); if (window.postListCreateVm) { window.postListCreateVm.expanded = true; } } })">
-                </label>
+                <!-- 확장된 상태: 전체 폼 -->
+                <div v-if="expanded">
+                    <!-- 사용자 프로필 헤더 -->
+                    <div class="post-header" style="padding: 0 0 12px 0; border: none;">
+                        <div class="post-header-avatar">
+                            <img v-if="userPhoto"
+                                :src="userPhoto"
+                                :alt="userName"
+                                style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                            <i v-else class="fa-solid fa-user"></i>
+                        </div>
+                        <div class="post-header-info">
+                            <div class="post-header-name">{{ userName }}</div>
+                            <div class="post-header-meta d-flex gap-2 align-items-center">
+                                <!-- 공개범위 선택 -->
+                                <div class="post-select-wrapper">
+                                    <i class="fa-solid fa-earth-americas" v-if="visibility === 'public'" style="font-size: 12px; margin-right: 4px;"></i>
+                                    <i class="fa-solid fa-user-group" v-if="visibility === 'friends'" style="font-size: 12px; margin-right: 4px;"></i>
+                                    <i class="fa-solid fa-lock" v-if="visibility === 'private'" style="font-size: 12px; margin-right: 4px;"></i>
+                                    <select v-model="visibility" class="post-select">
+                                        <option value="public"><?= t()->공개 ?></option>
+                                        <option value="friends"><?= t()->친구만 ?></option>
+                                        <option value="private"><?= t()->나만_보기 ?></option>
+                                    </select>
+                                    <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px; pointer-events: none;"></i>
+                                </div>
 
-                <button type="submit" class="btn btn-primary"><?= t()->작성 ?></button>
-            </div>
-        </nav>
+                                <!-- 카테고리 선택 (공개일 때만) -->
+                                <div v-if="visibility === 'public'" class="post-select-wrapper">
+                                    <i class="fa-solid fa-folder" style="font-size: 12px; margin-right: 4px;"></i>
+                                    <select v-model="category" class="post-select">
+                                        <?php foreach (config()->categories->getRootCategories() as $root) : ?>
+                                            <optgroup label="<?= htmlspecialchars($root->display_name) ?>">
+                                                <?php foreach ($root->getCategories() as $sub) : ?>
+                                                    <option value="<?= htmlspecialchars($sub->category) ?>"><?= htmlspecialchars($sub->name) ?></option>
+                                                <?php endforeach; ?>
+                                            </optgroup>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px; pointer-events: none;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-        <section>
-            <div id="files"></div>
-        </section>
-    </form>
+                    <!-- 게시물 내용 입력 -->
+                    <textarea
+                        ref="textarea"
+                        v-model="content"
+                        class="post-content-input"
+                        name="content"
+                        :placeholder="placeholder"
+                        @input="autoResize"></textarea>
+
+                    <!-- 카테고리 선택 (공개일 때만) -->
+
+
+                    <!-- 파일 미리보기 영역 -->
+                    <div v-show="hasFiles" style="margin-top: 12px;">
+                        <div id="files" :data-file-count="fileCount"></div>
+                    </div>
+
+                    <!-- 하단 액션 영역 -->
+                    <div class="post-create-actions">
+                        <!-- 사진/비디오 업로드 버튼 -->
+                        <label class="post-action-btn">
+                            <i class="fa-solid fa-image" style="color: #45bd62;"></i>
+                            <span><?= t()->사진_동영상 ?></span>
+                            <input type="file"
+                                multiple
+                                accept="image/*,video/*"
+                                style="display: none;"
+                                onchange="handle_file_change(event, { id: 'files', on_uploaded: (data) => { console.log('파일 업로드 완료:', data); if (window.postListCreateVm) { window.postListCreateVm.hasFiles = true; } } })">
+                        </label>
+
+                        <!-- 오른쪽: 취소 및 게시 버튼 -->
+                        <div style="display: flex; gap: 8px; margin-left: auto;">
+                            <button type="submit"
+                                class="btn-post"
+                                :disabled="!canSubmit">
+                                <?= t()->게시 ?>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </article>
 </section>
+
 <style>
-    /* 기본 상태 - 축소된 textarea */
-    #post-list-create textarea.form-control {
-        height: 1em !important;
-        line-height: 1.5em !important;
-        resize: vertical !important;
-        transition: height 0.3s ease !important;
-        overflow: hidden !important;
-        padding: 0.375rem 0.75rem !important;
+    .post-create-trigger {
+        flex: 1;
+        background-color: #f0f2f5;
+        border: none;
+        border-radius: 18px;
+        padding: 10px 16px;
+        font-size: 15px;
+        color: #65676b;
+        text-align: left;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
     }
 
-    /* 확장된 상태 - expanded 클래스가 적용되면 */
-    #post-list-create .expanded textarea.form-control {
-        height: 6em !important;
-        min-height: 6em !important;
-        overflow-y: auto !important;
+    .post-create-trigger:hover {
+        background-color: #e4e6eb;
     }
 
-    /* 디버깅용: expanded 클래스가 적용되면 배경색 변경 */
-    #post-list-create .expanded {
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 0.5rem;
+    .post-content-input {
+        width: 100%;
+        border: none;
+        outline: none;
+        font-size: 15px;
+        color: #050505;
+        line-height: 1.5;
+        resize: none;
+        min-height: 80px;
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 0;
+        background: transparent;
+    }
+
+    .post-content-input::placeholder {
+        color: #65676b;
+    }
+
+    /* 커스텀 드롭다운 래퍼 */
+    .post-select-wrapper {
+        display: inline-flex;
+        align-items: center;
+        background-color: #e4e6eb;
+        border-radius: 6px;
+        padding: 4px 8px;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+        position: relative;
+    }
+
+    .post-select-wrapper:hover {
+        background-color: #d8dadf;
+    }
+
+    /* 커스텀 select 스타일 */
+    .post-select {
+        background: transparent;
+        border: none;
+        outline: none;
+        font-size: 13px;
+        font-weight: 600;
+        color: #050505;
+        cursor: pointer;
+        padding: 0;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        padding-right: 4px;
+    }
+
+    .post-select:focus {
+        outline: none;
+    }
+
+    /* 아이콘 색상 */
+    .post-select-wrapper i {
+        color: #65676b;
+    }
+
+
+    /* 하단 액션 영역 */
+    .post-create-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #e4e6eb;
+    }
+
+    #post-list-create .post-action-btn {
+        background: none;
+        border: none;
+        padding: 8px;
+        color: #65676b;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        border-radius: 4px;
+        transition: background-color 0.15s ease;
+    }
+
+    #post-list-create .post-action-btn:hover {
+        background-color: #f0f2f5;
+    }
+
+    #post-list-create .post-action-btn i {
+        font-size: 18px;
+    }
+
+    /* 게시 버튼 */
+    .btn-post {
+        background-color: #0866ff;
+        border: none;
+        padding: 8px 24px;
+        font-size: 15px;
+        font-weight: 600;
+        color: white;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: background-color 0.15s ease;
+    }
+
+    .btn-post:hover {
+        background-color: #0757d6;
+    }
+
+    .btn-post:disabled {
+        background-color: #e4e6eb;
+        color: #bcc0c4;
+        cursor: not-allowed;
     }
 </style>
 <script>
@@ -102,65 +275,117 @@ $category = http_param('category') ?? 'story';
         const app = Vue.createApp({
             data() {
                 return {
-                    // 게시물 내용
                     content: '',
-                    expanded: true,
+                    expanded: false,
+                    hasFiles: false,
                     visibility: 'public',
                     category: '<?= $category ?>',
+                    userPhoto: '<?= htmlspecialchars($user_photo) ?>',
+                    userName: '<?= htmlspecialchars($user_name) ?>',
+                    placeholder: "<?= t()->당신의_이야기를_들려주세요 ?>",
                 };
+            },
+            computed: {
+                /**
+                 * 게시 버튼 활성화 여부
+                 */
+                canSubmit() {
+                    return this.content.trim().length > 0 || this.hasFiles;
+                }
             },
             methods: {
                 /**
-                 * textarea 확장 함수
+                 * 폼 확장
                  */
                 expand() {
                     this.expanded = true;
+                    this.$nextTick(() => {
+                        // textarea에 포커스
+                        if (this.$refs.textarea) {
+                            this.$refs.textarea.focus();
+                        }
+                    });
                 },
+
                 /**
-                 * 게시물 작성 폼 제출 처리
-                 * @param {Event} event - 폼 제출 이벤트
+                 * 취소 버튼 - 폼 초기화 및 축소
                  */
-                async submit_post(event) {
-                    // 폼 기본 동작 방지 (페이지 새로고침 방지)
-                    event.preventDefault();
+                cancel() {
+                    this.content = '';
+                    this.expanded = false;
+                    this.hasFiles = false;
+                    this.visibility = 'public';
 
-                    // 게시물 내용 가져오기
-                    const content = event.target.content.value;
+                    // 파일 업로드 영역 초기화
+                    const filesDiv = document.getElementById('files');
+                    if (filesDiv) {
+                        filesDiv.innerHTML = '';
+                    }
+                },
 
+                /**
+                 * textarea 자동 높이 조정
+                 */
+                autoResize() {
+                    const textarea = this.$refs.textarea;
+                    if (!textarea) return;
+
+                    textarea.style.height = 'auto';
+                    textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+                },
+
+                /**
+                 * 게시물 작성 제출
+                 */
+                async submit_post() {
                     // 내용이 비어있으면 경고
-                    if (!content.trim()) {
+                    if (!this.canSubmit) {
                         alert('<?= t()->게시물_내용을_입력해주세요 ?>');
                         return;
                     }
 
-                    // 파일 업로드된 파일들의 URL 가져오기 (파일 업로드 위젯에서 관리)
-                    const filesInput = document.querySelector('[name="files"]');
-                    const filesValue = filesInput ? filesInput.value : '';
+                    try {
+                        // 파일 업로드된 파일들의 URL 가져오기
+                        const filesInput = document.querySelector('[name="files"]');
+                        const filesValue = filesInput ? filesInput.value : '';
 
-                    // API 호출하여 게시물 작성
-                    const post = await func('create_post', {
-                        category: '<?= $category ?>',
-                        visibility: this.visibility,
-                        content: content,
-                        files: filesValue,
-                        alertOnError: true,
-                    });
+                        // API 호출하여 게시물 작성
+                        const post = await func('create_post', {
+                            category: this.visibility === 'public' ? this.category : '<?= $category ?>',
+                            visibility: this.visibility,
+                            content: this.content,
+                            files: filesValue,
+                            alertOnError: true,
+                        });
 
-                    console.log('게시물 작성 응답:', post);
+                        console.log('게시물 작성 응답:', post);
 
-                    if (post && post.id) {
-                        // 작성 성공 시, 페이지 새로고침
-                        window.location.reload();
+                        if (post && post.id) {
+                            // 작성 성공 시, 페이지 새로고침
+                            window.location.reload();
+                        }
+                    } catch (error) {
+                        console.error('게시물 작성 실패:', error);
+                        alert('<?= t()->게시물_작성_중_오류가_발생했습니다 ?>');
                     }
                 }
             },
+            watch: {
+                /**
+                 * content 변경 시 자동 높이 조정
+                 */
+                content() {
+                    this.$nextTick(() => {
+                        this.autoResize();
+                    });
+                }
+            },
             mounted() {
-                console.log('Vue 앱 마운트 완료, expanded 초기값:', this.expanded);
+                console.log('게시물 작성 위젯 마운트 완료');
             }
         });
 
         const vm = app.mount('#post-list-create');
-        console.log('Vue 인스턴스 마운트됨:', vm);
 
         // Vue 인스턴스를 전역 변수로 노출 (파일 업로드 콜백에서 접근하기 위함)
         window.postListCreateVm = vm;
@@ -177,13 +402,13 @@ function inject_post_list_create_language()
 {
     t()->inject([
         '당신의_이야기를_들려주세요' => [
-            'ko' => '당신의 이야기를 들려주세요',
-            'en' => 'Share your story',
-            'ja' => 'あなたのストーリーを共有してください',
-            'zh' => '分享您的故事'
+            'ko' => '무슨 생각을 하고 계신가요?',
+            'en' => "What's on your mind?",
+            'ja' => '今何をしていますか?',
+            'zh' => '你在想什么?'
         ],
-        '작성' => [
-            'ko' => '작성',
+        '게시' => [
+            'ko' => '게시',
             'en' => 'Post',
             'ja' => '投稿',
             'zh' => '发布'
@@ -193,6 +418,60 @@ function inject_post_list_create_language()
             'en' => 'Please enter the post content.',
             'ja' => '投稿内容を入力してください。',
             'zh' => '请输入帖子内容。'
+        ],
+        '게시물_작성_중_오류가_발생했습니다' => [
+            'ko' => '게시물 작성 중 오류가 발생했습니다.',
+            'en' => 'An error occurred while creating the post.',
+            'ja' => '投稿の作成中にエラーが発生しました。',
+            'zh' => '创建帖子时发生错误。'
+        ],
+        '공개' => [
+            'ko' => '공개',
+            'en' => 'Public',
+            'ja' => '公開',
+            'zh' => '公开'
+        ],
+        '친구만' => [
+            'ko' => '친구만',
+            'en' => 'Friends',
+            'ja' => '友達のみ',
+            'zh' => '仅好友'
+        ],
+        '나만_보기' => [
+            'ko' => '나만 보기',
+            'en' => 'Only Me',
+            'ja' => '自分のみ',
+            'zh' => '仅自己'
+        ],
+        '사진_동영상' => [
+            'ko' => '사진/동영상',
+            'en' => 'Photo/Video',
+            'ja' => '写真/動画',
+            'zh' => '照片/视频'
+        ],
+        '이모지' => [
+            'ko' => '이모지',
+            'en' => 'Emoji',
+            'ja' => '絵文字',
+            'zh' => '表情'
+        ],
+        '위치' => [
+            'ko' => '위치',
+            'en' => 'Location',
+            'ja' => '場所',
+            'zh' => '位置'
+        ],
+        '태그' => [
+            'ko' => '태그',
+            'en' => 'Tag',
+            'ja' => 'タグ',
+            'zh' => '标签'
+        ],
+        '취소' => [
+            'ko' => '취소',
+            'en' => 'Cancel',
+            'ja' => 'キャンセル',
+            'zh' => '取消'
         ],
     ]);
 }

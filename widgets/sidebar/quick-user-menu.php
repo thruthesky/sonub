@@ -56,13 +56,7 @@ $user = login();
             <!-- 사용자 프로필 -->
             <a href="<?= href()->user->profile ?>?id=<?= $user->id ?>" class="menu-item">
                 <div class="menu-icon">
-                    <?php if (!empty($user->photo_url)): ?>
-                        <img src="<?= $user->photo_url ?>" class="user-avatar" alt="<?= htmlspecialchars($user->display_name) ?>">
-                    <?php else: ?>
-                        <div class="user-avatar-placeholder">
-                            <i class="fa-solid fa-user"></i>
-                        </div>
-                    <?php endif; ?>
+                    <?php login_user_profile_photo() ?>
                 </div>
                 <span class="menu-text"><?= htmlspecialchars($user->display_name) ?></span>
             </a>
