@@ -50,4 +50,29 @@ class UserModel
     {
         return $this->toArray();
     }
+
+    public function displayDisplayName(): string
+    {
+        return htmlspecialchars($this->display_name ? $this->display_name : 'No name', ENT_QUOTES, 'UTF-8');
+    }
+
+    public function displayFirstName(): string
+    {
+        return '';
+    }
+
+    public function displayLastName(): string
+    {
+        return '';
+    }
+
+    public function displayMiddleName(): string
+    {
+        return '';
+    }
+
+    public function displayFullName(): string
+    {
+        return $this->displayFirstName() . $this->displayMiddleName() . ' ' . $this->displayLastName();
+    }
 }
