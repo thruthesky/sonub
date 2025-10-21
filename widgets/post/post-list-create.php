@@ -19,7 +19,7 @@ $user_photo = $user && isset($user->photo_url) ? $user->photo_url : '/images/def
 $user_name = $user && isset($user->display_name) ? $user->display_name : 'Guest';
 
 ?>
-<section id="post-list-create" class="mb-3">
+<section id="post-list-create" class="mb-3" v-cloak>
     <!-- 게시물 작성 카드 (post-card 스타일 적용) -->
     <article class="post-card">
         <div class="post-body">

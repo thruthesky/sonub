@@ -316,9 +316,79 @@ if (login()) {
             font-size: 14px;
         }
     }
+
+    /* 스켈레톤 로더 스타일 */
+    .skeleton {
+        background: linear-gradient(90deg, #f0f2f5 25%, #e4e6eb 50%, #f0f2f5 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 4px;
+    }
+
+    @keyframes shimmer {
+        0% {
+            background-position: 200% 0;
+        }
+        100% {
+            background-position: -200% 0;
+        }
+    }
+
+    .skeleton-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+
+    .skeleton-text {
+        border-radius: 4px;
+    }
+
+    .skeleton-image {
+        width: 100%;
+        height: 200px;
+        border-radius: 8px;
+    }
 </style>
 
 <div id="my-wall" class="mt-4">
+    <!-- 로딩 스켈레톤 (Vue 마운트 전에만 표시) -->
+    <div id="skeleton-loader">
+        <!-- 스켈레톤 게시물 카드 1 -->
+        <article class="post-card skeleton-card">
+            <div class="post-header">
+                <div class="skeleton skeleton-avatar"></div>
+                <div style="flex: 1;">
+                    <div class="skeleton skeleton-text" style="width: 150px; height: 16px; margin-bottom: 8px;"></div>
+                    <div class="skeleton skeleton-text" style="width: 100px; height: 14px;"></div>
+                </div>
+            </div>
+            <div class="post-body">
+                <div class="skeleton skeleton-text" style="width: 100%; height: 16px; margin-bottom: 8px;"></div>
+                <div class="skeleton skeleton-text" style="width: 80%; height: 16px; margin-bottom: 8px;"></div>
+                <div class="skeleton skeleton-text" style="width: 60%; height: 16px;"></div>
+                <div class="skeleton skeleton-image" style="margin-top: 12px;"></div>
+            </div>
+        </article>
+
+        <!-- 스켈레톤 게시물 카드 2 -->
+        <article class="post-card skeleton-card">
+            <div class="post-header">
+                <div class="skeleton skeleton-avatar"></div>
+                <div style="flex: 1;">
+                    <div class="skeleton skeleton-text" style="width: 150px; height: 16px; margin-bottom: 8px;"></div>
+                    <div class="skeleton skeleton-text" style="width: 100px; height: 14px;"></div>
+                </div>
+            </div>
+            <div class="post-body">
+                <div class="skeleton skeleton-text" style="width: 100%; height: 16px; margin-bottom: 8px;"></div>
+                <div class="skeleton skeleton-text" style="width: 90%; height: 16px; margin-bottom: 8px;"></div>
+            </div>
+        </article>
+    </div>
+
     <!-- Vue 앱이 여기에 렌더링됩니다 -->
 </div>
 
@@ -666,6 +736,12 @@ if (login()) {
             },
             mounted() {
                 console.log('Vue 앱 마운트 완료, 게시물 목록:', this.postList);
+
+                // 스켈레톤 로더 숨기기
+                const skeleton = document.getElementById('skeleton-loader');
+                if (skeleton) {
+                    skeleton.remove();
+                }
             }
         });
 
