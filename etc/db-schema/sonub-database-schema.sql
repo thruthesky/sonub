@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: sonub-mariadb
--- Generation Time: Oct 18, 2025 at 12:15 PM
+-- Generation Time: Oct 21, 2025 at 11:37 AM
 -- Server version: 11.7.2-MariaDB-ubu2404
 -- PHP Version: 8.3.6
 
@@ -109,7 +109,9 @@ CREATE TABLE `users` (
   `firebase_uid` varchar(128) NOT NULL,
   `created_at` int(10) UNSIGNED NOT NULL,
   `updated_at` int(10) UNSIGNED NOT NULL DEFAULT 0,
-  `display_name` varchar(64) DEFAULT NULL,
+  `first_name` varchar(32) NOT NULL DEFAULT '',
+  `last_name` varchar(32) NOT NULL DEFAULT '',
+  `middle_name` varchar(32) NOT NULL DEFAULT '',
   `birthday` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `gender` char(1) NOT NULL DEFAULT '',
   `photo_url` varchar(255) NOT NULL DEFAULT ''
@@ -173,7 +175,6 @@ ALTER TABLE `posts`
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `firebase_uid` (`firebase_uid`),
-  ADD UNIQUE KEY `display_name` (`display_name`),
   ADD KEY `created_at` (`created_at`);
 
 --

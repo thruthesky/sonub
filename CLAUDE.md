@@ -531,3 +531,10 @@ file -I docs/api.md
 
 ---
 
+# 페이지 이동
+- MPA 방식으로 페이지 이동
+- 모든 페이지는 `/page/**/*.php`에 존재해야 함
+- 각 페이지의 라우트는 `/xxx/yyy` 형식이며, 실제 PHP 언어로 작성된 페이지 스크립트 파일은 `/page/xxx/yyy.php` 와 같이 존재합니다. 즉, `/page/xxx/yyy.php` 파일을 수정했으면 `https://local.sonub.com/xxx/yyy` URL로 접속하여 변경 사항을 확인할 수 있습니다.
+  - Chrome DevTools MCP에서 `navigate_page('/xxx/yyy')` 함수를 사용하여 해당 페이지 이동 가능하며, 해당 라우트(경로)의 `page/xxx/yyy.php` 와 같이 PHP 스크립트를 수정 할 수 있습니다.
+- 첫 페이지는 `/page/index.php` 이며, 로그인을 한 경우 `/page/index.my-page.php` 를 포함하고 로그인을 하지 않은 경우 `/page/index.guest.php` 를 포함합니다.
+- 회원 정보 수정: `/page/user/profile.edit.php`

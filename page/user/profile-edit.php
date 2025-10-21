@@ -14,6 +14,42 @@ function inject_profile_edit_language()
             'ja' => 'プロフィール編集',
             'zh' => '编辑资料'
         ],
+        '이름' => [
+            'ko' => '이름',
+            'en' => 'First Name',
+            'ja' => '名',
+            'zh' => '名'
+        ],
+        '성' => [
+            'ko' => '성',
+            'en' => 'Last Name',
+            'ja' => '姓',
+            'zh' => '姓'
+        ],
+        '중간_이름' => [
+            'ko' => '중간 이름',
+            'en' => 'Middle Name',
+            'ja' => 'ミドルネーム',
+            'zh' => '中间名'
+        ],
+        '선택사항' => [
+            'ko' => '선택사항',
+            'en' => 'Optional',
+            'ja' => '任意',
+            'zh' => '可选'
+        ],
+        '이름을_입력해주세요' => [
+            'ko' => '이름을 입력해주세요.',
+            'en' => 'Please enter your first name.',
+            'ja' => '名前を入力してください。',
+            'zh' => '请输入您的名字。'
+        ],
+        '성을_입력해주세요' => [
+            'ko' => '성을 입력해주세요.',
+            'en' => 'Please enter your last name.',
+            'ja' => '姓を入力してください。',
+            'zh' => '请输入您的姓氏。'
+        ],
         '표시_이름' => [
             'ko' => '표시 이름',
             'en' => 'Display Name',
@@ -223,17 +259,44 @@ if (!$user) {
 
         <div id="profile-edit-component">
             <form @submit.prevent="updateProfile">
-                <!-- 표시 이름 -->
+                <!-- 이름 (First Name) -->
                 <div class="mb-4">
-                    <label for="displayName" class="form-label"><?= t()->표시_이름 ?></label>
+                    <label for="firstName" class="form-label"><?= t()->이름 ?></label>
                     <input
                         type="text"
                         class="form-control"
-                        id="displayName"
-                        v-model="form.displayName"
+                        id="firstName"
+                        v-model="form.firstName"
                         required
-                        maxlength="64">
-                    <div class="form-text"><?= t()->다른_사용자에게_표시되는_이름입니다 ?></div>
+                        maxlength="32">
+                    <div class="form-text"><?= t()->이름을_입력해주세요 ?></div>
+                </div>
+
+                <!-- 성 (Last Name) -->
+                <div class="mb-4">
+                    <label for="lastName" class="form-label"><?= t()->성 ?></label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="lastName"
+                        v-model="form.lastName"
+                        required
+                        maxlength="32">
+                    <div class="form-text"><?= t()->성을_입력해주세요 ?></div>
+                </div>
+
+                <!-- 중간 이름 (Middle Name) -->
+                <div class="mb-4">
+                    <label for="middleName" class="form-label">
+                        <?= t()->중간_이름 ?>
+                        <span class="text-muted">(<?= t()->선택사항 ?>)</span>
+                    </label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="middleName"
+                        v-model="form.middleName"
+                        maxlength="32">
                 </div>
 
                 <!-- 성별 -->
@@ -339,7 +402,9 @@ if (!$user) {
             data() {
                 return {
                     form: {
-                        displayName: '',
+                        firstName: '',
+                        lastName: '',
+                        middleName: '',
                         gender: '',
                     },
                     birthdayYear: '',
@@ -403,7 +468,9 @@ if (!$user) {
                         // PHP에서 전달받은 사용자 정보
                         const user = <?= json_encode($user->toArray()) ?>;
 
-                        this.form.displayName = user.display_name || '';
+                        this.form.firstName = user.first_name || '';
+                        this.form.lastName = user.last_name || '';
+                        this.form.middleName = user.middle_name || '';
                         this.form.gender = user.gender || '';
 
                         // 생년월일 파싱 (Unix timestamp)
@@ -429,8 +496,13 @@ if (!$user) {
                     this.errorMessage = '';
 
                     // 유효성 검사
-                    if (!this.form.displayName.trim()) {
-                        this.errorMessage = '표시 이름을 입력해주세요.';
+                    if (!this.form.firstName.trim()) {
+                        this.errorMessage = '이름을 입력해주세요.';
+                        return;
+                    }
+
+                    if (!this.form.lastName.trim()) {
+                        this.errorMessage = '성을 입력해주세요.';
                         return;
                     }
 
@@ -449,7 +521,9 @@ if (!$user) {
 
                     try {
                         const result = await update_my_profile({
-                            display_name: this.form.displayName.trim(),
+                            first_name: this.form.firstName.trim(),
+                            last_name: this.form.lastName.trim(),
+                            middle_name: this.form.middleName.trim(),
                             gender: this.form.gender,
                             birthday: birthday
                         });

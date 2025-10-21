@@ -56,12 +56,15 @@ function create_user_record(array $input): array
     $now = time();
 
     // 사용자 레코드 생성 (PDO Prepared Statement 사용)
-    $sql = "INSERT INTO users (firebase_uid, display_name, created_at, updated_at, birthday, gender, photo_url)
-            VALUES (:firebase_uid, :display_name, :created_at, :updated_at, :birthday, :gender, :photo_url)";
+    $sql = "INSERT INTO users (firebase_uid, display_name, first_name, last_name, middle_name, created_at, updated_at, birthday, gender, photo_url)
+            VALUES (:firebase_uid, :display_name, :first_name, :last_name, :middle_name, :created_at, :updated_at, :birthday, :gender, :photo_url)";
 
     $stmt = $pdo->prepare($sql);
     $stmt->bindValue(':firebase_uid', $input['firebase_uid'], PDO::PARAM_STR);
     $stmt->bindValue(':display_name', $displayName, PDO::PARAM_STR);
+    $stmt->bindValue(':first_name', $input['first_name'] ?? '', PDO::PARAM_STR);
+    $stmt->bindValue(':last_name', $input['last_name'] ?? '', PDO::PARAM_STR);
+    $stmt->bindValue(':middle_name', $input['middle_name'] ?? '', PDO::PARAM_STR);
     $stmt->bindValue(':created_at', $now, PDO::PARAM_INT);
     $stmt->bindValue(':updated_at', $now, PDO::PARAM_INT);
     $stmt->bindValue(':birthday', (int)($input['birthday'] ?? 0), PDO::PARAM_INT);
@@ -194,22 +197,27 @@ function update_user_profile(array $input): array
     $updateFields[] = 'updated_at = ?';
     $updateValues[] = time();
 
-    // display_name이 제공된 경우
-    if (isset($input['display_name']) && !empty($input['display_name'])) {
-        $displayName = trim($input['display_name']);
-
-        // display_name 중복 확인 (자기 자신은 제외)
-        $stmt = $pdo->prepare("SELECT id FROM users WHERE display_name = ? AND id != ?");
-        $stmt->execute([$displayName, $currentUser->id]);
-        $existing = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($existing) {
-            return error('display-name-already-exists', '이미 사용 중인 표시 이름입니다.', ['display_name' => $displayName]);
-        }
-
-        $updateFields[] = 'display_name = ?';
-        $updateValues[] = $displayName;
+    // first_name이 제공된 경우
+    if (isset($input['first_name'])) {
+        $firstName = trim($input['first_name']);
+        $updateFields[] = 'first_name = ?';
+        $updateValues[] = $firstName;
     }
+
+    // last_name이 제공된 경우
+    if (isset($input['last_name'])) {
+        $lastName = trim($input['last_name']);
+        $updateFields[] = 'last_name = ?';
+        $updateValues[] = $lastName;
+    }
+
+    // middle_name이 제공된 경우
+    if (isset($input['middle_name'])) {
+        $middleName = trim($input['middle_name']);
+        $updateFields[] = 'middle_name = ?';
+        $updateValues[] = $middleName;
+    }
+
 
     // birthday가 제공된 경우
     if (isset($input['birthday'])) {
