@@ -5,11 +5,16 @@
  * 친구 검색 기능을 제공하는 독립적인 Vue.js 컴포넌트입니다.
  *
  * 사용법 1: 자동 마운트 (권장)
- * HTML에 <div class="user-search-app"></div> 요소를 추가하면 자동으로 마운트됩니다.
+ * HTML에 <div class="user-search-component"></div> 요소를 추가하면 자동으로 마운트됩니다.
  *
  * 사용법 2: 수동 마운트
  * Vue.createApp(UserSearchComponent).mount('#user-search');
  */
+
+// 인스턴스 카운터 초기화
+if (typeof window.userSearchInstanceCounter === 'undefined') {
+    window.userSearchInstanceCounter = 0;
+}
 
 
 
@@ -23,8 +28,8 @@ window.UserSearchComponent = {
             <i class="bi bi-search"></i>{{ t.친구_검색 }}
         </button>
 
-        <!-- Friend Search Modal -->
-        <div class="modal fade" :id="modalId" tabindex="-1" :aria-labelledby="modalId + '-label'" aria-hidden="true">
+        <!-- Friend Search Modal with higher z-index for proper layering -->
+        <div class="modal fade" :id="modalId" tabindex="-1" :aria-labelledby="modalId + '-label'" aria-hidden="true" style="z-index: 9999;">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -344,7 +349,17 @@ window.UserSearchComponent = {
             console.log(`[user-search-${this.instanceId}] $nextTick에서 modalElement 검색:`, modalElement);
 
             if (modalElement && typeof bootstrap !== 'undefined') {
-                this.modalInstance = new bootstrap.Modal(modalElement);
+                // 모달을 body의 직접 자식으로 이동 (z-index 문제 해결)
+                document.body.appendChild(modalElement);
+
+                this.modalInstance = new bootstrap.Modal(modalElement, {
+                    backdrop: true,
+                    keyboard: true,
+                    focus: true
+                });
+
+
+
                 console.log(`[user-search-${this.instanceId}] 친구 검색 모달 초기화 완료 (ID: ${this.modalId})`);
             } else {
                 console.error(`[user-search-${this.instanceId}] Bootstrap Modal 초기화 실패 - modalElement:`, modalElement, 'bootstrap:', typeof bootstrap);
@@ -358,22 +373,22 @@ window.UserSearchComponent = {
 /**
  * 자동 마운트 함수
  *
- * .user-search-app 클래스를 가진 모든 요소를 찾아서 자동으로 Vue 앱을 마운트합니다.
+ * .user-search-component 클래스를 가진 모든 요소를 찾아서 자동으로 Vue 앱을 마운트합니다.
  *
  * 사용법:
- * 1. HTML에 <div class="user-search-app"></div> 요소를 추가
- * 2. 이 스크립트가 로드되면 자동으로 모든 .user-search-app 요소에 마운트됨
+ * 1. HTML에 <div class="user-search-component"></div> 요소를 추가
+ * 2. 이 스크립트가 로드되면 자동으로 모든 .user-search-component 요소에 마운트됨
  *
  * 주의사항:
  * - 한 요소에 한 번만 마운트됩니다 (중복 마운트 방지)
  * - DOM이 완전히 로드된 후에 실행됩니다
  */
 ready(() => {
-    // .user-search-app 클래스를 가진 모든 요소 찾기
-    const userSearchApps = document.querySelectorAll('.user-search-app');
+    // .user-search-component 클래스를 가진 모든 요소 찾기
+    const userSearchApps = document.querySelectorAll('.user-search-component');
 
     if (userSearchApps.length > 0) {
-        console.log(`[user-search] ${userSearchApps.length}개의 .user-search-app 요소 발견`);
+        console.log(`[user-search] ${userSearchApps.length}개의 .user-search-component 요소 발견`);
 
         // 각 요소에 Vue 앱 마운트
         userSearchApps.forEach((element, index) => {
@@ -395,6 +410,6 @@ ready(() => {
             }
         });
     } else {
-        console.log('[user-search] .user-search-app 요소를 찾지 못했습니다.');
+        console.log('[user-search] .user-search-component 요소를 찾지 못했습니다.');
     }
 });

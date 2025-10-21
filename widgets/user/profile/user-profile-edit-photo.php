@@ -1,7 +1,7 @@
-<script defer src="/js/file-upload.js?v=<?= APP_VERSION ?>"></script>
+<?php load_deferred_js('vue-components/file-upload.component') ?>
 <style>
     /* 프로필 사진 컨테이너 */
-    #profile-photo {
+    .file-upload-wrapper {
         width: 150px;
         height: 150px;
         border-radius: 50%;
@@ -16,7 +16,7 @@
     }
 
     /* uploaded-files div가 profile-photo를 완전히 채우도록 */
-    #profile-photo .uploaded-files {
+    .file-upload-wrapper .uploaded-files {
         width: 100%;
         height: 100%;
         margin: 0 !important;
@@ -31,7 +31,7 @@
     }
 
     /* 이미지가 타원형을 완전히 채우도록 */
-    #profile-photo .uploaded-files img {
+    .file-upload-wrapper .uploaded-files img {
         width: 100%;
         height: 100%;
         object-fit: cover;
@@ -40,7 +40,7 @@
     }
 
     /* progress bar를 타원형 아래에 명확히 표시 */
-    #profile-photo .file-upload-progress-container {
+    .file-upload-wrapper .file-upload-progress-container {
         position: relative;
         width: 150px;
         margin-top: 160px !important;
@@ -101,17 +101,24 @@
     }
 </style>
 
-<div class="d-inline-block position-relative" style="width: 150px; height: 150px;">
+<div id="user-profile-edit-photo" class="d-inline-block position-relative" style="width: 150px; height: 150px;">
     <!-- 프로필 사진 업로드 영역 -->
     <label class="d-inline-block position-relative" style="width: 150px; height: 150px; cursor: pointer;">
         <!-- 프로필 사진 표시 영역 -->
-        <div id="profile-photo"
-            data-single="true"
-            data-default-files="<?= login()->photo_url ?>"></div>
+        <file-upload-component
+            ref="upload"
+            :single="true"
+            :show-upload-button="false"
+            :input-name="'profile-photo'"
+            :default-files="'<?= login()->photo_url ?>'"
+            @uploaded="on_uploaded"
+            @deleted="on_deleted"></file-upload-component>
+
+
 
         <!-- 파일 입력 (숨김) -->
         <input type="file"
-            onchange="handle_file_change(event, { id: 'profile-photo', on_uploaded: on_uploaded })"
+            @change="$refs.upload.handleFileChange($event)"
             class="d-none"
             accept="image/*" />
 
@@ -122,25 +129,84 @@
     <!-- 삭제 버튼 (프로필 사진이 있을 때만 표시) -->
     <button class="profile-photo-delete-button <?= login()->photo_url ? '' : 'd-none' ?>"
         type="button"
-        onclick="delete_file(get_hidden_input_value('profile-photo'), {id: 'profile-photo', on_deleted: on_deleted, alert_on_error: true});"
+        @click="$refs.upload.deleteFile()"
         title="<?= t()->삭제 ?>">
         <i class="bi bi-x-lg"></i>
     </button>
 </div>
 
+
 <script>
-    /**
-     * 파일 업로드 후 호출되는 콜백 함수
-     *
-     * @param {Object} json - 업로드된 파일의 JSON 응답
-     * @param {string} json.url - 업로드된 파일의 URL
-     */
+    ready(() => {
+        Vue.createApp({
+            components: {
+                'file-upload-component': FileUploadComponent,
+            },
+            methods: {
+
+                /**
+                 * 파일 업로드 후 호출되는 콜백 함수
+                 *
+                 * @param {Object} json - 업로드된 파일의 JSON 응답
+                 * @param {string} json.url - 업로드된 파일의 URL
+                 */
+                on_uploaded(json) {
+                    console.log('File uploaded:', json);
+                    if (json && json.url) {
+                        // func() 함수를 사용하여 프로필 사진 업데이트
+                        func('update_user_profile', {
+                            photo_url: json.url,
+                            alertOnError: false
+                        }).then(response => {
+                            console.log('프로필 사진 업데이트 성공:', response);
+
+                            // 삭제 버튼 표시
+                            document.querySelector('.profile-photo-delete-button').classList.remove('d-none');
+
+
+                            Store.actions.setUserPhotoUrl(json.url);
+                        }).catch(error => {
+                            console.error('프로필 사진 업데이트 실패:', error);
+                            alert('프로필 사진 업데이트에 실패했습니다: ' + error.message);
+                        });
+                    }
+                },
+
+                /**
+                 * 파일 삭제 후 호출되는 콜백 함수
+                 *
+                 * @param {Object} json - 삭제된 파일의 JSON 응답
+                 * @param {boolean} json.deleted - 삭제 성공 여부
+                 */
+                on_deleted(json) {
+                    console.log('File deleted:', json);
+                    if (json && json.deleted) {
+                        // func() 함수를 사용하여 프로필 사진 제거
+                        func('update_user_profile', {
+                            photo_url: '',
+                            alertOnError: false
+                        }).then(response => {
+                            console.log('프로필 사진 삭제 성공:', response);
+                            Store.actions.setUserPhotoUrl('');
+
+                            // 삭제 버튼 숨김
+                            document.querySelector('.profile-photo-delete-button').classList.add('d-none');
+                        }).catch(error => {
+                            console.error('프로필 사진 삭제 실패:', error);
+                            alert('프로필 사진 삭제에 실패했습니다: ' + error.message);
+                        });
+                    }
+                }
+            }
+        }).mount('#user-profile-edit-photo');
+    });
+
     function on_uploaded(json) {
+        console.log('File uploaded:', json);
         if (json && json.url) {
             // func() 함수를 사용하여 프로필 사진 업데이트
             func('update_user_profile', {
                 photo_url: json.url,
-                auth: true,
                 alertOnError: false
             }).then(response => {
                 console.log('프로필 사진 업데이트 성공:', response);
@@ -153,32 +219,6 @@
             }).catch(error => {
                 console.error('프로필 사진 업데이트 실패:', error);
                 alert('프로필 사진 업데이트에 실패했습니다: ' + error.message);
-            });
-        }
-    }
-
-    /**
-     * 파일 삭제 후 호출되는 콜백 함수
-     *
-     * @param {Object} json - 삭제된 파일의 JSON 응답
-     * @param {boolean} json.deleted - 삭제 성공 여부
-     */
-    function on_deleted(json) {
-        if (json && json.deleted) {
-            // func() 함수를 사용하여 프로필 사진 제거
-            func('update_user_profile', {
-                photo_url: '',
-                auth: true,
-                alertOnError: false
-            }).then(response => {
-                console.log('프로필 사진 삭제 성공:', response);
-                Store.actions.setUserPhotoUrl('');
-
-                // 삭제 버튼 숨김
-                document.querySelector('.profile-photo-delete-button').classList.add('d-none');
-            }).catch(error => {
-                console.error('프로필 사진 삭제 실패:', error);
-                alert('프로필 사진 삭제에 실패했습니다: ' + error.message);
             });
         }
     }

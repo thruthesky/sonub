@@ -222,7 +222,7 @@ $hydrationData = [
 load_deferred_js('infinite-scroll');
 
 // 사용자 검색 컴포넌트 자동 로드
-load_deferred_js('vue-components/user-search');
+load_deferred_js('vue-components/user-search.component');
 ?>
 
 <div class="container py-4">
@@ -231,7 +231,7 @@ load_deferred_js('vue-components/user-search');
     <!-- Friend Action Buttons -->
     <div class="mb-3 d-flex gap-2 flex-wrap">
         <!-- 사용자 검색 컴포넌트 (자동 마운트) -->
-        <div class="user-search-app"></div>
+        <div class="user-search-component"></div>
 
         <!-- Friends List Button -->
         <a href="<?= href()->friend->list ?>" class="btn btn-outline-primary position-relative">

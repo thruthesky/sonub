@@ -82,7 +82,7 @@
 </div>
 
 // load_deferred_js() 함수로 공유 JavaScript 로드
-<?php load_deferred_js('vue-components/user-search'); ?>
+<?php load_deferred_js('vue-components/user-search.component'); ?>
 ```
 
 **참조**: 모든 개발 작업 시작 전 반드시 읽어야 할 기본 가이드라인
@@ -513,17 +513,17 @@ $users = list_users([
 
 **핵심 내용**:
 - Vue.js 사용자 검색 컴포넌트
-- 자동 마운트: `.user-search-app` 클래스
+- 자동 마운트: `.user-search-component` 클래스
 - Bootstrap 모달 사용
 - 다국어 지원, 페이지네이션
 - 여러 인스턴스 동시 사용 가능
 
 **주요 예제**:
 ```php
-<?php load_deferred_js('vue-components/user-search'); ?>
+<?php load_deferred_js('vue-components/user-search.component'); ?>
 
 <!-- 자동 마운트 -->
-<div class="user-search-app"></div>
+<div class="user-search-component"></div>
 ```
 
 **참조**: 사용자 검색 컴포넌트 사용법

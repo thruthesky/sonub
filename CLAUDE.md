@@ -256,11 +256,14 @@ file -I [파일경로]
 
 ---
 
-# JavaScript 프레임워크 - Vue.js 3.x
+# Vue.js - JavaScript 프레임워크 - Vue.js 3.x
 
-- PHP MPA 방식으로 Vue.js 3.x CDN 사용
+- PHP MPA 방식으로 Vue.js 3.x CDN 또는 External JavaScript 로딩해서 사용
 - 페이지 이동 시 자동 정리 (MPA 장점)
 - 각 페이지의 Vue 인스턴스는 독립적
+- `ready()` 래퍼 필수. `defer` 속성으로 Vue.js 를 로드하므로 `ready(() => { Vue.createApp(...).mount(...); })` 를 통해서 DOMContentLoaded 후 실행 보장
+- **절대 금지**: `const { createApp, ref } = Vue;` 구조 분해 할당
+- **필수**: `Vue.createApp({ components: { xxx: xxxComponent() }})` 와 같이 Vue component 를 Options API 로 작성하고, 별도의 변수로 분리
 
 ---
 

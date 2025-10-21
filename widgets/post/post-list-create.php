@@ -6,7 +6,7 @@
  * @included in page/post/list.php with route: /post/list
  */
 
-load_deferred_js('file-upload');
+load_deferred_js('vue-components/file-upload.component');
 
 // 다국어 번역 텍스트 주입
 inject_post_list_create_language();
@@ -19,120 +19,6 @@ $user_photo = $user && isset($user->photo_url) ? $user->photo_url : '/images/def
 $user_name = $user && isset($user->display_name) ? $user->display_name : 'Guest';
 
 ?>
-<section id="post-list-create" class="mb-3" v-cloak>
-    <!-- 게시물 작성 카드 (post-card 스타일 적용) -->
-    <article class="post-card">
-        <div class="post-body">
-            <form @submit.prevent="submit_post">
-                <!-- 축소된 상태: 프로필 + 클릭 가능한 버튼 -->
-                <div v-if="!expanded" class="d-flex align-items-center">
-                    <!-- 프로필 사진 -->
-                    <div class="post-header-avatar">
-                        <img v-if="userPhoto"
-                            :src="userPhoto"
-                            :alt="userName"
-                            style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                        <i v-else class="fa-solid fa-user"></i>
-                    </div>
-
-                    <!-- 클릭 가능한 버튼 -->
-                    <button type="button"
-                        @click="expand"
-                        class="post-create-trigger">
-                        {{ placeholder }}
-                    </button>
-                </div>
-
-                <!-- 확장된 상태: 전체 폼 -->
-                <div v-if="expanded">
-                    <!-- 사용자 프로필 헤더 -->
-                    <div class="post-header" style="padding: 0 0 12px 0; border: none;">
-                        <div class="post-header-avatar">
-                            <img v-if="userPhoto"
-                                :src="userPhoto"
-                                :alt="userName"
-                                style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                            <i v-else class="fa-solid fa-user"></i>
-                        </div>
-                        <div class="post-header-info">
-                            <div class="post-header-name">{{ userName }}</div>
-                            <div class="post-header-meta d-flex gap-2 align-items-center">
-                                <!-- 공개범위 선택 -->
-                                <div class="post-select-wrapper">
-                                    <i class="fa-solid fa-earth-americas" v-if="visibility === 'public'" style="font-size: 12px; margin-right: 4px;"></i>
-                                    <i class="fa-solid fa-user-group" v-if="visibility === 'friends'" style="font-size: 12px; margin-right: 4px;"></i>
-                                    <i class="fa-solid fa-lock" v-if="visibility === 'private'" style="font-size: 12px; margin-right: 4px;"></i>
-                                    <select v-model="visibility" class="post-select">
-                                        <option value="public"><?= t()->공개 ?></option>
-                                        <option value="friends"><?= t()->친구만 ?></option>
-                                        <option value="private"><?= t()->나만_보기 ?></option>
-                                    </select>
-                                    <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px; pointer-events: none;"></i>
-                                </div>
-
-                                <!-- 카테고리 선택 (공개일 때만) -->
-                                <div v-if="visibility === 'public'" class="post-select-wrapper">
-                                    <i class="fa-solid fa-folder" style="font-size: 12px; margin-right: 4px;"></i>
-                                    <select v-model="category" class="post-select">
-                                        <?php foreach (config()->categories->getRootCategories() as $root) : ?>
-                                            <optgroup label="<?= htmlspecialchars($root->display_name) ?>">
-                                                <?php foreach ($root->getCategories() as $sub) : ?>
-                                                    <option value="<?= htmlspecialchars($sub->category) ?>"><?= htmlspecialchars($sub->name) ?></option>
-                                                <?php endforeach; ?>
-                                            </optgroup>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px; pointer-events: none;"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 게시물 내용 입력 -->
-                    <textarea
-                        ref="textarea"
-                        v-model="content"
-                        class="post-content-input"
-                        name="content"
-                        :placeholder="placeholder"
-                        @input="autoResize"></textarea>
-
-                    <!-- 카테고리 선택 (공개일 때만) -->
-
-
-                    <!-- 파일 미리보기 영역 -->
-                    <div v-show="hasFiles" style="margin-top: 12px;">
-                        <div id="files" :data-file-count="fileCount"></div>
-                    </div>
-
-                    <!-- 하단 액션 영역 -->
-                    <div class="post-create-actions">
-                        <!-- 사진/비디오 업로드 버튼 -->
-                        <label class="post-action-btn">
-                            <i class="fa-solid fa-image" style="color: #45bd62;"></i>
-                            <span><?= t()->사진_동영상 ?></span>
-                            <input type="file"
-                                multiple
-                                accept="image/*,video/*"
-                                style="display: none;"
-                                onchange="handle_file_change(event, { id: 'files', on_uploaded: (data) => { console.log('파일 업로드 완료:', data); if (window.postListCreateVm) { window.postListCreateVm.hasFiles = true; } } })">
-                        </label>
-
-                        <!-- 오른쪽: 취소 및 게시 버튼 -->
-                        <div style="display: flex; gap: 8px; margin-left: auto;">
-                            <button type="submit"
-                                class="btn-post"
-                                :disabled="!canSubmit">
-                                <?= t()->게시 ?>
-                            </button>
-                        </div>
-                    </div>
-
-                </div>
-            </form>
-        </div>
-    </article>
-</section>
 
 <style>
     .post-create-trigger {
@@ -270,13 +156,137 @@ $user_name = $user && isset($user->display_name) ? $user->display_name : 'Guest'
         cursor: not-allowed;
     }
 </style>
+<section id="post-list-create" class="mb-3" v-cloak>
+    <!-- 게시물 작성 카드 (post-card 스타일 적용) -->
+    <article class="post-card">
+        <div class="post-body">
+            <form @submit.prevent="submit_post">
+                <!-- 축소된 상태: 프로필 + 클릭 가능한 버튼 -->
+                <div v-if="!expanded" class="d-flex align-items-center">
+                    <!-- 프로필 사진 -->
+                    <div class="post-header-avatar">
+                        <img v-if="userPhoto"
+                            :src="userPhoto"
+                            :alt="userName"
+                            style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                        <i v-else class="fa-solid fa-user"></i>
+                    </div>
+
+                    <!-- 클릭 가능한 버튼 -->
+                    <button type="button"
+                        @click="expand"
+                        class="post-create-trigger">
+                        {{ placeholder }}
+                    </button>
+                </div>
+
+                <!-- 확장된 상태: 전체 폼 -->
+                <div v-if="expanded">
+                    <!-- 사용자 프로필 헤더 -->
+                    <div class="post-header" style="padding: 0 0 12px 0; border: none;">
+                        <div class="post-header-avatar">
+                            <img v-if="userPhoto"
+                                :src="userPhoto"
+                                :alt="userName"
+                                style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                            <i v-else class="fa-solid fa-user"></i>
+                        </div>
+                        <div class="post-header-info">
+                            <div class="post-header-name">{{ userName }}</div>
+                            <div class="post-header-meta d-flex gap-2 align-items-center">
+                                <!-- 공개범위 선택 -->
+                                <div class="post-select-wrapper">
+                                    <i class="fa-solid fa-earth-americas" v-if="visibility === 'public'" style="font-size: 12px; margin-right: 4px;"></i>
+                                    <i class="fa-solid fa-user-group" v-if="visibility === 'friends'" style="font-size: 12px; margin-right: 4px;"></i>
+                                    <i class="fa-solid fa-lock" v-if="visibility === 'private'" style="font-size: 12px; margin-right: 4px;"></i>
+                                    <select v-model="visibility" class="post-select">
+                                        <option value="public"><?= t()->공개 ?></option>
+                                        <option value="friends"><?= t()->친구만 ?></option>
+                                        <option value="private"><?= t()->나만_보기 ?></option>
+                                    </select>
+                                    <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px; pointer-events: none;"></i>
+                                </div>
+
+                                <!-- 카테고리 선택 (공개일 때만) -->
+                                <div v-if="visibility === 'public'" class="post-select-wrapper">
+                                    <i class="fa-solid fa-folder" style="font-size: 12px; margin-right: 4px;"></i>
+                                    <select v-model="category" class="post-select">
+                                        <?php foreach (config()->categories->getRootCategories() as $root) : ?>
+                                            <optgroup label="<?= htmlspecialchars($root->display_name) ?>">
+                                                <?php foreach ($root->getCategories() as $sub) : ?>
+                                                    <option value="<?= htmlspecialchars($sub->category) ?>"><?= htmlspecialchars($sub->name) ?></option>
+                                                <?php endforeach; ?>
+                                            </optgroup>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px; pointer-events: none;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 게시물 내용 입력 -->
+                    <textarea
+                        ref="textarea"
+                        v-model="content"
+                        class="post-content-input"
+                        name="content"
+                        :placeholder="placeholder"
+                        @input="autoResize"></textarea>
+
+                    <!-- 카테고리 선택 (공개일 때만) -->
+
+                    <!-- 파일 업로드 컴포넌트 -->
+                    <file-upload-component
+                        ref="upload"
+                        :multiple="true"
+                        :accept="'image/*,video/*'"
+                        :show-upload-button="false"
+                        :show-delete-icon="true"
+                        :input-name="'files'"
+                        @change="onFileChange">
+                    </file-upload-component>
+
+
+                    <!-- 하단 액션 영역 -->
+                    <div class="post-create-actions">
+                        <!-- 사진/비디오 업로드 버튼 -->
+                        <label class="post-action-btn">
+                            <i class="fa-solid fa-image" style="color: #45bd62;"></i>
+                            <span><?= t()->사진_동영상 ?></span>
+                            <input type="file"
+                                multiple
+                                accept="image/*,video/*"
+                                style="display: none;"
+                                @change="$refs.upload.handleFileChange($event)">
+                        </label>
+
+                        <!-- 오른쪽: 취소 및 게시 버튼 -->
+                        <div style="display: flex; gap: 8px; margin-left: auto;">
+                            <button type="submit"
+                                class="btn-post"
+                                :disabled="!canSubmit">
+                                <?= t()->게시 ?>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </article>
+</section>
+
 <script>
     ready(() => {
         const app = Vue.createApp({
+            components: {
+                'file-upload-component': FileUploadComponent,
+            },
             data() {
                 return {
                     content: '',
-                    expanded: false,
+                    expanded: true,
                     hasFiles: false,
                     visibility: 'public',
                     category: '<?= $category ?>',
@@ -368,7 +378,7 @@ $user_name = $user && isset($user->display_name) ? $user->display_name : 'Guest'
                         console.error('게시물 작성 실패:', error);
                         alert('<?= t()->게시물_작성_중_오류가_발생했습니다 ?>');
                     }
-                }
+                },
             },
             watch: {
                 /**

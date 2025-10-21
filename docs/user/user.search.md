@@ -20,7 +20,7 @@
 
 ## 개요
 
-**파일 위치**: `js/vue-components/user-search.js`
+**파일 위치**: `js/vue-components/user-search.component.js`
 
 사용자 검색 컴포넌트는 다음 기능을 제공합니다:
 - 사용자 이름으로 검색
@@ -39,7 +39,7 @@
 ```php
 <?php
 // 사용자 검색 컴포넌트 로드
-load_deferred_js('vue-components/user-search');
+load_deferred_js('vue-components/user-search.component');
 ?>
 ```
 
@@ -59,23 +59,23 @@ load_deferred_js('vue-components/user-search');
 
 ### 방법 1: 자동 마운트 (권장)
 
-가장 간단한 방법입니다. HTML에 `.user-search-app` 클래스를 가진 div를 추가하면 자동으로 마운트됩니다.
+가장 간단한 방법입니다. HTML에 `.user-search-component` 클래스를 가진 div를 추가하면 자동으로 마운트됩니다.
 
 **HTML**:
 ```html
 <!-- 사용자 검색 컴포넌트 (자동 마운트) -->
-<div class="user-search-app"></div>
+<div class="user-search-component"></div>
 ```
 
 **PHP 예제**:
 ```php
 <?php
 // 스크립트 로드
-load_deferred_js('vue-components/user-search');
+load_deferred_js('vue-components/user-search.component');
 ?>
 
 <!-- 자동 마운트 -->
-<div class="user-search-app"></div>
+<div class="user-search-component"></div>
 ```
 
 **장점**:
@@ -87,13 +87,13 @@ load_deferred_js('vue-components/user-search');
 **여러 인스턴스 사용 예제**:
 ```html
 <!-- 사이드바에 첫 번째 검색 -->
-<div class="user-search-app"></div>
+<div class="user-search-component"></div>
 
 <!-- 메인 페이지에 두 번째 검색 -->
-<div class="user-search-app"></div>
+<div class="user-search-component"></div>
 
 <!-- 필요한 만큼 추가 가능 -->
-<div class="user-search-app"></div>
+<div class="user-search-component"></div>
 ```
 
 ---
@@ -116,7 +116,7 @@ load_deferred_js('vue-components/user-search');
 **PHP 예제**:
 ```php
 <?php
-load_deferred_js('vue-components/user-search');
+load_deferred_js('vue-components/user-search.component');
 ?>
 
 <div id="custom-search"></div>
@@ -356,11 +356,11 @@ formatDate(1697501234) // "2023-10-17"
 ```php
 <?php
 // 사용자 검색 컴포넌트 자동 로드
-load_deferred_js('vue-components/user-search');
+load_deferred_js('vue-components/user-search.component');
 ?>
 
 <!-- 사용자 검색 컴포넌트 (자동 마운트) -->
-<div class="user-search-app"></div>
+<div class="user-search-component"></div>
 -------
 
 <!-- 다른 위젯 내용 -->
@@ -376,7 +376,7 @@ load_deferred_js('vue-components/user-search');
 ```php
 <?php
 // 사용자 검색 컴포넌트 자동 로드
-load_deferred_js('vue-components/user-search');
+load_deferred_js('vue-components/user-search.component');
 ?>
 
 <div class="container py-4">
@@ -385,7 +385,7 @@ load_deferred_js('vue-components/user-search');
     <!-- Friend Action Buttons -->
     <div class="mb-3 d-flex gap-2 flex-wrap">
         <!-- 사용자 검색 컴포넌트 (자동 마운트) -->
-        <div class="user-search-app"></div>
+        <div class="user-search-component"></div>
 
         <!-- 다른 버튼들 -->
         <a href="..." class="btn btn-outline-primary">친구 목록</a>
@@ -400,22 +400,22 @@ load_deferred_js('vue-components/user-search');
 
 ```php
 <?php
-load_deferred_js('vue-components/user-search');
+load_deferred_js('vue-components/user-search.component');
 ?>
 
 <!-- 헤더에 첫 번째 검색 -->
 <div class="header">
-    <div class="user-search-app"></div>
+    <div class="user-search-component"></div>
 </div>
 
 <!-- 사이드바에 두 번째 검색 -->
 <div class="sidebar">
-    <div class="user-search-app"></div>
+    <div class="user-search-component"></div>
 </div>
 
 <!-- 메인 콘텐츠에 세 번째 검색 -->
 <div class="main-content">
-    <div class="user-search-app"></div>
+    <div class="user-search-component"></div>
 </div>
 ```
 
@@ -446,11 +446,11 @@ console.log(typeof bootstrap); // "object"이어야 함
 // Vue 앱 중첩 확인
 // ❌ 잘못된 구조
 <div id="parent-vue-app">
-    <div class="user-search-app"></div> <!-- 중첩됨! -->
+    <div class="user-search-component"></div> <!-- 중첩됨! -->
 </div>
 
 // ✅ 올바른 구조
-<div class="user-search-app"></div> <!-- 독립적 -->
+<div class="user-search-component"></div> <!-- 독립적 -->
 <div id="parent-vue-app"></div>     <!-- 독립적 -->
 ```
 
