@@ -520,12 +520,12 @@ load_deferred_js('vue-components/user-search.component');
                     initialScrollToBottom: false // 페이지 로드 시 자동 스크롤 안 함
                 });
 
-                console.log('[user-list] 사용자 목록 페이지 초기화 완료:', {
-                    totalUsers: this.users.length,
-                    total: this.total,
-                    currentPage: this.currentPage,
-                    myUserId: this.myUserId
-                });
+                // console.log('[user-list] 사용자 목록 페이지 초기화 완료:', {
+                //     totalUsers: this.users.length,
+                //     total: this.total,
+                //     currentPage: this.currentPage,
+                //     myUserId: this.myUserId
+                // });
             }
         }).mount('#user-list-app');
     });

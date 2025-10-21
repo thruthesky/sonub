@@ -226,11 +226,11 @@ window.UserSearchComponent = {
          * 친구 검색 모달 열기
          */
         openSearchModal() {
-            console.log(`[user-search-${this.instanceId}] 친구 검색 모달 열기`);
+            // console.log(`[user-search-${this.instanceId}] 친구 검색 모달 열기`);
             if (this.modalInstance) {
                 this.modalInstance.show();
             } else {
-                console.error(`[user-search-${this.instanceId}] modalInstance가 null입니다.`);
+                // console.error(`[user-search-${this.instanceId}] modalInstance가 null입니다.`);
             }
         },
 
@@ -238,7 +238,7 @@ window.UserSearchComponent = {
          * 친구 검색 모달 닫기
          */
         closeSearchModal() {
-            console.log(`[user-search-${this.instanceId}] 친구 검색 모달 닫기`);
+            // console.log(`[user-search-${this.instanceId}] 친구 검색 모달 닫기`);
             if (this.modalInstance) {
                 this.modalInstance.hide();
             }
@@ -254,7 +254,7 @@ window.UserSearchComponent = {
                 return;
             }
 
-            console.log(`[user-search-${this.instanceId}] 검색 수행:`, this.searchTerm);
+            // console.log(`[user-search-${this.instanceId}] 검색 수행:`, this.searchTerm);
 
             // 상태 초기화
             this.searchPage = 1;
@@ -271,7 +271,7 @@ window.UserSearchComponent = {
             try {
                 this.searchLoading = true;
 
-                console.log(`[user-search-${this.instanceId}] 검색 API 호출: term="${this.searchTerm.trim()}", page=${this.searchPage}`);
+                // console.log(`[user-search-${this.instanceId}] 검색 API 호출: term="${this.searchTerm.trim()}", page=${this.searchPage}`);
 
                 const result = await func('list_users', {
                     name: this.searchTerm.trim(),
@@ -283,10 +283,10 @@ window.UserSearchComponent = {
                 this.searchTotal = result.total || 0;
                 this.searchTotalPages = result.total_pages || 0;
 
-                console.log(`[user-search-${this.instanceId}] 검색 결과: ${this.searchResults.length}명 (총 ${this.searchTotal}명, ${this.searchTotalPages}페이지)`);
+                // console.log(`[user-search-${this.instanceId}] 검색 결과: ${this.searchResults.length}명 (총 ${this.searchTotal}명, ${this.searchTotalPages}페이지)`);
 
             } catch (error) {
-                console.error(`[user-search-${this.instanceId}] 검색 실패:`, error);
+                // console.error(`[user-search-${this.instanceId}] 검색 실패:`, error);
                 alert(this.t.검색에_실패했습니다 + ': ' + (error.message || error.error_message || ''));
             } finally {
                 this.searchLoading = false;
@@ -300,17 +300,17 @@ window.UserSearchComponent = {
         async goToSearchPage(pageNum) {
             // 유효성 검사: 페이지 번호가 범위 내에 있는지 확인
             if (pageNum < 1 || pageNum > this.searchTotalPages) {
-                console.log(`[user-search-${this.instanceId}] 잘못된 페이지 번호: ${pageNum} (범위: 1-${this.searchTotalPages})`);
+                // console.log(`[user-search-${this.instanceId}] 잘못된 페이지 번호: ${pageNum} (범위: 1-${this.searchTotalPages})`);
                 return;
             }
 
             // 현재 페이지와 동일하면 중단
             if (pageNum === this.searchPage) {
-                console.log(`[user-search-${this.instanceId}] 이미 ${pageNum}페이지에 있습니다.`);
+                // console.log(`[user-search-${this.instanceId}] 이미 ${pageNum}페이지에 있습니다.`);
                 return;
             }
 
-            console.log(`[user-search-${this.instanceId}] 검색 결과 페이지 이동: ${this.searchPage} -> ${pageNum}`);
+            // console.log(`[user-search-${this.instanceId}] 검색 결과 페이지 이동: ${this.searchPage} -> ${pageNum}`);
 
             // 페이지 번호 업데이트
             this.searchPage = pageNum;
@@ -340,13 +340,13 @@ window.UserSearchComponent = {
     },
 
     mounted() {
-        console.log(`[user-search-${this.instanceId}] mounted() 호출됨, modalId: ${this.modalId}`);
+        // console.log(`[user-search-${this.instanceId}] mounted() 호출됨, modalId: ${this.modalId}`);
 
         // Vue가 DOM을 완전히 렌더링할 때까지 대기
         this.$nextTick(() => {
             // Bootstrap Modal 초기화
             const modalElement = document.getElementById(this.modalId);
-            console.log(`[user-search-${this.instanceId}] $nextTick에서 modalElement 검색:`, modalElement);
+            // console.log(`[user-search-${this.instanceId}] $nextTick에서 modalElement 검색:`, modalElement);
 
             if (modalElement && typeof bootstrap !== 'undefined') {
                 // 모달을 body의 직접 자식으로 이동 (z-index 문제 해결)
@@ -360,12 +360,12 @@ window.UserSearchComponent = {
 
 
 
-                console.log(`[user-search-${this.instanceId}] 친구 검색 모달 초기화 완료 (ID: ${this.modalId})`);
+                // console.log(`[user-search-${this.instanceId}] 친구 검색 모달 초기화 완료 (ID: ${this.modalId})`);
             } else {
-                console.error(`[user-search-${this.instanceId}] Bootstrap Modal 초기화 실패 - modalElement:`, modalElement, 'bootstrap:', typeof bootstrap);
+                // console.error(`[user-search-${this.instanceId}] Bootstrap Modal 초기화 실패 - modalElement:`, modalElement, 'bootstrap:', typeof bootstrap);
             }
 
-            console.log(`[user-search-${this.instanceId}] 사용자 검색 모듈 초기화 완료`);
+            // console.log(`[user-search-${this.instanceId}] 사용자 검색 모듈 초기화 완료`);
         });
     }
 };
@@ -388,28 +388,28 @@ ready(() => {
     const userSearchApps = document.querySelectorAll('.user-search-component');
 
     if (userSearchApps.length > 0) {
-        console.log(`[user-search] ${userSearchApps.length}개의 .user-search-component 요소 발견`);
+        // console.log(`[user-search] ${userSearchApps.length}개의 .user-search-component 요소 발견`);
 
         // 각 요소에 Vue 앱 마운트
         userSearchApps.forEach((element, index) => {
             // 이미 마운트된 요소는 건너뛰기 (중복 마운트 방지)
             if (element.__vue_app__) {
-                console.log(`[user-search] 요소 ${index}는 이미 마운트되어 있습니다.`);
+                // console.log(`[user-search] 요소 ${index}는 이미 마운트되어 있습니다.`);
                 return;
             }
 
-            console.log(`[user-search] 요소 ${index}에 Vue 앱 마운트 중...`);
+            // console.log(`[user-search] 요소 ${index}에 Vue 앱 마운트 중...`);
 
             try {
                 const app = Vue.createApp(window.UserSearchComponent);
                 app.mount(element);
 
-                console.log(`[user-search] 요소 ${index}에 Vue 앱 마운트 완료`);
+                // console.log(`[user-search] 요소 ${index}에 Vue 앱 마운트 완료`);
             } catch (error) {
-                console.error(`[user-search] 요소 ${index} 마운트 실패:`, error);
+                // console.error(`[user-search] 요소 ${index} 마운트 실패:`, error);
             }
         });
     } else {
-        console.log('[user-search] .user-search-component 요소를 찾지 못했습니다.');
+        // console.log('[user-search] .user-search-component 요소를 찾지 못했습니다.');
     }
 });

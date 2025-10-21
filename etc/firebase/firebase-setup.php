@@ -8,13 +8,13 @@
     <?php include ROOT_DIR . '/etc/config/firebase-web-config.php'; ?>
     const firebaseConfig = <?php echo json_encode(firebaseConfig); ?>;
 
-    console.log('Firebase Config:', firebaseConfig);
+    // console.log('Firebase Config:', firebaseConfig);
     // Initialize Firebase
     firebase_ready(() => {
 
         firebase.initializeApp(firebaseConfig);
 
-        console.log('Firebase initialized:', firebase.app().name);
+        // console.log('Firebase initialized:', firebase.app().name);
 
         // Check if a user is already signed in
         firebase.auth().onAuthStateChanged((user) => {
@@ -22,14 +22,14 @@
             if (user) {
 
                 // User is signed in.
-                console.log('User is signed in:', user);
+                // console.log('User is signed in:', user);
 
                 // You can access user information here
                 const uid = user.uid;
                 const email = user.email;
                 const displayName = user.displayName;
 
-                console.log('User UID:', uid);
+                // console.log('User UID:', uid);
                 // console.log('Email:', email);
                 // console.log('Display Name:', displayName);
 
@@ -41,7 +41,7 @@
 
             } else {
                 // No user is signed in.
-                console.log('No user is signed in.');
+                // console.log('No user is signed in.');
             }
         });
     })

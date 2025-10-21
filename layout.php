@@ -60,13 +60,13 @@ if (file_exists($module_path)) {
                 }
                 if (firebase.apps.length > 0) {
                     // 이미 초기화 되었으면 바로 콜백 호출
-                    console.log("---> Firebase 이미 초기화 되어 있음");
+                    // console.log("---> Firebase 이미 초기화 되어 있음");
                     callback();
                     return;
                 }
                 // 파이어베이스 app 초기화: Firebase (and user) available immediately after this line.
                 firebase.initializeApp(firebaseConfig);
-                console.log("---> Firebase 초기화 됨");
+                // console.log("---> Firebase 초기화 됨");
                 callback();
             })
         }
