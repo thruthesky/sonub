@@ -276,7 +276,8 @@ ready(() => {
     // 3️⃣ 액션 (actions)
     const actions = {
         inc() { state.count++; },
-        setUser(u) { state.user = u; }
+        setUser(u) { state.user = u; },
+        setUserPhotoUrl(url) { state.user = { ...state.user, photo_url: url }; }
     };
 
     // 4️⃣ 전역 노출 (모든 Vue 앱이 동일한 인스턴스를 사용)

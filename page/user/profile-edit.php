@@ -204,6 +204,21 @@ if (!$user) {
 
 
 
+        <script>
+            ready(() => {
+                Vue.createApp({
+                    data() {
+                        return {
+                            Store: Store
+                        };
+                    },
+                    mounted() {
+                        console.log('User Data:', this.Store.state.user);
+                    }
+                }).mount('#yo');
+            });
+        </script>
+
 
 
         <div id="profile-edit-component">

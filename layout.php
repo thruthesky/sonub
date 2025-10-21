@@ -126,14 +126,7 @@ if (file_exists($module_path)) {
                         <!-- Temporarily change to icon instead of profile picture -->
                         <?php if (login()) : ?>
                             <a href="<?= href()->user->profile ?>" class="text-dark" title="Profile">
-                                <data v-scope>
-                                    <?php if (login()->photo_url) : ?>
-                                        <img :src="Store.state.user.photo_url" src="<?= login()->photo_url ?>" alt="Profile Photo" class="rounded-circle" style="width: 40px; height: 40px;">
-                                    <?php else : ?>
-                                        <i class="bi bi-person-circle fs-3"></i>
-                                    <?php endif; ?>
-                                    {{ Store.state.user.photo_url }}
-                                </data>
+                                <?php login_user_profile_photo() ?>
                             </a>
                         <?php endif; ?>
 

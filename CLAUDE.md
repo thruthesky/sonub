@@ -502,6 +502,18 @@ Vue.createApp({
 
 상세 예제는 `docs/coding-guideline.md` 참조
 
+## Store 전역 상태 관리
+- `js/app.js`의 `Store` 객체 사용
+- `Store.state`로 상태 접근
+- `Store.actions`로 상태 변경
+
+```javascript
+// 상태 접근
+console.log(Store.state.user);
+// 상태 변경
+Store.actions.setUser(newUser);
+```
+
 ---
 
 # UTF-8 인코딩 규칙
