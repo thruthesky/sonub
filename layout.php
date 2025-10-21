@@ -126,7 +126,14 @@ if (file_exists($module_path)) {
                         <!-- Temporarily change to icon instead of profile picture -->
                         <?php if (login()) : ?>
                             <a href="<?= href()->user->profile ?>" class="text-dark" title="Profile">
-                                <i class="bi bi-person-circle fs-3"></i>
+                                <data v-scope>
+                                    <?php if (login()->photo_url) : ?>
+                                        <img :src="Store.state.user.photo_url" src="<?= login()->photo_url ?>" alt="Profile Photo" class="rounded-circle" style="width: 40px; height: 40px;">
+                                    <?php else : ?>
+                                        <i class="bi bi-person-circle fs-3"></i>
+                                    <?php endif; ?>
+                                    {{ Store.state.user.photo_url }}
+                                </data>
                             </a>
                         <?php endif; ?>
 
@@ -235,10 +242,14 @@ if (file_exists($module_path)) {
         /* Sticky sidebars */
         .sticky-sidebar {
             position: sticky;
-            top: 100px; /* Offset for fixed header (80-88px) + spacing */
-            align-self: flex-start; /* Prevent stretching */
-            max-height: calc(100vh - 120px); /* Prevent sidebar from being taller than viewport */
-            overflow-y: auto; /* Allow scrolling if sidebar content is too long */
+            top: 100px;
+            /* Offset for fixed header (80-88px) + spacing */
+            align-self: flex-start;
+            /* Prevent stretching */
+            max-height: calc(100vh - 120px);
+            /* Prevent sidebar from being taller than viewport */
+            overflow-y: auto;
+            /* Allow scrolling if sidebar content is too long */
         }
     </style>
 
@@ -262,6 +273,16 @@ if (file_exists($module_path)) {
         __HYDRATE__.lang = "<?php echo get_user_lang(); ?>";
     </script>
 
+    <script src="/js/petite-vue.iife.js" defer></script>
+    <script>
+        ready(() => {
+            // v-scope 가 붙은 요소만 골라서 Petite Vue 적용
+            document.querySelectorAll('[v-scope]').forEach(el => {
+                // 각 v-scope 엘리먼트를 독립적으로 마운트
+                PetiteVue.createApp().mount(el)
+            })
+        })
+    </script>
 </body>
 
 </html>

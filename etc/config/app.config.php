@@ -47,6 +47,7 @@ class AppConfig
     public string $upload_path = '';
     public AppConfigTest $test;
     public array $pages_without_footer = [];
+    public CategoryList $categories;
 
     public function toArray(): array
     {
@@ -80,6 +81,7 @@ function config(): AppConfig
             '/page/index.php',
             '/page/post/list.php'
         ];
+        $config->categories = category();
     }
     return $config;
 }

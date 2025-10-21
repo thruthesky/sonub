@@ -166,6 +166,10 @@ class CategoryList
     {
         return $this->groups;
     }
+    public function getRootCategories(): array
+    {
+        return $this->getGroups();
+    }
 
     /**
      * 배열로 변환
@@ -214,7 +218,7 @@ function get_all_categories(): CategoryList
     // 커뮤니티
     // ========================================
     $community = new CategoryGroup('community', tr(['ko' => '커뮤니티', 'en' => 'Community', 'ja' => 'コミュニティ', 'zh' => '社区']));
-    $community->add(new CategoryModel('story', tr(['ko' => '이야기', 'en' => 'Story', 'ja' => 'ストーリー', 'zh' => '故事'])));
+    $community->add(new CategoryModel('story', tr(['ko' => '나의 이야기', 'en' => 'My Story', 'ja' => '私のストーリー', 'zh' => '我的故事'])));
     $community->add(new CategoryModel('relationships', tr(['ko' => '관계', 'en' => 'Relationships', 'ja' => '人間関係', 'zh' => '关系'])));
     $community->add(new CategoryModel('fitness', tr(['ko' => '운동', 'en' => 'Fitness', 'ja' => 'フィットネス', 'zh' => '健身'])));
     $community->add(new CategoryModel('beauty', tr(['ko' => '뷰티', 'en' => 'Beauty', 'ja' => 'ビューティー', 'zh' => '美容'])));

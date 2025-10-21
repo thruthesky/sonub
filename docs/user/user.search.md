@@ -236,7 +236,7 @@ const result = await func('list_users', {
     searchLoading: false,       // 검색 중 상태
     searchPerformed: false,     // 검색 수행 여부
     modalInstance: null,        // Bootstrap 모달 인스턴스
-    state: window.AppStore.state, // 전역 상태
+    state: window.Store.state, // 전역 상태
     profileUrl: '/user/profile' // 프로필 URL
 }
 ```
@@ -506,7 +506,7 @@ if (!element.__vue_app__) {
 console.log(typeof tr); // "function"이어야 함
 
 // 언어 설정 확인
-console.log(window.AppStore.state.language); // "en", "ko", "ja", "zh"
+console.log(window.Store.state.language); // "en", "ko", "ja", "zh"
 ```
 
 ### 문제 5: "ready is not defined" 에러

@@ -444,7 +444,7 @@ alert(message);
 ```
 
 **Advantages:**
-- ✅ Automatic translation according to user language (`window.AppStore.state.lang`)
+- ✅ Automatic translation according to user language (`window.Store.state.lang`)
 - ✅ Support dynamic language switching (automatic update on language change)
 - ✅ Available in Vue.js computed property
 

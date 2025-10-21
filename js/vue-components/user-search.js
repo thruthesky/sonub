@@ -152,7 +152,7 @@ window.UserSearchComponent = {
             modalInstance: null, // Bootstrap 모달 인스턴스
 
             // 전역 상태 관리
-            state: window.AppStore.state,
+            state: window.Store.state,
 
             // 프로필 URL
             profileUrl: '/user/profile'

@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3034;                  // Socket server port
 const USE_HTTPS = process.env.USE_HTTPS !== 'false';    // Default to HTTPS
 
 const KEY_URL = process.env.KEY || '/../dev/ssl/sonub-key.pem';
-const CERT_URL = process.env.CERT || '/../dev/ssl/sonub-cert.pem'; 
+const CERT_URL = process.env.CERT || '/../dev/ssl/sonub-cert.pem';
 
 const app = express();
 
@@ -69,7 +69,7 @@ const WATCH_PATHS = [
     './widgets',
     './api.php',
     './boot.php',
-    './index.php',
+    './layout.php',
 ];
 
 // 무시 목록/디바운스

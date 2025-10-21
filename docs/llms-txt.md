@@ -62,6 +62,7 @@
 - CSS 및 JavaScript 파일 분리 규칙
 - Firebase 통합 가이드라인
 - 라우팅 규칙 및 레이아웃 파일 구조
+- **페이지 PHP 스크립트 구조**: 페이지 파일과 부분 파일 관리
 - 페이지별 CSS/JavaScript 자동 로딩 시스템
 - `load_deferred_js()` 함수 사용법
 
@@ -70,6 +71,15 @@
 // href() 함수로 URL 생성
 <a href="<?= href()->user->login ?>">로그인</a>
 <a href="<?= href()->post->list(1, 'discussion') ?>">토론 게시판</a>
+
+// 페이지 부분 파일 사용
+// page/user/login.php (메인 페이지)
+<?php include 'login.buttons.php'; ?>
+
+// page/user/login.buttons.php (부분 파일)
+<div class="button-group">
+    <button type="submit">로그인</button>
+</div>
 
 // load_deferred_js() 함수로 공유 JavaScript 로드
 <?php load_deferred_js('vue-components/user-search'); ?>
@@ -152,7 +162,7 @@ $users = db()->table('users')->where('age', '>', 18)->get();
 **핵심 내용**:
 - **JavaScript는 페이지 내 `<script>` 태그로 작성** (외부 `.js` 파일 분리 금지)
 - `ready()` 래퍼 함수 필수
-- `window.AppStore.state` 전역 상태 관리 (Vue.js Reactivity)
+- `window.Store.state` 전역 상태 관리 (Vue.js Reactivity)
 - **다국어 번역**: PHP `tr()` 함수 우선 권장, JavaScript `tr()` 함수는 특별한 경우에만
 - `func()` 함수로 API 호출
 - Vue.js Options API 사용, 구조 분해 할당 금지
@@ -169,7 +179,7 @@ ready(() => {
     Vue.createApp({
         data() {
             return {
-                state: window.AppStore.state
+                state: window.Store.state
             };
         },
         methods: {

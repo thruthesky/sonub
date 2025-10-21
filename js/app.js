@@ -255,7 +255,7 @@ function get_axios_error_message(err, options = {}) {
 }
 
 
-// AppStore (Vue 3 전역 상태 관리)
+// Store (Vue 3 전역 상태 관리)
 ready(() => {
     // Vue 전역 스토어 (모든 앱이 공유)
 
@@ -280,7 +280,7 @@ ready(() => {
     };
 
     // 4️⃣ 전역 노출 (모든 Vue 앱이 동일한 인스턴스를 사용)
-    window.AppStore = { state, getters, actions };
+    window.Store = { state, getters, actions };
 });
 
 // 사용자 프로필 아이콘 컴포넌트
@@ -291,7 +291,7 @@ ready(() => {
         Vue.createApp({
             data() {
                 return {
-                    state: window.AppStore.state
+                    state: window.Store.state
                 };
             },
             template: `
@@ -325,6 +325,6 @@ function thumbnail(fileUrl, width, height, fit = 'cover', quality = 85, bgColor 
 // 다국어 번역 함수
 // 예제: tr({ en: 'Hello', ko: '안녕하세요' });
 function tr(texts = {}) {
-    const lang = window.AppStore.state.lang;
+    const lang = window.Store.state.lang;
     return texts[lang] || texts['en'] || '';
 }

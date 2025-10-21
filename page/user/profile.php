@@ -328,7 +328,7 @@ $is_me = login() && login()->id === $user->id;
                     // 친구 요청 상태
                     requesting: false,
                     isFriend: false,
-                    state: window.AppStore.state
+                    state: window.Store.state
                 };
             },
             methods: {
@@ -337,8 +337,8 @@ $is_me = login() && login()->id === $user->id;
                  * @param {number} otherUserId - 친구 요청을 보낼 사용자 ID
                  */
                 async requestFriend(otherUserId) {
-                    console.log(window.AppStore);
-                    // 로그인 확인 - window.AppStore.user에서 로그인한 사용자 정보 가져오기
+                    console.log(window.Store);
+                    // 로그인 확인 - window.Store.user에서 로그인한 사용자 정보 가져오기
                     if (!this.state?.user?.id) {
                         alert('<?= t()->로그인이_필요합니다 ?>');
                         window.location.href = '<?= href()->user->login ?>';

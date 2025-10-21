@@ -1055,14 +1055,14 @@ ready(() => {
         },
         methods: {
             async requestFriend(otherUserId) {
-                // 로그인 확인 - window.AppStore.user에서 로그인한 사용자 정보 가져오기
-                if (!window.AppStore || !window.AppStore.user || !window.AppStore.user.id) {
+                // 로그인 확인 - window.Store.user에서 로그인한 사용자 정보 가져오기
+                if (!window.Store || !window.Store.user || !window.Store.user.id) {
                     alert('로그인이 필요합니다.');
                     window.location.href = '/user/login';
                     return;
                 }
 
-                const myUserId = window.AppStore.user.id;
+                const myUserId = window.Store.user.id;
 
                 // 자기 자신에게 친구 요청 방지
                 if (otherUserId === myUserId) {
@@ -1094,14 +1094,14 @@ ready(() => {
 });
 ```
 
-#### window.AppStore 사용하기
+#### window.Store 사용하기
 
-**🔥 중요**: Sonub에서는 **로그인한 사용자 정보를 `window.AppStore.user`에서 가져옵니다**.
+**🔥 중요**: Sonub에서는 **로그인한 사용자 정보를 `window.Store.user`에서 가져옵니다**.
 
-##### AppStore 구조
+##### Store 구조
 
 ```javascript
-window.AppStore = {
+window.Store = {
     user: {
         id: 1,                    // 사용자 ID
         firebase_uid: 'abc123',   // Firebase UID
@@ -1114,18 +1114,18 @@ window.AppStore = {
 };
 ```
 
-##### AppStore 사용 예제
+##### Store 사용 예제
 
 **로그인 확인:**
 ```javascript
-// ✅ 올바른 방법: window.AppStore.user 사용
-if (!window.AppStore || !window.AppStore.user || !window.AppStore.user.id) {
+// ✅ 올바른 방법: window.Store.user 사용
+if (!window.Store || !window.Store.user || !window.Store.user.id) {
     alert('로그인이 필요합니다.');
     window.location.href = '/user/login';
     return;
 }
 
-const myUserId = window.AppStore.user.id;
+const myUserId = window.Store.user.id;
 ```
 
 **❌ 잘못된 방법:**
@@ -1137,7 +1137,7 @@ const myUserId = parseInt(appElement.dataset.myUserId) || 0;
 const myUserId = <?= login() ? login()->id : 0 ?>;
 ```
 
-##### AppStore 사용의 장점
+##### Store 사용의 장점
 
 1. **중앙 관리**: 모든 페이지에서 일관된 방식으로 사용자 정보 접근
 2. **간단한 코드**: data 속성이나 초기화 코드가 필요 없음
@@ -1180,7 +1180,7 @@ Vue.createApp({
 });
 ```
 
-**✅ 올바른 방법 (AppStore 사용):**
+**✅ 올바른 방법 (Store 사용):**
 ```php
 <!-- PHP: 간단한 구조, data 속성 불필요 -->
 <div id="profile-app">
@@ -1200,8 +1200,8 @@ Vue.createApp({
     },
     methods: {
         async requestFriend(otherUserId) {
-            // window.AppStore.user에서 직접 가져옴
-            const myUserId = window.AppStore.user.id;
+            // window.Store.user에서 직접 가져옴
+            const myUserId = window.Store.user.id;
 
             await func('request_friend', {
                 me: myUserId,
@@ -1214,29 +1214,29 @@ Vue.createApp({
 
 ##### 사용 시 주의사항
 
-1. **항상 null 체크**: `window.AppStore`와 `window.AppStore.user`가 존재하는지 확인
-2. **로그인 여부 확인**: `window.AppStore.user.id`가 있는지 확인
+1. **항상 null 체크**: `window.Store`와 `window.Store.user`가 존재하는지 확인
+2. **로그인 여부 확인**: `window.Store.user.id`가 있는지 확인
 3. **파라미터 전달**: 다른 사용자 ID는 함수 파라미터로 전달
 
 ```javascript
 // ✅ 올바른 null 체크
-if (!window.AppStore || !window.AppStore.user || !window.AppStore.user.id) {
+if (!window.Store || !window.Store.user || !window.Store.user.id) {
     alert('로그인이 필요합니다.');
     return;
 }
 
 // ✅ 안전하게 사용자 ID 가져오기
-const myUserId = window.AppStore.user.id;
+const myUserId = window.Store.user.id;
 ```
 
 #### 주의사항
 
 1. **Firebase 인증 필수**: `auth: true` 파라미터를 항상 포함해야 합니다.
-2. **로그인 확인**: `window.AppStore.user`를 사용하여 로그인 상태를 확인합니다.
+2. **로그인 확인**: `window.Store.user`를 사용하여 로그인 상태를 확인합니다.
 3. **중복 요청 방지**: 요청 중 상태(`requesting`)를 사용하여 버튼을 비활성화합니다.
 4. **에러 처리**: `try-catch`를 사용하여 에러를 적절히 처리합니다.
 5. **자기 자신 확인**: 자기 자신에게는 친구 요청을 보낼 수 없습니다.
-6. **AppStore 사용**: 로그인한 사용자 정보는 항상 `window.AppStore.user`에서 가져옵니다.
+6. **Store 사용**: 로그인한 사용자 정보는 항상 `window.Store.user`에서 가져옵니다.
 
 ## 사용자 검색 컴포넌트
 

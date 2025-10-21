@@ -49,6 +49,12 @@
     - [라우팅 예제](#라우팅-예제)
     - [중요 사항](#중요-사항)
     - [라우팅 시스템의 장점](#라우팅-시스템의-장점)
+  - [페이지 PHP 스크립트 구조](#페이지-php-스크립트-구조)
+    - [페이지 파일 기본 규칙](#페이지-파일-기본-규칙)
+    - [페이지 부분 파일 (Page Parts)](#페이지-부분-파일-page-parts)
+    - [공유 코드 관리 규칙](#공유-코드-관리-규칙)
+    - [파일 구조 예시](#파일-구조-예시)
+    - [중요 규칙 정리](#중요-규칙-정리)
   - [개발 시스템 시작](#개발-시스템-시작)
     - [빠른 시작 (필수 명령어)](#빠른-시작-필수-명령어)
     - [데이터베이스 관리](#데이터베이스-관리)
@@ -854,6 +860,157 @@ location / {
 
 ---
 
+## 페이지 PHP 스크립트 구조
+
+### 페이지 파일 기본 규칙
+
+**페이지 PHP 스크립트**는 웹 브라우저에서 직접 접근 가능한 PHP 파일로, 다음 위치에 저장됩니다:
+
+- **위치**: `page/*.php` 및 `page/**/*.php`
+- **역할**: URL로 직접 접근하여 표시되는 웹 페이지
+- **예시**: `page/user/login.php`, `page/post/list.php`, `page/index.php`
+
+### 페이지 부분 파일 (Page Parts)
+
+페이지 PHP 스크립트에서 코드를 분리하여 관리하려면 **페이지 부분 파일(Page Parts)**을 사용할 수 있습니다:
+
+#### 명명 규칙
+
+```
+page/[folder]/[page-name].[parts].php
+```
+
+- **`[page-name]`**: 메인 페이지 파일 이름
+- **`[parts]`**: 부분을 나타내는 설명적 이름
+- **위치**: 메인 페이지와 같은 폴더에 저장
+
+#### 사용 예제
+
+**예제 1: 로그인 페이지 버튼 분리**
+
+```php
+// page/user/login.php (메인 페이지)
+<?php
+include 'login.buttons.php';  // 버튼 부분 포함
+?>
+
+<div class="container">
+    <h1>로그인</h1>
+    <form>
+        <input type="text" name="username">
+        <input type="password" name="password">
+        <?php include 'login.buttons.php'; ?>
+    </form>
+</div>
+```
+
+```php
+// page/user/login.buttons.php (버튼 부분 파일)
+<div class="button-group">
+    <button type="submit" class="btn btn-primary">로그인</button>
+    <button type="button" class="btn btn-secondary">취소</button>
+    <a href="<?= href()->user->register ?>" class="btn btn-link">회원가입</a>
+</div>
+```
+
+**예제 2: 프로필 페이지 섹션 분리**
+
+```php
+// page/user/profile.php (메인 페이지)
+<?php
+$user_id = $_GET['id'] ?? 0;
+$user = get_user(['id' => $user_id]);
+?>
+
+<div class="profile-page">
+    <?php include 'profile.header.php'; ?>
+    <?php include 'profile.info.php'; ?>
+    <?php include 'profile.posts.php'; ?>
+</div>
+```
+
+```php
+// page/user/profile.header.php (헤더 부분)
+<div class="profile-header">
+    <img src="<?= $user['profile_url'] ?>" class="profile-image">
+    <h2><?= $user['display_name'] ?></h2>
+</div>
+```
+
+```php
+// page/user/profile.info.php (정보 부분)
+<div class="profile-info">
+    <p>이메일: <?= $user['email'] ?></p>
+    <p>가입일: <?= $user['created_at'] ?></p>
+</div>
+```
+
+### 공유 코드 관리 규칙
+
+#### 단일 페이지 전용 코드
+
+- **✅ 사용**: 페이지 부분 파일 (`page/[folder]/[page-name].[parts].php`)
+- **위치**: 메인 페이지와 같은 폴더
+- **예시**: `login.buttons.php`, `profile.header.php`
+
+#### 여러 페이지 공유 코드
+
+- **✅ 사용**: 위젯 폴더 (`widgets/`)
+- **❌ 금지**: 페이지 폴더에 공유 코드 저장
+- **예시**: `widgets/user-card.php`, `widgets/comment-form.php`
+
+### 파일 구조 예시
+
+```
+page/
+├── index.php                    # 메인 페이지
+├── user/
+│   ├── login.php               # 로그인 페이지 (메인)
+│   ├── login.buttons.php       # 로그인 버튼 (부분)
+│   ├── login.form.php          # 로그인 폼 (부분)
+│   ├── profile.php             # 프로필 페이지 (메인)
+│   ├── profile.header.php      # 프로필 헤더 (부분)
+│   └── profile.info.php        # 프로필 정보 (부분)
+└── post/
+    ├── list.php                # 게시글 목록 (메인)
+    ├── list.filters.php        # 목록 필터 (부분)
+    └── list.pagination.php     # 페이지네이션 (부분)
+
+widgets/                         # 공유 컴포넌트
+├── user-card.php               # 여러 페이지에서 사용
+├── comment-form.php            # 여러 페이지에서 사용
+└── sidebar.php                 # 여러 페이지에서 사용
+```
+
+### 중요 규칙 정리
+
+| 구분 | 페이지 부분 파일 | 위젯 파일 |
+|------|-----------------|----------|
+| **용도** | 단일 페이지 전용 코드 | 여러 페이지 공유 코드 |
+| **위치** | `page/[folder]/` | `widgets/` |
+| **명명** | `[page-name].[parts].php` | `[widget-name].php` |
+| **포함 방법** | `include` 또는 `require` | `include` 또는 `require` |
+| **예시** | `login.buttons.php` | `user-card.php` |
+
+**✅ 올바른 사용:**
+```php
+// 단일 페이지 전용 - 페이지 부분 파일
+page/user/login.php
+page/user/login.buttons.php    // ✅ 로그인 페이지만 사용
+
+// 여러 페이지 공유 - 위젯
+widgets/user-avatar.php        // ✅ 여러 페이지에서 사용
+```
+
+**❌ 잘못된 사용:**
+```php
+// 공유 코드를 페이지 폴더에 저장
+page/common/header.php         // ❌ 금지! widgets/ 폴더 사용
+page/shared/footer.php         // ❌ 금지! widgets/ 폴더 사용
+```
+
+---
+
 ## 개발 시스템 시작
 
 ### 빠른 시작 (필수 명령어)
@@ -1295,7 +1452,7 @@ ready(() => {
     Vue.createApp({
         data() {
             return {
-                state: window.AppStore.state
+                state: window.Store.state
             };
         },
         methods: {

@@ -443,7 +443,7 @@ alert(message);
 ```
 
 **장점:**
-- ✅ 사용자 언어(`window.AppStore.state.lang`)에 맞게 자동 번역
+- ✅ 사용자 언어(`window.Store.state.lang`)에 맞게 자동 번역
 - ✅ 동적 언어 전환 지원 (언어 변경 시 자동 업데이트)
 - ✅ Vue.js computed property에서 사용 가능
 

@@ -11,7 +11,7 @@ load_deferred_js('file-upload');
 // 다국어 번역 텍스트 주입
 inject_post_list_create_language();
 
-$category = http_param('category') ?? 'my-wall';
+$category = http_param('category') ?? 'story';
 
 ?>
 <section id="post-list-create" class="mb-4 px-2">
@@ -34,7 +34,29 @@ $category = http_param('category') ?? 'my-wall';
                 @touchstart="expand"
                 @keydown="expand"></textarea>
         </nav>
-        <data v-show="expanded">
+        <nav v-show="expanded">
+
+            <data class="row">
+                <aside class="col-6">
+                    <select name="category" v-model="visibility" class="form-select form-select-sm my-2">
+                        <option value="private" <?= $category === 'private' ? 'selected' : '' ?>>My Wall (Private)</option>
+                        <option value="public" <?= $category === 'public' ? 'selected' : '' ?>>Public</option>
+                        <option value="friends" <?= $category === 'friends' ? 'selected' : '' ?>>Friends</option>
+                    </select>
+                </aside>
+                <aside class="col-6" v-show="visibility === 'public'">
+                    <select name="category" v-model="category" class="form-select form-select-sm my-2">
+                        <?php foreach (config()->categories->getRootCategories() as $root) : ?>
+                            <optgroup label="<?= $root->display_name ?>">
+                                <?php foreach ($root->getCategories() as $sub) : ?>
+                                    <option value="<?= $sub->category ?>" <?= $category === $sub->category ? 'selected' : '' ?>><?= $sub->name ?></option>
+                                <?php endforeach; ?>
+                            </optgroup>
+                        <?php endforeach; ?>
+                    </select>
+                </aside>
+            </data>
+
             <div class="d-flex justify-content-between align-items-center my-2">
                 <label class="flex-shrink-1 pointer">
                     <i class="fa-solid fa-camera" style="font-size: 2em;"></i>
@@ -43,7 +65,7 @@ $category = http_param('category') ?? 'my-wall';
 
                 <button type="submit" class="btn btn-primary"><?= t()->작성 ?></button>
             </div>
-        </data>
+        </nav>
 
         <section>
             <div id="files"></div>
@@ -82,7 +104,9 @@ $category = http_param('category') ?? 'my-wall';
                 return {
                     // 게시물 내용
                     content: '',
-                    expanded: false,
+                    expanded: true,
+                    visibility: 'public',
+                    category: '<?= $category ?>',
                 };
             },
             methods: {

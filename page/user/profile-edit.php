@@ -1,4 +1,5 @@
 <?php
+
 /**
  * 다국어 번역 주입 함수
  *
@@ -200,6 +201,10 @@ if (!$user) {
     <!-- 프로필 편집 폼 -->
     <div class="profile-edit-section">
         <h1 class="section-title"><?= t()->프로필_수정 ?></h1>
+
+
+
+
 
         <div id="profile-edit-component">
             <form @submit.prevent="updateProfile">
