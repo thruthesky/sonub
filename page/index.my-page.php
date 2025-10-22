@@ -63,6 +63,7 @@ if (login()) {
     .post-header {
         display: flex;
         align-items: center;
+        justify-content: space-between;
         padding: 12px 16px;
         border-bottom: 1px solid #e4e6eb;
     }
@@ -317,6 +318,20 @@ if (login()) {
         }
     }
 
+    /* 게시물 메뉴 드롭다운 */
+    .post-menu-dropdown {
+        min-width: 120px;
+        z-index: 1000;
+    }
+
+    .post-menu-dropdown button:hover {
+        background-color: #f0f2f5;
+    }
+
+    .post-menu-dropdown button.text-danger:hover {
+        background-color: #ffe8e8;
+    }
+
     /* 스켈레톤 로더 스타일 */
     .skeleton {
         background: linear-gradient(90deg, #f0f2f5 25%, #e4e6eb 50%, #f0f2f5 75%);
@@ -424,25 +439,49 @@ if (login()) {
                     <div v-else>
                         <article v-for="post in postList.posts" :key="post.post_id" class="post-card">
                             <!-- 게시물 헤더 (사용자 정보) -->
-                            <div class="post-header">
-                                <!-- 프로필 사진 -->
-                                <div class="post-header-avatar">
-                                    <img v-if="getAuthorPhoto(post)"
-                                         :src="getAuthorPhoto(post)"
-                                         :alt="getAuthorName(post)"
-                                         style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                                    <i v-else class="fa-solid fa-user"></i>
-                                </div>
+                            <header class="post-header">
+                                <div class="d-flex align-items-center">
+                                    <!-- 프로필 사진 -->
+                                    <div class="post-header-avatar">
+                                        <img v-if="getAuthorPhoto(post)"
+                                             :src="getAuthorPhoto(post)"
+                                             :alt="getAuthorName(post)"
+                                             style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                                        <i v-else class="fa-solid fa-user"></i>
+                                    </div>
 
-                                <!-- 사용자 이름, 날짜, 공개범위 -->
-                                <div class="post-header-info">
-                                    <div class="post-header-name">{{ getAuthorName(post) }}</div>
-                                    <div class="post-header-meta">
-                                        {{ formatDate(post.created_at) }} ·
-                                        <span class="badge bg-secondary">{{ post.visibility || 'public' }}</span>
+                                    <!-- 사용자 이름, 날짜, 공개범위 -->
+                                    <div class="post-header-info">
+                                        <div class="post-header-name">{{ getAuthorName(post) }}</div>
+                                        <div class="post-header-meta">
+                                            {{ formatDate(post.created_at) }} ·
+                                            <span class="badge bg-secondary">{{ post.visibility || 'public' }}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+
+                                <!-- 게시물 메뉴 (본인 게시물인 경우에만 표시) -->
+                                <div class="position-relative">
+                                    <button @click="togglePostMenu(post)" class="btn btn-sm btn-link text-muted p-1">
+                                        <i class="fa-solid fa-ellipsis"></i>
+                                    </button>
+
+                                    <!-- 드롭다운 메뉴 -->
+                                    <div v-if="post.showMenu" class="position-absolute end-0 bg-white border rounded shadow-sm"
+                                         style="min-width: 120px; z-index: 1000;">
+                                        <button @click="handleEditPost(post)"
+                                                class="btn btn-sm w-100 text-start d-flex align-items-center gap-2 py-2 px-3 border-0">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                            <span>Edit</span>
+                                        </button>
+                                        <button @click="handleDeletePost(post)"
+                                                class="btn btn-sm w-100 text-start text-danger d-flex align-items-center gap-2 py-2 px-3 border-0">
+                                            <i class="fa-solid fa-trash"></i>
+                                            <span>Delete</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </header>
 
                             <!-- 게시물 본문 -->
                             <div class="post-body">
@@ -733,6 +772,75 @@ if (login()) {
                 handleShare(post) {
                     console.log('Share clicked:', post.post_id);
                     // TODO: 공유 모달 표시
+                },
+
+                /**
+                 * 본인 게시물인지 확인
+                 * @param {Object} post - 게시물 객체
+                 * @returns {boolean} 본인 게시물이면 true
+                 */
+                isMyPost(post) {
+                    const myUserId = <?= login() ? login()->id : 'null' ?>;
+                    return myUserId && post.user_id === myUserId;
+                },
+
+                /**
+                 * 게시물 메뉴 토글
+                 * @param {Object} post - 게시물 객체
+                 */
+                togglePostMenu(post) {
+                    // 다른 모든 메뉴 닫기
+                    this.postList.posts.forEach(p => {
+                        if (p.post_id !== post.post_id) {
+                            p.showMenu = false;
+                        }
+                    });
+                    // 현재 메뉴 토글
+                    post.showMenu = !post.showMenu;
+                },
+
+                /**
+                 * 게시물 수정 핸들러
+                 * @param {Object} post - 게시물 객체
+                 */
+                handleEditPost(post) {
+                    console.log('Edit post:', post.post_id);
+                    post.showMenu = false;
+                    // TODO: 게시물 수정 모달 또는 페이지로 이동
+                    alert('게시물 수정 기능은 준비 중입니다.');
+                },
+
+                /**
+                 * 게시물 삭제 핸들러
+                 * @param {Object} post - 게시물 객체
+                 */
+                async handleDeletePost(post) {
+                    post.showMenu = false;
+
+                    const confirmed = confirm('이 게시물을 삭제하시겠습니까?');
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    try {
+                        console.log('Deleting post:', post.post_id);
+                        // TODO: API 호출로 게시물 삭제
+                        // await func('delete_post', {
+                        //     post_id: post.post_id,
+                        //     auth: true
+                        // });
+
+                        // 목록에서 제거
+                        const index = this.postList.posts.findIndex(p => p.post_id === post.post_id);
+                        if (index !== -1) {
+                            this.postList.posts.splice(index, 1);
+                        }
+
+                        alert('게시물이 삭제되었습니다.');
+                    } catch (error) {
+                        console.error('게시물 삭제 오류:', error);
+                        alert('게시물 삭제 중 오류가 발생했습니다.');
+                    }
                 }
             },
             mounted() {

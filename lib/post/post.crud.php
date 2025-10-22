@@ -583,3 +583,39 @@ function count_posts(?array $filters = []): int
         return 0;
     }
 }
+
+// TODO: WRITE UNIT TEST
+function delete_post($id)
+{
+    if (login() == false) {
+        error('login-required', tr(['en' => 'Login is required.', 'ko' => '로그인이 필요합니다.', 'ja' => 'ログインが必要です。', 'zh' => '需要登录。']));
+    }
+
+    if (empty($id) || !is_numeric($id)) {
+        error('invalid-id', tr([
+            'en' => 'Invalid post ID.',
+            'ko' => '잘못된 게시글 ID입니다.',
+            'ja' => '無効な投稿IDです。',
+            'zh' => '无效的帖子ID。'
+        ]));
+        return;
+    }
+
+    $user = login();
+    $user_id = $user->id;
+
+    $pdo = pdo();
+
+    $sql = 'DELETE FROM posts WHERE id = :id AND user_id = :user_id';
+
+
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        error_log('게시글 개수 조회 실패: ' . $e->getMessage());
+        return 0;
+    }
+}
