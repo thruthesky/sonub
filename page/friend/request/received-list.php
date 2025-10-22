@@ -15,187 +15,7 @@ if ($user) {
     ]);
     $receivedCount = count_friend_requests_received(['me' => $user->id]);
 }
-?>
 
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-12 col-lg-8">
-            <h1 class="mb-4"><?= t()->받은_친구_요청 ?></h1>
-
-            <?php if (!$user): ?>
-                <div class="alert alert-warning" role="alert">
-                    <div class="d-flex flex-column flex-sm-row align-items-sm-center">
-                        <div class="flex-grow-1"><?= t()->로그인이_필요합니다 ?></div>
-                        <a class="btn btn-sm btn-primary mt-3 mt-sm-0 ms-sm-3" href="<?= href()->user->login ?>">
-                            <?= t()->로그인_페이지로_이동 ?>
-                        </a>
-                    </div>
-                </div>
-            <?php else: ?>
-                <div class="card border-0 shadow-sm mb-4 bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                    <div class="card-body d-flex justify-content-between align-items-center py-4">
-                        <div class="text-white">
-                            <div class="small opacity-75 mb-1"><?= t()->총_받은_요청 ?></div>
-                            <div class="fs-3 fw-bold"><?= number_format($receivedCount) ?></div>
-                        </div>
-                        <div class="text-white opacity-75">
-                            <i class="bi bi-people fs-1"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <?php if (empty($requests)): ?>
-                    <div class="alert alert-info" role="alert">
-                        <?= t()->받은_친구_요청이_없습니다 ?>
-                    </div>
-                <?php else: ?>
-                    <div class="list-group shadow-sm" id="received-requests-list">
-                        <?php foreach ($requests as $request): ?>
-                            <div class="list-group-item border-0 border-bottom py-3 px-4 hover-bg-light" data-request-id="<?= $request['user_id'] ?>" style="transition: all 0.2s ease;">
-                                <div class="d-flex align-items-center flex-wrap gap-3">
-                                    <!-- 프로필 이미지 -->
-                                    <div class="flex-shrink-0">
-                                        <?php if (!empty($request['photo_url'])): ?>
-                                            <img src="<?= htmlspecialchars($request['photo_url']) ?>"
-                                                 alt="<?= htmlspecialchars($request['display_name']) ?>"
-                                                 class="rounded-circle border border-2 border-white shadow-sm"
-                                                 style="width: 56px; height: 56px; object-fit: cover;">
-                                        <?php else: ?>
-                                            <div class="rounded-circle bg-light border border-2 border-white shadow-sm d-flex align-items-center justify-content-center"
-                                                 style="width: 56px; height: 56px;">
-                                                <i class="bi bi-person fs-4 text-secondary"></i>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-
-                                    <!-- 사용자 정보 -->
-                                    <div class="flex-grow-1 min-w-0">
-                                        <a href="<?= href()->user->profile ?>?id=<?= $request['user_id'] ?>"
-                                           class="text-decoration-none fw-semibold text-dark d-block mb-1 text-truncate">
-                                            <?= htmlspecialchars($request['display_name'] ?: t()->이름_정보_없음) ?>
-                                        </a>
-                                        <div class="text-muted small">
-                                            <i class="bi bi-clock me-1"></i>
-                                            <?= date('Y-m-d H:i', $request['updated_at'] ?: $request['created_at']) ?>
-                                        </div>
-                                    </div>
-
-                                    <!-- 액션 버튼 -->
-                                    <div class="d-flex gap-2 flex-shrink-0">
-                                        <button class="btn btn-sm btn-success accept-btn d-flex align-items-center gap-1 px-3"
-                                                data-user-id="<?= $request['user_id'] ?>"
-                                                title="<?= t()->수락 ?>">
-                                            <i class="bi bi-check-circle"></i>
-                                            <span class="d-none d-sm-inline"><?= t()->수락 ?></span>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger reject-btn d-flex align-items-center gap-1 px-3"
-                                                data-user-id="<?= $request['user_id'] ?>"
-                                                title="<?= t()->거절 ?>">
-                                            <i class="bi bi-x-circle"></i>
-                                            <span class="d-none d-sm-inline"><?= t()->거절 ?></span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-            <?php endif; ?>
-        </div>
-    </div>
-</div>
-
-<script>
-ready(() => {
-    // 수락 버튼 이벤트
-    document.querySelectorAll('.accept-btn').forEach(btn => {
-        btn.addEventListener('click', async function() {
-            const userId = parseInt(this.dataset.userId);
-            const listItem = this.closest('[data-request-id]');
-
-            try {
-                this.disabled = true;
-                this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> <?= t()->처리중 ?>';
-
-                // 친구 요청 수락
-                await func('accept_friend', {
-                    me: <?= $user ? $user->id : 0 ?>,
-                    other: userId,
-                    auth: true
-                });
-
-                // 리스트에서 제거 (애니메이션)
-                listItem.style.transition = 'opacity 0.3s, transform 0.3s';
-                listItem.style.opacity = '0';
-                listItem.style.transform = 'translateX(100%)';
-
-                setTimeout(() => {
-                    listItem.remove();
-
-                    // 남은 요청이 없으면 메시지 표시
-                    const remainingRequests = document.querySelectorAll('#received-requests-list [data-request-id]');
-                    if (remainingRequests.length === 0) {
-                        location.reload();
-                    }
-                }, 300);
-
-                alert('<?= t()->친구_요청을_수락했습니다 ?>');
-            } catch (error) {
-                console.error('친구 요청 수락 오류:', error);
-                this.disabled = false;
-                this.innerHTML = '<i class="bi bi-check-circle"></i> <?= t()->수락 ?>';
-            }
-        });
-    });
-
-    // 거절 버튼 이벤트
-    document.querySelectorAll('.reject-btn').forEach(btn => {
-        btn.addEventListener('click', async function() {
-            const userId = parseInt(this.dataset.userId);
-            const listItem = this.closest('[data-request-id]');
-
-            if (!confirm('<?= t()->친구_요청을_거절하시겠습니까 ?>')) {
-                return;
-            }
-
-            try {
-                this.disabled = true;
-                this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> <?= t()->처리중 ?>';
-
-                // 친구 요청 거절
-                await func('reject_friend', {
-                    me: <?= $user ? $user->id : 0 ?>,
-                    other: userId,
-                    auth: true
-                });
-
-                // 리스트에서 제거 (애니메이션)
-                listItem.style.transition = 'opacity 0.3s, transform 0.3s';
-                listItem.style.opacity = '0';
-                listItem.style.transform = 'translateX(-100%)';
-
-                setTimeout(() => {
-                    listItem.remove();
-
-                    // 남은 요청이 없으면 메시지 표시
-                    const remainingRequests = document.querySelectorAll('#received-requests-list [data-request-id]');
-                    if (remainingRequests.length === 0) {
-                        location.reload();
-                    }
-                }, 300);
-
-                alert('<?= t()->친구_요청을_거절했습니다 ?>');
-            } catch (error) {
-                console.error('친구 요청 거절 오류:', error);
-                this.disabled = false;
-                this.innerHTML = '<i class="bi bi-x-circle"></i> <?= t()->거절 ?>';
-            }
-        });
-    });
-});
-</script>
-
-<?php
 /**
  * 받은 친구 요청 페이지 다국어 번역 주입
  */
@@ -282,3 +102,186 @@ function inject_friend_request_received_list_language(): void
         ],
     ]);
 }
+
+inject_friend_request_received_list_language();
+?>
+TODO: Improve the UI Design
+<div class="container ">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <h1 class="mb-4"><?= t()->받은_친구_요청 ?></h1>
+
+            <?php if (!$user): ?>
+                <div class="alert alert-warning" role="alert">
+                    <div class="d-flex flex-column flex-sm-row align-items-sm-center">
+                        <div class="flex-grow-1"><?= t()->로그인이_필요합니다 ?></div>
+                        <a class="btn btn-sm btn-primary mt-3 mt-sm-0 ms-sm-3" href="<?= href()->user->login ?>">
+                            <?= t()->로그인_페이지로_이동 ?>
+                        </a>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="card border-0 shadow-sm mb-4 bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="card-body d-flex justify-content-between align-items-center py-4">
+                        <div class="text-white">
+                            <div class="small opacity-75 mb-1"><?= t()->총_받은_요청 ?></div>
+                            <div class="fs-3 fw-bold"><?= number_format($receivedCount) ?></div>
+                        </div>
+                        <div class="text-white opacity-75">
+                            <i class="bi bi-people fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <?php if (empty($requests)): ?>
+                    <div class="alert alert-info" role="alert">
+                        <?= t()->받은_친구_요청이_없습니다 ?>
+                    </div>
+                <?php else: ?>
+                    <div class="list-group shadow-sm" id="received-requests-list">
+                        <?php foreach ($requests as $request): ?>
+                            <div class="list-group-item border-0 border-bottom py-3 px-4 hover-bg-light" data-request-id="<?= $request['user_id'] ?>" style="transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center flex-wrap gap-3">
+                                    <!-- 프로필 이미지 -->
+                                    <div class="flex-shrink-0">
+                                        <?php if (!empty($request['photo_url'])): ?>
+                                            <img src="<?= htmlspecialchars($request['photo_url']) ?>"
+                                                alt="<?= htmlspecialchars($request['display_name']) ?>"
+                                                class="rounded-circle border border-2 border-white shadow-sm"
+                                                style="width: 56px; height: 56px; object-fit: cover;">
+                                        <?php else: ?>
+                                            <div class="rounded-circle bg-light border border-2 border-white shadow-sm d-flex align-items-center justify-content-center"
+                                                style="width: 56px; height: 56px;">
+                                                <i class="bi bi-person fs-4 text-secondary"></i>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <!-- 사용자 정보 -->
+                                    <div class="flex-grow-1 min-w-0">
+                                        <a href="<?= href()->user->profile ?>?id=<?= $request['user_id'] ?>"
+                                            class="text-decoration-none fw-semibold text-dark d-block mb-1 text-truncate">
+                                            <?= htmlspecialchars($request['display_name'] ?: t()->이름_정보_없음) ?>
+                                        </a>
+                                        <div class="text-muted small">
+                                            <i class="bi bi-clock me-1"></i>
+                                            <?= date('Y-m-d H:i', $request['updated_at'] ?: $request['created_at']) ?>
+                                        </div>
+                                    </div>
+
+                                    <!-- 액션 버튼 -->
+                                    <div class="d-flex gap-2 flex-shrink-0">
+                                        <button class="btn btn-sm btn-success accept-btn d-flex align-items-center gap-1 px-3"
+                                            data-user-id="<?= $request['user_id'] ?>"
+                                            title="<?= t()->수락 ?>">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span class="d-none d-sm-inline"><?= t()->수락 ?></span>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger reject-btn d-flex align-items-center gap-1 px-3"
+                                            data-user-id="<?= $request['user_id'] ?>"
+                                            title="<?= t()->거절 ?>">
+                                            <i class="bi bi-x-circle"></i>
+                                            <span class="d-none d-sm-inline"><?= t()->거절 ?></span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<script>
+    ready(() => {
+        // 수락 버튼 이벤트
+        document.querySelectorAll('.accept-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const userId = parseInt(this.dataset.userId);
+                const listItem = this.closest('[data-request-id]');
+
+                try {
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> <?= t()->처리중 ?>';
+
+                    // 친구 요청 수락
+                    await func('accept_friend', {
+                        me: <?= $user ? $user->id : 0 ?>,
+                        other: userId,
+                        auth: true
+                    });
+
+                    // 리스트에서 제거 (애니메이션)
+                    listItem.style.transition = 'opacity 0.3s, transform 0.3s';
+                    listItem.style.opacity = '0';
+                    listItem.style.transform = 'translateX(100%)';
+
+                    setTimeout(() => {
+                        listItem.remove();
+
+                        // 남은 요청이 없으면 메시지 표시
+                        const remainingRequests = document.querySelectorAll('#received-requests-list [data-request-id]');
+                        if (remainingRequests.length === 0) {
+                            location.reload();
+                        }
+                    }, 300);
+
+                    alert('<?= t()->친구_요청을_수락했습니다 ?>');
+                } catch (error) {
+                    console.error('친구 요청 수락 오류:', error);
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-check-circle"></i> <?= t()->수락 ?>';
+                }
+            });
+        });
+
+        // 거절 버튼 이벤트
+        document.querySelectorAll('.reject-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const userId = parseInt(this.dataset.userId);
+                const listItem = this.closest('[data-request-id]');
+
+                if (!confirm('<?= t()->친구_요청을_거절하시겠습니까 ?>')) {
+                    return;
+                }
+
+                try {
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> <?= t()->처리중 ?>';
+
+                    // 친구 요청 거절
+                    await func('reject_friend', {
+                        me: <?= $user ? $user->id : 0 ?>,
+                        other: userId,
+                        auth: true
+                    });
+
+                    // 리스트에서 제거 (애니메이션)
+                    listItem.style.transition = 'opacity 0.3s, transform 0.3s';
+                    listItem.style.opacity = '0';
+                    listItem.style.transform = 'translateX(-100%)';
+
+                    setTimeout(() => {
+                        listItem.remove();
+
+                        // 남은 요청이 없으면 메시지 표시
+                        const remainingRequests = document.querySelectorAll('#received-requests-list [data-request-id]');
+                        if (remainingRequests.length === 0) {
+                            location.reload();
+                        }
+                    }, 300);
+
+                    alert('<?= t()->친구_요청을_거절했습니다 ?>');
+                } catch (error) {
+                    console.error('친구 요청 거절 오류:', error);
+                    this.disabled = false;
+                    this.innerHTML = '<i class="bi bi-x-circle"></i> <?= t()->거절 ?>';
+                }
+            });
+        });
+    });
+</script>
+
+<?php
