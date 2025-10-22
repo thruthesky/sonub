@@ -24,7 +24,7 @@ if (typeof window.userSearchInstanceCounter === 'undefined') {
 window.UserSearchComponent = {
     template: `
         <!-- Friend Search Button -->
-        <button @click="openSearchModal" class="user-search-btn">
+        <button @click="openSearchModal" class="btn-pill-gray w-100">
             <i class="bi bi-search"></i>{{ t.친구_검색 }}
         </button>
 

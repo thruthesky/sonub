@@ -226,6 +226,10 @@ load_deferred_js('vue-components/user-search.component');
 ?>
 
 <div class="container py-4">
+    <!-- TODO: Friend request is broken 
+        - When sending a friend request to the user and refreshing the page.
+        - The display is 'add friend' instead show 'send friend request'
+    -->
     <h1 class="mb-4"><?= t()->사용자_목록 ?></h1>
 
     <!-- Friend Action Buttons -->
@@ -234,7 +238,7 @@ load_deferred_js('vue-components/user-search.component');
         <div class="user-search-component"></div>
 
         <!-- Friends List Button -->
-        <a href="<?= href()->friend->list ?>" class="btn btn-outline-primary position-relative">
+        <a href="<?= href()->friend->list ?>" class="btn-pill-gray">
             <i class="bi bi-people me-2"></i>
             <?= t()->친구_목록 ?>
             <?php if ($friendsCount > 0): ?>
@@ -246,7 +250,7 @@ load_deferred_js('vue-components/user-search.component');
         </a>
 
         <!-- Received Requests Button -->
-        <a href="<?= href()->friend->request_received ?>" class="btn btn-outline-success position-relative">
+        <a href="<?= href()->friend->request_received ?>" class="btn-pill-gray">
             <i class="bi bi-inbox me-2"></i>
             <?= t()->받은_요청 ?>
             <?php if ($friendRequestsReceivedCount > 0): ?>
@@ -258,7 +262,7 @@ load_deferred_js('vue-components/user-search.component');
         </a>
 
         <!-- Sent Requests Button -->
-        <a href="<?= href()->friend->request_sent ?>" class="btn btn-outline-info position-relative">
+        <a href="<?= href()->friend->request_sent ?>" class="btn-pill-gray position-relative">
             <i class="bi bi-send me-2"></i>
             <?= t()->보낸_요청 ?>
             <?php if ($friendRequestsSentCount > 0): ?>
@@ -278,80 +282,104 @@ load_deferred_js('vue-components/user-search.component');
 </div>
 
 <!-- Vue.js 앱 컨테이너 -->
-<div id="user-list-app" class="container py-4">
+<div id="user-list-app" class="container">
     <div class="row">
         <div class="col-12">
             <!-- 사용자 목록 그리드 -->
             <div class="row g-3">
+                <!-- 스켈레톤 로딩 (초기 로딩 시) -->
+                <div v-if="isInitialLoading" class="col-6" v-for="n in 6" :key="'skeleton-' + n">
+                    <div class="card h-100">
+                        <div class="card-body p-2 d-flex align-items-center">
+                            <!-- 프로필 사진 스켈레톤 -->
+                            <div class="skeleton skeleton-avatar" style="width: 50px; height: 50px;"></div>
+
+                            <!-- 사용자 정보 스켈레톤 -->
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="skeleton skeleton-text mb-2" style="width: 70%; height: 16px;"></div>
+                                <div class="skeleton skeleton-text" style="width: 50%; height: 12px;"></div>
+                            </div>
+
+                            <!-- 버튼 스켈레톤 -->
+                            <div class="flex-shrink-0 ms-2">
+                                <div class="skeleton skeleton-text" style="width: 60px; height: 32px; border-radius: 4px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 사용자 없음 메시지 -->
-                <div v-if="users.length === 0" class="col-12">
+                <div v-if="!isInitialLoading && filteredUsers.length === 0" class="col-12" v-cloak>
                     <div class="alert alert-info">
                         <?= t()->등록된_사용자가_없습니다 ?>
                     </div>
                 </div>
 
                 <!-- 사용자 카드 -->
-                <div v-for="user in users" :key="user.id" class="col-6">
-                    <div class="card h-100">
-                        <div class="card-body p-2 d-flex align-items-center">
-                            <!-- 프로필 사진 (클릭하면 프로필 페이지로 이동) -->
-                            <a :href="`<?= href()->user->profile ?>?id=${user.id}`" class="flex-shrink-0 me-2 text-decoration-none">
-                                <img v-if="user.photo_url"
-                                    :src="user.photo_url"
-                                    class="rounded-circle"
-                                    style="width: 50px; height: 50px; object-fit: cover;"
-                                    :alt="user.display_name">
-                                <div v-else
-                                    class="rounded-circle bg-secondary bg-opacity-25 d-inline-flex align-items-center justify-content-center"
-                                    style="width: 50px; height: 50px;">
-                                    <i class="bi bi-person fs-5 text-secondary"></i>
+                <div v-for="user in filteredUsers" :key="user.id" class="col-12 col-md-6">
+                    <a :href="`<?= href()->user->profile ?>?id=${user.id}`" class="text-decoration-none">
+                        <div class="card h-100" v-cloak>
+                            <div class="card-body p-2 d-flex align-items-center">
+                                <!-- 프로필 사진 (클릭하면 프로필 페이지로 이동) -->
+                                <div class="flex-shrink-0 me-2" v-cloak>
+                                    <img v-if="user.photo_url"
+                                        :src="user.photo_url"
+                                        class="rounded-circle"
+                                        style="width: 50px; height: 50px; object-fit: cover;"
+                                        :alt="user.display_name">
+                                    <div v-else
+                                        class="rounded-circle bg-secondary bg-opacity-25 d-inline-flex align-items-center justify-content-center"
+                                        style="width: 50px; height: 50px;">
+                                        <i class="bi bi-person fs-5 text-secondary"></i>
+                                    </div>
                                 </div>
-                            </a>
 
-                            <!-- 사용자 정보 (클릭하면 프로필 페이지로 이동) -->
-                            <a :href="`<?= href()->user->profile ?>?id=${user.id}`" class="flex-grow-1 min-w-0 text-decoration-none">
-                                <!-- 사용자 이름 -->
-                                <h6 class="card-title mb-0 text-truncate text-dark">{{ user.display_name }}</h6>
+                                <div class="flex-grow-1 d-flex flex-column gap-1">
+                                    <h6 class="card-title mb-0 text-truncate text-dark">{{ user.display_name || 'No name' }}</h6>
+                                    <p class="card-text text-muted mb-0" style="font-size: 0.75rem;">
+                                        {{ formatDate(user.created_at) }}
+                                    </p>
 
-                                <!-- 가입일 -->
-                                <p class="card-text text-muted mb-0" style="font-size: 0.75rem;">
-                                    {{ formatDate(user.created_at) }}
-                                </p>
-                            </a>
+                                    <!-- 친구 추가 버튼 (로그인한 경우에만 표시) -->
+                                    <div v-if="myUserId">
+                                        <button @click.prevent="requestFriend(user)"
+                                            class="btn btn-sm w-100"
+                                            :class="user.is_friend ? 'btn-success' : 'btn-primary'"
+                                            :disabled="user.requesting || user.is_friend">
+                                            <span v-if="user.requesting">
+                                                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                                <?= t()->요청_중 ?>
+                                            </span>
+                                            <span v-else-if="user.is_friend">
+                                                <i class="bi bi-check-circle me-1"></i>
+                                                <?= t()->친구 ?>
+                                            </span>
+                                            <span v-else>
+                                                <i class="bi bi-person-plus me-1"></i>
+                                                <?= t()->친구_추가 ?>
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
 
-                            <!-- 친구 맺기 버튼 (본인이 아닌 경우에만 표시) -->
-                            <div v-if="myUserId && user.id !== myUserId" class="flex-shrink-0 ms-2">
-                                <button @click="requestFriend(user)"
-                                    class="btn btn-sm"
-                                    :class="user.is_friend ? 'btn-success' : 'btn-primary'"
-                                    :disabled="user.requesting || user.is_friend">
-                                    <span v-if="user.requesting">
-                                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                                        <?= t()->요청_중 ?>
-                                    </span>
-                                    <span v-else-if="user.is_friend">
-                                        <i class="bi bi-check-circle me-1"></i>
-                                        <?= t()->친구 ?>
-                                    </span>
-                                    <span v-else>
-                                        <i class="bi bi-person-plus me-1"></i>
-                                    </span>
-                                </button>
+
                             </div>
                         </div>
-                    </div>
+
+                    </a>
+
                 </div>
             </div>
 
             <!-- 로딩 인디케이터 -->
-            <div v-if="loading" class="text-center mt-4">
+            <div v-if="loading" class="text-center mt-4" v-cloak>
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden"><?= t()->로딩_중 ?></span>
                 </div>
             </div>
 
             <!-- 모든 사용자 로드 완료 메시지 -->
-            <div v-if="!loading && hasMore === false && users.length > 0" class="text-center mt-4 text-muted">
+            <div v-if="!loading && hasMore === false && users.length > 0" class="text-center mt-4 text-muted" v-cloak>
                 <?= t()->모든_사용자를_불러왔습니다 ?>
             </div>
         </div>
@@ -371,6 +399,7 @@ load_deferred_js('vue-components/user-search.component');
                     currentPage: <?= json_encode($hydrationData['currentPage']) ?>,
                     perPage: <?= json_encode($hydrationData['perPage']) ?>,
                     loading: false,
+                    isInitialLoading: false, // 스켈레톤 로딩 상태 (SSR 데이터가 있으므로 false)
                     hasMore: true,
                     myUserId: <?= login() ? login()->id : 'null' ?> // 로그인한 사용자 ID
                 };
@@ -379,6 +408,14 @@ load_deferred_js('vue-components/user-search.component');
                 // 더 불러올 데이터가 있는지 계산
                 canLoadMore() {
                     return this.users.length < this.total && !this.loading;
+                },
+
+                // 현재 로그인한 사용자를 제외한 사용자 목록
+                filteredUsers() {
+                    if (!this.myUserId) {
+                        return this.users; // 로그인하지 않은 경우 모든 사용자 표시
+                    }
+                    return this.users.filter(user => user.id !== this.myUserId);
                 }
             },
             methods: {
@@ -457,12 +494,6 @@ load_deferred_js('vue-components/user-search.component');
                     if (!this.myUserId) {
                         alert('<?= t()->로그인이_필요합니다 ?>');
                         window.location.href = '<?= href()->user->login ?>';
-                        return;
-                    }
-
-                    // 자기 자신에게 친구 요청 방지
-                    if (user.id === this.myUserId) {
-                        alert('<?= t()->자기_자신에게는_친구_요청을_보낼_수_없습니다 ?>');
                         return;
                     }
 
