@@ -635,7 +635,8 @@ if (login()) {
                  */
                 formatDate(dateString) {
                     if (!dateString) return '';
-                    const date = new Date(dateString);
+                    dateToMiliseconds = dateString * 1000;
+                    const date = new Date(dateToMiliseconds);
                     return date.toLocaleString('ko-KR');
                 },
                 /**
@@ -694,7 +695,7 @@ if (login()) {
                  * @returns {string|null} 프로필 사진 URL 또는 null
                  */
                 getAuthorPhoto(post) {
-                    return post.author_photo_url || post.photo_url || null;
+                    return post.author?.photo_url || null;
                 },
                 /**
                  * 좋아요 버튼 클릭 핸들러
