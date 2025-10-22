@@ -55,10 +55,10 @@ $user = login();
         <nav class="menu-list">
             <!-- 사용자 프로필 -->
             <a href="<?= href()->user->profile ?>?id=<?= $user->id ?>" class="menu-item">
-                <div class="menu-icon">
+                <div class="menu-icon icon-user">
                     <?php login_user_profile_photo() ?>
                 </div>
-                <span class="menu-text"><?= htmlspecialchars($user->display_name) ?></span>
+                <span class="menu-text"><?= htmlspecialchars($user->displayDisplayName()) ?></span>
             </a>
 
             <!-- 내 친구 -->
@@ -138,6 +138,7 @@ $user = login();
         justify-content: center;
         border-radius: 50%;
         overflow: hidden;
+        color: var(--bs-body-color);
     }
 
     /* 사용자 아바타 */
@@ -170,6 +171,10 @@ $user = login();
 
     .quick-user-menu-widget .icon-settings {
         background: linear-gradient(135deg, #8b9dc3, #6b7fa3);
+    }
+
+    .quick-user-menu-widget .icon-user {
+        background: linear-gradient(135deg, #65676b, #6b7fa3);
     }
 
     .quick-user-menu-widget .menu-icon i {

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * 최신 게시글 위젯
  *
@@ -73,7 +74,7 @@ $result = list_posts(['limit' => 10]);
 
 <!-- 위젯 전용 스타일 - 심플하고 단조로운 디자인 -->
 <style>
-/*
+    /*
  * 최신 게시글 위젯 스타일
  * - 심플하고 단조로운 디자인
  * - Bootstrap 기본 색상 변수 사용
@@ -81,86 +82,87 @@ $result = list_posts(['limit' => 10]);
  * - 충분한 여백
  */
 
-.latest-posts-widget {
-    background-color: white;
-    border: 1px solid var(--bs-border-color);
-    border-radius: 8px;
-    padding: 1.25rem;
-    /* Shadow 최소화 - 미세한 그림자만 */
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-/* 제목 영역 */
-.latest-posts-widget .widget-title {
-    color: var(--bs-emphasis-color);
-    font-size: 1rem;
-    font-weight: 600;
-}
-
-.latest-posts-widget .widget-icon {
-    color: var(--bs-primary);
-    font-size: 1.1rem;
-}
-
-/* 빈 상태 */
-.latest-posts-widget .empty-state {
-    padding: 2rem 0;
-    color: var(--bs-secondary);
-    font-size: 0.9rem;
-}
-
-.latest-posts-widget .empty-state i {
-    font-size: 1.2rem;
-}
-
-/* 게시글 항목 */
-.latest-posts-widget .post-item {
-    text-decoration: none;
-    color: var(--bs-body-color);
-    padding: 0.5rem;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-}
-
-.latest-posts-widget .post-item:hover {
-    background-color: var(--bs-light);
-    color: var(--bs-primary);
-}
-
-/* 게시글 아이콘 */
-.latest-posts-widget .post-icon {
-    color: var(--bs-secondary);
-    font-size: 0.8rem;
-    margin-top: 0.2rem;
-    flex-shrink: 0;
-}
-
-.latest-posts-widget .post-item:hover .post-icon {
-    color: var(--bs-primary);
-}
-
-/* 게시글 제목 */
-.latest-posts-widget .post-title {
-    flex: 1;
-    font-size: 0.875rem;
-    line-height: 1.5;
-    /* 2줄까지 표시, 나머지는 ... */
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    word-break: break-word;
-}
-
-/* 반응형 디자인 */
-@media (max-width: 768px) {
     .latest-posts-widget {
-        padding: 1rem;
+        background-color: white;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 8px;
+        padding: 1.25rem;
+        /* Shadow 최소화 - 미세한 그림자만 */
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
 
-    .latest-posts-widget .post-title {
-        font-size: 0.8rem;
+    /* 제목 영역 */
+    .latest-posts-widget .widget-title {
+        color: var(--bs-emphasis-color);
+        font-size: 1rem;
+        font-weight: 600;
     }
-}
+
+    .latest-posts-widget .widget-icon {
+        color: var(--bs-primary);
+        font-size: 1.1rem;
+    }
+
+    /* 빈 상태 */
+    .latest-posts-widget .empty-state {
+        padding: 2rem 0;
+        color: var(--bs-secondary);
+        font-size: 0.9rem;
+    }
+
+    .latest-posts-widget .empty-state i {
+        font-size: 1.2rem;
+    }
+
+    /* 게시글 항목 */
+    .latest-posts-widget .post-item {
+        text-decoration: none;
+        color: var(--bs-body-color);
+        padding: 0.5rem;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+    }
+
+    .latest-posts-widget .post-item:hover {
+        background-color: var(--bs-light);
+        color: var(--bs-primary);
+    }
+
+    /* 게시글 아이콘 */
+    .latest-posts-widget .post-icon {
+        color: var(--bs-secondary);
+        font-size: 0.8rem;
+        margin-top: 0.2rem;
+        flex-shrink: 0;
+    }
+
+    .latest-posts-widget .post-item:hover .post-icon {
+        color: var(--bs-primary);
+    }
+
+    /* 게시글 제목 */
+    .latest-posts-widget .post-title {
+        flex: 1;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        /* 2줄까지 표시, 나머지는 ... */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        word-break: break-word;
+    }
+
+    /* 반응형 디자인 */
+    @media (max-width: 768px) {
+        .latest-posts-widget {
+            padding: 1rem;
+        }
+
+        .latest-posts-widget .post-title {
+            font-size: 0.8rem;
+        }
+    }
 </style>
