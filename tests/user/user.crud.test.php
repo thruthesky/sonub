@@ -37,7 +37,7 @@ try {
         if (is_array($user) && isset($user['id'])) {
             echo "   ✅ get_user() 함수 정상 동작\n";
             echo "   - 사용자 ID: {$user['id']}\n";
-            echo "   - 사용자 이름: {$user['display_name']}\n";
+            echo "   - 사용자 이름: {$user['first_name']} {$user['last_name']}\n";
         } else {
             echo "   ❌ get_user() 함수 실패\n";
             exit(1);
@@ -58,7 +58,7 @@ try {
     if ($user && is_array($user)) {
         echo "   ✅ get_user_by_firebase_uid() 함수 정상 동작\n";
         echo "   - Firebase UID: {$user['firebase_uid']}\n";
-        echo "   - 사용자 이름: {$user['display_name']}\n";
+        echo "   - 사용자 이름: {$user['first_name']} {$user['last_name']}\n";
     } else {
         echo "   ❌ get_user_by_firebase_uid() 함수 실패\n";
         exit(1);
@@ -100,7 +100,7 @@ try {
     $testFirebaseUid = 'test_user_' . time();
     $newUser = create_user_record([
         'firebase_uid' => $testFirebaseUid,
-        'display_name' => 'Test User ' . time(),
+        'first_name' => 'Test User ' . time(),
         'birthday' => strtotime('1995-05-05'),
         'gender' => 'F'
     ]);
@@ -109,7 +109,7 @@ try {
         echo "   ✅ create_user_record() 함수 정상 동작\n";
         echo "   - 생성된 사용자 ID: {$newUser['id']}\n";
         echo "   - Firebase UID: {$newUser['firebase_uid']}\n";
-        echo "   - 사용자 이름: {$newUser['display_name']}\n";
+        echo "   - 사용자 이름: {$newUser['first_name']} {$newUser['last_name']}\n";
 
         // 생성된 사용자 삭제 (테스트 정리)
         $pdo = pdo();

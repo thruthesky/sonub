@@ -143,8 +143,8 @@ $stmt->execute([$id]);
 $user = $stmt->fetch();
 
 // ✅ PDO INSERT
-$stmt = $pdo->prepare("INSERT INTO users (firebase_uid, display_name) VALUES (?, ?)");
-$stmt->execute([$firebase_uid, $display_name]);
+$stmt = $pdo->prepare("INSERT INTO users (firebase_uid, first_name, last_name) VALUES (?, ?, ?)");
+$stmt->execute([$firebase_uid, $first_name, $last_name]);
 $user_id = $pdo->lastInsertId();
 
 // 차선택: 쿼리 빌더 (복잡한 경우)
@@ -171,7 +171,7 @@ $users = db()->table('users')->where('age', '>', 18)->get();
 ```php
 <!-- page/user/profile.php -->
 <div id="app">
-    <p v-if="state.login">환영합니다, {{ state.login.display_name }}님!</p>
+    <p v-if="state.login">환영합니다, {{ state.login.first_name }} {{ state.login.last_name }}님!</p>
 </div>
 
 <script>
@@ -490,7 +490,8 @@ ready(() => {
 // 사용자 생성
 $user = create_user_record([
     'firebase_uid' => 'abc123xyz',
-    'display_name' => '홍길동',
+    'first_name' => '길동',
+    'last_name' => '홍',
     'birthday' => strtotime('1990-01-01'),
     'gender' => 'M'
 ]);

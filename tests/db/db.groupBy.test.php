@@ -36,7 +36,9 @@ try {
 
         $userId = db()->insert([
             'firebase_uid' => 'test_groupby_' . $i,
-            'display_name' => 'test_groupby_' . $i,
+            'first_name' => 'test_groupby_' . $i,
+            'last_name' => '',
+            'middle_name' => '',
             'gender' => $gender,
             'birthday' => $birthday,
             'created_at' => $createdAt,

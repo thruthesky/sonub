@@ -221,7 +221,7 @@ $is_me = login() && login()->id === $user->id;
         <!-- 프로필 사진 -->
         <div class="profile-photo-wrapper">
             <?php if (!empty($user->photo_url)): ?>
-                <img src="<?= $user->photo_url ?>" alt="<?= htmlspecialchars($user->display_name) ?>" class="profile-photo">
+                <img src="<?= $user->photo_url ?>" alt="<?= $user->displayFullName() ?>" class="profile-photo">
             <?php else: ?>
                 <div class="profile-photo-placeholder">
                     <i class="fa-solid fa-user"></i>
@@ -235,7 +235,7 @@ $is_me = login() && login()->id === $user->id;
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
             <!-- 이름 및 기본 정보 -->
             <div>
-                <h1 class="profile-name mb-1"><?= htmlspecialchars($user->display_name) ?></h1>
+                <h1 class="profile-name mb-1"><?= $user->displayFullName() ?></h1>
                 <p class="profile-meta text-muted mb-0">ID: <?= $user->id ?></p>
             </div>
 
@@ -324,11 +324,12 @@ $is_me = login() && login()->id === $user->id;
         // Vue.js 프로필 앱 생성
         Vue.createApp({
             data() {
+                console.log('window.Store in profile:', window.Store);
                 return {
                     // 친구 요청 상태
                     requesting: false,
                     isFriend: false,
-                    state: window.Store.state
+                    state: window.Store?.state || {},
                 };
             },
             methods: {

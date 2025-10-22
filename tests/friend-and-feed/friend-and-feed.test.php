@@ -81,15 +81,15 @@ function fetch_friendship(int $u1, int $u2): ?array
 function ensure_test_user(PDO $pdo, int $userId, int $now): void
 {
     $firebaseUid = "test-user-$userId";
-    $displayName = "TestUser{$userId}";
+    $firstName = "TestUser{$userId}";
 
-    $stmt = $pdo->prepare("INSERT INTO users (id, firebase_uid, display_name, created_at, updated_at, birthday, gender, photo_url)
-        VALUES (:id, :firebase_uid, :display_name, :created_at, :updated_at, 0, '', '')
-        ON DUPLICATE KEY UPDATE firebase_uid = VALUES(firebase_uid), display_name = VALUES(display_name), updated_at = VALUES(updated_at)");
+    $stmt = $pdo->prepare("INSERT INTO users (id, firebase_uid, first_name, created_at, updated_at, birthday, gender, photo_url)
+        VALUES (:id, :firebase_uid, :first_name, :created_at, :updated_at, 0, '', '')
+        ON DUPLICATE KEY UPDATE firebase_uid = VALUES(firebase_uid), first_name = VALUES(first_name), updated_at = VALUES(updated_at)");
     $stmt->execute([
         ':id' => $userId,
         ':firebase_uid' => $firebaseUid,
-        ':display_name' => $displayName,
+        ':first_name' => $firstName,
         ':created_at' => $now,
         ':updated_at' => $now,
     ]);
@@ -464,7 +464,7 @@ $receivedRequests = get_friend_requests_received(['me' => 1501]);
 assert_true(is_array($receivedRequests) && count($receivedRequests) === 1, "1501이 받은 친구 요청 1건 반환");
 $firstRequest = $receivedRequests[0];
 assert_true($firstRequest['user_id'] === 1500, "요청 보낸 사용자 ID가 올바름");
-assert_true($firstRequest['display_name'] === 'TestUser1500', "요청 보낸 사용자 이름이 올바름");
+assert_true($firstRequest['first_name'] === 'TestUser1500', "요청 보낸 사용자 이름이 올바름");
 assert_true($firstRequest['requested_by'] === 1500, "requested_by 값이 보낸 사용자 ID와 일치");
 
 $noRequests = get_friend_requests_received(['me' => 1500]);
@@ -492,7 +492,7 @@ $sentRequests = get_friend_requests_sent(['me' => 1500]);
 assert_true(is_array($sentRequests) && count($sentRequests) === 1, "1500이 보낸 친구 요청 1건 반환");
 $firstSent = $sentRequests[0];
 assert_true($firstSent['user_id'] === 1501, "요청 대상 사용자 ID가 올바름");
-assert_true($firstSent['display_name'] === 'TestUser1501', "요청 대상 사용자 이름이 올바름");
+assert_true($firstSent['first_name'] === 'TestUser1501', "요청 대상 사용자 이름이 올바름");
 assert_true($firstSent['requested_by'] === 1500, "requested_by 값이 요청자와 일치");
 
 $noSent = get_friend_requests_sent(['me' => 1501]);

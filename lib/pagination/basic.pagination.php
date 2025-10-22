@@ -65,7 +65,7 @@
  *
  * // 사용자 목록 표시
  * foreach ($users as $user) {
- *     echo $user['display_name'];
+ *     echo $user['first_name'] . ' ' . $user['last_name'];
  * }
  *
  * // 페이지네이션 표시 (검색 조건 자동 유지)

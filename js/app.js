@@ -255,34 +255,6 @@ function get_axios_error_message(err, options = {}) {
 }
 
 
-// Store (Vue 3 전역 상태 관리)
-ready(() => {
-    // Vue 전역 스토어 (모든 앱이 공유)
-
-    const { reactive, computed } = Vue;
-
-    // 1️⃣ 상태 (state)
-    const state = reactive({
-        count: 0,
-        user: window.__HYDRATE__?.user ?? null,  // index.php에서 주입된 로그인 사용자 정보
-        lang: window.__HYDRATE__?.lang || 'en'  // index.php에서 주입된 사용자 언어 정보
-    });
-
-    // 2️⃣ 계산값 (getters)
-    const getters = {
-        doubled: computed(() => state.count * 2)
-    };
-
-    // 3️⃣ 액션 (actions)
-    const actions = {
-        inc() { state.count++; },
-        setUser(u) { state.user = u; },
-        setUserPhotoUrl(url) { state.user = { ...state.user, photo_url: url }; }
-    };
-
-    // 4️⃣ 전역 노출 (모든 Vue 앱이 동일한 인스턴스를 사용)
-    window.Store = { state, getters, actions };
-});
 
 // 사용자 프로필 아이콘 컴포넌트
 // 여러 개의 .user-profile-icon 요소가 있을 수 있으므로 각각에 대해 Vue 앱 마운트

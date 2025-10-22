@@ -38,18 +38,26 @@ load_deferred_js('vue-components/user-search.component');
     <?php else: ?>
         <div class="users-grid">
             <?php foreach ($displayUsers as $user): ?>
+                <?php
+                // first_name, middle_name, last_name을 조합하여 전체 이름 생성
+                $name_parts = [];
+                if (!empty($user['first_name'])) $name_parts[] = $user['first_name'];
+                if (!empty($user['middle_name'])) $name_parts[] = $user['middle_name'];
+                if (!empty($user['last_name'])) $name_parts[] = $user['last_name'];
+                $full_name = !empty($name_parts) ? implode(' ', $name_parts) : t()->익명;
+                ?>
                 <a href="<?= href()->user->profile ?>?id=<?= $user['id'] ?>" class="user-item">
                     <div class="user-avatar">
                         <?php if (!empty($user['photo_url'])): ?>
                             <img src="<?= htmlspecialchars($user['photo_url'] ?? '') ?>"
-                                alt="<?= htmlspecialchars($user['display_name'] ?? t()->사용자) ?>">
+                                alt="<?= htmlspecialchars($full_name) ?>">
                         <?php else: ?>
                             <div class="avatar-placeholder">
                                 <i class="fa-solid fa-user"></i>
                             </div>
                         <?php endif; ?>
                     </div>
-                    <div class="user-name"><?= htmlspecialchars($user['display_name'] ?? t()->익명) ?></div>
+                    <div class="user-name"><?= htmlspecialchars($full_name) ?></div>
                 </a>
             <?php endforeach; ?>
         </div>

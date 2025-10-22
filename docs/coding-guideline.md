@@ -219,7 +219,7 @@ $total_count = $result['total'];
 
 <!-- 사용자 목록 표시 -->
 <?php foreach ($users as $user): ?>
-    <div><?= htmlspecialchars($user['display_name']) ?></div>
+    <div><?= htmlspecialchars($user['first_name'] . ' ' . $user['last_name']) ?></div>
 <?php endforeach; ?>
 ```
 
@@ -933,7 +933,7 @@ $user = get_user(['id' => $user_id]);
 // page/user/profile.header.php (헤더 부분)
 <div class="profile-header">
     <img src="<?= $user['profile_url'] ?>" class="profile-image">
-    <h2><?= $user['display_name'] ?></h2>
+    <h2><?= $user['first_name'] . ' ' . $user['last_name'] ?></h2>
 </div>
 ```
 

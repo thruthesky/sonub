@@ -133,9 +133,17 @@ inject_friend_request_sent_list_language();
                                 <div class="d-flex align-items-center flex-wrap gap-3">
                                     <!-- 프로필 이미지 -->
                                     <div class="flex-shrink-0">
+                                        <?php
+                                        // first_name, middle_name, last_name을 조합하여 전체 이름 생성
+                                        $name_parts = [];
+                                        if (!empty($request['first_name'])) $name_parts[] = $request['first_name'];
+                                        if (!empty($request['middle_name'])) $name_parts[] = $request['middle_name'];
+                                        if (!empty($request['last_name'])) $name_parts[] = $request['last_name'];
+                                        $full_name = !empty($name_parts) ? implode(' ', $name_parts) : t()->이름_정보_없음;
+                                        ?>
                                         <?php if (!empty($request['photo_url'])): ?>
                                             <img src="<?= htmlspecialchars($request['photo_url']) ?>"
-                                                alt="<?= htmlspecialchars($request['display_name']) ?>"
+                                                alt="<?= htmlspecialchars($full_name) ?>"
                                                 class="rounded-circle border border-2 border-white shadow-sm"
                                                 style="width: 56px; height: 56px; object-fit: cover;">
                                         <?php else: ?>
@@ -150,7 +158,7 @@ inject_friend_request_sent_list_language();
                                     <div class="flex-grow-1 min-w-0">
                                         <a href="<?= href()->user->profile ?>?id=<?= $request['user_id'] ?>"
                                             class="text-decoration-none fw-semibold text-dark d-block mb-1 text-truncate">
-                                            <?= htmlspecialchars($request['display_name'] ?: t()->이름_정보_없음) ?>
+                                            <?= htmlspecialchars($full_name) ?>
                                         </a>
                                         <div class="text-muted small">
                                             <i class="bi bi-clock me-1"></i>

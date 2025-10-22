@@ -22,7 +22,7 @@ $pdo->exec("DELETE FROM users WHERE id IN (1001, 1002, 1003)");
 
 // 테스트 사용자 생성
 $now = time();
-$pdo->exec("INSERT INTO users (id, firebase_uid, display_name, created_at, updated_at) VALUES
+$pdo->exec("INSERT INTO users (id, firebase_uid, first_name, created_at, updated_at) VALUES
     (1001, 'test-uid-1001', 'User 1001', $now, $now),
     (1002, 'test-uid-1002', 'User 1002', $now, $now),
     (1003, 'test-uid-1003', 'User 1003', $now, $now)

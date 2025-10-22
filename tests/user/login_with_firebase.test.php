@@ -56,19 +56,19 @@ try {
         exit(1);
     }
 
-    // display_name이 올바른 형식인지 확인 (firebase_uid의 앞 3글자-타임스탬프)
-    $displayNamePattern = '/^' . preg_quote(substr($testFirebaseUid, 0, 3), '/') . '-\d+$/';
-    if (!preg_match($displayNamePattern, $result['display_name'])) {
-        echo "❌ display_name이 기본값(firebase_uid의 앞 3글자-타임스탬프)으로 설정되지 않았습니다\n";
+    // first_name이 올바른 형식인지 확인 (firebase_uid의 앞 3글자-타임스탬프)
+    $firstNamePattern = '/^' . preg_quote(substr($testFirebaseUid, 0, 3), '/') . '-\d+$/';
+    if (!preg_match($firstNamePattern, $result['first_name'])) {
+        echo "❌ first_name이 기본값(firebase_uid의 앞 3글자-타임스탬프)으로 설정되지 않았습니다\n";
         echo "   기대 패턴: " . substr($testFirebaseUid, 0, 3) . "-[타임스탬프]\n";
-        echo "   실제값: " . $result['display_name'] . "\n";
+        echo "   실제값: " . $result['first_name'] . "\n";
         exit(1);
     }
 
     echo "✅ 새 사용자 생성 성공\n";
     echo "   사용자 ID: " . $result['id'] . "\n";
     echo "   Firebase UID: " . $result['firebase_uid'] . "\n";
-    echo "   표시 이름: " . $result['display_name'] . "\n";
+    echo "   표시 이름: " . $result['first_name'] . " " . $result['last_name'] . "\n";
     echo "   생성 시각: " . $result['created_at'] . " (" . date('Y-m-d H:i:s', $result['created_at']) . ")\n";
 
     // 생성된 사용자 ID 저장 (이후 테스트용)
@@ -120,7 +120,8 @@ $testFirebaseUid2 = 'test_firebase_full_' . time() . '_' . rand(1000, 9999);
 try {
     $result = login_with_firebase([
         'firebase_uid' => $testFirebaseUid2,
-        'display_name' => '홍길동',
+        'first_name' => '길동',
+        'last_name' => '홍',
         'birthday' => strtotime('1990-01-01'),
         'gender' => 'M'
     ]);
@@ -138,8 +139,13 @@ try {
         exit(1);
     }
 
-    if ($result['display_name'] !== '홍길동') {
-        echo "❌ display_name이 일치하지 않습니다\n";
+    if ($result['first_name'] !== '길동') {
+        echo "❌ first_name이 일치하지 않습니다\n";
+        exit(1);
+    }
+
+    if ($result['last_name'] !== '홍') {
+        echo "❌ last_name이 일치하지 않습니다\n";
         exit(1);
     }
 
@@ -156,7 +162,7 @@ try {
     echo "✅ 전체 정보 포함 사용자 생성 성공\n";
     echo "   사용자 ID: " . $result['id'] . "\n";
     echo "   Firebase UID: " . $result['firebase_uid'] . "\n";
-    echo "   표시 이름: " . $result['display_name'] . "\n";
+    echo "   표시 이름: " . $result['first_name'] . " " . $result['last_name'] . "\n";
     echo "   생년월일: " . date('Y-m-d', $result['birthday']) . "\n";
     echo "   성별: " . $result['gender'] . "\n";
 

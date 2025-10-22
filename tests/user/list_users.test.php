@@ -41,7 +41,11 @@ $max_birth_year = $current_year - 20; // 20세
 for ($i = 0; $i < 30; $i++) {
     $gender = $genders[$i % 2];
     $name_index = $i % 10;
-    $name = $names[$gender][$name_index] . ($i >= 10 ? ($i >= 20 ? '3' : '2') : '');
+    $fullname = $names[$gender][$name_index] . ($i >= 10 ? ($i >= 20 ? '3' : '2') : '');
+
+    // 한글 이름 분리: 첫 2글자는 성, 나머지는 이름
+    $last_name = mb_substr($fullname, 0, 1);
+    $first_name = mb_substr($fullname, 1);
 
     // 20세 ~ 55세 사이의 랜덤 생년월일
     $birth_year = rand($min_birth_year, $max_birth_year);
@@ -49,7 +53,9 @@ for ($i = 0; $i < 30; $i++) {
 
     $data = [
         'firebase_uid' => 'test_list_users_' . str_pad($i, 3, '0', STR_PAD_LEFT),
-        'display_name' => $name,
+        'first_name' => $first_name,
+        'last_name' => $last_name,
+        'middle_name' => '',
         'created_at' => time(),
         'updated_at' => time(),
         'birthday' => $birthday,
@@ -249,11 +255,11 @@ try {
 
     echo "   조회된 사용자 수: " . count($result['users']) . "명\n";
 
-    // 이름이 '김'으로 시작하는지 확인
+    // 이름(first_name)이 '김'으로 시작하는지 또는 성(last_name)이 '김'인지 확인
     $name_valid = true;
     foreach ($result['users'] as $user) {
-        if (strpos($user['display_name'], '김') !== 0) {
-            echo "   ⚠️ 검색 조건 불일치: {$user['display_name']}\n";
+        if ($user['last_name'] !== '김' && strpos($user['first_name'], '김') !== 0) {
+            echo "   ⚠️ 검색 조건 불일치: {$user['first_name']} {$user['last_name']}\n";
             $name_valid = false;
         }
     }
@@ -312,8 +318,8 @@ try {
         }
 
         // 이름 확인
-        if (strpos($user['display_name'], '이') !== 0) {
-            echo "   ⚠️ 이름 불일치: {$user['display_name']}\n";
+        if ($user['last_name'] !== '이' && strpos($user['first_name'], '이') !== 0) {
+            echo "   ⚠️ 이름 불일치: {$user['first_name']} {$user['last_name']}\n";
             $all_valid = false;
         }
     }

@@ -48,7 +48,7 @@ try {
     echo "   ✅ 로그인 성공\n";
     echo "   - Firebase UID: {$user->firebase_uid}\n";
     echo "   - 사용자 ID: {$user->id}\n";
-    echo "   - 사용자 이름: {$user->display_name}\n";
+    echo "   - 사용자 이름: {$user->first_name} {$user->last_name}\n";
 
     echo "\n";
 

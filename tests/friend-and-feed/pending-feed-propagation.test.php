@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Pending 상태 피드 전파 테스트 (스팸 방지 검증)
  *
@@ -19,14 +20,14 @@ require_once __DIR__ . '/../../init.php';
 /**
  * 테스트 헬퍼 함수: 임시 사용자 생성
  */
-function create_test_user(string $firebaseUid, string $displayName): int
+function create_test_user(string $firebaseUid, string $firstName): int
 {
     $pdo = pdo();
-    $sql = "INSERT INTO users (firebase_uid, display_name, created_at, updated_at)
+    $sql = "INSERT INTO users (firebase_uid, first_name, created_at, updated_at)
             VALUES (?, ?, ?, ?)";
     $stmt = $pdo->prepare($sql);
     $now = time();
-    $stmt->execute([$firebaseUid, $displayName, $now, $now]);
+    $stmt->execute([$firebaseUid, $firstName, $now, $now]);
     return (int)$pdo->lastInsertId();
 }
 
@@ -75,7 +76,7 @@ function create_test_friendship(int $requesterId, int $receiverId, string $statu
  */
 function check_post_in_feed(int $userId, int $postId): bool
 {
-    $feed = get_hybrid_feed(['me' => $userId, 'limit' => 100, 'offset' => 0]);
+    $feed = get_feed_entries(['me' => $userId, 'limit' => 100, 'offset' => 0]);
     foreach ($feed as $item) {
         if ($item['post_id'] === $postId) {
             return true;

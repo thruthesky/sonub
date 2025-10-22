@@ -22,7 +22,7 @@ $pdo->exec("DELETE FROM users WHERE id IN (2001, 2002, 2003, 2004)");
 
 // 테스트 사용자 생성
 $now = time();
-$pdo->exec("INSERT INTO users (id, firebase_uid, display_name, photo_url, created_at, updated_at) VALUES
+$pdo->exec("INSERT INTO users (id, firebase_uid, first_name, photo_url, created_at, updated_at) VALUES
     (2001, 'test-uid-2001', 'Alice', 'https://example.com/alice.jpg', $now, $now),
     (2002, 'test-uid-2002', 'Bob', 'https://example.com/bob.jpg', $now, $now),
     (2003, 'test-uid-2003', 'Charlie', 'https://example.com/charlie.jpg', $now, $now),
@@ -64,8 +64,8 @@ $requests = get_friend_requests_received(['me' => 2001]);
 if (count($requests) === 2) {
     echo "✓ 통과: Alice가 2건의 친구 요청을 받았습니다.\n";
     echo "  - 요청 수: " . count($requests) . "\n";
-    echo "  - 첫 번째 요청자: {$requests[0]['display_name']} (ID: {$requests[0]['user_id']})\n";
-    echo "  - 두 번째 요청자: {$requests[1]['display_name']} (ID: {$requests[1]['user_id']})\n\n";
+    echo "  - 첫 번째 요청자: {$requests[0]['first_name']} (ID: {$requests[0]['user_id']})\n";
+    echo "  - 두 번째 요청자: {$requests[1]['first_name']} (ID: {$requests[1]['user_id']})\n\n";
 } else {
     echo "✗ 실패: 요청 수가 예상과 다릅니다.\n";
     echo "  - 요청 수: " . count($requests) . " (예상: 2)\n\n";
@@ -81,19 +81,22 @@ $foundBob = false;
 $foundCharlie = false;
 
 foreach ($requests as $req) {
-    if ($req['user_id'] === 2002 && $req['display_name'] === 'Bob') {
+    $full_name = $req['first_name'] . ($req['last_name'] ? ' ' . $req['last_name'] : '');
+    if ($req['user_id'] === 2002 && $req['first_name'] === 'Bob') {
         $foundBob = true;
         echo "  ✓ Bob의 요청 확인\n";
         echo "    - user_id: {$req['user_id']}\n";
-        echo "    - display_name: {$req['display_name']}\n";
+        echo "    - first_name: {$req['first_name']}\n";
+        echo "    - last_name: {$req['last_name']}\n";
         echo "    - photo_url: {$req['photo_url']}\n";
         echo "    - requested_by: {$req['requested_by']}\n";
     }
-    if ($req['user_id'] === 2003 && $req['display_name'] === 'Charlie') {
+    if ($req['user_id'] === 2003 && $req['first_name'] === 'Charlie') {
         $foundCharlie = true;
         echo "  ✓ Charlie의 요청 확인\n";
         echo "    - user_id: {$req['user_id']}\n";
-        echo "    - display_name: {$req['display_name']}\n";
+        echo "    - first_name: {$req['first_name']}\n";
+        echo "    - last_name: {$req['last_name']}\n";
         echo "    - photo_url: {$req['photo_url']}\n";
         echo "    - requested_by: {$req['requested_by']}\n";
     }
@@ -120,8 +123,8 @@ if ($requests[0]['user_id'] === 2003 && $requests[1]['user_id'] === 2002) {
     echo "  - 두 번째: Bob (먼저 요청)\n\n";
 } else {
     echo "✗ 실패: 정렬 순서가 올바르지 않습니다.\n";
-    echo "  - 첫 번째: {$requests[0]['display_name']} (ID: {$requests[0]['user_id']})\n";
-    echo "  - 두 번째: {$requests[1]['display_name']} (ID: {$requests[1]['user_id']})\n\n";
+    echo "  - 첫 번째: {$requests[0]['first_name']} (ID: {$requests[0]['user_id']})\n";
+    echo "  - 두 번째: {$requests[1]['first_name']} (ID: {$requests[1]['user_id']})\n\n";
     exit(1);
 }
 
@@ -132,19 +135,19 @@ echo "테스트 5: 정렬 순서 변경 테스트 (display_name ASC)\n";
 
 $requests = get_friend_requests_received([
     'me' => 2001,
-    'order_by' => 'display_name',
+    'order_by' => 'first_name',
     'order' => 'ASC'
 ]);
 
 // 알파벳 순서: Bob < Charlie
-if ($requests[0]['display_name'] === 'Bob' && $requests[1]['display_name'] === 'Charlie') {
+if ($requests[0]['first_name'] === 'Bob' && $requests[1]['first_name'] === 'Charlie') {
     echo "✓ 통과: 이름 오름차순 정렬이 올바릅니다.\n";
-    echo "  - 첫 번째: {$requests[0]['display_name']}\n";
-    echo "  - 두 번째: {$requests[1]['display_name']}\n\n";
+    echo "  - 첫 번째: {$requests[0]['first_name']}\n";
+    echo "  - 두 번째: {$requests[1]['first_name']}\n\n";
 } else {
     echo "✗ 실패: 정렬이 올바르지 않습니다.\n";
-    echo "  - 첫 번째: {$requests[0]['display_name']}\n";
-    echo "  - 두 번째: {$requests[1]['display_name']}\n\n";
+    echo "  - 첫 번째: {$requests[0]['first_name']}\n";
+    echo "  - 두 번째: {$requests[1]['first_name']}\n\n";
     exit(1);
 }
 
@@ -176,18 +179,18 @@ $requests = get_friend_requests_received([
     'me' => 2001,
     'limit' => 1,
     'offset' => 1,
-    'order_by' => 'display_name',
+    'order_by' => 'first_name',
     'order' => 'ASC'
 ]);
 
-if (count($requests) === 1 && $requests[0]['display_name'] === 'Charlie') {
+if (count($requests) === 1 && $requests[0]['first_name'] === 'Charlie') {
     echo "✓ 통과: offset=1로 두 번째 요청만 조회됩니다.\n";
-    echo "  - 조회된 요청자: {$requests[0]['display_name']}\n\n";
+    echo "  - 조회된 요청자: {$requests[0]['first_name']}\n\n";
 } else {
     echo "✗ 실패: offset 파라미터가 작동하지 않습니다.\n";
     echo "  - 조회된 요청 수: " . count($requests) . "\n";
     if (count($requests) > 0) {
-        echo "  - 조회된 요청자: {$requests[0]['display_name']} (예상: Charlie)\n\n";
+        echo "  - 조회된 요청자: {$requests[0]['first_name']} (예상: Charlie)\n\n";
     }
     exit(1);
 }
@@ -221,15 +224,15 @@ accept_friend(['me' => 2001, 'other' => 2002]);
 $requests = get_friend_requests_received(['me' => 2001]);
 
 // Bob 요청 수락 후 Charlie만 남아야 함
-if (count($requests) === 1 && $requests[0]['display_name'] === 'Charlie') {
+if (count($requests) === 1 && $requests[0]['first_name'] === 'Charlie') {
     echo "✓ 통과: 수락된 요청은 목록에서 제외됩니다.\n";
     echo "  - 남은 요청 수: " . count($requests) . "\n";
-    echo "  - 남은 요청자: {$requests[0]['display_name']}\n\n";
+    echo "  - 남은 요청자: {$requests[0]['first_name']}\n\n";
 } else {
     echo "✗ 실패: 수락된 요청이 목록에서 제외되지 않았습니다.\n";
     echo "  - 남은 요청 수: " . count($requests) . " (예상: 1)\n";
     if (count($requests) > 0) {
-        echo "  - 남은 요청자: {$requests[0]['display_name']} (예상: Charlie)\n\n";
+        echo "  - 남은 요청자: {$requests[0]['first_name']} (예상: Charlie)\n\n";
     }
     exit(1);
 }

@@ -18,16 +18,17 @@ load_page_css();
 
 <?php
 // 로그인한 사용자의 피드 조회 (내 글 + 친구 글 + pending 상태 친구 글)
-// get_hybrid_feed()는 feed_entries 캐시를 사용하여 고속 조회
+// **중요: get_feed_entries()는 오직 feed_entries 테이블에서만 조회합니다**
+// 더 이상 posts 테이블에서 추가 조회하지 않으므로, fanout된 글만 표시됩니다.
 if (login()) {
     $offset = ($page - 1) * $per_page;
-    $feedItems = get_hybrid_feed([
+    $feedItems = get_feed_entries([
         'me' => login()->id,
         'limit' => $per_page,
         'offset' => $offset
     ]);
 
-    // get_hybrid_feed()는 배열을 직접 반환하므로, list_posts() 형식으로 변환
+    // get_feed_entries()는 배열을 직접 반환하므로, list_posts() 형식으로 변환
     $postList = [
         'posts' => $feedItems,
         'page' => $page,
@@ -46,7 +47,7 @@ if (login()) {
 ?>
 
 <style>
-    #my-wall {
+    #my-page {
         min-height: 50vh;
         /* Allow natural growth for infinite scroll */
     }
@@ -369,7 +370,7 @@ if (login()) {
     }
 </style>
 
-<div id="my-wall" class="mt-4">
+<div id="my-page" class="mt-4">
     <!-- 로딩 스켈레톤 (Vue 마운트 전에만 표시) -->
     <div id="skeleton-loader">
         <!-- 스켈레톤 게시물 카드 1 -->
@@ -594,9 +595,9 @@ if (login()) {
                     }
                     const nextPage = this.postList.page + 1;
                     try {
-                        // get_hybrid_feed() API 호출로 변경
+                        // get_feed_entries() API 호출로 변경
                         const offset = nextPage * <?= $per_page ?>;
-                        const feedItems = await func('get_hybrid_feed', {
+                        const feedItems = await func('get_feed_entries', {
                             me: <?= login() ? login()->id : 'null' ?>,
                             limit: <?= $per_page ?>,
                             offset: offset,
@@ -685,7 +686,14 @@ if (login()) {
                  * @returns {string} 작성자 이름
                  */
                 getAuthorName(post) {
-                    return post.author_display_name || post.display_name || 'Anonymous User';
+                    // first_name, middle_name, last_name을 조합하여 전체 이름 반환
+                    const parts = [
+                        post.first_name,
+                        post.middle_name,
+                        post.last_name
+                    ].filter(name => name && name.trim() !== '');
+
+                    return parts.length > 0 ? parts.join(' ') : 'Anonymous';
                 },
                 /**
                  * 작성자 프로필 사진 URL 반환
@@ -750,7 +758,7 @@ if (login()) {
                         // 임시: 댓글을 로컬에 추가 (실제로는 API 응답 사용)
                         const newComment = {
                             comment_id: Date.now(),
-                            author_name: '<?= login() ? login()->display_name : "Guest" ?>',
+                            author_name: '<?= login() ? (login()->first_name . ' ' . login()->last_name) : "Guest" ?>',
                             author_photo_url: this.currentUserPhoto,
                             content: post.newComment.trim(),
                             created_at: new Date().toISOString()
@@ -854,7 +862,7 @@ if (login()) {
             }
         });
 
-        const vm = app.mount('#my-wall');
+        const vm = app.mount('#my-page');
         console.log('Vue 인스턴스 마운트됨:', vm);
 
         // Vue 인스턴스를 전역 변수로 노출

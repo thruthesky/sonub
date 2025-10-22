@@ -35,10 +35,18 @@ if (empty($displayFriends)) {
     <div class="widget-friends-row d-flex gap-3">
         <?php foreach ($displayFriends as $friend): ?>
             <a href="<?= href()->user->profile ?>?id=<?= $friend['id'] ?>" class=" d-flex flex-column align-items-center">
+                <?php
+                // 친구 이름 조합 (first_name, middle_name, last_name)
+                $name_parts = [];
+                if (!empty($friend['first_name'])) $name_parts[] = $friend['first_name'];
+                if (!empty($friend['middle_name'])) $name_parts[] = $friend['middle_name'];
+                if (!empty($friend['last_name'])) $name_parts[] = $friend['last_name'];
+                $full_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Anonymous';
+                ?>
                 <?php if (!empty($friend['photo_url'])): ?>
                     <!-- 프로필 사진이 있는 경우 -->
                     <img src="<?= thumbnail($friend['photo_url']) ?>"
-                        alt="<?= htmlspecialchars($friend['display_name']) ?>"
+                        alt="<?= htmlspecialchars($full_name) ?>"
                         class="widget-friend-photo w-100 rounded-circle">
                 <?php else: ?>
                     <!-- 프로필 사진이 없는 경우 기본 아이콘 -->
@@ -48,7 +56,7 @@ if (empty($displayFriends)) {
                 <?php endif; ?>
 
                 <!-- 친구 이름 -->
-                <span class="text-center sm"><?= htmlspecialchars($friend['display_name']) ?></span>
+                <span class="text-center sm"><?= htmlspecialchars($full_name) ?></span>
             </a>
         <?php endforeach; ?>
     </div>

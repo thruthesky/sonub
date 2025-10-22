@@ -24,18 +24,18 @@ echo "========================================\n\n";
 /**
  * 테스트 사용자 생성 헬퍼 함수
  */
-function create_test_user(string $display_name): array
+function create_test_user(string $first_name): array
 {
     $pdo = pdo();
     $firebase_uid = 'test_' . uniqid() . '_' . time();
     $created_at = time();
 
-    $sql = "INSERT INTO users (firebase_uid, display_name, created_at, updated_at)
-            VALUES (:firebase_uid, :display_name, :created_at, :updated_at)";
+    $sql = "INSERT INTO users (firebase_uid, first_name, created_at, updated_at)
+            VALUES (:firebase_uid, :first_name, :created_at, :updated_at)";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ':firebase_uid' => $firebase_uid,
-        ':display_name' => $display_name,
+        ':first_name' => $first_name,
         ':created_at' => $created_at,
         ':updated_at' => $created_at
     ]);
@@ -45,7 +45,7 @@ function create_test_user(string $display_name): array
     return [
         'id' => $user_id,
         'firebase_uid' => $firebase_uid,
-        'display_name' => $display_name,
+        'first_name' => $first_name,
         'created_at' => $created_at
     ];
 }
@@ -119,8 +119,8 @@ $user1 = create_test_user('reject_test_user1_' . time());
 $user2 = create_test_user('reject_test_user2_' . time());
 
 echo "✅ 테스트 사용자 생성 완료\n";
-echo "  - User1 ID: {$user1['id']}, Display Name: {$user1['display_name']}\n";
-echo "  - User2 ID: {$user2['id']}, Display Name: {$user2['display_name']}\n\n";
+echo "  - User1 ID: {$user1['id']}, First Name: {$user1['first_name']}\n";
+echo "  - User2 ID: {$user2['id']}, First Name: {$user2['first_name']}\n\n";
 
 // =============================================================================
 // 테스트 1: pending 스팸 방지 로직 검증
@@ -222,8 +222,8 @@ $user3 = create_test_user('cancel_test_user3_' . time());
 $user4 = create_test_user('cancel_test_user4_' . time());
 
 echo "✅ 테스트 사용자 생성 완료\n";
-echo "  - User3 ID: {$user3['id']}, Display Name: {$user3['display_name']}\n";
-echo "  - User4 ID: {$user4['id']}, Display Name: {$user4['display_name']}\n\n";
+echo "  - User3 ID: {$user3['id']}, First Name: {$user3['first_name']}\n";
+echo "  - User4 ID: {$user4['id']}, First Name: {$user4['first_name']}\n\n";
 
 // 1단계: User3이 User4에게 친구 요청
 request_friend(['me' => $user3['id'], 'other' => $user4['id']]);

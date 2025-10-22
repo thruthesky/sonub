@@ -35,11 +35,11 @@ if (isset($result['error_code']) && $result['error_code'] === 'firebase-uid-requ
 // 테스트 3: 새 사용자 생성 성공
 echo "테스트 3: 새 사용자 생성\n";
 $testFirebaseUid = 'test_firebase_' . time();
-$testDisplayName = '테스트사용자_' . time();
+$testFirstName = '테스트사용자_' . time();
 
 $newUser = create_user_record([
     'firebase_uid' => $testFirebaseUid,
-    'display_name' => $testDisplayName,
+    'first_name' => $testFirstName,
     'birthday' => strtotime('1990-01-01'),
     'gender' => 'M'
 ]);
@@ -49,11 +49,11 @@ if (isset($newUser['error_code'])) {
     exit(1);
 }
 
-if ($newUser['firebase_uid'] === $testFirebaseUid && $newUser['display_name'] === $testDisplayName) {
+if ($newUser['firebase_uid'] === $testFirebaseUid && $newUser['first_name'] === $testFirstName) {
     echo "✅ 사용자 생성 성공\n";
     echo "   ID: " . $newUser['id'] . "\n";
     echo "   Firebase UID: " . $newUser['firebase_uid'] . "\n";
-    echo "   Display Name: " . $newUser['display_name'] . "\n";
+    echo "   First Name: " . $newUser['first_name'] . "\n";
     echo "   Birthday: " . $newUser['birthday'] . "\n";
     echo "   Gender: " . $newUser['gender'] . "\n\n";
 
@@ -68,7 +68,7 @@ if ($newUser['firebase_uid'] === $testFirebaseUid && $newUser['display_name'] ==
 echo "테스트 4: 이미 존재하는 사용자 생성 시도\n";
 $duplicateResult = create_user_record([
     'firebase_uid' => $testFirebaseUid,
-    'display_name' => '중복사용자'
+    'first_name' => '중복사용자'
 ]);
 
 if (isset($duplicateResult['error_code']) && $duplicateResult['error_code'] === 'user-already-exists') {
@@ -96,7 +96,7 @@ if ($minimalUser['firebase_uid'] === $minimalFirebaseUid) {
     echo "✅ 최소 정보 사용자 생성 성공\n";
     echo "   ID: " . $minimalUser['id'] . "\n";
     echo "   Firebase UID: " . $minimalUser['firebase_uid'] . "\n";
-    echo "   Display Name: " . ($minimalUser['display_name'] ?: '(비어있음)') . "\n\n";
+    echo "   First Name: " . ($minimalUser['first_name'] ?: '(비어있음)') . "\n\n";
 
     $minimalUserId = $minimalUser['id'];
 } else {

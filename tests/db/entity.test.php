@@ -103,7 +103,9 @@ function setup_test_database() {
         db()->query("
             CREATE TABLE IF NOT EXISTS users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                display_name VARCHAR(255),
+                first_name VARCHAR(255),
+                last_name VARCHAR(255),
+                middle_name VARCHAR(255),
                 email VARCHAR(255) UNIQUE,
                 password_hash VARCHAR(255),
                 status VARCHAR(50) DEFAULT 'active',
@@ -130,8 +132,8 @@ function setup_test_database() {
         ");
 
         // Clean up any existing test data
-        db()->query("DELETE FROM posts WHERE email LIKE 'test%@example.com' OR display_name LIKE 'Test User%'");
-        db()->query("DELETE FROM users WHERE email LIKE 'test%@example.com' OR display_name LIKE 'Test User%'");
+        db()->query("DELETE FROM posts WHERE email LIKE 'test%@example.com' OR title LIKE 'Test Post%'");
+        db()->query("DELETE FROM users WHERE email LIKE 'test%@example.com' OR first_name LIKE 'Test%'");
 
         return true;
     } catch (Exception $e) {
@@ -146,8 +148,8 @@ function setup_test_database() {
 function cleanup_test_data() {
     try {
         // Clean up test data (keep tables for future tests)
-        db()->query("DELETE FROM posts WHERE email LIKE 'test%@example.com' OR title LIKE 'Test Post%'");
-        db()->query("DELETE FROM users WHERE email LIKE 'test%@example.com' OR display_name LIKE 'Test User%'");
+        db()->query("DELETE FROM posts WHERE title LIKE 'Test Post%'");
+        db()->query("DELETE FROM users WHERE email LIKE 'test%@example.com' OR first_name LIKE 'Test%'");
         return true;
     } catch (Exception $e) {
         echo "Cleanup failed: " . $e->getMessage() . "\n";
@@ -172,14 +174,18 @@ if (!setup_test_database()) {
 echo "\n[Testing User Entity - Create]\n";
 
 $user = User::create([
-    'display_name' => 'Test User 1',
+    'first_name' => 'User',
+    'last_name' => 'Test',
+    'middle_name' => '1',
     'email' => 'test1@example.com',
     'password' => 'password123'
 ]);
 
 assert_not_null($user, "User::create should return a User instance");
 assert_true($user->getValue('id') > 0, "Created user should have an ID");
-assert_equals('Test User 1', $user->getDisplayName(), "User display name should match");
+assert_equals('User', $user->getValue('first_name'), "User first name should match");
+assert_equals('Test', $user->getValue('last_name'), "User last name should match");
+assert_equals('1', $user->getValue('middle_name'), "User middle name should match");
 assert_equals('test1@example.com', $user->getEmail(), "User email should match");
 assert_true($user->verifyPassword('password123'), "Password verification should work");
 assert_equals('active', $user->getStatus(), "Default status should be active");
@@ -194,7 +200,7 @@ $fetchedUser = User::get($userId);
 
 assert_not_null($fetchedUser, "User::get should return a User instance");
 assert_equals($userId, $fetchedUser->getValue('id'), "Fetched user ID should match");
-assert_equals('Test User 1', $fetchedUser->getDisplayName(), "Fetched user display name should match");
+assert_equals('User', $fetchedUser->getValue('first_name'), "Fetched user first name should match");
 
 // Test 3: User Entity - Find by Email
 echo "\n[Testing User Entity - Find by Email]\n";
@@ -209,11 +215,11 @@ assert_null($notFound, "Should return null for non-existent email");
 // Test 4: User Entity - Update
 echo "\n[Testing User Entity - Update]\n";
 
-$updateResult = $fetchedUser->update(['display_name' => 'Updated User 1']);
+$updateResult = $fetchedUser->update(['first_name' => 'Updated']);
 assert_true($updateResult, "Update should return true");
 
 $updatedUser = User::get($userId);
-assert_equals('Updated User 1', $updatedUser->getDisplayName(), "Display name should be updated");
+assert_equals('Updated', $updatedUser->getValue('first_name'), "First name should be updated");
 assert_not_null($updatedUser->getValue('updated_at'), "Updated_at should be updated");
 
 // Test 5: User Entity - Duplicate Email Prevention
@@ -222,7 +228,9 @@ echo "\n[Testing User Entity - Duplicate Email Prevention]\n";
 $exceptionThrown = false;
 try {
     User::create([
-        'display_name' => 'Test User 2',
+        'first_name' => 'User',
+        'last_name' => 'Test',
+        'middle_name' => '2',
         'email' => 'test1@example.com', // Duplicate email
         'password' => 'password456'
     ]);
@@ -281,7 +289,7 @@ echo "\n[Testing Post Entity - Get Author]\n";
 $author = $publishedPost->getAuthor();
 assert_not_null($author, "Should get post author");
 assert_equals($userId, $author->getValue('id'), "Author ID should match user ID");
-assert_equals('Updated User 1', $author->getDisplayName(), "Author name should match");
+assert_equals('Updated', $author->getValue('first_name'), "Author name should match");
 
 // Test 11: Post Entity - Increment View Count
 echo "\n[Testing Post Entity - Increment View Count]\n";
@@ -311,16 +319,18 @@ assert_equals('Test Post 2 with keyword', $searchResults[0]->getTitle(), "Search
 echo "\n[Testing Entity Magic Methods]\n";
 
 $user3 = User::create([
-    'display_name' => 'Test User 3',
+    'first_name' => 'User',
+    'last_name' => 'Test',
+    'middle_name' => '3',
     'email' => 'test3@example.com'
 ]);
 
 // Magic getter
-assert_equals('Test User 3', $user3->display_name, "Magic getter should work");
+assert_equals('User', $user3->first_name, "Magic getter should work");
 
 // Magic setter
-$user3->display_name = 'Magic Updated';
-assert_equals('Magic Updated', $user3->getValue('display_name'), "Magic setter should work");
+$user3->first_name = 'MagicUpdated';
+assert_equals('MagicUpdated', $user3->getValue('first_name'), "Magic setter should work");
 
 // Magic isset
 assert_true(isset($user3->email), "Magic isset should work for existing field");
@@ -331,12 +341,12 @@ echo "\n[Testing Entity Save Method]\n";
 
 // Test update via save
 $user4 = User::get($user3->getValue('id'));
-$user4->setValue('display_name', 'Save Updated');
+$user4->setValue('first_name', 'SaveUpdated');
 $saveResult = $user4->save();
 assert_true($saveResult, "Save on existing entity should update");
 
 $savedUser = User::get($user3->getValue('id'));
-assert_equals('Save Updated', $savedUser->getDisplayName(), "Save should update entity");
+assert_equals('SaveUpdated', $savedUser->getValue('first_name'), "Save should update entity");
 
 // Test 15: User - Get Posts
 echo "\n[Testing User Get Posts]\n";
@@ -370,7 +380,8 @@ echo "\n[Testing Entity Delete]\n";
 
 // Create a user to delete
 $deleteUser = User::create([
-    'display_name' => 'Test Delete User',
+    'first_name' => 'Delete',
+    'last_name' => 'Test',
     'email' => 'testdelete@example.com'
 ]);
 $deleteId = $deleteUser->getValue('id');
@@ -385,7 +396,8 @@ assert_null($deletedUser, "Deleted user should not exist");
 echo "\n[Testing Entity Destroy Static Method]\n";
 
 $destroyUser = User::create([
-    'display_name' => 'Test Destroy User',
+    'first_name' => 'Destroy',
+    'last_name' => 'Test',
     'email' => 'testdestroy@example.com'
 ]);
 $destroyId = $destroyUser->getValue('id');
@@ -400,19 +412,20 @@ assert_null($destroyedUser, "Destroyed user should not exist");
 echo "\n[Testing Entity toArray and toJson]\n";
 
 $arrayUser = User::create([
-    'display_name' => 'Test Array User',
+    'first_name' => 'Array',
+    'last_name' => 'Test',
     'email' => 'testarray@example.com'
 ]);
 
 $userArray = $arrayUser->toArray();
 assert_true(is_array($userArray), "toArray should return array");
 assert_array_has_key('id', $userArray, "Array should have id key");
-assert_array_has_key('display_name', $userArray, "Array should have display_name key");
+assert_array_has_key('first_name', $userArray, "Array should have first_name key");
 
 $userJson = $arrayUser->toJson();
 assert_true(is_string($userJson), "toJson should return string");
 $decoded = json_decode($userJson, true);
-assert_equals('Test Array User', $decoded['display_name'], "JSON should contain correct data");
+assert_equals('Array', $decoded['first_name'], "JSON should contain correct data");
 
 // ============================================================================
 // CLEANUP AND RESULTS

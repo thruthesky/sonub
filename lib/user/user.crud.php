@@ -11,7 +11,9 @@
  *
  * @param array $input HTTP 입력 파라미터
  * - $input['firebase_uid']: (필수) Firebase UID
- * - $input['display_name']: (선택) 사용자 표시 이름
+ * - $input['first_name']: (선택) 이름
+ * - $input['last_name']: (선택) 성
+ * - $input['middle_name']: (선택) 중간 이름
  * - $input['birthday']: (선택) 생년월일 (timestamp)
  * - $input['gender']: (선택) 성별 ('M' 또는 'F')
  * @return array 생성된 사용자 정보 배열 또는 에러 배열
@@ -21,13 +23,14 @@
  * {
  *   "func": "create_user_record",
  *   "firebase_uid": "abc123xyz",
- *   "display_name": "홍길동"
+ *   "first_name": "길동",
+ *   "last_name": "홍"
  * }
- * 응답: {"id":1,"firebase_uid":"abc123xyz","display_name":"홍길동",...,"func":"create_user_record"}
+ * 응답: {"id":1,"firebase_uid":"abc123xyz","first_name":"길동","last_name":"홍",...,"func":"create_user_record"}
  * + 세션 ID 쿠키 자동 설정: sonub_session_id=1-abc123xyz-...
  *
  * @example 직접 호출
- * $user = create_user_record(['firebase_uid' => 'abc123xyz', 'display_name' => '홍길동']);
+ * $user = create_user_record(['firebase_uid' => 'abc123xyz', 'first_name' => '길동', 'last_name' => '홍']);
  * echo $user['id']; // 1
  * // 세션 ID 쿠키가 자동으로 설정됨
  */
@@ -51,17 +54,14 @@ function create_user_record(array $input): array
     }
 
     // 데이터 준비
-    // display_name이 없으면 firebase_uid를 사용 (UNIQUE 제약 조건)
-    $displayName = $input['display_name'] ?? $input['firebase_uid'];
     $now = time();
 
     // 사용자 레코드 생성 (PDO Prepared Statement 사용)
-    $sql = "INSERT INTO users (firebase_uid, display_name, first_name, last_name, middle_name, created_at, updated_at, birthday, gender, photo_url)
-            VALUES (:firebase_uid, :display_name, :first_name, :last_name, :middle_name, :created_at, :updated_at, :birthday, :gender, :photo_url)";
+    $sql = "INSERT INTO users (firebase_uid, first_name, last_name, middle_name, created_at, updated_at, birthday, gender, photo_url)
+            VALUES (:firebase_uid, :first_name, :last_name, :middle_name, :created_at, :updated_at, :birthday, :gender, :photo_url)";
 
     $stmt = $pdo->prepare($sql);
     $stmt->bindValue(':firebase_uid', $input['firebase_uid'], PDO::PARAM_STR);
-    $stmt->bindValue(':display_name', $displayName, PDO::PARAM_STR);
     $stmt->bindValue(':first_name', $input['first_name'] ?? '', PDO::PARAM_STR);
     $stmt->bindValue(':last_name', $input['last_name'] ?? '', PDO::PARAM_STR);
     $stmt->bindValue(':middle_name', $input['middle_name'] ?? '', PDO::PARAM_STR);
@@ -135,7 +135,7 @@ function get_user(array $input): array
  * @example 직접 호출
  * $user = get_user_by_firebase_uid('abc123xyz');
  * if ($user) {
- *     echo $user['display_name'];
+ *     echo $user['first_name'] . ' ' . $user['last_name'];
  * }
  */
 function get_user_by_firebase_uid(string $firebase_uid): ?array
@@ -159,7 +159,9 @@ function get_user_by_firebase_uid(string $firebase_uid): ?array
  * 로그인 한 사용자의 프로필 업데이트
  *
  * @param array $input HTTP 입력 파라미터
- * - $input['display_name']: (선택) 사용자 표시 이름
+ * - $input['first_name']: (선택) 이름
+ * - $input['last_name']: (선택) 성
+ * - $input['middle_name']: (선택) 중간 이름
  * - $input['birthday']: (선택) 생년월일 (Unix timestamp)
  * - $input['gender']: (선택) 성별 ('M' 또는 'F')
  * @return array 업데이트된 사용자 정보 배열 또는 에러 배열
@@ -168,15 +170,16 @@ function get_user_by_firebase_uid(string $firebase_uid): ?array
  * POST /api.php
  * {
  *   "func": "update_user_profile",
- *   "display_name": "홍길동",
+ *   "first_name": "길동",
+ *   "last_name": "홍",
  *   "birthday": 631152000,
  *   "gender": "M"
  * }
- * 응답: {"id":1,"firebase_uid":"abc123xyz","display_name":"홍길동",...,"func":"update_user_profile"}
+ * 응답: {"id":1,"firebase_uid":"abc123xyz","first_name":"길동","last_name":"홍",...,"func":"update_user_profile"}
  *
  * @example 직접 호출
- * $user = update_user_profile(['display_name' => '홍길동', 'gender' => 'M']);
- * echo $user['display_name']; // 홍길동
+ * $user = update_user_profile(['first_name' => '길동', 'last_name' => '홍', 'gender' => 'M']);
+ * echo $user['first_name']; // 길동
  */
 function update_user_profile(array $input): array
 {
@@ -271,7 +274,7 @@ function update_my_profile(array $input): array
  * - $input['gender'] - (선택) 성별 필터 ('M' 또는 'F')
  * - $input['age_start'] - (선택) 시작 나이 (예: 24)
  * - $input['age_end'] - (선택) 끝 나이 (예: 32)
- * - $input['name'] - (선택) 이름 검색 (정확히 일치하는 display_name만 검색)
+ * - $input['name'] - (선택) 이름 검색 (정확히 일치하는 first_name만 검색)
  *
  * @return array
  * - 'page' - 현재 페이지 번호
@@ -290,14 +293,14 @@ function update_my_profile(array $input): array
  * $result = list_users(['age_start' => 24, 'age_end' => 32, 'page' => 1]);
  *
  * @example 이름 검색 (정확히 일치)
- * $result = list_users(['name' => '홍길동', 'page' => 1]);
+ * $result = list_users(['name' => '길동', 'page' => 1]);
  *
  * @example 복합 검색
  * $result = list_users([
  *     'gender' => 'F',
  *     'age_start' => 24,
  *     'age_end' => 32,
- *     'name' => '김영희',
+ *     'name' => '영희',
  *     'page' => 1
  * ]);
  */
@@ -339,7 +342,7 @@ function list_users(array $input): array
 
     // 이름 검색 (정확히 일치하는 사용자만 검색)
     if ($name !== '') {
-        $conditions[] = 'display_name = ?';
+        $conditions[] = 'first_name = ?';
         $params[] = $name;
     }
 

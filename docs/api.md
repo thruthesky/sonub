@@ -679,13 +679,17 @@ function app_version(): array {
    class UserModel {
        private int $idx;
        private string $email;
-       private string $display_name;
+       private string $first_name;
+       private string $last_name;
+       private string $middle_name;
        private int $created_at;
 
        public function __construct(array $data) {
            $this->idx = $data['idx'] ?? 0;
            $this->email = $data['email'] ?? '';
-           $this->display_name = $data['display_name'] ?? '';
+           $this->first_name = $data['first_name'] ?? '';
+           $this->last_name = $data['last_name'] ?? '';
+           $this->middle_name = $data['middle_name'] ?? '';
            $this->created_at = $data['created_at'] ?? 0;
        }
 
@@ -697,7 +701,9 @@ function app_version(): array {
            return [
                'idx' => $this->idx,
                'email' => $this->email,
-               'display_name' => $this->display_name,
+               'first_name' => $this->first_name,
+               'last_name' => $this->last_name,
+               'middle_name' => $this->middle_name,
                'created_at' => $this->created_at
            ];
        }
@@ -791,7 +797,9 @@ function app_version(): array {
      "func": "api_get_user_info",
      "idx": 123,
      "email": "user@example.com",
-     "display_name": "홍길동",
+     "first_name": "길동",
+     "last_name": "홍",
+     "middle_name": "",
      "created_at": 1734000000
    }
 
@@ -1044,7 +1052,9 @@ console.log('사용자:', user);
 
 // 프로필 업데이트
 const result = await func('update_user_profile', {
-    display_name: '홍길동',
+    first_name: '길동',
+    last_name: '홍',
+    middle_name: '',
     gender: 'male',
     birthday: '1990-01-01'
 });
@@ -1138,7 +1148,9 @@ async updateProfile() {
     try {
         // 프로필 업데이트 API 호출
         const result = await func('update_user_profile', {
-            display_name: this.form.displayName.trim(),
+            first_name: this.form.firstName.trim(),
+            last_name: this.form.lastName.trim(),
+            middle_name: this.form.middleName.trim(),
             gender: this.form.gender,
             birthday: birthday,
             auth: true,           // Firebase 인증 토큰 전송
@@ -1240,13 +1252,15 @@ ready(() => {
             };
 
             // 프로필 업데이트
-            const updateProfile = async (displayName, gender, birthday) => {
+            const updateProfile = async (firstName, lastName, middleName, gender, birthday) => {
                 loading.value = true;
                 error.value = null;
 
                 try {
                     const result = await func('update_user_profile', {
-                        display_name: displayName,
+                        first_name: firstName,
+                        last_name: lastName,
+                        middle_name: middleName,
                         gender: gender,
                         birthday: birthday,
                         auth: true,

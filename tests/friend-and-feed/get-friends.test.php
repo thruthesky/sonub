@@ -144,8 +144,8 @@ test_assert(
 if (count($friends) > 0) {
     $first_friend = $friends[0];
     test_assert(
-        isset($first_friend['id']) && isset($first_friend['display_name']),
-        "친구 정보에 id와 display_name 필드가 포함되어야 함"
+        isset($first_friend['id']) && isset($first_friend['first_name']),
+        "친구 정보에 id와 first_name 필드가 포함되어야 함"
     );
 }
 
@@ -259,11 +259,11 @@ test_assert(
     "ID 오름차순 정렬 (id ASC): ID가 오름차순으로 정렬되어야 함"
 );
 
-// ORDER BY display_name ASC
-$friends_name_asc = get_friends(['me' => $u1, 'order_by' => 'display_name', 'order' => 'ASC']);
+// ORDER BY first_name ASC
+$friends_name_asc = get_friends(['me' => $u1, 'order_by' => 'first_name', 'order' => 'ASC']);
 test_assert(
     is_array($friends_name_asc),
-    "이름 오름차순 정렬 (display_name ASC): 정상 동작"
+    "이름 오름차순 정렬 (first_name ASC): 정상 동작"
 );
 
 // ORDER BY created_at DESC
@@ -358,7 +358,7 @@ test_assert(
 );
 
 // 시나리오 3: 이름순 정렬된 친구 목록
-$friends_sorted = get_friends(['me' => $u1, 'order_by' => 'display_name', 'order' => 'ASC']);
+$friends_sorted = get_friends(['me' => $u1, 'order_by' => 'first_name', 'order' => 'ASC']);
 test_assert(
     count($friends_sorted) === 7,
     "시나리오 3 (이름순 정렬): 모든 친구 이름순으로 조회"

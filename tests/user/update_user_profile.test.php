@@ -18,7 +18,8 @@ echo "준비: 테스트용 사용자 생성\n";
 try {
     $testUser = login_with_firebase([
         'firebase_uid' => $testFirebaseUid,
-        'display_name' => '테스트사용자',
+        'first_name' => '테스트사용자',
+        'last_name' => '',
         'birthday' => strtotime('1990-01-01'),
         'gender' => 'M'
     ]);
@@ -46,7 +47,7 @@ try {
     unset($_COOKIE[SESSION_ID]);
 
     $result = update_user_profile([
-        'display_name' => '새로운이름'
+        'first_name' => '새로운이름'
     ]);
 
     if (isset($result['error_code']) && $result['error_code'] === 'user-not-logged-in') {
@@ -67,13 +68,13 @@ try {
 echo "\n";
 
 // ============================================
-// 테스트 2: display_name만 업데이트
+// 테스트 2: first_name만 업데이트
 // ============================================
-echo "테스트 2: display_name만 업데이트\n";
+echo "테스트 2: first_name만 업데이트\n";
 try {
-    $newDisplayName = '업데이트된이름_' . time();
+    $newFirstName = '업데이트된이름_' . time();
     $result = update_user_profile([
-        'display_name' => $newDisplayName
+        'first_name' => $newFirstName
     ]);
 
     if (isset($result['error_code'])) {
@@ -84,10 +85,10 @@ try {
     }
 
     // 결과 검증
-    if ($result['display_name'] !== $newDisplayName) {
-        echo "❌ display_name이 업데이트되지 않았습니다\n";
-        echo "   기대값: " . $newDisplayName . "\n";
-        echo "   실제값: " . $result['display_name'] . "\n";
+    if ($result['first_name'] !== $newFirstName) {
+        echo "❌ first_name이 업데이트되지 않았습니다\n";
+        echo "   기대값: " . $newFirstName . "\n";
+        echo "   실제값: " . $result['first_name'] . "\n";
         exit(1);
     }
 
@@ -99,8 +100,8 @@ try {
         exit(1);
     }
 
-    echo "✅ display_name 업데이트 성공\n";
-    echo "   새 이름: " . $result['display_name'] . "\n";
+    echo "✅ first_name 업데이트 성공\n";
+    echo "   새 이름: " . $result['first_name'] . "\n";
     echo "   업데이트 시각: " . date('Y-m-d H:i:s', $result['updated_at']) . "\n";
 } catch (Exception $e) {
     echo "❌ 예외 발생: " . $e->getMessage() . "\n";
@@ -157,12 +158,14 @@ echo "\n";
 // ============================================
 echo "테스트 4: 모든 필드 한 번에 업데이트\n";
 try {
-    $finalDisplayName = '최종이름_' . time();
+    $finalFirstName = '최종이름_' . time();
+    $finalLastName = '최종';
     $finalBirthday = strtotime('2000-12-25');
     $finalGender = 'M';
 
     $result = update_user_profile([
-        'display_name' => $finalDisplayName,
+        'first_name' => $finalFirstName,
+        'last_name' => $finalLastName,
         'birthday' => $finalBirthday,
         'gender' => $finalGender
     ]);
@@ -175,8 +178,13 @@ try {
     }
 
     // 결과 검증
-    if ($result['display_name'] !== $finalDisplayName) {
-        echo "❌ display_name이 업데이트되지 않았습니다\n";
+    if ($result['first_name'] !== $finalFirstName) {
+        echo "❌ first_name이 업데이트되지 않았습니다\n";
+        exit(1);
+    }
+
+    if ($result['last_name'] !== $finalLastName) {
+        echo "❌ last_name이 업데이트되지 않았습니다\n";
         exit(1);
     }
 
@@ -191,7 +199,7 @@ try {
     }
 
     echo "✅ 모든 필드 업데이트 성공\n";
-    echo "   표시 이름: " . $result['display_name'] . "\n";
+    echo "   표시 이름: " . $result['first_name'] . " " . $result['last_name'] . "\n";
     echo "   생년월일: " . date('Y-m-d', $result['birthday']) . "\n";
     echo "   성별: " . $result['gender'] . "\n";
 } catch (Exception $e) {
@@ -201,78 +209,37 @@ try {
 echo "\n";
 
 // ============================================
-// 테스트 5: display_name 중복 검사
+// 테스트 5: 이름 중복 검사 (테스트 생략 - 이름은 중복 가능)
 // ============================================
-echo "테스트 5: display_name 중복 검사\n";
-try {
-    // 다른 사용자 생성
-    $testFirebaseUid2 = 'test_update_profile_2_' . time() . '_' . rand(1000, 9999);
-    $testUser2 = login_with_firebase([
-        'firebase_uid' => $testFirebaseUid2,
-        'display_name' => '다른사용자_' . time()
-    ]);
-
-    if (isset($testUser2['error_code'])) {
-        echo "❌ 두 번째 테스트 사용자 생성 실패\n";
-        exit(1);
-    }
-
-    $createdUserId2 = $testUser2['id'];
-
-    // 첫 번째 사용자의 세션으로 복원
-    $_COOKIE[SESSION_ID] = generate_session_id($testUser);
-
-    // 두 번째 사용자의 display_name으로 업데이트 시도
-    $result = update_user_profile([
-        'display_name' => $testUser2['display_name']
-    ]);
-
-    if (isset($result['error_code']) && $result['error_code'] === 'display-name-already-exists') {
-        echo "✅ display_name 중복 검사 성공\n";
-        echo "   에러 메시지: " . $result['error_message'] . "\n";
-    } else {
-        echo "❌ 중복 검사 실패 - 에러가 반환되지 않았습니다\n";
-        print_r($result);
-        exit(1);
-    }
-
-    // 두 번째 사용자 삭제
-    db()->delete()
-        ->from('users')
-        ->where('id = ?', [$createdUserId2])
-        ->execute();
-
-} catch (Exception $e) {
-    echo "❌ 예외 발생: " . $e->getMessage() . "\n";
-    exit(1);
-}
+echo "테스트 5: 이름 중복 검사 (이름은 중복 가능하므로 테스트 생략)\n";
+echo "✅ 이름 중복은 허용되므로 테스트를 건너뜁니다.\n";
 echo "\n";
 
 // ============================================
 // 테스트 6: 빈 값 전달 시 업데이트 안 됨
 // ============================================
-echo "테스트 6: 빈 display_name 전달 시 업데이트 안 됨\n";
+echo "테스트 6: 빈 first_name 전달 시 업데이트 안 됨\n";
 try {
-    // 현재 display_name 저장
+    // 현재 first_name 저장
     $currentUser = db()->select('*')
         ->from('users')
         ->where('id = ?', [$createdUserId])
         ->first();
-    $currentDisplayName = $currentUser['display_name'];
+    $currentFirstName = $currentUser['first_name'];
 
-    // 빈 display_name으로 업데이트 시도
+    // 빈 first_name으로 업데이트 시도
     $result = update_user_profile([
-        'display_name' => ''
+        'first_name' => ''
     ]);
 
-    // display_name이 변경되지 않았는지 확인
-    if ($result['display_name'] === $currentDisplayName) {
+    // first_name이 변경되지 않았는지 확인
+    if ($result['first_name'] === $currentFirstName) {
         echo "✅ 빈 값 전달 시 업데이트 안 됨 확인\n";
-        echo "   display_name 유지: " . $result['display_name'] . "\n";
+        echo "   first_name 유지: " . $result['first_name'] . "\n";
     } else {
-        echo "❌ display_name이 변경되었습니다\n";
-        echo "   이전: " . $currentDisplayName . "\n";
-        echo "   현재: " . $result['display_name'] . "\n";
+        echo "❌ first_name이 변경되었습니다\n";
+        echo "   이전: " . $currentFirstName . "\n";
+        echo "   현재: " . $result['first_name'] . "\n";
         exit(1);
     }
 } catch (Exception $e) {

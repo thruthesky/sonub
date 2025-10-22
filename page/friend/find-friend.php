@@ -140,7 +140,7 @@ function calculate_age($birthday)
                                     <?php if (!empty($user->photo_url)): ?>
                                         <img
                                             src="<?= htmlspecialchars($user->photo_url) ?>"
-                                            alt="<?= htmlspecialchars($user->display_name) ?>"
+                                            alt="<?= $user->displayFullName() ?>"
                                             class="rounded-circle"
                                             style="width: 80px; height: 80px; object-fit: cover;">
                                     <?php else: ?>
@@ -156,7 +156,7 @@ function calculate_age($birthday)
                             <!-- 사용자 정보 -->
                             <h5 class="card-title text-center mb-2">
                                 <a href="?page=user/profile&id=<?= $user->id ?>" class="text-decoration-none">
-                                    <?= htmlspecialchars($user->display_name) ?>
+                                    <?= $user->displayFullName() ?>
                                 </a>
                             </h5>
 

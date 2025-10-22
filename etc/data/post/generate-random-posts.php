@@ -105,7 +105,8 @@ $categories = [
     'drama',    // 뉴스 > 드라마
 ];
 
-echo "✅ 테스트 사용자 확인: {$bananaUser['display_name']} (ID: {$bananaUser['id']})\n";
+$bananaUserFullName = $bananaUser['first_name'] . ($bananaUser['middle_name'] ? ' ' . $bananaUser['middle_name'] : '') . ' ' . $bananaUser['last_name'];
+echo "✅ 테스트 사용자 확인: {$bananaUserFullName} (ID: {$bananaUser['id']})\n";
 echo "📝 각 카테고리당 {$postsPerCategory}개씩, 총 " . ($postsPerCategory * count($categories)) . "개의 랜덤 게시글을 생성합니다...\n";
 echo "📸 각 게시글마다 0-10개의 랜덤 이미지를 추가합니다...\n\n";
 

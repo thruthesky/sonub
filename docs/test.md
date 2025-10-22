@@ -248,7 +248,7 @@ $post = create_post([
 
 // 로그인된 사용자 정보 확인
 $user = login();
-echo "로그인된 사용자: {$user->display_name}\n";
+echo "로그인된 사용자: {$user->first_name} {$user->last_name}\n";
 echo "Firebase UID: {$user->firebase_uid}\n";
 ```
 
@@ -314,7 +314,8 @@ echo "로그인된 사용자: {$user->firebase_uid}\n"; // 출력: apple
 // 테스트용 사용자 생성
 $user = create_user_record([
     'firebase_uid' => 'test_user_' . time(),
-    'display_name' => 'Test User',
+    'first_name' => 'Test',
+    'last_name' => 'User',
 ]);
 
 // 생성된 사용자로 로그인
@@ -378,7 +379,7 @@ try {
 
     // 로그인 확인
     $user = login();
-    echo "   로그인된 사용자: {$user->display_name} (firebase_uid: {$user->firebase_uid})\n";
+    echo "   로그인된 사용자: {$user->first_name} {$user->last_name} (firebase_uid: {$user->firebase_uid})\n";
 
     // 게시글 생성
     $post = create_post([

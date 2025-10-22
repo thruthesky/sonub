@@ -43,7 +43,7 @@ function login_user_profile_photo(): void
         </style>
     <?php endif; ?>
 
-    <data id="login-user-profile-photo-<?= $id ?>" :title="state.user?.display_name || ''">
+    <data id="login-user-profile-photo-<?= $id ?>" :title="displayName">
         <?php if (login()->photo_url) : ?>
             <img src="<?= login()->photo_url ?>" alt="Profile Photo" class="login-user-profile-photo">
         <?php else : ?>
@@ -54,14 +54,28 @@ function login_user_profile_photo(): void
         ready(() => {
             Vue.createApp({
                 template: `
-                    <img v-if="state.user.photo_url" :src="state.user.photo_url" class="login-user-profile-photo">
+                    <img v-if="state.user.photo_url" :src="state.user?.photo_url" class="login-user-profile-photo">
                     <i v-else class="bi bi-person-circle fs-3"></i>
                 `,
                 data() {
                     return {
-                        state: window.Store.state
+                        state: window.Store?.state || {
+                            user: {},
+                        },
                     };
                 },
+                computed: {
+                    // first_name, middle_name, last_name으로 전체 이름 조합
+                    displayName() {
+                        if (!this.state.user) return '';
+                        const parts = [
+                            this.state.user.first_name,
+                            this.state.user.middle_name,
+                            this.state.user.last_name
+                        ].filter(name => name && name.trim() !== '');
+                        return parts.length > 0 ? parts.join(' ') : 'Anonymous';
+                    }
+                }
             }).mount('#login-user-profile-photo-<?= $id ?>');
         })
     </script>

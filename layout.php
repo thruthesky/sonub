@@ -84,7 +84,50 @@ if (file_exists($module_path)) {
 
         // 서버에서 클라이언트로 데이터 전달용 객체 (Hydration)
         window.__HYDRATE__ = {};
+
+
+        // Store (Vue 3 전역 상태 관리)
+        ready(() => {
+            // Vue 전역 스토어 (모든 앱이 공유)
+
+            const {
+                reactive,
+                computed
+            } = Vue;
+
+            // 1️⃣ 상태 (state)
+            const state = reactive({
+                user: window.__HYDRATE__?.user ?? null, // index.php에서 주입된 로그인 사용자 정보
+                lang: window.__HYDRATE__?.lang || 'en' // index.php에서 주입된 사용자 언어 정보
+            });
+
+            // 2️⃣ 계산값 (getters)
+            const getters = {
+                doubled: computed(() => state.count * 2)
+            };
+
+            // 3️⃣ 액션 (actions)
+            const actions = {
+                setUser(u) {
+                    state.user = u;
+                },
+                setUserPhotoUrl(url) {
+                    state.user = {
+                        ...state.user,
+                        photo_url: url
+                    };
+                }
+            };
+
+            // 4️⃣ 전역 노출 (모든 Vue 앱이 동일한 인스턴스를 사용)
+            window.Store = {
+                state,
+                getters,
+                actions
+            };
+        });
     </script>
+
 
 
 </head>

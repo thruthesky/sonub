@@ -326,7 +326,7 @@ load_deferred_js('vue-components/user-search.component');
                                         :src="user.photo_url"
                                         class="rounded-circle"
                                         style="width: 50px; height: 50px; object-fit: cover;"
-                                        :alt="user.display_name">
+                                        :alt="getUserFullName(user)">
                                     <div v-else
                                         class="rounded-circle bg-secondary bg-opacity-25 d-inline-flex align-items-center justify-content-center"
                                         style="width: 50px; height: 50px;">
@@ -335,7 +335,7 @@ load_deferred_js('vue-components/user-search.component');
                                 </div>
 
                                 <div class="flex-grow-1 d-flex flex-column gap-1">
-                                    <h6 class="card-title mb-0 text-truncate text-dark">{{ user.display_name || 'No name' }}</h6>
+                                    <h6 class="card-title mb-0 text-truncate text-dark">{{ getUserFullName(user) }}</h6>
                                     <p class="card-text text-muted mb-0" style="font-size: 0.75rem;">
                                         {{ formatDate(user.created_at) }}
                                     </p>
@@ -504,7 +504,8 @@ load_deferred_js('vue-components/user-search.component');
                     }
 
                     // 확인 창 표시
-                    const confirmed = confirm(`${user.display_name}<?= t()->님에게_친구_맺기_신청을_하시겠습니까 ?>`);
+                    const userName = this.getUserFullName(user);
+                    const confirmed = confirm(`${userName}<?= t()->님에게_친구_맺기_신청을_하시겠습니까 ?>`);
                     if (!confirmed) {
                         return;
                     }
@@ -513,7 +514,7 @@ load_deferred_js('vue-components/user-search.component');
                         // 요청 중 상태 설정
                         user.requesting = true;
 
-                        console.log(`친구 요청 전송: ${user.display_name} (ID: ${user.id})`);
+                        console.log(`친구 요청 전송: ${userName} (ID: ${user.id})`);
 
                         // API 호출: request_friend 함수 사용
                         await func('request_friend', {
@@ -526,8 +527,9 @@ load_deferred_js('vue-components/user-search.component');
                         user.is_friend = true;
                         user.requesting = false;
 
-                        console.log(`친구 요청 성공: ${user.display_name}`);
-                        alert(`${user.display_name}<?= t()->님에게_친구_요청을_보냈습니다 ?>`);
+                        const userName = this.getUserFullName(user);
+                        console.log(`친구 요청 성공: ${userName}`);
+                        alert(`${userName}<?= t()->님에게_친구_요청을_보냈습니다 ?>`);
                     } catch (error) {
                         console.error('친구 요청 실패:', error);
                         user.requesting = false;
@@ -536,6 +538,21 @@ load_deferred_js('vue-components/user-search.component');
                         const errorMessage = error.message || error.error_message || '<?= t()->친구_요청에_실패했습니다 ?>';
                         alert(`<?= t()->친구_요청_실패 ?>: ${errorMessage}`);
                     }
+                },
+
+                /**
+                 * 사용자 전체 이름 반환
+                 * @param {Object} user - 사용자 객체
+                 * @returns {string} 전체 이름
+                 */
+                getUserFullName(user) {
+                    const parts = [
+                        user.first_name,
+                        user.middle_name,
+                        user.last_name
+                    ].filter(name => name && name.trim() !== '');
+
+                    return parts.length > 0 ? parts.join(' ') : 'No name';
                 }
             },
             mounted() {

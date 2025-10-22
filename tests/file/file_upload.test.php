@@ -26,7 +26,9 @@ echo "테스트 2: 테스트용 사용자 생성 및 로그인\n";
 $testFirebaseUid = 'test_file_upload_' . time();
 $testUser = create_user_record([
     'firebase_uid' => $testFirebaseUid,
-    'display_name' => '파일업로드테스트_' . time()
+    'first_name' => '파일업로드테스트_' . time(),
+    'last_name' => '',
+    'middle_name' => ''
 ]);
 
 if (isset($testUser['error_code'])) {

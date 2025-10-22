@@ -16,10 +16,18 @@ $category = http_param('category') ?? 'story';
 // 로그인한 사용자 정보 가져오기
 $user = login();
 $user_photo = $user && isset($user->photo_url) ? $user->photo_url : '/images/default-user.png';
-$user_name = $user && isset($user->display_name) ? $user->display_name : 'Guest';
+// first_name, middle_name, last_name을 조합하여 전체 이름 생성
+$name_parts = [];
+if ($user) {
+    if (!empty($user->first_name)) $name_parts[] = $user->first_name;
+    if (!empty($user->middle_name)) $name_parts[] = $user->middle_name;
+    if (!empty($user->last_name)) $name_parts[] = $user->last_name;
+}
+$user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
 
 ?>
 
+id: <?= login()->id ?>
 <style>
     .post-create-trigger {
         flex: 1;

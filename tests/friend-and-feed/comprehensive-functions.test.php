@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Friend-and-Feed 7개 핵심 함수 종합 테스트
  *
@@ -8,7 +9,7 @@
  * 3. fanout_post_to_friends()
  * 4. get_feed_from_cache()
  * 5. get_feed_from_read_join()
- * 6. get_hybrid_feed()
+ * 6. get_feed_entries()
  * 7. finalize_feed_with_visibility()
  *
  * 실행 방법:
@@ -376,16 +377,16 @@ $pdo->exec("DELETE FROM blocks WHERE blocker_id = $u2 AND blocked_id = $u1");
 echo "\n";
 
 // ============================================================================
-// 테스트 6: get_hybrid_feed() 함수 (API 함수)
+// 테스트 6: get_feed_entries() 함수 (API 함수)
 // ============================================================================
-echo "테스트 6: get_hybrid_feed() 함수\n";
+echo "테스트 6: get_feed_entries() 함수\n";
 echo "----------------------------------------\n";
 
 // 정상 조회
-$hybrid_feed = get_hybrid_feed(['me' => $u2, 'limit' => 20, 'offset' => 0]);
+$hybrid_feed = get_feed_entries(['me' => $u2, 'limit' => 20, 'offset' => 0]);
 test_assert(
     isset($hybrid_feed),
-    "get_hybrid_feed는 'feed' 키를 포함한 배열을 반환해야 함"
+    "get_feed_entries는 'feed' 키를 포함한 배열을 반환해야 함"
 );
 test_assert(
     is_array($hybrid_feed),
@@ -407,32 +408,32 @@ if (count($hybrid_feed) > 0) {
 
 // 잘못된 파라미터 테스트
 test_throws(
-    fn() => get_hybrid_feed(['me' => 0, 'limit' => 20]),
+    fn() => get_feed_entries(['me' => 0, 'limit' => 20]),
     'invalid-me',
     "me=0일 때 'invalid-me' 에러 발생"
 );
 
 test_throws(
-    fn() => get_hybrid_feed(['me' => -5, 'limit' => 20]),
+    fn() => get_feed_entries(['me' => -5, 'limit' => 20]),
     'invalid-me',
     "me=-5일 때 'invalid-me' 에러 발생"
 );
 
 // LIMIT 범위 테스트 (자동 보정)
-$hybrid_limit_0 = get_hybrid_feed(['me' => $u2, 'limit' => 0]);
+$hybrid_limit_0 = get_feed_entries(['me' => $u2, 'limit' => 0]);
 test_assert(
     is_array($hybrid_limit_0),
     "limit=0일 때 자동으로 기본값(20)으로 보정되어야 함"
 );
 
-$hybrid_limit_200 = get_hybrid_feed(['me' => $u2, 'limit' => 200]);
+$hybrid_limit_200 = get_feed_entries(['me' => $u2, 'limit' => 200]);
 test_assert(
     is_array($hybrid_limit_200),
     "limit=200일 때 자동으로 최대값(20)으로 제한되어야 함"
 );
 
 // OFFSET 테스트
-$hybrid_offset = get_hybrid_feed(['me' => $u2, 'limit' => 1, 'offset' => 0]);
+$hybrid_offset = get_feed_entries(['me' => $u2, 'limit' => 1, 'offset' => 0]);
 test_assert(
     count($hybrid_offset) <= 1,
     "limit=1, offset=0일 때 최대 1개 반환"
@@ -564,7 +565,7 @@ $post_scenario = create_test_post(
 );
 
 // u1과 u3는 친구이므로 u1의 피드에 나타나야 함
-$scenario_feed = get_hybrid_feed(['me' => $u1, 'limit' => 50, 'offset' => 0]);
+$scenario_feed = get_feed_entries(['me' => $u1, 'limit' => 50, 'offset' => 0]);
 $scenario_post_ids = array_column($scenario_feed, 'post_id');
 
 test_assert(

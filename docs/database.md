@@ -96,7 +96,9 @@ Sonub 프로젝트의 최신 MariaDB 데이터베이스 구조는 항상 다음 
 #### `users` 테이블
 - `id` (INT, PRIMARY KEY, AUTO_INCREMENT): 사용자 고유 ID
 - `firebase_uid` (VARCHAR(128), UNIQUE): Firebase 인증 UID
-- `display_name` (VARCHAR(64), UNIQUE): 사용자 표시 이름
+- `first_name` (VARCHAR(64)): 이름
+- `last_name` (VARCHAR(64)): 성
+- `middle_name` (VARCHAR(64)): 중간 이름
 - `birthday` (INT): 생년월일 (Unix timestamp)
 - `gender` (CHAR(1)): 성별 (M/F)
 - `photo_url` (VARCHAR(255)): 프로필 사진 URL
@@ -224,8 +226,8 @@ $pdo = pdo();
 $pdo = pdo();
 
 // 단순 삽입 - 마지막 삽입 ID를 반환합니다
-$stmt = $pdo->prepare("INSERT INTO users (display_name, email, created_at) VALUES (?, ?, ?)");
-$stmt->execute(['jaeho', 'jaeho@example.com', time()]);
+$stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, email, created_at) VALUES (?, ?, ?, ?)");
+$stmt->execute(['재호', '송', 'jaeho@example.com', time()]);
 $userId = $pdo->lastInsertId();
 
 echo "새 사용자 ID: {$userId}";
@@ -275,7 +277,7 @@ $stmt->execute([123]);
 $user = $stmt->fetch();
 
 if ($user) {
-    echo "사용자 이름: {$user['display_name']}";
+    echo "사용자 이름: {$user['first_name']} {$user['last_name']}";
 } else {
     echo "사용자를 찾을 수 없습니다";
 }
@@ -307,15 +309,15 @@ $activeCount = $stmt->fetchColumn();
 $pdo = pdo();
 
 // 레코드 업데이트 - 영향받은 행 수를 반환합니다
-$stmt = $pdo->prepare("UPDATE users SET display_name = ?, updated_at = ? WHERE id = ?");
-$stmt->execute(['송재호', time(), 123]);
+$stmt = $pdo->prepare("UPDATE users SET first_name = ?, last_name = ?, updated_at = ? WHERE id = ?");
+$stmt->execute(['재호', '송', time(), 123]);
 $affectedRows = $stmt->rowCount();
 
 echo "{$affectedRows}개 행이 업데이트되었습니다";
 
 // 여러 필드 업데이트
-$stmt = $pdo->prepare("UPDATE users SET display_name = ?, email = ?, updated_at = ? WHERE id = ?");
-$stmt->execute(['Updated Name', 'new@example.com', time(), 5]);
+$stmt = $pdo->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ?, updated_at = ? WHERE id = ?");
+$stmt->execute(['Updated', 'Name', 'new@example.com', time(), 5]);
 $affectedRows = $stmt->rowCount();
 ```
 
@@ -346,8 +348,8 @@ try {
     $pdo->beginTransaction();
 
     // 사용자 삽입
-    $stmt = $pdo->prepare("INSERT INTO users (display_name, email, created_at) VALUES (?, ?, ?)");
-    $stmt->execute(['John Doe', 'john@example.com', time()]);
+    $stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, email, created_at) VALUES (?, ?, ?, ?)");
+    $stmt->execute(['John', 'Doe', 'john@example.com', time()]);
     $userId = $pdo->lastInsertId();
 
     // 프로필 삽입
@@ -401,12 +403,13 @@ $result = $stmt->fetchAll();
 
 ```php
 // 단순 삽입 - 마지막 삽입 ID를 반환합니다
-$id = db()->insert(['display_name' => 'jaeho', 'email' => 'jaeho@example.com'])
+$id = db()->insert(['first_name' => '재호', 'last_name' => '송', 'email' => 'jaeho@example.com'])
     ->into('users');
 
 // 여러 필드로 삽입
 $id = db()->insert([
-    'display_name' => 'John Doe',
+    'first_name' => 'John',
+    'last_name' => 'Doe',
     'email' => 'john@example.com',
     'created_at' => date('Y-m-d H:i:s')
 ])->into('users');
@@ -421,7 +424,7 @@ $id = db()->insert([
 $users = db()->select('*')->from('users')->get();
 
 // 특정 컬럼 선택
-$users = db()->select('id, display_name, email')->from('users')->get();
+$users = db()->select('id, first_name, last_name, email')->from('users')->get();
 
 // WHERE 조건 사용
 $users = db()->select('*')
@@ -470,14 +473,15 @@ $activeCount = db()->select()
 
 ```php
 // 레코드 업데이트 - 영향을 받은 행 수를 반환합니다
-$affected = db()->update(['display_name' => 'song'])
+$affected = db()->update(['first_name' => '재호', 'last_name' => '송'])
     ->table('users')
-    ->where("display_name = 'jaeho'")
+    ->where("first_name = 'jaeho'")
     ->execute();
 
 // 여러 필드로 업데이트
 $affected = db()->update([
-    'display_name' => 'Updated Name',
+    'first_name' => 'Updated',
+    'last_name' => 'Name',
     'updated_at' => date('Y-m-d H:i:s')
 ])
 ->table('users')
@@ -519,14 +523,14 @@ $results = db()->query("SELECT * FROM users WHERE id = ?", [1]);
 
 // INSERT 쿼리 - 마지막 삽입 ID를 반환합니다
 $id = db()->query(
-    "INSERT INTO users (display_name, email) VALUES (?, ?)",
-    ['John', 'john@example.com']
+    "INSERT INTO users (first_name, last_name, email) VALUES (?, ?, ?)",
+    ['John', 'Doe', 'john@example.com']
 );
 
 // UPDATE 쿼리 - 영향을 받은 행을 반환합니다
 $affected = db()->query(
-    "UPDATE users SET display_name = ? WHERE id = ?",
-    ['New Name', 5]
+    "UPDATE users SET first_name = ?, last_name = ? WHERE id = ?",
+    ['New', 'Name', 5]
 );
 
 // DELETE 쿼리 - 삭제된 행을 반환합니다
@@ -591,7 +595,7 @@ $results = db()->select('users.*, COUNT(posts.id) as post_count')
     ->get();
 
 // 여러 JOIN
-$results = db()->select('u.display_name, p.title, c.comment')
+$results = db()->select('u.first_name, u.last_name, p.title, c.comment')
     ->from('users u')
     ->join('posts p', 'u.id = p.user_id')
     ->join('comments c', 'p.id = c.post_id', 'LEFT')
@@ -619,7 +623,8 @@ $users = db()->select('*')
 $users = db()->select('*')
     ->from('users')
     ->where('status = ?', ['active'])
-    ->orderBy('display_name', 'ASC')
+    ->orderBy('last_name', 'ASC')
+    ->orderBy('first_name', 'ASC')
     ->limit(10)
     ->get();
 ```
@@ -656,7 +661,8 @@ try {
 
     // 사용자 삽입
     $userId = db()->insert([
-        'display_name' => 'John Doe',
+        'first_name' => 'John',
+        'last_name' => 'Doe',
         'email' => 'john@example.com'
     ])->into('users');
 
@@ -753,7 +759,8 @@ class Product extends Entity {
 $user = User::create([
     'firebase_uid' => 'firebase_uid_abc123',
     'phone_number' => '+1234567890',
-    'display_name' => 'John Doe'
+    'first_name' => 'John',
+    'last_name' => 'Doe'
 ]);
 
 // 생성된 엔티티 데이터에 접근
@@ -772,22 +779,25 @@ $users = User::find(['status' => 'active'], 10); // 최대 10개
 $first = User::findFirst(['role' => 'admin']);
 
 // 매직 getter
-echo $user->display_name;  // getValue('display_name')와 동일
+echo $user->first_name;    // getValue('first_name')와 동일
+echo $user->last_name;     // getValue('last_name')와 동일
 echo $user->email;
 ```
 
 #### Update (업데이트)
 ```php
 // 엔티티 업데이트
-$user->update(['display_name' => 'Jane Doe']);
+$user->update(['first_name' => 'Jane', 'last_name' => 'Doe']);
 
 // 매직 setter 사용
-$user->display_name = 'New Name';
+$user->first_name = 'New';
+$user->last_name = 'Name';
 $user->save();
 
 // 대량 업데이트
 $user->setData([
-    'display_name' => 'Updated Name',
+    'first_name' => 'Updated',
+    'last_name' => 'Name',
     'email' => 'new@example.com'
 ]);
 $user->save();
@@ -811,19 +821,18 @@ User::destroy($id);
 $user = User::create([
     'firebase_uid' => 'firebase_uid_123',
     'phone_number' => '+1234567890',
-    'display_name' => 'John Doe' // 선택 사항, 제공되지 않으면 마스킹된 전화번호 사용
+    'first_name' => 'John',
+    'last_name' => 'Doe'
 ]);
 
 // 사용자 찾기
 $user = User::findByFirebaseUid('firebase_uid_123');
 $user = User::findByPhoneNumber('+1234567890');
-$user = User::findByDisplayName('John Doe');
-
 // 사용자 생성 또는 가져오기 (Firebase 인증 흐름에 유용)
 $user = User::createOrGetByFirebaseUid(
     'firebase_uid_123',
     '+1234567890',
-    ['display_name' => 'John Doe'] // 선택적 추가 데이터
+    ['first_name' => 'John', 'last_name' => 'Doe'] // 선택적 추가 데이터
 );
 
 // 상태 관리
@@ -889,10 +898,12 @@ $recent = Post::getRecent(5); // 가장 최근 게시된 게시물 5개
 $user = User::get(1);
 
 // 매직 getter
-echo $user->display_name;     // getValue('display_name')와 동일
+echo $user->first_name;       // getValue('first_name')와 동일
+echo $user->last_name;        // getValue('last_name')와 동일
 
 // 매직 setter
-$user->display_name = 'New Name'; // setValue('display_name', 'New Name')와 동일
+$user->first_name = 'New';    // setValue('first_name', 'New')와 동일
+$user->last_name = 'Name';    // setValue('last_name', 'Name')와 동일
 
 // 매직 isset
 if (isset($user->email)) {
@@ -998,7 +1009,8 @@ if ($existing) {
 
 // 새 사용자 삽입
 $userId = db()->insert([
-    'display_name' => $name,
+    'first_name' => $firstName,
+    'last_name' => $lastName,
     'email' => $email,
     'password_hash' => password_hash($password, PASSWORD_DEFAULT),
     'created_at' => date('Y-m-d H:i:s')
@@ -1018,7 +1030,8 @@ db()->insert([
 $post = db()->query("
     SELECT
         p.*,
-        u.display_name as author_name,
+        u.first_name,
+        u.last_name,
         COUNT(c.id) as comment_count
     FROM posts p
     JOIN users u ON p.user_id = u.id
@@ -1028,7 +1041,7 @@ $post = db()->query("
 ", [$postId])[0];
 
 // 게시물의 댓글 가져오기
-$comments = db()->select('c.*, u.display_name')
+$comments = db()->select('c.*, u.first_name, u.last_name')
     ->from('comments c')
     ->join('users u', 'c.user_id = u.id')
     ->where('c.post_id = ?', [$postId])
@@ -1046,14 +1059,15 @@ function searchUsers($keyword, $page = 1, $perPage = 20) {
     // 전체 수 가져오기
     $total = db()->select()
         ->from('users')
-        ->where('display_name LIKE ? OR email LIKE ?', ["%$keyword%", "%$keyword%"])
+        ->where('first_name LIKE ? OR last_name LIKE ? OR email LIKE ?', ["%$keyword%", "%$keyword%", "%$keyword%"])
         ->count();
 
     // 페이지네이션된 결과 가져오기
     $users = db()->select('*')
         ->from('users')
-        ->where('display_name LIKE ? OR email LIKE ?', ["%$keyword%", "%$keyword%"])
-        ->orderBy('display_name', 'ASC')
+        ->where('first_name LIKE ? OR last_name LIKE ? OR email LIKE ?', ["%$keyword%", "%$keyword%", "%$keyword%"])
+        ->orderBy('last_name', 'ASC')
+        ->orderBy('first_name', 'ASC')
         ->limit($perPage, $offset)
         ->get();
 

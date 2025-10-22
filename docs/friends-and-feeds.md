@@ -11,6 +11,7 @@
   - [Feed Entries (피드 캐시)](#feed-entries-피드-캐시)
 - [엔터티 간 연관 관계](#엔터티-간-연관-관계)
 - [피드 전송(팬아웃) 흐름](#피드-전송팬아웃-흐름)
+  - [친구 요청 시 초기 피드 전파 (fanout_to_follower)](#2-1단계-친구-요청-시-초기-피드-전파-fanout_to_follower)
 - [친구 요청 상태 변경 및 피드 관리](#친구-요청-상태-변경-및-피드-관리)
   - [1. 친구 요청 거절 (reject_friend)](#1-친구-요청-거절-reject_friend)
   - [2. 친구 요청 취소 (cancel_friend_request)](#2-친구-요청-취소-cancel_friend_request)
@@ -42,13 +43,14 @@ CREATE TABLE `users` (
   `firebase_uid` varchar(128) NOT NULL,
   `created_at` int(10) UNSIGNED NOT NULL,
   `updated_at` int(10) UNSIGNED NOT NULL DEFAULT 0,
-  `display_name` varchar(64) DEFAULT NULL,
+  `first_name` varchar(32) DEFAULT NULL,
+  `last_name` varchar(32) DEFAULT NULL,
+  `middle_name` varchar(32) DEFAULT NULL,
   `birthday` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `gender` char(1) NOT NULL DEFAULT '',
   `photo_url` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `firebase_uid` (`firebase_uid`),
-  UNIQUE KEY `display_name` (`display_name`),
   KEY `created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 ```
@@ -56,14 +58,15 @@ CREATE TABLE `users` (
 **컬럼 설명:**
 - `id`: 내부 사용자 ID (AUTO_INCREMENT)
 - `firebase_uid`: Firebase 인증 UID (외부 인증 시스템 연동)
-- `display_name`: 사용자 표시 이름 (UNIQUE, 닉네임 중복 방지)
+- `first_name`: 사용자 이름 (이름)
+- `last_name`: 사용자 성 (성)
+- `middle_name`: 사용자 중간 이름 (중간 이름, 선택 사항)
 - `birthday`: 생년월일 (UNIX timestamp)
 - `gender`: 성별 ('M', 'F', '')
 - `photo_url`: 프로필 사진 URL
 
 **인덱스:**
 - `firebase_uid` UNIQUE: Firebase 인증 기반 로그인 고속화
-- `display_name` UNIQUE: 닉네임 중복 체크 및 검색 최적화
 - `created_at`: 가입 시간 기준 정렬 (최근 가입자 조회 등)
 
 ---
@@ -427,6 +430,98 @@ User A ↔ User B (status = 'accepted')
 - **요청을 보낸 사람(requester)**: 상대방 글만 볼 수 있음 (단방향)
 - **요청을 받은 사람(receiver)**: 요청자 글을 볼 수 없음 (스팸 방지)
 
+### 2-1단계: 친구 요청 시 초기 피드 전파 (fanout_to_follower)
+
+**⭐ 중요: 친구 요청 시 즉시 상대방 글을 내 피드에 표시**
+
+사용자 A가 B에게 친구 요청을 보낼 때, 비록 `pending` 상태이지만 A(follower)는 B(followed)의 글을 즉시 볼 수 있어야 합니다. 이를 위해 `fanout_to_follower()` 함수를 호출하여 B의 최근 글들을 A의 `feed_entries`에 주입합니다.
+
+**동작 방식:**
+
+```php
+// request_friend() 함수 내부
+function request_friend(array $input): array
+{
+    // ... (파라미터 검증 및 friendship 생성)
+
+    // 친구 요청 후 즉시 상대방의 최근 글을 내 피드에 전파
+    fanout_to_follower($me, $other);
+
+    return ['message' => '친구 요청을 보냈습니다', 'success' => true];
+}
+```
+
+**fanout_to_follower() 함수:**
+
+```php
+/**
+ * 친구 요청 시 follower에게 followed의 최근 글 전파
+ *
+ * @param int $follower_id 요청을 보낸 사용자 (follower)
+ * @param int $followed_id 요청을 받은 사용자 (followed)
+ */
+function fanout_to_follower(int $follower_id, int $followed_id)
+{
+    $pdo = pdo();
+
+    // 1단계: followed의 최근 글 100개 선택
+    $sql_select = "SELECT id, user_id, created_at
+                     FROM posts
+                    WHERE user_id = :followed_id
+                    ORDER BY created_at DESC
+                    LIMIT 100";
+    $stmt_select = $pdo->prepare($sql_select);
+    $stmt_select->execute([':followed_id' => $followed_id]);
+    $posts = $stmt_select->fetchAll(PDO::FETCH_ASSOC);
+
+    if (empty($posts)) {
+        return; // 글이 없으면 종료
+    }
+
+    // 2단계: follower의 feed_entries에 삽입
+    $sql_insert = "INSERT IGNORE INTO feed_entries (receiver_id, post_id, post_author_id, created_at)
+                   VALUES (:receiver_id, :post_id, :post_author_id, :created_at)";
+    $stmt_insert = $pdo->prepare($sql_insert);
+
+    foreach ($posts as $post) {
+        $stmt_insert->execute([
+            ':receiver_id' => $follower_id,
+            ':post_id' => $post['id'],
+            ':post_author_id' => $post['user_id'],
+            ':created_at' => $post['created_at'],
+        ]);
+    }
+}
+```
+
+**핵심 특징:**
+
+1. **최대 100개 제한**: 상대방의 최근 글 100개만 전파하여 성능 최적화
+2. **즉시 피드 표시**: 친구 요청을 보낸 순간부터 상대방의 글을 내 페이지에서 볼 수 있음
+3. **사용자 경험 향상**:
+   - 친구 요청 전에 상대방의 콘텐츠를 미리 볼 수 있음
+   - 관심 있는 글을 보고 친구 수락을 기다릴 수 있음
+4. **INSERT IGNORE 사용**: 중복 삽입 방지 (이미 전파된 글은 무시)
+
+**예제 시나리오:**
+
+```
+User A가 User B에게 친구 요청 전송:
+
+1. request_friend(['me' => A, 'other' => B]) 호출
+2. friendships 테이블에 (A, B, status='pending', requested_by=A) 삽입
+3. fanout_to_follower(A, B) 호출
+4. B의 최근 글 100개를 A의 feed_entries에 삽입
+5. A가 index.php에서 get_feed_entries() 호출 시 B의 글들이 즉시 표시됨 ✅
+```
+
+**장점:**
+
+- ✅ **즉각적인 피드백**: 친구 요청 후 즉시 상대방의 콘텐츠 확인 가능
+- ✅ **친구 수락 유도**: 상대방의 흥미로운 글을 보고 친구 수락 가능성 증가
+- ✅ **초기 사용자 경험 개선**: 사이트 초기 단계에서 콘텐츠 부족 문제 완화
+- ✅ **성능 최적화**: 최대 100개 제한으로 데이터베이스 부하 제어
+
 ### 3단계: 피드 캐시 삽입 (Feed Entries)
 
 **3-1. 친구들에게 전파:**
@@ -478,7 +573,8 @@ SELECT
   p.content,
   p.files,
   p.created_at,
-  u.display_name AS author_name,
+  u.first_name AS author_first_name,
+  u.last_name AS author_last_name,
   u.photo_url AS author_photo
 FROM feed_entries fe
 INNER JOIN posts p ON fe.post_id = p.id
@@ -678,7 +774,8 @@ SELECT
     WHEN user_id_a = 5 THEN user_id_b
     ELSE user_id_a
   END AS friend_id,
-  u.display_name,
+  u.first_name,
+  u.last_name,
   u.photo_url,
   f.created_at AS friend_since
 FROM friendships f
@@ -701,7 +798,8 @@ SELECT
     WHEN f.user_id_a = 10 THEN f.user_id_b
     ELSE f.user_id_a
   END AS requester_id,
-  u.display_name AS requester_name,
+  u.first_name AS requester_first_name,
+  u.last_name AS requester_last_name,
   u.photo_url AS requester_photo,
   f.created_at AS requested_at
 FROM friendships f
@@ -746,7 +844,8 @@ SELECT
   p.content,
   p.files,
   p.created_at,
-  u.display_name AS author_name,
+  u.first_name AS author_first_name,
+  u.last_name AS author_last_name,
   u.photo_url AS author_photo,
   (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comment_count
 FROM posts p
@@ -784,7 +883,8 @@ SELECT
   p.content,
   p.files,
   p.created_at,
-  u.display_name AS author_name,
+  u.first_name AS author_first_name,
+  u.last_name AS author_last_name,
   u.photo_url AS author_photo
 FROM feed_entries fe
 INNER JOIN posts p ON fe.post_id = p.id
@@ -808,7 +908,7 @@ LIMIT 20 OFFSET 0;
 
 초기 구현에서는 본인이 작성한 게시글이 본인의 피드에 표시되지 않았습니다:
 - ❌ fanout_post_to_friends(): 친구들에게만 전파, 본인은 제외
-- ❌ get_hybrid_feed(): friend_ids에 본인 ID 미포함
+- ❌ get_feed_entries(): friend_ids에 본인 ID 미포함
 
 ### 해결 방법
 
@@ -825,7 +925,7 @@ INSERT IGNORE INTO feed_entries (receiver_id, post_id, post_author_id, created_a
 VALUES (:author_id, :post_id, :author_id, :created_at);
 ```
 
-**2. get_hybrid_feed() 함수 수정**
+**2. get_feed_entries() 함수 수정**
 ```php
 // 2단계: 부족분은 읽기 조인으로 보충 (본인 ID 포함)
 $friend_ids = get_friend_ids(['me' => $me]);

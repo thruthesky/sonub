@@ -62,7 +62,9 @@ function login(): ?UserModel
  *
  * @param array $params 로그인에 필요한 파라미터
  * - $params['firebase_uid']: Firebase UID (필수)
- * - $params['display_name']: 표시 이름 (선택, 기본값: firebase_uid의 앞 3글자)
+ * - $params['first_name']: 이름 (선택, 기본값: '')
+ * - $params['last_name']: 성 (선택, 기본값: '')
+ * - $params['middle_name']: 중간 이름 (선택, 기본값: '')
  * - $params['birthday']: 생일 (선택, 기본값: 0)
  * - $params['gender']: 성별 (선택, 기본값: '')
  */

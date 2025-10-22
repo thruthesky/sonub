@@ -262,7 +262,12 @@ if (!$user) {
     <form id="profile-form">
         <div class="mb-3">
             <label class="form-label"><?= t()->이름 ?></label>
-            <input type="text" class="form-control" name="display_name" value="<?= $user['display_name'] ?>">
+            <input type="text" class="form-control" name="first_name" value="<?= $user['first_name'] ?>">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label"><?= t()->성 ?></label>
+            <input type="text" class="form-control" name="last_name" value="<?= $user['last_name'] ?>">
         </div>
 
         <div class="mb-3">

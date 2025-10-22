@@ -18,7 +18,9 @@ echo "동일한 이름 사용자 생성 시작\n";
 echo "========================================\n\n";
 
 // 설정
-$display_name = 'Jae';
+$first_name = 'Jae';
+$last_name = 'Kim';
+$middle_name = ''; // 중간 이름 (선택적)
 $count = 30;
 
 // 프로필 사진 URL 목록 (다양한 아바타 이미지)
@@ -49,7 +51,9 @@ function get_profile_photo_url(int $index): string
 }
 
 echo "생성할 사용자 정보:\n";
-echo "- display_name: $display_name\n";
+echo "- first_name: $first_name\n";
+echo "- last_name: $last_name\n";
+echo "- middle_name: " . ($middle_name ?: '(없음)') . "\n";
 echo "- 생성 개수: {$count}명\n\n";
 
 // 사용자 생성
@@ -67,7 +71,9 @@ for ($i = 0; $i < $count; $i++) {
         // 사용자 생성 데이터
         $input = [
             'firebase_uid' => $firebase_uid,
-            'display_name' => $display_name,
+            'first_name' => $first_name,
+            'last_name' => $last_name,
+            'middle_name' => $middle_name,
             'photo_url' => $photo_url,
         ];
 
@@ -98,14 +104,16 @@ echo "생성된 사용자 샘플 (처음 5명):\n";
 echo "----------------------------------------\n";
 
 $pdo = pdo();
-$stmt = $pdo->prepare("SELECT id, firebase_uid, display_name, photo_url FROM users WHERE display_name = :name ORDER BY id DESC LIMIT 5");
-$stmt->execute([':name' => $display_name]);
+$stmt = $pdo->prepare("SELECT id, firebase_uid, first_name, last_name, middle_name, photo_url FROM users WHERE first_name = :first_name AND last_name = :last_name ORDER BY id DESC LIMIT 5");
+$stmt->execute([':first_name' => $first_name, ':last_name' => $last_name]);
 $sample_users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 foreach ($sample_users as $user) {
     echo "ID: {$user['id']}\n";
     echo "  - Firebase UID: {$user['firebase_uid']}\n";
-    echo "  - Display Name: {$user['display_name']}\n";
+    echo "  - First Name: {$user['first_name']}\n";
+    echo "  - Last Name: {$user['last_name']}\n";
+    echo "  - Middle Name: " . ($user['middle_name'] ?: '(없음)') . "\n";
     echo "  - Photo URL: {$user['photo_url']}\n";
     echo "\n";
 }

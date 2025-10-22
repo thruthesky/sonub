@@ -22,7 +22,7 @@
  * }
  *
  * $user = User::get(1);
- * $user->update(['display_name' => 'New Name']);
+ * $user->update(['first_name' => 'New', 'last_name' => 'Name']);
  */
 
 require_once __DIR__ . '/db.php';

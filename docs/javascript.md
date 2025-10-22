@@ -81,7 +81,7 @@ Sonub의 JavaScript는 **PHP MPA (Multi-Page Application)** 방식으로 동작�
     <div v-for="user in users" :key="user.id">
         <!-- ✅ PHP 함수로 URL 직접 주입 -->
         <a :href="`<?= href()->user->profile ?>?id=${user.id}`">
-            {{ user.display_name }}
+            {{ user.first_name }} {{ user.last_name }}
         </a>
     </div>
 </div>
@@ -185,7 +185,9 @@ window.Store = {
         user: {
             id: 1,                    // 사용자 ID
             firebase_uid: 'abc123',   // Firebase UID
-            display_name: '홍길동',   // 표시 이름
+            first_name: '길동',       // 이름
+            last_name: '홍',          // 성
+            middle_name: '',          // 중간 이름
             gender: 'M',              // 성별
             birthday: 631152000,      // 생년월일 (Unix timestamp)
             photo_url: '/uploads/...' // 프로필 사진 URL
@@ -275,7 +277,7 @@ ready(() => {
 
                 // 사용자 사용 가능 - 사용자 정보 접근
                 const myUserId = this.state.user.id;
-                const myName = this.state.user.display_name;
+                const myName = `${this.state.user.first_name} ${this.state.user.last_name}`;
                 console.log(`사용자 정보: ${myName} (ID: ${myUserId})`);
             }
         }
@@ -311,7 +313,7 @@ ready(() => {
                 }
 
                 const user = this.currentUser;
-                console.log(`사용자 정보: ${user.display_name}`);
+                console.log(`사용자 정보: ${user.first_name} ${user.last_name}`);
             }
         }
     }).mount('#app');
@@ -341,7 +343,7 @@ ready(() => {
 <div id="app">
     <!-- ✅ 사용자 상태 기반 조건부 UI 표시 -->
     <div v-if="isLoggedIn">
-        <p>환영합니다, {{ state.user.display_name }}님!</p>
+        <p>환영합니다, {{ state.user.first_name }} {{ state.user.last_name }}님!</p>
         <button @click="doSomething">친구 추가</button>
     </div>
     <div v-else>
@@ -364,7 +366,7 @@ $is_me = login() && login()->id === $user->id;
 ?>
 
 <div id="profile-app">
-    <h1><?= htmlspecialchars($user->display_name) ?></h1>
+    <h1><?= htmlspecialchars($user->displayFullName()) ?></h1>
 
     <?php if (!$is_me): ?>
         <button @click="requestFriend(<?= $user->id ?>)"
@@ -536,12 +538,13 @@ ready(() => {
             async updateProfile() {
                 try {
                     await func('update_user', {
-                        display_name: '새로운 이름',
+                        first_name: '새로운',
+                        last_name: '이름',
                         auth: true
                     });
 
                     // ✅ state.user가 변경되면 자동으로 업데이트됨!
-                    // 템플릿의 {{ state.user.display_name }}도 자동 업데이트!
+                    // 템플릿의 {{ state.user.first_name }} {{ state.user.last_name }}도 자동 업데이트!
 
                 } catch (error) {
                     console.error('프로필 업데이트 실패:', error);
@@ -555,7 +558,7 @@ ready(() => {
 ```html
 <div id="app">
     <!-- ✅ state.user가 변경되면 자동으로 업데이트됨! -->
-    <p>환영합니다, {{ state.user.display_name }}님!</p>
+    <p>환영합니다, {{ state.user.first_name }} {{ state.user.last_name }}님!</p>
     <button @click="updateProfile">프로필 업데이트</button>
 </div>
 ```

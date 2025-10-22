@@ -27,6 +27,9 @@ $firstNames = [
     '다은', '예은', '가은', '예린', '나은', '유진', '수빈', '지민', '수현', '예원'
 ];
 
+// 한국 중간 이름 (선택적, 70% 확률로 비어있음)
+$middleNames = ['', '', '', '', '', '', '', '민', '서', '지', '해', '윤', '원'];
+
 // 영어 이름 목록
 $englishFirstNames = [
     'James', 'John', 'Robert', 'Michael', 'William', 'David', 'Richard', 'Joseph', 'Thomas', 'Charles',
@@ -66,7 +69,7 @@ $photoUrls = [
 echo "📋 설정:\n";
 echo "   - 생성할 사용자 수: 100명\n";
 echo "   - Firebase UID 형식: random_user_{번호}\n";
-echo "   - Display Name: 한국어/영어 이름 랜덤\n";
+echo "   - First Name, Last Name, Middle Name: 한국어/영어 이름 랜덤\n";
 echo "   - 생년월일: 1970~2005년 사이 랜덤\n";
 echo "   - 성별: 남/여 랜덤\n";
 echo "   - 프로필 사진: 랜덤 아바타 또는 없음\n\n";
@@ -115,10 +118,17 @@ for ($i = 1; $i <= 100; $i++) {
         $useKoreanName = rand(0, 1) === 1; // 50% 확률로 한국 이름 사용
 
         if ($useKoreanName) {
-            $displayName = $lastNames[array_rand($lastNames)] . $firstNames[array_rand($firstNames)] . $i;
+            $firstName = $firstNames[array_rand($firstNames)];
+            $lastName = $lastNames[array_rand($lastNames)];
+            $middleName = $middleNames[array_rand($middleNames)];
         } else {
-            $displayName = $englishFirstNames[array_rand($englishFirstNames)] . ' ' . $englishLastNames[array_rand($englishLastNames)] . $i;
+            $firstName = $englishFirstNames[array_rand($englishFirstNames)];
+            $lastName = $englishLastNames[array_rand($englishLastNames)];
+            $middleName = ''; // 영어 이름은 중간 이름 없음
         }
+
+        // 중복 확인을 위한 번호 추가
+        $firstName = $firstName . $i;
 
         // 생년월일: 1970년 ~ 2005년 사이 랜덤
         $birthYear = rand(1970, 2005);
@@ -138,7 +148,9 @@ for ($i = 1; $i <= 100; $i++) {
         // 사용자 데이터 삽입
         $userId = db()->insert([
             'firebase_uid' => 'random_user_' . $i,
-            'display_name' => $displayName,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'middle_name' => $middleName,
             'birthday' => $birthday,
             'gender' => $gender,
             'photo_url' => $photoUrl,
@@ -151,10 +163,11 @@ for ($i = 1; $i <= 100; $i++) {
         // 10명마다 진행 상황 출력
         if ($i % 10 === 0) {
             $age = date('Y') - $birthYear;
+            $fullName = $firstName . ($middleName ? ' ' . $middleName : '') . ' ' . $lastName;
             echo sprintf(
                 "   %3d/100: %-20s | 성별: %s | 나이: %2d세 | ID: %d\n",
                 $i,
-                mb_substr($displayName, 0, 20),
+                mb_substr($fullName, 0, 20),
                 $gender === 'M' ? '남' : '여',
                 $age,
                 $userId
@@ -195,11 +208,12 @@ try {
     foreach ($samples as $sample) {
         $age = $sample['birthday'] > 0 ? date('Y') - date('Y', $sample['birthday']) : '?';
         $hasPhoto = !empty($sample['photo_url']) ? '📷' : '  ';
+        $fullName = $sample['first_name'] . ($sample['middle_name'] ? ' ' . $sample['middle_name'] : '') . ' ' . $sample['last_name'];
         echo sprintf(
             "   %s ID: %-3d | %-20s | 성별: %s | 나이: %2s세\n",
             $hasPhoto,
             $sample['id'],
-            mb_substr($sample['display_name'], 0, 20),
+            mb_substr($fullName, 0, 20),
             $sample['gender'] === 'M' ? '남' : '여',
             $age
         );

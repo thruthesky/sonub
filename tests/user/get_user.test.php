@@ -62,11 +62,14 @@ echo "테스트 5: 테스트 사용자 생성 및 조회\n";
 try {
     // 테스트 사용자 데이터 삽입
     $testUid = 'test_uid_' . time();
-    $testDisplayName = '테스트사용자_' . time();
+    $testFirstName = '테스트사용자_' . time();
+    $testLastName = '테스트';
     $insertId = db()
         ->insert([
             'firebase_uid' => $testUid,
-            'display_name' => $testDisplayName,
+            'first_name' => $testFirstName,
+            'last_name' => $testLastName,
+            'middle_name' => '',
             'created_at' => time(),
             'updated_at' => time(),
             'birthday' => 0,
@@ -79,11 +82,13 @@ try {
     // get_user()로 조회
     $user = get_user(['id' => $insertId]);
 
-    if ($user && $user['firebase_uid'] === $testUid && $user['display_name'] === $testDisplayName) {
+    if ($user && $user['firebase_uid'] === $testUid && $user['first_name'] === $testFirstName && $user['last_name'] === $testLastName) {
         echo "✅ get_user() 조회 성공\n";
         echo "   ID: " . $user['id'] . "\n";
         echo "   Firebase UID: " . $user['firebase_uid'] . "\n";
-        echo "   Display Name: " . $user['display_name'] . "\n";
+        echo "   First Name: " . $user['first_name'] . "\n";
+        echo "   Last Name: " . $user['last_name'] . "\n";
+        echo "   Middle Name: " . $user['middle_name'] . "\n";
     } else {
         echo "❌ 조회된 데이터가 일치하지 않음\n";
         print_r($user);

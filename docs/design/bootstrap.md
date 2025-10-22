@@ -142,7 +142,7 @@ page/user/
     <div class="card shadow-sm profile-card-enter">
         <div class="card-body p-4">
             <div class="profile-header-gradient text-white p-3 rounded mb-3">
-                <h3 class="mb-0"><?= htmlspecialchars($user->display_name) ?></h3>
+                <h3 class="mb-0"><?= htmlspecialchars($user->displayFullName()) ?></h3>
             </div>
             <!-- 기타 내용 -->
         </div>

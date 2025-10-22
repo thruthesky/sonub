@@ -39,7 +39,9 @@ Sonub의 사용자 관리 시스템은 Firebase Authentication과 MariaDB를 함
 |------|------|------|-----------|
 | `id` | int(10) unsigned | 사용자 고유 ID | PRIMARY KEY, AUTO_INCREMENT |
 | `firebase_uid` | varchar(128) | Firebase UID | UNIQUE, NOT NULL |
-| `display_name` | varchar(64) | 사용자 표시 이름 | UNIQUE, NOT NULL |
+| `first_name` | varchar(64) | 이름 | NOT NULL |
+| `last_name` | varchar(64) | 성 | NOT NULL |
+| `middle_name` | varchar(64) | 중간 이름 | NULL |
 | `created_at` | int(10) unsigned | 생성 시각 (timestamp) | NOT NULL |
 | `updated_at` | int(10) unsigned | 수정 시각 (timestamp) | NOT NULL, DEFAULT 0 |
 | `birthday` | int(10) unsigned | 생년월일 (timestamp) | NOT NULL, DEFAULT 0 |
@@ -74,7 +76,9 @@ Sonub의 사용자 관리 시스템은 Firebase Authentication과 MariaDB를 함
 | 파라미터 | 타입 | 필수 | 설명 |
 |----------|------|------|------|
 | `firebase_uid` | string | ✅ | Firebase UID |
-| `display_name` | string | ❌ | 사용자 표시 이름 (없으면 firebase_uid 사용) |
+| `first_name` | string | ❌ | 이름 |
+| `last_name` | string | ❌ | 성 |
+| `middle_name` | string | ❌ | 중간 이름 |
 | `birthday` | int | ❌ | 생년월일 (Unix timestamp) |
 | `gender` | string | ❌ | 성별 ('M' 또는 'F') |
 
@@ -107,7 +111,9 @@ curl -X POST https://local.sonub.com/api.php \
   -d '{
     "func": "create_user_record",
     "firebase_uid": "abc123xyz",
-    "display_name": "홍길동",
+    "first_name": "길동",
+    "last_name": "홍",
+    "middle_name": "",
     "birthday": 631152000,
     "gender": "M"
   }'
@@ -120,7 +126,9 @@ curl -X POST https://local.sonub.com/api.php \
 {
   "id": 1,
   "firebase_uid": "abc123xyz",
-  "display_name": "홍길동",
+  "first_name": "길동",
+  "last_name": "홍",
+  "middle_name": "",
   "created_at": 1759646876,
   "updated_at": 1759646876,
   "birthday": 631152000,
@@ -158,7 +166,9 @@ $user = create_user_record([
 // 전체 정보로 사용자 생성
 $user = create_user_record([
     'firebase_uid' => 'abc123xyz',
-    'display_name' => '홍길동',
+    'first_name' => '길동',
+    'last_name' => '홍',
+    'middle_name' => '',
     'birthday' => strtotime('1990-01-01'),
     'gender' => 'M'
 ]);
@@ -207,7 +217,9 @@ curl -X GET "https://local.sonub.com/api.php?f=get_user&id=1"
 {
   "id": 1,
   "firebase_uid": "abc123xyz",
-  "display_name": "홍길동",
+  "first_name": "길동",
+  "last_name": "홍",
+  "middle_name": "",
   "created_at": 1759646876,
   "updated_at": 1759646876,
   "birthday": 631152000,
@@ -224,7 +236,7 @@ $user = get_user(['id' => 1]);
 if (isset($user['error_code'])) {
     echo "에러: " . $user['error_message'];
 } else {
-    echo "사용자 이름: " . $user['display_name'];
+    echo "사용자 이름: " . $user['first_name'] . " " . $user['last_name'];
 }
 ```
 
@@ -259,7 +271,9 @@ if (isset($user['error_code'])) {
         [
             'id' => 1,
             'firebase_uid' => 'abc123',
-            'display_name' => '홍길동',
+            'first_name' => '길동',
+            'last_name' => '홍',
+            'middle_name' => '',
             'created_at' => 1759646876,
             'updated_at' => 1759646876,
             'birthday' => 631152000,
@@ -413,7 +427,7 @@ $page = $result['page'];
     <?php foreach ($users as $user_data): ?>
         <?php $user = new UserModel($user_data); ?>
         <div class="user-card">
-            <h3><?= htmlspecialchars($user->display_name) ?></h3>
+            <h3><?= htmlspecialchars($user->first_name . ' ' . $user->last_name) ?></h3>
             <p>성별: <?= $user->gender === 'M' ? '남성' : '여성' ?></p>
         </div>
     <?php endforeach; ?>
@@ -485,7 +499,9 @@ curl "https://local.sonub.com/api.php?f=list_users&gender=F&age_start=25&age_end
     {
       "id": 1,
       "firebase_uid": "abc123xyz",
-      "display_name": "홍길동",
+      "first_name": "길동",
+      "last_name": "홍",
+      "middle_name": "",
       "created_at": 1759646876,
       "updated_at": 1759646876,
       "birthday": 631152000,
@@ -495,7 +511,9 @@ curl "https://local.sonub.com/api.php?f=list_users&gender=F&age_start=25&age_end
     {
       "id": 2,
       "firebase_uid": "def456uvw",
-      "display_name": "김영희",
+      "first_name": "영희",
+      "last_name": "김",
+      "middle_name": "",
       "created_at": 1759646900,
       "updated_at": 1759646900,
       "birthday": 725846400,
@@ -579,7 +597,7 @@ $name = $_GET['name'] ?? '';
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-body">
-                        <h5><?= htmlspecialchars($user->display_name) ?></h5>
+                        <h5><?= htmlspecialchars($user->first_name . ' ' . $user->last_name) ?></h5>
                         <p class="text-muted">
                             <?= $user->gender === 'M' ? '남성' : '여성' ?>
                         </p>
@@ -743,7 +761,7 @@ $result = list_users(array_merge($_GET, ['per_page' => 50]));
                 <?php $user = new UserModel($user_data); ?>
                 <tr>
                     <td><?= $user->id ?></td>
-                    <td><?= htmlspecialchars($user->display_name) ?></td>
+                    <td><?= htmlspecialchars($user->first_name . ' ' . $user->last_name) ?></td>
                     <td><?= $user->gender === 'M' ? '남성' : '여성' ?></td>
                     <td><?= date('Y-m-d', $user->created_at) ?></td>
                     <td>
@@ -774,7 +792,8 @@ ALTER TABLE users ADD INDEX idx_gender (gender);
 ALTER TABLE users ADD INDEX idx_birthday (birthday);
 
 -- 이름 검색 성능 향상
-ALTER TABLE users ADD INDEX idx_display_name (display_name);
+ALTER TABLE users ADD INDEX idx_first_name (first_name);
+ALTER TABLE users ADD INDEX idx_last_name (last_name);
 
 -- 복합 인덱스 (성별 + 생년월일)
 ALTER TABLE users ADD INDEX idx_gender_birthday (gender, birthday);
@@ -794,7 +813,9 @@ firebase.auth().onAuthStateChanged(async (user) => {
             // 성공 시 서버가 자동으로 세션 ID 쿠키를 설정합니다
             const result = await func('create_user_record', {
                 firebase_uid: user.uid,
-                display_name: user.displayName || user.uid
+                first_name: user.displayName?.split(' ')[0] || '',
+                last_name: user.displayName?.split(' ')[1] || '',
+                middle_name: ''
             });
 
             console.log('사용자 ID:', result.id);
@@ -824,7 +845,7 @@ $user = get_user(['id' => $userId]);
 
 if (!isset($user['error_code'])) {
     echo "Firebase UID: " . $user['firebase_uid'] . "\n";
-    echo "표시 이름: " . $user['display_name'] . "\n";
+    echo "이름: " . $user['first_name'] . " " . $user['last_name'] . "\n";
     echo "생년월일: " . date('Y-m-d', $user['birthday']) . "\n";
     echo "성별: " . ($user['gender'] === 'M' ? '남성' : '여성') . "\n";
 }
@@ -1018,7 +1039,7 @@ $is_me = login() && login()->id === $user->id;
 <!-- Vue.js 앱 컨테이너 -->
 <div id="profile-app">
     <!-- 프로필 정보 -->
-    <h1><?= htmlspecialchars($user->display_name) ?></h1>
+    <h1><?= htmlspecialchars($user->first_name . ' ' . $user->last_name) ?></h1>
 
     <!-- 친구 추가 버튼 (다른 사용자인 경우만 표시) -->
     <?php if (!$is_me): ?>
@@ -1105,7 +1126,9 @@ window.Store = {
     user: {
         id: 1,                    // 사용자 ID
         firebase_uid: 'abc123',   // Firebase UID
-        display_name: '홍길동',   // 표시 이름
+        first_name: '길동',       // 이름
+        last_name: '홍',          // 성
+        middle_name: '',          // 중간 이름
         gender: 'M',              // 성별
         birthday: 631152000,      // 생년월일 (Unix timestamp)
         photo_url: '/uploads/...' // 프로필 사진 URL
@@ -1331,7 +1354,7 @@ $users = $result['users'];
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-body">
-                        <h5><?= htmlspecialchars($user->display_name) ?></h5>
+                        <h5><?= htmlspecialchars($user->first_name . ' ' . $user->last_name) ?></h5>
                     </div>
                 </div>
             </div>
@@ -1481,7 +1504,7 @@ Vue.createApp({
 <div id="user-list-app" class="container">
     <!-- Vue.js 사용자 목록 앱 -->
     <div v-for="user in users" :key="user.id">
-        <h5>{{ user.display_name }}</h5>
+        <h5>{{ user.first_name }} {{ user.last_name }}</h5>
     </div>
 </div>
 

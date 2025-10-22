@@ -99,6 +99,9 @@ function request_friend(array $input): array
         ':updated' => $now
     ]);
 
+    // 팬아웃
+    fanout_to_follower($me, $other);
+
     return ['message' => '친구 요청을 보냈습니다', 'success' => true];
 }
 
@@ -419,7 +422,7 @@ function count_friend_requests_sent(array $input): int
  *   - int $input['me'] 요청 목록을 조회할 사용자 ID
  *   - int $input['limit'] 조회할 최대 건수 (기본값 20, 최대 100)
  *   - int $input['offset'] 시작 위치 (기본값 0)
- *   - string $input['order_by'] 정렬 기준 (updated_at, created_at, display_name)
+ *   - string $input['order_by'] 정렬 기준 (updated_at, created_at, first_name, last_name)
  *   - string $input['order'] 정렬 순서 (ASC, DESC)
  * @return array 보낸 친구 요청 목록
  * @throws ApiException 에러 발생 시
@@ -447,7 +450,8 @@ function get_friend_requests_sent(array $input): array
     $orderByWhitelist = [
         'updated_at' => 'f.updated_at',
         'created_at' => 'f.created_at',
-        'display_name' => 'u.display_name',
+        'first_name' => 'u.first_name',
+        'last_name' => 'u.last_name',
     ];
     $orderBySql = $orderByWhitelist[$orderBy] ?? $orderByWhitelist['updated_at'];
     $orderSql = $order === 'ASC' ? 'ASC' : 'DESC';
@@ -455,7 +459,9 @@ function get_friend_requests_sent(array $input): array
     $pdo = pdo();
     $sql = "SELECT
                 CASE WHEN f.user_id_a = :me_case THEN f.user_id_b ELSE f.user_id_a END AS receiver_id,
-                u.display_name,
+                u.first_name,
+                u.last_name,
+                u.middle_name,
                 u.photo_url,
                 f.requested_by,
                 f.created_at,
@@ -483,7 +489,9 @@ function get_friend_requests_sent(array $input): array
     return array_map(static function (array $row): array {
         return [
             'user_id' => (int)$row['receiver_id'],
-            'display_name' => $row['display_name'] ?? '',
+            'first_name' => $row['first_name'] ?? '',
+            'last_name' => $row['last_name'] ?? '',
+            'middle_name' => $row['middle_name'] ?? '',
             'photo_url' => $row['photo_url'] ?? '',
             'requested_by' => (int)$row['requested_by'],
             'created_at' => (int)$row['created_at'],
@@ -545,7 +553,7 @@ function count_friend_requests_received(array $input): int
  *   - int $input['me'] 요청 목록을 조회할 사용자 ID
  *   - int $input['limit'] 조회할 최대 건수 (기본값 20, 최대 100)
  *   - int $input['offset'] 시작 위치 (기본값 0)
- *   - string $input['order_by'] 정렬 기준 (updated_at, created_at, display_name)
+ *   - string $input['order_by'] 정렬 기준 (updated_at, created_at, first_name, last_name)
  *   - string $input['order'] 정렬 순서 (ASC, DESC)
  * @return array 받은 친구 요청 목록
  * @throws ApiException 에러 발생 시
@@ -573,7 +581,8 @@ function get_friend_requests_received(array $input): array
     $orderByWhitelist = [
         'updated_at' => 'f.updated_at',
         'created_at' => 'f.created_at',
-        'display_name' => 'u.display_name',
+        'first_name' => 'u.first_name',
+        'last_name' => 'u.last_name',
     ];
     $orderBySql = $orderByWhitelist[$orderBy] ?? $orderByWhitelist['updated_at'];
     $orderSql = $order === 'ASC' ? 'ASC' : 'DESC';
@@ -581,7 +590,9 @@ function get_friend_requests_received(array $input): array
     $pdo = pdo();
     $sql = "SELECT
                 CASE WHEN f.user_id_a = :me_case THEN f.user_id_b ELSE f.user_id_a END AS requester_id,
-                u.display_name,
+                u.first_name,
+                u.last_name,
+                u.middle_name,
                 u.photo_url,
                 f.requested_by,
                 f.created_at,
@@ -609,7 +620,9 @@ function get_friend_requests_received(array $input): array
     return array_map(static function (array $row): array {
         return [
             'user_id' => (int)$row['requester_id'],
-            'display_name' => $row['display_name'] ?? '',
+            'first_name' => $row['first_name'] ?? '',
+            'last_name' => $row['last_name'] ?? '',
+            'middle_name' => $row['middle_name'] ?? '',
             'photo_url' => $row['photo_url'] ?? '',
             'requested_by' => (int)$row['requested_by'],
             'created_at' => (int)$row['created_at'],
@@ -628,7 +641,7 @@ function get_friend_requests_received(array $input): array
  *   - int $input['me'] 친구 목록을 조회할 사용자 ID
  *   - int $input['limit'] 조회할 최대 친구 수 (기본값: 10, 최대값: 100)
  *   - int $input['offset'] 시작 위치 (기본값: 0, 페이지네이션용)
- *   - string $input['order_by'] 정렬 기준 (기본값: 'id', 옵션: 'id', 'display_name', 'created_at')
+ *   - string $input['order_by'] 정렬 기준 (기본값: 'id', 옵션: 'id', 'first_name', 'last_name', 'created_at')
  *   - string $input['order'] 정렬 순서 (기본값: 'DESC', 옵션: 'ASC', 'DESC')
  * @return array 친구 정보 배열 (직접 배열 형태로 반환, 친구가 없으면 빈 배열)
  * @throws ApiException 에러 발생 시
@@ -636,13 +649,13 @@ function get_friend_requests_received(array $input): array
  * @example
  * // PHP에서 호출 - 기본 (최대 10명, ID 내림차순)
  * $friends = get_friends(['me' => 5]);
- * // [['id' => 10, 'display_name' => '홍길동', ...], ...]
+ * // [['id' => 10, 'first_name' => '길동', 'last_name' => '홍', ...], ...]
  *
  * // 최대 5명만 조회
  * $friends = get_friends(['me' => 5, 'limit' => 5]);
  *
  * // 이름 오름차순 정렬
- * $friends = get_friends(['me' => 5, 'order_by' => 'display_name', 'order' => 'ASC']);
+ * $friends = get_friends(['me' => 5, 'order_by' => 'first_name', 'order' => 'ASC']);
  *
  * // 페이지네이션 (6번째부터 5명)
  * $friends = get_friends(['me' => 5, 'limit' => 5, 'offset' => 5]);
@@ -675,7 +688,7 @@ function get_friends(array $input): array
     }
 
     // order_by 화이트리스트 검증 (SQL 인젝션 방지)
-    $allowed_order_by = ['id', 'display_name', 'created_at'];
+    $allowed_order_by = ['id', 'first_name', 'last_name', 'created_at'];
     if (!in_array($order_by, $allowed_order_by, true)) {
         $order_by = 'id';
     }
@@ -856,11 +869,54 @@ function fanout_post_to_friends(int $author_id, int $post_id, int $created_at): 
 }
 
 /**
+ * 사용자 A 가 B 에게 친구 요청을 할 때, A 가 B 의 follwer 가 되고, B 는 A 의 follwed 가 된다.
+ * 
+ * - 최대 100 개의 최근 글만 fanout 한다.
+ * 
+ * @param int $follower_id 
+ * @param int $followed_id 
+ * @return void 
+ */
+function fanout_to_follower(int $follower_id, int $followed_id)
+{
+    $pdo = pdo();
+
+    // 1단계: 최근 글 100개 선택
+    $sql_select = "SELECT id, user_id, created_at
+                     FROM posts
+                    WHERE user_id = :followed_id
+                    ORDER BY created_at DESC
+                    LIMIT 100";
+    $stmt_select = $pdo->prepare($sql_select);
+    $stmt_select->execute([':followed_id' => $followed_id]);
+    $posts = $stmt_select->fetchAll(PDO::FETCH_ASSOC);
+
+    if (empty($posts)) {
+        return;
+    }
+
+    // 2단계: feed_entries에 삽입
+    $sql_insert = "INSERT IGNORE INTO feed_entries (receiver_id, post_id, post_author_id, created_at)
+                   VALUES (:receiver_id, :post_id, :post_author_id, :created_at)";
+    $stmt_insert = $pdo->prepare($sql_insert);
+
+    foreach ($posts as $post) {
+        $stmt_insert->execute([
+            ':receiver_id' => $follower_id,
+            ':post_id' => $post['id'],
+            ':post_author_id' => $post['user_id'],
+            ':created_at' => $post['created_at'],
+        ]);
+    }
+}
+
+
+/**
  * 피드 캐시에서 사용자의 피드 조회 함수
  *
  * feed_entries 테이블에서 미리 생성된 피드 캐시를 조회합니다.
  * 친구 목록 조인 없이 단일 테이블 스캔으로 고속 조회가 가능합니다.
- * (내부 전용 - get_hybrid_feed()에서 사용)
+ * (내부 전용 - get_feed_entries()에서 사용)
  *
  * @param int $me 피드를 조회할 사용자 ID
  * @param int $limit 조회할 최대 개수
@@ -891,7 +947,7 @@ function get_feed_from_cache(int $me, int $limit, int $offset = 0): array
  *
  * feed_entries 캐시가 충분하지 않을 때 posts 테이블에서 직접 조회합니다.
  * 친구 ID 배열을 받아 IN 절로 필터링하며, 선택적으로 차단 사용자를 제외합니다.
- * (내부 전용 - get_hybrid_feed()에서 사용)
+ * (내부 전용 - get_feed_entries()에서 사용)
  *
  * @param int $me 피드를 조회할 사용자 ID
  * @param array $friend_ids 친구 ID 배열
@@ -954,15 +1010,22 @@ function get_feed_from_read_join(
 // 이제 lib/post/post.crud.php의 create_post() 함수에서 자동으로 피드 전파를 수행합니다.
 
 /**
- * 하이브리드 피드 조회 함수 (API 호출 가능)
+ * 피드 조회 함수 (API 호출 가능)
  *
- * 캐시(feed_entries)와 읽기 조인(posts)을 결합하여 사용자의 피드를 조회합니다.
- * 1. 먼저 캐시에서 조회
- * 2. 캐시가 부족하면 posts 테이블에서 직접 조회 (본인 게시글 포함)
- * 3. 두 결과를 병합하고 중복 제거
- * 4. visibility 및 차단 관계를 최종 검증
+ * **중요: get_hybrid_feed에서 get_feed_entries로 함수 이름 변경 및 동작 변경**
  *
- * **중요**: friend_ids에 본인 ID를 추가하여 캐시가 비어있을 때도 본인 게시글을 조회합니다.
+ * feed_entries 테이블에서만 피드를 조회합니다.
+ * 이전 get_hybrid_feed 함수는 캐시가 부족하면 posts 테이블에서 추가로 조회했으나,
+ * 현재 get_feed_entries는 오직 feed_entries 테이블에서만 조회하고 글이 없으면 빈 배열을 반환합니다.
+ *
+ * **동작:**
+ * 1. feed_entries 캐시에서만 조회
+ * 2. 글이 없으면 빈 배열 반환 (posts 테이블 추가 조회 안 함)
+ * 3. visibility 및 차단 관계를 최종 검증
+ *
+ * **my-page에서 글 표시:**
+ * 더 이상 posts 테이블에서 추가 조회하지 않으며,
+ * feed_entries에 fanout된 글만 표시됩니다.
  *
  * @param array $input 입력 파라미터
  *   - int $input['me'] 피드를 조회할 사용자 ID
@@ -974,14 +1037,14 @@ function get_feed_from_read_join(
  *
  * @example
  * // PHP에서 호출
- * $feed = get_hybrid_feed(['me' => 10, 'limit' => 20, 'offset' => 0]);
+ * $feed = get_feed_entries(['me' => 10, 'limit' => 20, 'offset' => 0]);
  * // [['post_id' => 1, 'title' => '...'], ['post_id' => 2, 'title' => '...'], ...]
  *
  * // JavaScript에서 API 호출
- * const feed = await func('get_hybrid_feed', { me: 10, limit: 20, offset: 0 });
+ * const feed = await func('get_feed_entries', { me: 10, limit: 20, offset: 0 });
  * console.log(feed);  // 피드 배열
  */
-function get_hybrid_feed(array $input): array
+function get_feed_entries(array $input): array
 {
     // 파라미터 추출 및 검증
     $me = (int)($input['me'] ?? 0);
@@ -1000,35 +1063,9 @@ function get_hybrid_feed(array $input): array
         $offset = 0;
     }
 
-    // 1단계: 캐시에서 조회
+    // 캐시에서만 조회
     $cached = get_feed_from_cache($me, $limit, $offset);
-    if (count($cached) >= $limit) {
-        return finalize_feed_with_visibility($me, $cached);
-    }
-
-    // 2단계: 부족분은 읽기 조인으로 보충 (본인 ID 포함)
-    $friend_ids = get_friend_ids(['me' => $me]);
-    $friend_ids[] = $me; // ✅ 본인 ID 추가 (캐시 누락 시에도 본인 게시글 조회)
-    $friend_ids = array_unique($friend_ids); // 중복 제거
-    $need = $limit - count($cached);
-    $joined = get_feed_from_read_join($me, $friend_ids, $need, $offset);
-
-    // 3단계: 병합 + post_id 기준 중복 제거
-    $merged = [...$cached, ...$joined];
-    $seen = [];
-    $unique = [];
-    foreach ($merged as $r) {
-        $pid = (int)$r['post_id'];
-        if (isset($seen[$pid])) continue;
-        $seen[$pid] = true;
-        $unique[] = $r;
-    }
-
-    // 4단계: 최신순(epoch 내림차순) 정렬
-    usort($unique, fn($a, $b) => (int)$b['created_at'] <=> (int)$a['created_at']);
-
-    // 5단계: visibility/차단 최종 검증 + 본문 붙이기
-    return finalize_feed_with_visibility($me, array_slice($unique, 0, $limit));
+    return finalize_feed_with_visibility($me, $cached);
 }
 
 /**
@@ -1041,7 +1078,7 @@ function get_hybrid_feed(array $input): array
  * - 차단된 사용자의 게시글은 제외
  *
  * **중요**: pending 상태의 친구도 포함하여 visibility 검증을 수행합니다.
- * (내부 전용 - get_hybrid_feed()에서 사용)
+ * (내부 전용 - get_feed_entries()에서 사용)
  *
  * @param int $me 피드를 조회하는 사용자 ID
  * @param array $items 피드 항목 배열 (post_id, post_author_id, created_at)
@@ -1050,23 +1087,23 @@ function get_hybrid_feed(array $input): array
 function finalize_feed_with_visibility(int $me, array $items): array
 {
     $out = [];
-    // 친구 목록 캐시(루프 내 DB 호출 줄이기)
-    // accepted 상태의 친구만 조회
-    $friend_ids = get_friend_ids(['me' => $me]);
+    // // 친구 목록 캐시(루프 내 DB 호출 줄이기)
+    // // accepted 상태의 친구만 조회
+    // $friend_ids = get_friend_ids(['me' => $me]);
 
-    // pending 상태에서 내가 요청한 사용자 ID 목록 조회 (내가 요청자인 경우 상대방 글을 볼 수 있음)
-    $pdo = pdo();
-    $sql = "SELECT CASE WHEN user_id_a = :me1 THEN user_id_b ELSE user_id_a END AS friend_id
-            FROM friendships
-            WHERE (user_id_a = :me2 OR user_id_b = :me3)
-              AND status = 'pending'
-              AND requested_by = :me4";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([':me1' => $me, ':me2' => $me, ':me3' => $me, ':me4' => $me]);
-    $pending_ids = array_map(fn($r) => (int)$r['friend_id'], $stmt->fetchAll());
+    // // pending 상태에서 내가 요청한 사용자 ID 목록 조회 (내가 요청자인 경우 상대방 글을 볼 수 있음)
+    // $pdo = pdo();
+    // $sql = "SELECT CASE WHEN user_id_a = :me1 THEN user_id_b ELSE user_id_a END AS friend_id
+    //         FROM friendships
+    //         WHERE (user_id_a = :me2 OR user_id_b = :me3)
+    //           AND status = 'pending'
+    //           AND requested_by = :me4";
+    // $stmt = $pdo->prepare($sql);
+    // $stmt->execute([':me1' => $me, ':me2' => $me, ':me3' => $me, ':me4' => $me]);
+    // $pending_ids = array_map(fn($r) => (int)$r['friend_id'], $stmt->fetchAll());
 
-    // 전체 허용 ID 목록 (accepted + pending 요청자)
-    $allowed_author_ids = array_unique([...$friend_ids, ...$pending_ids]);
+    // // 전체 허용 ID 목록 (accepted + pending 요청자)
+    // $allowed_author_ids = array_unique([...$friend_ids, ...$pending_ids]);
 
     foreach ($items as $r) {
         $post = get_post_row((int)$r['post_id']);
@@ -1080,10 +1117,14 @@ function finalize_feed_with_visibility(int $me, array $items): array
             continue;
         }
 
+
+
         // visibility 검증
         if ($vis === 'private' && $author !== $me) continue;
         // friends: 본인 또는 accepted 친구 또는 내가 요청한 pending 상태의 사용자
-        if ($vis === 'friends' && $author !== $me && !in_array($author, $allowed_author_ids, true)) continue;
+        // Get the user and check if it's you, accepted friend, or pending requester
+        // $visible = is_visible_friendship($me, $author);
+        // if ($vis === 'friends' && $author !== $me && !$visible) continue;
 
         // files 필드를 배열로 변환 (콤마로 구분된 문자열 → 배열)
         $files = [];
@@ -1104,6 +1145,84 @@ function finalize_feed_with_visibility(int $me, array $items): array
     }
 
     // 안전하게 최신순 보장
+    // TODO: delete this after checking if it's really needed
     usort($out, fn($a, $b) => $b['created_at'] <=> $a['created_at']);
     return $out;
+}
+
+/**
+ * 친구 관계 상태 조회 함수 (내부용)
+ *
+ * 두 사용자 간의 친구 관계 상태(friendships.status)를 조회합니다.
+ * - 관계가 없으면 null을 반환합니다.
+ * - 내가 상대방에게 친구 요청을 보냈고, 'pending' 상태이면 'following'을 반환합니다.
+ * - 상대방이 나에게 친구 요청을 보냈고, 'pending' 상태이면 'followed'를 반환합니다.
+ * - 'accepted' 상태이면 'accepted'를 반환합니다.
+ * - 'blocked' 상태이면 'blocked'를 반환합니다.
+ * (내부 전용 - API로 호출되지 않음)
+ *
+ * @param int $me 첫 번째 사용자 ID
+ * @param int $other 두 번째 사용자 ID
+ * @return string|null 친구 관계 상태 ('following', 'accepted', 'blocked') 또는 null
+ *
+ * @example
+ * $status = get_friendship_status(5, 10);
+ * if ($status === 'accepted') {
+ *     echo "5와 10은 친구입니다.";
+ * } elseif ($status === 'following') {
+ *     echo "5는 10을 팔로우하고 있습니다.";
+ * } elseif ($status === 'followed') {
+ *     echo "10은 5를 팔로우하고 있습니다.";
+ * } else {
+ *     echo "5와 10은 친구가 아닙니다.";
+ * }
+ */
+function get_friendship_status(int $me, int $other): ?string
+{
+    $pdo = pdo();
+    $sql = "SELECT status, requested_by
+              FROM friendships
+             WHERE (user_id_a = :me AND user_id_b = :other)
+                OR (user_id_a = :other_2 AND user_id_b = :me_2)
+             LIMIT 1";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        ':me' => $me,
+        ':other' => $other,
+        ':other_2' => $other,
+        ':me_2' => $me,
+    ]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$result) return null;
+
+    // 요청자에 따라 상태 반환
+    if ($result['status'] === 'pending') {
+        return $result['requested_by'] === $me ? 'following' : 'followed';
+    }
+    return $result['status'];
+}
+
+/**
+ * 친구 관계 가시성 확인 함수 (내부용)
+ *
+ * 두 사용자 간의 친구 관계가 가시적인지 확인합니다.
+ * 즉, 'accepted' 상태이거나 내가 상대방을 팔로우('following')하고 있는지 확인합니다.
+ * (내부 전용 - API로 호출되지 않음)
+ *
+ * @param int $me 첫 번째 사용자 ID
+ * @param int $other 두 번째 사용자 ID
+ * @return bool 친구 관계가 가시적이면 true
+ *
+ * @example
+ * $visible = is_visible_friendship(5, 10);
+ * if ($visible) {
+ *     echo "5와 10은 가시적인 친구 관계입니다.";
+ * } else {
+ *     echo "5와 10은 가시적인 친구 관계가 아닙니다.";
+ * }
+ */
+function is_visible_friendship(int $me, int $other): bool
+{
+    $status = get_friendship_status($me, $other);
+    return $status === 'accepted' || $status === 'following';
 }

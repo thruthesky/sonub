@@ -15,7 +15,7 @@ echo "======================================\n";
 echo "Starting Random User Generation\n";
 echo "======================================\n\n";
 
-// Korean names (last names + first names)
+// Korean names (last names + first names + middle names)
 $lastNames = ['Kim', 'Lee', 'Park', 'Choi', 'Jung', 'Kang', 'Cho', 'Yoon', 'Jang', 'Lim', 'Han', 'Oh', 'Seo', 'Shin', 'Kwon', 'Hwang', 'Ahn', 'Song', 'Jeon', 'Hong'];
 $firstNames = [
     'Minjun', 'Seojun', 'Yejun', 'Doyun', 'Siwoo', 'Juwon', 'Hajun', 'Jiho', 'Jihoon', 'Junseo',
@@ -23,6 +23,7 @@ $firstNames = [
     'Eunwoo', 'Hyunwoo', 'Jihwan', 'Taeyang', 'Seunghyun', 'Yujun', 'Minjae', 'Eunho', 'Seungwoo', 'Sihyun',
     'Yerin', 'Jimin', 'Daeun', 'Yujin', 'Soyul', 'Sua', 'Ain', 'Jian', 'Yunseo', 'Sohyun'
 ];
+$middleNames = ['', '', '', 'Min', 'Seo', 'Ji', 'Hae', 'Yoon', 'Won']; // 중간 이름 (70% 확률로 비어있음)
 
 // Real profile photo IDs from Picsum Photos (always available)
 $photoIds = [
@@ -45,15 +46,15 @@ for ($i = 1; $i <= 100; $i++) {
         // Generate random name
         $lastName = $lastNames[array_rand($lastNames)];
         $firstName = $firstNames[array_rand($firstNames)];
-        $displayName = $lastName . ' ' . $firstName;
+        $middleName = $middleNames[array_rand($middleNames)];
 
-        // Check if display_name already exists
-        $stmt = $pdo->prepare("SELECT id FROM users WHERE display_name = ?");
-        $stmt->execute([$displayName]);
+        // Check if first_name and last_name already exists
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE first_name = ? AND last_name = ?");
+        $stmt->execute([$firstName, $lastName]);
 
         if ($stmt->fetch()) {
             // Add number if already exists
-            $displayName = $displayName . rand(10, 99);
+            $firstName = $firstName . rand(10, 99);
         }
 
         // Generate random Firebase UID (must be unique)
@@ -74,13 +75,15 @@ for ($i = 1; $i <= 100; $i++) {
 
         // Insert user
         $stmt = $pdo->prepare("
-            INSERT INTO users (firebase_uid, display_name, birthday, gender, photo_url, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO users (firebase_uid, first_name, last_name, middle_name, birthday, gender, photo_url, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
 
         $stmt->execute([
             $firebaseUid,
-            $displayName,
+            $firstName,
+            $lastName,
+            $middleName,
             $birthday,
             $gender,
             $photoUrl,
@@ -91,7 +94,8 @@ for ($i = 1; $i <= 100; $i++) {
         $userId = $pdo->lastInsertId();
 
         $successCount++;
-        echo "Success [{$successCount}/100] User created: {$displayName} (ID: {$userId}, Gender: {$gender})\n";
+        $fullName = $firstName . ($middleName ? ' ' . $middleName : '') . ' ' . $lastName;
+        echo "Success [{$successCount}/100] User created: {$fullName} (ID: {$userId}, Gender: {$gender})\n";
 
     } catch (Exception $e) {
         $errorCount++;

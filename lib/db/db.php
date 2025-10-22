@@ -7,9 +7,9 @@
  * 데이터베이스 쿼리를 구축하고 실행하기 위한 Fluent 인터페이스를 제공합니다.
  *
  * 사용 예제:
- * - 삽입: db()->insert(['display_name' => '재호'])->into('users');
+ * - 삽입: db()->insert(['first_name' => '재호', 'last_name' => '송'])->into('users');
  * - 조회: db()->select('*')->from('users')->where('id > 2')->limit(5)->get();
- * - 업데이트: db()->update(['display_name' => '송'])->table('users')->where("display_name='재호'")->execute();
+ * - 업데이트: db()->update(['first_name' => '재호', 'last_name' => '송'])->table('users')->where("first_name='재호'")->execute();
  * - 삭제: db()->delete()->from('users')->where('id = 5')->execute();
  * - 원시 쿼리: db()->query("SELECT * FROM users WHERE id = ?", [1]);
  */
@@ -82,7 +82,8 @@ class Db
      *
      * @example 단일 레코드 삽입
      * $userId = db()->insert([
-     *     'display_name' => '홍길동',
+     *     'first_name' => '길동',
+     *     'last_name' => '홍',
      *     'email' => 'hong@example.com',
      *     'created_at' => time()
      * ])->into('users');
@@ -111,7 +112,8 @@ class Db
      *
      * @example 특정 사용자 정보 업데이트
      * $affected = db()->update([
-     *     'display_name' => '김철수',
+     *     'first_name' => '철수',
+     *     'last_name' => '김',
      *     'updated_at' => time()
      * ])->table('users')->where('id = ?', [123])->execute();
      *
@@ -228,7 +230,8 @@ class Db
      *
      * @example 단일 사용자 삽입
      * $userId = db()->insert([
-     *     'display_name' => '홍길동',
+     *     'first_name' => '길동',
+     *     'last_name' => '홍',
      *     'email' => 'hong@example.com'
      * ])->into('users');
      * echo "새 사용자 ID: " . $userId;
@@ -267,7 +270,8 @@ class Db
      *
      * @example 단일 사용자 삽입
      * $userId = db()->insert([
-     *     'display_name' => '홍길동',
+     *     'first_name' => '길동',
+     *     'last_name' => '홍',
      *     'email' => 'hong@example.com'
      * ])->into('users');
      * echo "새 사용자 ID: " . $userId;
@@ -577,10 +581,10 @@ class Db
      * ", [10]);
      *
      * @example JOIN과 GROUP BY - 사용자별 게시글 수와 이름
-     * $results = db()->select('users.display_name, COUNT(posts.id) as post_count')
+     * $results = db()->select('users.first_name, users.last_name, COUNT(posts.id) as post_count')
      *     ->from('users')
      *     ->join('posts', 'users.id = posts.user_id', 'LEFT')
-     *     ->groupBy('users.id, users.display_name')
+     *     ->groupBy('users.id, users.first_name, users.last_name')
      *     ->orderBy('post_count', 'DESC')
      *     ->get();
      *
@@ -620,7 +624,7 @@ class Db
      *     ->get();
      *
      * @example LEFT JOIN
-     * $results = db()->select('posts.*, users.display_name')
+     * $results = db()->select('posts.*, users.first_name, users.last_name')
      *     ->from('posts')
      *     ->join('users', 'posts.user_id = users.id', 'LEFT')
      *     ->get();
@@ -655,7 +659,7 @@ class Db
      * @example 모든 사용자 조회
      * $users = db()->select('*')->from('users')->get();
      * foreach ($users as $user) {
-     *     echo $user['display_name'];
+     *     echo $user['first_name'] . ' ' . $user['last_name'];
      * }
      *
      * @example 조건부 조회
@@ -665,7 +669,7 @@ class Db
      *     ->get();
      *
      * @example 정렬된 결과
-     * $sortedUsers = db()->select('id, display_name, email')
+     * $sortedUsers = db()->select('id, first_name, last_name, email')
      *     ->from('users')
      *     ->orderBy('created_at', 'DESC')
      *     ->get();
@@ -701,7 +705,7 @@ class Db
      *     ->first();
      *
      * if ($user) {
-     *     echo $user['display_name'];
+     *     echo $user['first_name'] . ' ' . $user['last_name'];
      * } else {
      *     echo '사용자를 찾을 수 없습니다';
      * }
@@ -781,7 +785,7 @@ class Db
      * @return int 마지막 삽입 ID
      *
      * @example into() 메서드를 통해 자동 호출됨
-     * $userId = db()->insert(['name' => '홍길동'])->into('users');
+     * $userId = db()->insert(['first_name' => '길동', 'last_name' => '홍'])->into('users');
      */
     protected function executeInsert()
     {
@@ -807,7 +811,8 @@ class Db
      *
      * @example 특정 사용자 업데이트
      * $affected = db()->update([
-     *     'display_name' => '김철수',
+     *     'first_name' => '철수',
+     *     'last_name' => '김',
      *     'updated_at' => time()
      * ])->table('users')
      *   ->where('id = ?', [123])
@@ -976,13 +981,13 @@ class Db
      * @example SELECT 쿼리
      * $users = db()->query("SELECT * FROM users WHERE id > ?", [100]);
      * foreach ($users as $user) {
-     *     echo $user['display_name'];
+     *     echo $user['first_name'] . ' ' . $user['last_name'];
      * }
      *
      * @example INSERT 쿼리
      * $userId = db()->query(
-     *     "INSERT INTO users (display_name, email) VALUES (?, ?)",
-     *     ['홍길동', 'hong@example.com']
+     *     "INSERT INTO users (first_name, last_name, email) VALUES (?, ?, ?)",
+     *     ['길동', '홍', 'hong@example.com']
      * );
      * echo "새 사용자 ID: " . $userId;
      *
@@ -1038,7 +1043,7 @@ class Db
      * try {
      *     db()->beginTransaction();
      *
-     *     $userId = db()->insert(['name' => '홍길동'])->into('users');
+     *     $userId = db()->insert(['first_name' => '길동', 'last_name' => '홍'])->into('users');
      *     db()->insert(['user_id' => $userId, 'bio' => '안녕하세요'])->into('profiles');
      *
      *     db()->commit();
@@ -1054,7 +1059,8 @@ class Db
      *
      *     // 사용자 생성
      *     $userId = db()->insert([
-     *         'display_name' => '김철수',
+     *         'first_name' => '철수',
+     *         'last_name' => '김',
      *         'email' => 'kim@example.com'
      *     ])->into('users');
      *
@@ -1115,6 +1121,8 @@ class Db
 }
 
 /**
+ * @deprecated Use pdo() with prepared statements for all DB operations.
+ * 
  * 데이터베이스 인스턴스 가져오기 (싱글톤)
  *
  * @return Db 데이터베이스 인스턴스
@@ -1123,7 +1131,7 @@ class Db
  * $users = db()->select('*')->from('users')->get();
  *
  * @example INSERT
- * $userId = db()->insert(['name' => '홍길동'])->into('users');
+ * $userId = db()->insert(['first_name' => '길동', 'last_name' => '홍'])->into('users');
  *
  * @example UPDATE
  * $affected = db()->update(['status' => 'active'])
@@ -1190,14 +1198,14 @@ function db_connection(): PDO
  *
  * @example INSERT 쿼리
  * $pdo = pdo();
- * $stmt = $pdo->prepare("INSERT INTO users (display_name, email, created_at) VALUES (?, ?, ?)");
- * $stmt->execute(['홍길동', 'hong@example.com', time()]);
+ * $stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, email, created_at) VALUES (?, ?, ?, ?)");
+ * $stmt->execute(['길동', '홍', 'hong@example.com', time()]);
  * $userId = $pdo->lastInsertId();
  *
  * @example UPDATE 쿼리
  * $pdo = pdo();
- * $stmt = $pdo->prepare("UPDATE users SET display_name = ? WHERE id = ?");
- * $stmt->execute(['김철수', 123]);
+ * $stmt = $pdo->prepare("UPDATE users SET first_name = ?, last_name = ? WHERE id = ?");
+ * $stmt->execute(['철수', '김', 123]);
  * $affectedRows = $stmt->rowCount();
  *
  * @example DELETE 쿼리
@@ -1210,8 +1218,8 @@ function db_connection(): PDO
  * $pdo = pdo();
  * try {
  *     $pdo->beginTransaction();
- *     $stmt = $pdo->prepare("INSERT INTO users (display_name, email) VALUES (?, ?)");
- *     $stmt->execute(['John', 'john@example.com']);
+ *     $stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, email) VALUES (?, ?, ?)");
+ *     $stmt->execute(['John', 'Doe', 'john@example.com']);
  *     $pdo->commit();
  * } catch (Exception $e) {
  *     $pdo->rollBack();

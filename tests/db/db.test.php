@@ -94,7 +94,9 @@ function setup_test_database() {
         db()->query("
             CREATE TABLE IF NOT EXISTS test_users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                display_name VARCHAR(255),
+                first_name VARCHAR(255),
+                last_name VARCHAR(255),
+                middle_name VARCHAR(255),
                 email VARCHAR(255),
                 status VARCHAR(50) DEFAULT 'active',
                 age INT,
@@ -155,7 +157,9 @@ if (!setup_test_database()) {
 echo "\n[Testing INSERT Operations]\n";
 
 $insertId1 = db()->insert([
-    'display_name' => 'jaeho',
+    'first_name' => 'jaeho',
+    'last_name' => '',
+    'middle_name' => '',
     'email' => 'jaeho@example.com',
     'age' => 25
 ])->into('test_users');
@@ -163,7 +167,9 @@ $insertId1 = db()->insert([
 assert_true($insertId1 > 0, "INSERT should return a valid ID");
 
 $insertId2 = db()->insert([
-    'display_name' => 'song',
+    'first_name' => 'song',
+    'last_name' => '',
+    'middle_name' => '',
     'email' => 'song@example.com',
     'age' => 30
 ])->into('test_users');
@@ -173,7 +179,9 @@ assert_true($insertId2 > $insertId1, "Second INSERT should return a higher ID");
 // Insert more test data
 for ($i = 3; $i <= 5; $i++) {
     db()->insert([
-        'display_name' => "User$i",
+        'first_name' => "User$i",
+        'last_name' => '',
+        'middle_name' => '',
         'email' => "user$i@example.com",
         'age' => 20 + $i
     ])->into('test_users');
@@ -200,13 +208,13 @@ $user = db()->select('*')
     ->where('id = ?', [1])
     ->first();
 assert_not_null($user, "Should find user with id = 1");
-assert_equals('jaeho', $user['display_name'], "User with id = 1 should be 'jaeho'");
+assert_equals('jaeho', $user['first_name'], "User with id = 1 should be 'jaeho'");
 
 // Select specific columns
 $emailList = db()->select('email')->from('test_users')->get();
 assert_equals(5, count($emailList), "Should return 5 email records");
 assert_array_has_key('email', $emailList[0], "Should have email field");
-assert_true(!isset($emailList[0]['display_name']), "Should not have display_name field");
+assert_true(!isset($emailList[0]['first_name']), "Should not have first_name field");
 
 // Count records
 $count = db()->select()->from('test_users')->count();
@@ -221,9 +229,9 @@ assert_equals(2, $countFiltered, "Should have 2 users with age > 25");
 // Test 3: UPDATE Operations
 echo "\n[Testing UPDATE Operations]\n";
 
-$affected = db()->update(['display_name' => 'updated_jaeho'])
+$affected = db()->update(['first_name' => 'updated_jaeho'])
     ->table('test_users')
-    ->where("display_name = 'jaeho'")
+    ->where("first_name = 'jaeho'")
     ->execute();
 assert_equals(1, $affected, "Should update 1 row");
 
@@ -232,7 +240,7 @@ $updatedUser = db()->select('*')
     ->from('test_users')
     ->where('id = ?', [1])
     ->first();
-assert_equals('updated_jaeho', $updatedUser['display_name'], "Name should be updated");
+assert_equals('updated_jaeho', $updatedUser['first_name'], "Name should be updated");
 
 // Update multiple rows
 $affectedMultiple = db()->update(['status' => 'inactive'])
@@ -246,7 +254,9 @@ echo "\n[Testing DELETE Operations]\n";
 
 // Add a user to delete
 $deleteId = db()->insert([
-    'display_name' => 'to_delete',
+    'first_name' => 'to_delete',
+    'last_name' => '',
+    'middle_name' => '',
     'email' => 'delete@example.com'
 ])->into('test_users');
 
@@ -271,13 +281,13 @@ assert_true(is_array($results), "Raw query should return array");
 assert_equals(1, count($results), "Should return 1 result");
 
 $insertedId = db()->query(
-    "INSERT INTO test_users (display_name, email) VALUES (?, ?)",
-    ['raw_insert', 'raw@example.com']
+    "INSERT INTO test_users (first_name, last_name, middle_name, email) VALUES (?, ?, ?, ?)",
+    ['raw_insert', '', '', 'raw@example.com']
 );
 assert_true($insertedId > 0, "Raw INSERT should return ID");
 
 $affectedRows = db()->query(
-    "UPDATE test_users SET display_name = ? WHERE id = ?",
+    "UPDATE test_users SET first_name = ? WHERE id = ?",
     ['raw_updated', $insertedId]
 );
 assert_equals(1, $affectedRows, "Raw UPDATE should affect 1 row");
@@ -362,7 +372,9 @@ try {
     db()->beginTransaction();
 
     $transId = db()->insert([
-        'display_name' => 'transaction_test',
+        'first_name' => 'transaction_test',
+        'last_name' => '',
+        'middle_name' => '',
         'email' => 'trans@example.com'
     ])->into('test_users');
 

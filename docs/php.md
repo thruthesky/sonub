@@ -159,7 +159,7 @@ $profile_user = $user;
 // 이 파일에서는 $profile_user를 안전하게 사용 가능
 ?>
 <div class="container">
-    <h1><?= $profile_user->display_name ?>님의 프로필</h1>
+    <h1><?= $profile_user->displayFullName() ?>님의 프로필</h1>
 </div>
 ```
 

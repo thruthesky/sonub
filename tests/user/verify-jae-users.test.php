@@ -17,20 +17,20 @@ echo "========================================\n\n";
 $pdo = pdo();
 
 // 1. Jae 사용자 수 확인
-$stmt = $pdo->query("SELECT COUNT(*) as count FROM users WHERE display_name = 'Jae'");
+$stmt = $pdo->query("SELECT COUNT(*) as count FROM users WHERE first_name = 'Jae'");
 $result = $stmt->fetch(PDO::FETCH_ASSOC);
 $count = (int)$result['count'];
 
-echo "✅ 동일한 이름(Jae)을 가진 사용자 수: {$count}명\n\n";
+echo "✅ 동일한 이름(first_name=Jae)을 가진 사용자 수: {$count}명\n\n";
 
 // 2. 샘플 사용자 10명 확인
 echo "샘플 사용자 (최근 생성된 10명):\n";
 echo "----------------------------------------\n";
 
 $stmt = $pdo->query("
-    SELECT id, firebase_uid, display_name, photo_url
+    SELECT id, firebase_uid, first_name, last_name, middle_name, photo_url
     FROM users
-    WHERE display_name = 'Jae'
+    WHERE first_name = 'Jae'
     ORDER BY id DESC
     LIMIT 10
 ");
@@ -40,7 +40,9 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 foreach ($users as $i => $user) {
     echo ($i + 1) . ". ID: {$user['id']}\n";
     echo "   - Firebase UID: {$user['firebase_uid']}\n";
-    echo "   - Display Name: {$user['display_name']}\n";
+    echo "   - First Name: {$user['first_name']}\n";
+    echo "   - Last Name: {$user['last_name']}\n";
+    echo "   - Middle Name: {$user['middle_name']}\n";
     echo "   - Photo URL: {$user['photo_url']}\n\n";
 }
 
@@ -48,7 +50,7 @@ foreach ($users as $i => $user) {
 $stmt = $pdo->query("
     SELECT COUNT(DISTINCT photo_url) as unique_count
     FROM users
-    WHERE display_name = 'Jae'
+    WHERE first_name = 'Jae'
 ");
 $unique_result = $stmt->fetch(PDO::FETCH_ASSOC);
 $unique_count = (int)$unique_result['unique_count'];
@@ -59,7 +61,7 @@ echo "✅ 고유한 프로필 사진 URL 개수: {$unique_count}개\n";
 $stmt = $pdo->query("
     SELECT COUNT(DISTINCT firebase_uid) as unique_count
     FROM users
-    WHERE display_name = 'Jae'
+    WHERE first_name = 'Jae'
 ");
 $unique_uid_result = $stmt->fetch(PDO::FETCH_ASSOC);
 $unique_uid_count = (int)$unique_uid_result['unique_count'];
