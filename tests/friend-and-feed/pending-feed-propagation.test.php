@@ -76,7 +76,7 @@ function create_test_friendship(int $requesterId, int $receiverId, string $statu
  */
 function check_post_in_feed(int $userId, int $postId): bool
 {
-    $feed = get_feed_entries(['me' => $userId, 'limit' => 100, 'offset' => 0]);
+    $feed = get_posts_from_feed_entries(['me' => $userId, 'limit' => 100, 'offset' => 0]);
     foreach ($feed as $item) {
         if ($item['post_id'] === $postId) {
             return true;

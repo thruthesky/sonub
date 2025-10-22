@@ -1,15 +1,15 @@
 <?php
 
 /**
- * fanout_to_follower() 함수 테스트
+ * fanout_on_friend_request() 함수 테스트
  *
  * 테스트 시나리오:
  * 1. 사용자 A(follower)와 B(followed) 생성
  * 2. B가 여러 개의 게시글 작성 (예: 5개)
  * 3. A가 B에게 친구 요청 전송 (pending 상태)
- * 4. fanout_to_follower(A, B) 함수 호출
+ * 4. fanout_on_friend_request(A, B) 함수 호출
  * 5. A의 feed_entries에 B의 최근 글들이 전파되었는지 확인
- * 6. get_feed_entries()로 A의 피드 조회 시 B의 글들이 포함되는지 확인
+ * 6. get_posts_from_feed_entries()로 A의 피드 조회 시 B의 글들이 포함되는지 확인
  * 7. 최대 100개 제한 테스트 (B가 150개 글 작성 시 100개만 전파되는지 확인)
  *
  * 실행 방법:
@@ -127,7 +127,8 @@ function cleanup_test_data(array $userIds, array $postIds): void
 // ============================================================================
 
 echo "========================================\n";
-echo "테스트: fanout_to_follower() 함수 검증\n";
+echo "테스트: fanout_on_friend_request() 함수 검증\n";
+echo "   - 사용자 A가 B에게 친구 요청 시 B의 글 100개가 A의 피드에 전파\n";
 echo "========================================\n\n";
 
 $userIds = [];
@@ -159,10 +160,10 @@ try {
     request_friend(['me' => $aliceId, 'other' => $bobId]);
     echo "✅ 친구 요청 전송 완료 (pending 상태)\n\n";
 
-    // 4단계: fanout_to_follower() 함수 호출
-    echo "[4단계] fanout_to_follower({$aliceId}, {$bobId}) 함수 호출 중...\n";
-    fanout_to_follower($aliceId, $bobId);
-    echo "✅ fanout_to_follower() 함수 호출 완료\n\n";
+    // 4단계: fanout_on_friend_request() 함수 호출
+    echo "[4단계] fanout_on_friend_request({$aliceId}, {$bobId}) 함수 호출 중...\n";
+    fanout_on_friend_request($aliceId, $bobId);
+    echo "✅ fanout_on_friend_request() 함수 호출 완료\n\n";
 
     // 5단계: Alice의 feed_entries에 Bob의 글들이 전파되었는지 확인
     echo "[5단계] Alice의 feed_entries에 Bob의 글들이 전파되었는지 확인 중...\n";
@@ -177,9 +178,9 @@ try {
         throw new Exception("전파된 글 개수가 예상과 다릅니다.");
     }
 
-    // 6단계: get_feed_entries()로 Alice의 피드 조회 시 Bob의 글들이 포함되는지 확인
-    echo "[6단계] get_feed_entries()로 Alice의 피드 조회 중...\n";
-    $feed = get_feed_entries(['me' => $aliceId, 'limit' => 20, 'offset' => 0]);
+    // 6단계: get_posts_from_feed_entries()로 Alice의 피드 조회 시 Bob의 글들이 포함되는지 확인
+    echo "[6단계] get_posts_from_feed_entries()로 Alice의 피드 조회 중...\n";
+    $feed = get_posts_from_feed_entries(['me' => $aliceId, 'limit' => 20, 'offset' => 0]);
 
     $bobPostCount = 0;
     foreach ($feed as $item) {
@@ -189,10 +190,10 @@ try {
     }
 
     if ($bobPostCount === 5) {
-        echo "✅ get_feed_entries() 결과에 Bob의 글 5개가 포함되어 있습니다.\n";
+        echo "✅ get_posts_from_feed_entries() 결과에 Bob의 글 5개가 포함되어 있습니다.\n";
         echo "   (author_id: {$bobId}, count: {$bobPostCount})\n\n";
     } else {
-        echo "❌ get_feed_entries() 결과에 Bob의 글 개수가 예상과 다릅니다.\n";
+        echo "❌ get_posts_from_feed_entries() 결과에 Bob의 글 개수가 예상과 다릅니다.\n";
         echo "   예상: 5개, 실제: {$bobPostCount}개\n";
         echo "   피드 조회 결과:\n";
         var_dump($feed);
@@ -201,7 +202,7 @@ try {
 
     // 7단계: 최대 100개 제한 테스트
     echo "[7단계] 최대 100개 제한 테스트 중...\n";
-    echo "   Charlie가 150개 글 작성 후 fanout_to_follower() 호출 시 100개만 전파되는지 확인\n";
+    echo "   Charlie가 150개 글 작성 후 fanout_on_friend_request() 호출 시 100개만 전파되는지 확인\n";
 
     // Charlie 생성
     $charlieId = create_test_user('test_charlie_' . time(), 'Charlie');
@@ -227,9 +228,9 @@ try {
     request_friend(['me' => $aliceId, 'other' => $charlieId]);
     echo "   - Alice가 Charlie에게 친구 요청 전송 완료\n";
 
-    // fanout_to_follower() 호출
-    fanout_to_follower($aliceId, $charlieId);
-    echo "   - fanout_to_follower({$aliceId}, {$charlieId}) 함수 호출 완료\n";
+    // fanout_on_friend_request() 호출
+    fanout_on_friend_request($aliceId, $charlieId);
+    echo "   - fanout_on_friend_request({$aliceId}, {$charlieId}) 함수 호출 완료\n";
 
     // Alice의 feed_entries에 Charlie의 글이 100개만 전파되었는지 확인
     $charlieFeedCount = count_feed_entries($aliceId, $charlieId);
@@ -250,14 +251,15 @@ try {
     echo "========================================\n\n";
 
     echo "📋 테스트 요약:\n";
-    echo "   1. fanout_to_follower(): 기본 동작 (5개 글 전파) ✅\n";
-    echo "   2. get_feed_entries(): follower 피드 조회 ✅\n";
-    echo "   3. fanout_to_follower(): 최대 100개 제한 ✅\n\n";
+    echo "   1. fanout_on_friend_request(): 기본 동작 (5개 글 전파) ✅\n";
+    echo "      - 사용자 A가 B에게 친구 요청 시 B의 글 중 100개를 A의 피드에 전파\n";
+    echo "   2. get_posts_from_feed_entries(): follower 피드 조회 ✅\n";
+    echo "   3. fanout_on_friend_request(): 최대 100개 제한 ✅\n\n";
 
     echo "🎯 결론:\n";
-    echo "   - follower가 followed의 최근 글을 자신의 피드에 가져올 수 있습니다.\n";
+    echo "   - 친구 요청 시 요청자(A)가 수신자(B)의 최근 글을 자신의 피드에 가져올 수 있습니다.\n";
     echo "   - 최대 100개 제한이 정상적으로 작동합니다.\n";
-    echo "   - pending 상태에서 follower는 followed의 글을 볼 수 있습니다.\n\n";
+    echo "   - pending 상태에서 요청자는 수신자의 글을 볼 수 있습니다.\n\n";
 } catch (Exception $e) {
     echo "\n========================================\n";
     echo "❌ 테스트 실패: {$e->getMessage()}\n";

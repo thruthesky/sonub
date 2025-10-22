@@ -11,7 +11,7 @@
   - [Feed Entries (피드 캐시)](#feed-entries-피드-캐시)
 - [엔터티 간 연관 관계](#엔터티-간-연관-관계)
 - [피드 전송(팬아웃) 흐름](#피드-전송팬아웃-흐름)
-  - [친구 요청 시 초기 피드 전파 (fanout_to_follower)](#2-1단계-친구-요청-시-초기-피드-전파-fanout_to_follower)
+  - [친구 요청 시 초기 피드 전파 (fanout_on_friend_request)](#2-1단계-친구-요청-시-초기-피드-전파-fanout_on_friend_request)
 - [친구 요청 상태 변경 및 피드 관리](#친구-요청-상태-변경-및-피드-관리)
   - [1. 친구 요청 거절 (reject_friend)](#1-친구-요청-거절-reject_friend)
   - [2. 친구 요청 취소 (cancel_friend_request)](#2-친구-요청-취소-cancel_friend_request)
@@ -430,11 +430,11 @@ User A ↔ User B (status = 'accepted')
 - **요청을 보낸 사람(requester)**: 상대방 글만 볼 수 있음 (단방향)
 - **요청을 받은 사람(receiver)**: 요청자 글을 볼 수 없음 (스팸 방지)
 
-### 2-1단계: 친구 요청 시 초기 피드 전파 (fanout_to_follower)
+### 2-1단계: 친구 요청 시 초기 피드 전파 (fanout_on_friend_request)
 
 **⭐ 중요: 친구 요청 시 즉시 상대방 글을 내 피드에 표시**
 
-사용자 A가 B에게 친구 요청을 보낼 때, 비록 `pending` 상태이지만 A(follower)는 B(followed)의 글을 즉시 볼 수 있어야 합니다. 이를 위해 `fanout_to_follower()` 함수를 호출하여 B의 최근 글들을 A의 `feed_entries`에 주입합니다.
+사용자 A가 B에게 친구 요청을 보낼 때, 비록 `pending` 상태이지만 A(requester, 요청자)는 B(target, 수신자)의 글을 즉시 볼 수 있어야 합니다. 이를 위해 `fanout_on_friend_request()` 함수를 호출하여 B의 최근 글 100개를 A의 `feed_entries`에 주입합니다.
 
 **동작 방식:**
 
@@ -445,47 +445,47 @@ function request_friend(array $input): array
     // ... (파라미터 검증 및 friendship 생성)
 
     // 친구 요청 후 즉시 상대방의 최근 글을 내 피드에 전파
-    fanout_to_follower($me, $other);
+    fanout_on_friend_request($me, $other);
 
     return ['message' => '친구 요청을 보냈습니다', 'success' => true];
 }
 ```
 
-**fanout_to_follower() 함수:**
+**fanout_on_friend_request() 함수:**
 
 ```php
 /**
- * 친구 요청 시 follower에게 followed의 최근 글 전파
+ * 친구 요청 시 요청자에게 수신자의 최근 글 100개 전파
  *
- * @param int $follower_id 요청을 보낸 사용자 (follower)
- * @param int $followed_id 요청을 받은 사용자 (followed)
+ * @param int $requester_id 요청을 보낸 사용자 (requester, A)
+ * @param int $target_id 요청을 받은 사용자 (target, B)
  */
-function fanout_to_follower(int $follower_id, int $followed_id)
+function fanout_on_friend_request(int $requester_id, int $target_id)
 {
     $pdo = pdo();
 
-    // 1단계: followed의 최근 글 100개 선택
+    // 1단계: target(수신자 B)의 최근 글 100개 선택
     $sql_select = "SELECT id, user_id, created_at
                      FROM posts
-                    WHERE user_id = :followed_id
+                    WHERE user_id = :target_id
                     ORDER BY created_at DESC
                     LIMIT 100";
     $stmt_select = $pdo->prepare($sql_select);
-    $stmt_select->execute([':followed_id' => $followed_id]);
+    $stmt_select->execute([':target_id' => $target_id]);
     $posts = $stmt_select->fetchAll(PDO::FETCH_ASSOC);
 
     if (empty($posts)) {
         return; // 글이 없으면 종료
     }
 
-    // 2단계: follower의 feed_entries에 삽입
+    // 2단계: requester(요청자 A)의 feed_entries에 삽입 (A 페이지에 B의 글 표시)
     $sql_insert = "INSERT IGNORE INTO feed_entries (receiver_id, post_id, post_author_id, created_at)
                    VALUES (:receiver_id, :post_id, :post_author_id, :created_at)";
     $stmt_insert = $pdo->prepare($sql_insert);
 
     foreach ($posts as $post) {
         $stmt_insert->execute([
-            ':receiver_id' => $follower_id,
+            ':receiver_id' => $requester_id,
             ':post_id' => $post['id'],
             ':post_author_id' => $post['user_id'],
             ':created_at' => $post['created_at'],
@@ -496,29 +496,29 @@ function fanout_to_follower(int $follower_id, int $followed_id)
 
 **핵심 특징:**
 
-1. **최대 100개 제한**: 상대방의 최근 글 100개만 전파하여 성능 최적화
-2. **즉시 피드 표시**: 친구 요청을 보낸 순간부터 상대방의 글을 내 페이지에서 볼 수 있음
+1. **최대 100개 제한**: 수신자 B의 최근 글 100개만 전파하여 성능 최적화
+2. **즉시 피드 표시**: 사용자 A가 B에게 친구 요청을 보낸 순간부터 B의 글을 A 페이지(피드)에서 볼 수 있음
 3. **사용자 경험 향상**:
-   - 친구 요청 전에 상대방의 콘텐츠를 미리 볼 수 있음
-   - 관심 있는 글을 보고 친구 수락을 기다릴 수 있음
+   - 친구 요청 후 즉시 상대방의 콘텐츠를 확인 가능
+   - B의 흥미로운 글을 보고 A가 친구 수락을 기다릴 수 있음
 4. **INSERT IGNORE 사용**: 중복 삽입 방지 (이미 전파된 글은 무시)
 
 **예제 시나리오:**
 
 ```
-User A가 User B에게 친구 요청 전송:
+사용자 A가 B에게 친구 요청 전송:
 
 1. request_friend(['me' => A, 'other' => B]) 호출
 2. friendships 테이블에 (A, B, status='pending', requested_by=A) 삽입
-3. fanout_to_follower(A, B) 호출
-4. B의 최근 글 100개를 A의 feed_entries에 삽입
-5. A가 index.php에서 get_feed_entries() 호출 시 B의 글들이 즉시 표시됨 ✅
+3. fanout_on_friend_request(A, B) 호출
+4. B의 글 중 최근 100개를 A의 feed_entries에 삽입
+5. A가 index.php에서 get_posts_from_feed_entries() 호출 시 B의 글들이 즉시 A 페이지(피드)에 표시됨 ✅
 ```
 
 **장점:**
 
-- ✅ **즉각적인 피드백**: 친구 요청 후 즉시 상대방의 콘텐츠 확인 가능
-- ✅ **친구 수락 유도**: 상대방의 흥미로운 글을 보고 친구 수락 가능성 증가
+- ✅ **즉각적인 피드백**: 친구 요청 후 즉시 수신자 B의 콘텐츠를 요청자 A가 확인 가능
+- ✅ **친구 수락 유도**: B의 흥미로운 글을 보고 A가 친구 수락을 기다리게 하여 수락 가능성 증가
 - ✅ **초기 사용자 경험 개선**: 사이트 초기 단계에서 콘텐츠 부족 문제 완화
 - ✅ **성능 최적화**: 최대 100개 제한으로 데이터베이스 부하 제어
 
@@ -819,7 +819,7 @@ SELECT
   c.content,
   c.files,
   c.created_at,
-  u.display_name AS author_name,
+  CONCAT(u.first_name, ' ', u.last_name) AS author_name,
   u.photo_url AS author_photo
 FROM comments c
 INNER JOIN users u ON c.user_id = u.id
@@ -908,7 +908,7 @@ LIMIT 20 OFFSET 0;
 
 초기 구현에서는 본인이 작성한 게시글이 본인의 피드에 표시되지 않았습니다:
 - ❌ fanout_post_to_friends(): 친구들에게만 전파, 본인은 제외
-- ❌ get_feed_entries(): friend_ids에 본인 ID 미포함
+- ❌ get_posts_from_feed_entries(): friend_ids에 본인 ID 미포함
 
 ### 해결 방법
 
@@ -925,12 +925,20 @@ INSERT IGNORE INTO feed_entries (receiver_id, post_id, post_author_id, created_a
 VALUES (:author_id, :post_id, :author_id, :created_at);
 ```
 
-**2. get_feed_entries() 함수 수정**
+**2. get_posts_from_feed_entries() 함수**
+
+이 함수는 **feed_entries 테이블에서만 조회**합니다:
+- feed_entries 테이블에서 사용자의 글 번호 목록을 가져옴
+- 글 제목/내용/글쓴이 등의 정보를 JOIN하여 함께 리턴
+- 더 이상 posts 테이블에서 추가 조회하지 않음 (순수 Fan-out on Write 패턴)
+
 ```php
-// 2단계: 부족분은 읽기 조인으로 보충 (본인 ID 포함)
-$friend_ids = get_friend_ids(['me' => $me]);
-$friend_ids[] = $me; // ✅ 본인 ID 추가 (캐시 누락 시에도 본인 게시글 조회)
-$friend_ids = array_unique($friend_ids);
+function get_posts_from_feed_entries(array $input): array
+{
+    // feed_entries에서만 조회
+    $cached = get_feed_from_cache($me, $limit, $offset);
+    return finalize_feed_with_visibility($me, $cached);
+}
 ```
 
 **3. finalize_feed_with_visibility() 함수 수정**
@@ -957,10 +965,11 @@ if ($visibility === 'friends' && $author !== $me && !in_array($author, $allowed_
 
 ### 결과
 
-✅ **Fan-out on Write + 읽기 보충 하이브리드 패턴 완성**
-1. **캐시 경로 (Fan-out on Write)**: 본인 게시글 즉시 노출 (1초 미만)
-2. **읽기 조인 경로 (Fan-out on Read)**: 캐시 누락 시에도 본인 게시글 조회
+✅ **순수 Fan-out on Write 패턴 완성**
+1. **캐시 전용 (Fan-out on Write)**: 본인 게시글 즉시 노출 (1초 미만)
+2. **feed_entries 테이블 전용**: 더 이상 posts 테이블에서 추가 조회하지 않음
 3. **Visibility 검증**: pending 상태의 친구 게시글도 정확히 필터링
+4. **get_posts_from_feed_entries()**: feed_entries에서 글 번호를 가져와 글 정보를 함께 리턴
 
 ### 테스트 검증
 

@@ -1,6 +1,7 @@
 <?php
+
 /**
- * get_feed_from_cache 함수 테스트
+ * get_feeds_from_feed_entries 함수 테스트
  *
  * 실행 방법:
  * php tests/friend-and-feed/get-feed-from-cache.test.php
@@ -11,7 +12,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../init.php';
 
 echo "========================================\n";
-echo "get_feed_from_cache() 함수 테스트 시작\n";
+echo "get_feeds_from_feed_entries() 함수 테스트 시작\n";
 echo "========================================\n\n";
 
 // 테스트 카운터
@@ -72,7 +73,7 @@ echo "✓ 기존 테스트 데이터 정리 완료\n\n";
 echo "테스트 1: 빈 피드 조회\n";
 echo "----------------------------------------\n";
 
-$feed = get_feed_from_cache($u1, 20, 0);
+$feed = get_feeds_from_feed_entries($u1, 20, 0);
 test_assert(is_array($feed), "빈 피드는 배열을 반환해야 함");
 test_assert(count($feed) === 0, "피드 항목이 없어야 함");
 
@@ -115,7 +116,7 @@ $stmt->execute([$u1, $post3['id'], $u4, $now - 100]); // 1분 40초 전
 echo "✓ feed_entries에 피드 항목 3개 삽입 완료\n";
 
 // 피드 조회
-$feed = get_feed_from_cache($u1, 20, 0);
+$feed = get_feeds_from_feed_entries($u1, 20, 0);
 test_assert(is_array($feed), "피드는 배열을 반환해야 함");
 test_assert(count($feed) === 3, "피드 항목이 3개여야 함 (실제: " . count($feed) . "개)");
 
@@ -156,7 +157,7 @@ echo "테스트 3: LIMIT 파라미터 확인\n";
 echo "----------------------------------------\n";
 
 // LIMIT 1
-$feed_limit_1 = get_feed_from_cache($u1, 1, 0);
+$feed_limit_1 = get_feeds_from_feed_entries($u1, 1, 0);
 test_assert(count($feed_limit_1) === 1, "LIMIT 1일 때 1개 항목만 반환해야 함");
 test_assert(
     (int)$feed_limit_1[0]['post_id'] === $post3['id'],
@@ -164,7 +165,7 @@ test_assert(
 );
 
 // LIMIT 2
-$feed_limit_2 = get_feed_from_cache($u1, 2, 0);
+$feed_limit_2 = get_feeds_from_feed_entries($u1, 2, 0);
 test_assert(count($feed_limit_2) === 2, "LIMIT 2일 때 2개 항목만 반환해야 함");
 
 echo "\n";
@@ -176,7 +177,7 @@ echo "테스트 4: OFFSET 파라미터 확인\n";
 echo "----------------------------------------\n";
 
 // OFFSET 0 (기본값)
-$feed_offset_0 = get_feed_from_cache($u1, 2, 0);
+$feed_offset_0 = get_feeds_from_feed_entries($u1, 2, 0);
 test_assert(count($feed_offset_0) === 2, "OFFSET 0일 때 첫 2개 항목 반환");
 test_assert(
     (int)$feed_offset_0[0]['post_id'] === $post3['id'],
@@ -184,7 +185,7 @@ test_assert(
 );
 
 // OFFSET 1
-$feed_offset_1 = get_feed_from_cache($u1, 2, 1);
+$feed_offset_1 = get_feeds_from_feed_entries($u1, 2, 1);
 test_assert(count($feed_offset_1) === 2, "OFFSET 1일 때 2개 항목 반환");
 test_assert(
     (int)$feed_offset_1[0]['post_id'] === $post2['id'],
@@ -196,7 +197,7 @@ test_assert(
 );
 
 // OFFSET 2
-$feed_offset_2 = get_feed_from_cache($u1, 2, 2);
+$feed_offset_2 = get_feeds_from_feed_entries($u1, 2, 2);
 test_assert(count($feed_offset_2) === 1, "OFFSET 2일 때 1개 항목만 반환");
 test_assert(
     (int)$feed_offset_2[0]['post_id'] === $post1['id'],
@@ -204,7 +205,7 @@ test_assert(
 );
 
 // OFFSET 3 (범위 초과)
-$feed_offset_3 = get_feed_from_cache($u1, 2, 3);
+$feed_offset_3 = get_feeds_from_feed_entries($u1, 2, 3);
 test_assert(count($feed_offset_3) === 0, "OFFSET 3일 때 빈 배열 반환");
 
 echo "\n";
@@ -216,15 +217,15 @@ echo "테스트 5: 사용자 격리 확인\n";
 echo "----------------------------------------\n";
 
 // u1의 피드는 3개
-$feed_u1 = get_feed_from_cache($u1, 20, 0);
+$feed_u1 = get_feeds_from_feed_entries($u1, 20, 0);
 test_assert(count($feed_u1) === 3, "u1의 피드는 3개여야 함");
 
 // u2의 피드는 0개 (아직 feed_entries에 없음)
-$feed_u2 = get_feed_from_cache($u2, 20, 0);
+$feed_u2 = get_feeds_from_feed_entries($u2, 20, 0);
 test_assert(count($feed_u2) === 0, "u2의 피드는 0개여야 함 (u1의 피드와 격리)");
 
 // u5의 피드도 0개
-$feed_u5 = get_feed_from_cache($u5, 20, 0);
+$feed_u5 = get_feeds_from_feed_entries($u5, 20, 0);
 test_assert(count($feed_u5) === 0, "u5의 피드는 0개여야 함");
 
 echo "\n";
@@ -248,19 +249,19 @@ for ($i = 4; $i <= 10; $i++) {
 echo "✓ 추가 피드 항목 7개 생성 완료 (총 10개)\n";
 
 // 전체 조회
-$feed_all = get_feed_from_cache($u1, 100, 0);
+$feed_all = get_feeds_from_feed_entries($u1, 100, 0);
 test_assert(count($feed_all) === 10, "총 10개 피드 항목이 조회되어야 함 (실제: " . count($feed_all) . "개)");
 
 // 페이지 1 (0-4)
-$page1 = get_feed_from_cache($u1, 5, 0);
+$page1 = get_feeds_from_feed_entries($u1, 5, 0);
 test_assert(count($page1) === 5, "페이지 1은 5개 항목 반환");
 
 // 페이지 2 (5-9)
-$page2 = get_feed_from_cache($u1, 5, 5);
+$page2 = get_feeds_from_feed_entries($u1, 5, 5);
 test_assert(count($page2) === 5, "페이지 2는 5개 항목 반환");
 
 // 페이지 3 (10-14, 범위 초과)
-$page3 = get_feed_from_cache($u1, 5, 10);
+$page3 = get_feeds_from_feed_entries($u1, 5, 10);
 test_assert(count($page3) === 0, "페이지 3은 빈 배열 반환");
 
 echo "\n";
@@ -271,7 +272,7 @@ echo "\n";
 echo "테스트 7: created_at 정렬 확인 (DESC)\n";
 echo "----------------------------------------\n";
 
-$feed_sorted = get_feed_from_cache($u1, 10, 0);
+$feed_sorted = get_feeds_from_feed_entries($u1, 10, 0);
 $is_sorted = true;
 for ($i = 0; $i < count($feed_sorted) - 1; $i++) {
     if ((int)$feed_sorted[$i]['created_at'] < (int)$feed_sorted[$i + 1]['created_at']) {

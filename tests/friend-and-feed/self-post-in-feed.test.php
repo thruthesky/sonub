@@ -7,10 +7,10 @@
  * 1. 사용자 생성 (Alice)
  * 2. Alice가 게시글 작성
  * 3. fanout_post_to_friends() 함수가 본인에게도 피드 전파하는지 확인 (feed_entries 테이블)
- * 4. get_feed_entries() 함수로 본인 피드 조회 시 본인 게시글이 포함되는지 확인
+ * 4. get_posts_from_feed_entries() 함수로 본인 피드 조회 시 본인 게시글이 포함되는지 확인
  *
- * **중요: get_feed_entries는 오직 feed_entries 테이블에서만 조회합니다**
- * 더 이상 posts 테이블에서 추가 조회하지 않으므로, fanout된 글만 표시됩니다.
+ * **중요: get_posts_from_feed_entries는 feed_entries 테이블에서 글 번호를 가져와 글 제목/내용/글쓴이 등의 정보를 함께 리턴합니다**
+ * fanout된 글만 표시됩니다.
  *
  * 실행 방법:
  * php tests/friend-and-feed/self-post-in-feed.test.php
@@ -162,9 +162,9 @@ try {
         throw new Exception('feed_entries 테이블에 본인 피드가 없습니다.');
     }
 
-    // 4단계: get_feed_entries() 함수로 본인 피드 조회 (캐시 경로)
-    echo "[4단계] get_feed_entries() 함수로 본인 피드 조회 (캐시 경로) 중...\n";
-    $feed = get_feed_entries(['me' => $aliceId, 'limit' => 20, 'offset' => 0]);
+    // 4단계: get_posts_from_feed_entries() 함수로 본인 피드 조회 (캐시 경로)
+    echo "[4단계] get_posts_from_feed_entries() 함수로 본인 피드 조회 (캐시 경로) 중...\n";
+    $feed = get_posts_from_feed_entries(['me' => $aliceId, 'limit' => 20, 'offset' => 0]);
 
     $foundInFeed = false;
     foreach ($feed as $item) {
@@ -175,18 +175,18 @@ try {
     }
 
     if ($foundInFeed) {
-        echo "✅ get_feed_entries() 결과에 본인 게시글이 포함되어 있습니다.\n";
+        echo "✅ get_posts_from_feed_entries() 결과에 본인 게시글이 포함되어 있습니다.\n";
         echo "   (post_id: {$postId}, author_id: {$aliceId})\n\n";
     } else {
-        echo "❌ get_feed_entries() 결과에 본인 게시글이 포함되어 있지 않습니다.\n";
+        echo "❌ get_posts_from_feed_entries() 결과에 본인 게시글이 포함되어 있지 않습니다.\n";
         echo "   피드 조회 결과:\n";
         var_dump($feed);
-        throw new Exception('get_feed_entries() 결과에 본인 게시글이 없습니다.');
+        throw new Exception('get_posts_from_feed_entries() 결과에 본인 게시글이 없습니다.');
     }
 
-    // 5단계: 캐시 삭제 후 get_feed_entries는 빈 배열 반환 확인
-    echo "[5단계] 캐시 삭제 후 get_feed_entries는 빈 배열 반환 확인 중...\n";
-    echo "   **중요: get_feed_entries는 오직 feed_entries에서만 조회하므로 빈 결과 예상**\n";
+    // 5단계: 캐시 삭제 후 get_posts_from_feed_entries는 빈 배열 반환 확인
+    echo "[5단계] 캐시 삭제 후 get_posts_from_feed_entries는 빈 배열 반환 확인 중...\n";
+    echo "   **중요: get_posts_from_feed_entries는 오직 feed_entries에서만 조회하므로 빈 결과 예상**\n";
 
     // 캐시 삭제
     $pdo = pdo();
@@ -195,14 +195,14 @@ try {
     $stmt->execute([$aliceId, $postId]);
     echo "   - feed_entries 캐시 삭제 완료\n";
 
-    // 캐시가 비어있는 상태에서 get_feed_entries() 호출
-    $feedAfterCacheClear = get_feed_entries(['me' => $aliceId, 'limit' => 20, 'offset' => 0]);
+    // 캐시가 비어있는 상태에서 get_posts_from_feed_entries() 호출
+    $feedAfterCacheClear = get_posts_from_feed_entries(['me' => $aliceId, 'limit' => 20, 'offset' => 0]);
 
     if (empty($feedAfterCacheClear)) {
-        echo "✅ 캐시가 비어있을 때 get_feed_entries는 빈 배열을 반환합니다.\n";
+        echo "✅ 캐시가 비어있을 때 get_posts_from_feed_entries는 빈 배열을 반환합니다.\n";
         echo "   (더 이상 posts 테이블에서 추가 조회하지 않음)\n\n";
     } else {
-        echo "❌ 캐시가 비어있을 때 get_feed_entries가 예상치 못한 결과를 반환했습니다.\n";
+        echo "❌ 캐시가 비어있을 때 get_posts_from_feed_entries가 예상치 못한 결과를 반환했습니다.\n";
         echo "   피드 조회 결과:\n";
         var_dump($feedAfterCacheClear);
         throw new Exception('캐시 누락 시 예상치 못한 결과 반환');
@@ -215,12 +215,12 @@ try {
 
     echo "📋 테스트 요약:\n";
     echo "   1. fanout_post_to_friends(): 본인에게 피드 전파 ✅\n";
-    echo "   2. get_feed_entries() (캐시 경로): 본인 게시글 조회 ✅\n";
-    echo "   3. get_feed_entries() (캐시 삭제 후): 빈 배열 반환 ✅\n\n";
+    echo "   2. get_posts_from_feed_entries() (캐시 경로): 본인 게시글 조회 ✅\n";
+    echo "   3. get_posts_from_feed_entries() (캐시 삭제 후): 빈 배열 반환 ✅\n\n";
 
     echo "🎯 결론:\n";
     echo "   - 본인이 작성한 게시글이 feed_entries에 fanout되어 index.php에서 정상적으로 표시됩니다.\n";
-    echo "   - get_feed_entries는 오직 feed_entries에서만 조회하므로 캐시가 중요합니다.\n\n";
+    echo "   - get_posts_from_feed_entries는 오직 feed_entries에서만 조회하므로 캐시가 중요합니다.\n\n";
 } catch (Exception $e) {
     echo "\n========================================\n";
     echo "❌ 테스트 실패: {$e->getMessage()}\n";

@@ -99,8 +99,9 @@ function request_friend(array $input): array
         ':updated' => $now
     ]);
 
-    // 팬아웃
-    fanout_to_follower($me, $other);
+    // 팬아웃: 친구 요청 시 요청자(A)의 피드에 수신자(B)의 글 전파
+    // 사용자 A가 B에게 친구 요청할 때, B의 글 중 100개를 A 페이지에 나오게 함
+    fanout_on_friend_request($me, $other);
 
     return ['message' => '친구 요청을 보냈습니다', 'success' => true];
 }
@@ -151,6 +152,10 @@ function accept_friend(array $input): array
     if (!$success) {
         error('no-pending-request', '승인할 친구 요청이 없습니다');
     }
+
+    // 팬아웃: 친구 수락 시 수락자의 피드에 요청자의 글 전파
+    // 사용자 B가 A의 친구 요청을 수락할 때, A의 글 중 100개를 B의 피드에 표시
+    fanout_on_friend_request($me, $other);
 
     return ['message' => '친구 요청을 수락했습니다', 'success' => true];
 }
@@ -776,6 +781,8 @@ function is_blocked_either_way(int $a, int $b): bool
  * (내부 전용 - API로 호출되지 않음)
  *
  * @param int $post_id 조회할 게시글 ID
+ * @param bool $with_user 사용자 정보 조인 여부 (기본값: false)
+ *       true로 설정하면 users 테이블과 JOIN하여 작성자 정보 중, first_name, photo_url, firebase_uid 세개의 필드만 포함한다.
  * @return array|null 게시글 데이터 배열 또는 null
  *
  * @example
@@ -784,10 +791,21 @@ function is_blocked_either_way(int $a, int $b): bool
  *     echo $row['title'];
  * }
  */
-function get_post_row(int $post_id): ?array
+function get_post_row(int $post_id, bool $with_user = false): ?array
 {
     $pdo = pdo();
-    $stmt = $pdo->prepare("SELECT * FROM posts WHERE id=:id");
+    if ($with_user) {
+        $sql = "SELECT p.*, u.first_name, u.photo_url, u.firebase_uid
+                  FROM posts p
+             LEFT JOIN users u ON p.user_id = u.id
+                 WHERE p.id = :id
+                 LIMIT 1";
+    } else {
+        $sql = "SELECT * FROM posts
+                 WHERE id = :id
+                 LIMIT 1";
+    }
+    $stmt = $pdo->prepare($sql);
     $stmt->execute([':id' => $post_id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     return $row ?: null;
@@ -869,15 +887,20 @@ function fanout_post_to_friends(int $author_id, int $post_id, int $created_at): 
 }
 
 /**
- * 사용자 A 가 B 에게 친구 요청을 할 때, A 가 B 의 follwer 가 되고, B 는 A 의 follwed 가 된다.
- * 
- * - 최대 100 개의 최근 글만 fanout 한다.
- * 
- * @param int $follower_id 
- * @param int $followed_id 
- * @return void 
+ * 친구 요청 시 요청자의 피드에 수신자의 최근 글 100개 전파 함수
+ *
+ * - 최대 100개의 최근 글만 fanout 한다.
+ *
+ * 용도:
+ * - 친구 요청을 할 때, 요청자가 상대방의 최근 글을 피드에서 바로 볼 수 있도록 한다.
+ * - 친구 요청을 허락할 때, 수락자가 요청자의 최근 글을 피드에서 바로 볼 수 있도록 한다.
+ * - 사용자 A가 B에게 친구 요청할 때, B의 글 중 100개를 A의 피드에 표시
+ *
+ * @param int $follower_id 요청자 또는 수락자 ID (피드를 받을 사용자)
+ * @param int $followed_id 수신자 또는 요청자 ID (글을 제공할 사용자)
+ * @return void
  */
-function fanout_to_follower(int $follower_id, int $followed_id)
+function fanout_on_friend_request(int $follower_id, int $followed_id)
 {
     $pdo = pdo();
 
@@ -910,13 +933,12 @@ function fanout_to_follower(int $follower_id, int $followed_id)
     }
 }
 
-
 /**
  * 피드 캐시에서 사용자의 피드 조회 함수
  *
  * feed_entries 테이블에서 미리 생성된 피드 캐시를 조회합니다.
  * 친구 목록 조인 없이 단일 테이블 스캔으로 고속 조회가 가능합니다.
- * (내부 전용 - get_feed_entries()에서 사용)
+ * (내부 전용 - get_posts_from_feed_entries()에서 사용)
  *
  * @param int $me 피드를 조회할 사용자 ID
  * @param int $limit 조회할 최대 개수
@@ -924,9 +946,9 @@ function fanout_to_follower(int $follower_id, int $followed_id)
  * @return array 피드 항목 배열 (post_id, post_author_id, created_at)
  *
  * @example
- * $feed = get_feed_from_cache(10, 20, 0); // 사용자 10의 피드 20개 조회
+ * $feed = get_feeds_from_feed_entries(10, 20, 0); // 사용자 10의 피드 20개 조회
  */
-function get_feed_from_cache(int $me, int $limit, int $offset = 0): array
+function get_feeds_from_feed_entries(int $me, int $limit, int $offset = 0): array
 {
     $pdo = pdo();
     $sql = "SELECT post_id, post_author_id, created_at
@@ -947,7 +969,7 @@ function get_feed_from_cache(int $me, int $limit, int $offset = 0): array
  *
  * feed_entries 캐시가 충분하지 않을 때 posts 테이블에서 직접 조회합니다.
  * 친구 ID 배열을 받아 IN 절로 필터링하며, 선택적으로 차단 사용자를 제외합니다.
- * (내부 전용 - get_feed_entries()에서 사용)
+ * (내부 전용 - get_posts_from_feed_entries()에서 사용)
  *
  * @param int $me 피드를 조회할 사용자 ID
  * @param array $friend_ids 친구 ID 배열
@@ -1012,11 +1034,11 @@ function get_feed_from_read_join(
 /**
  * 피드 조회 함수 (API 호출 가능)
  *
- * **중요: get_hybrid_feed에서 get_feed_entries로 함수 이름 변경 및 동작 변경**
+ * **중요: get_hybrid_feed에서 get_posts_from_feed_entries로 함수 이름 변경 및 동작 변경**
  *
  * feed_entries 테이블에서만 피드를 조회합니다.
  * 이전 get_hybrid_feed 함수는 캐시가 부족하면 posts 테이블에서 추가로 조회했으나,
- * 현재 get_feed_entries는 오직 feed_entries 테이블에서만 조회하고 글이 없으면 빈 배열을 반환합니다.
+ * 현재 get_posts_from_feed_entries는 오직 feed_entries 테이블에서만 조회하고 글이 없으면 빈 배열을 반환합니다.
  *
  * **동작:**
  * 1. feed_entries 캐시에서만 조회
@@ -1037,14 +1059,14 @@ function get_feed_from_read_join(
  *
  * @example
  * // PHP에서 호출
- * $feed = get_feed_entries(['me' => 10, 'limit' => 20, 'offset' => 0]);
+ * $feed = get_posts_from_feed_entries(['me' => 10, 'limit' => 20, 'offset' => 0]);
  * // [['post_id' => 1, 'title' => '...'], ['post_id' => 2, 'title' => '...'], ...]
  *
  * // JavaScript에서 API 호출
- * const feed = await func('get_feed_entries', { me: 10, limit: 20, offset: 0 });
+ * const feed = await func('get_posts_from_feed_entries', { me: 10, limit: 20, offset: 0 });
  * console.log(feed);  // 피드 배열
  */
-function get_feed_entries(array $input): array
+function get_posts_from_feed_entries(array $input): array
 {
     // 파라미터 추출 및 검증
     $me = (int)($input['me'] ?? 0);
@@ -1064,7 +1086,7 @@ function get_feed_entries(array $input): array
     }
 
     // 캐시에서만 조회
-    $cached = get_feed_from_cache($me, $limit, $offset);
+    $cached = get_feeds_from_feed_entries($me, $limit, $offset);
     return finalize_feed_with_visibility($me, $cached);
 }
 
@@ -1078,7 +1100,7 @@ function get_feed_entries(array $input): array
  * - 차단된 사용자의 게시글은 제외
  *
  * **중요**: pending 상태의 친구도 포함하여 visibility 검증을 수행합니다.
- * (내부 전용 - get_feed_entries()에서 사용)
+ * (내부 전용 - get_posts_from_feed_entries()에서 사용)
  *
  * @param int $me 피드를 조회하는 사용자 ID
  * @param array $items 피드 항목 배열 (post_id, post_author_id, created_at)
@@ -1106,7 +1128,7 @@ function finalize_feed_with_visibility(int $me, array $items): array
     // $allowed_author_ids = array_unique([...$friend_ids, ...$pending_ids]);
 
     foreach ($items as $r) {
-        $post = get_post_row((int)$r['post_id']);
+        $post = get_post_row((int)$r['post_id'], with_user: true);
         if (!$post) continue;
 
         $author = (int)$post['user_id'];
@@ -1141,6 +1163,11 @@ function finalize_feed_with_visibility(int $me, array $items): array
             'files'      => $files,
             'created_at' => (int)$post['created_at'],
             'visibility' => $vis,
+            'author' => [
+                'first_name'   => $post['first_name'] ?? '',
+                'photo_url'    => $post['photo_url'] ?? '',
+                'firebase_uid' => $post['firebase_uid'] ?? '',
+            ],
         ];
     }
 

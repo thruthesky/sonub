@@ -8,8 +8,8 @@
  * 2. B가 여러 개의 게시글 작성 (예: 5개)
  * 3. A가 B에게 친구 요청 전송 (request_friend 호출)
  * 4. friendships 테이블에 pending 상태로 저장되었는지 확인
- * 5. fanout_to_follower()가 자동 호출되어 B의 글들이 A의 feed_entries에 전파되었는지 확인
- * 6. get_feed_entries()로 A의 피드 조회 시 B의 글들이 포함되는지 확인
+ * 5. fanout_on_friend_request()가 자동 호출되어 B의 글들이 A의 feed_entries에 전파되었는지 확인
+ * 6. get_posts_from_feed_entries()로 A의 피드 조회 시 B의 글들이 포함되는지 확인
  * 7. 중복 요청 테스트 (같은 친구에게 두 번 요청 시 에러 없이 처리)
  *
  * 실행 방법:
@@ -209,13 +209,14 @@ try {
         throw new Exception("friendships 테이블에 저장되지 않았습니다.");
     }
 
-    // 5단계: fanout_to_follower()가 자동 호출되어 B의 글들이 A의 feed_entries에 전파되었는지 확인
+    // 5단계: fanout_on_friend_request()가 자동 호출되어 B의 글들이 A의 feed_entries에 전파되었는지 확인
     echo "[5단계] Alice의 feed_entries에 Bob의 글들이 전파되었는지 확인 중...\n";
+    echo "   - 사용자 A가 B에게 친구 요청 시 B의 글 100개가 A의 피드에 전파\n";
     $feedCount = count_feed_entries($aliceId, $bobId);
 
     if ($feedCount === 5) {
         echo "✅ Alice의 feed_entries에 Bob의 글 5개가 전파되었습니다.\n";
-        echo "   (fanout_to_follower()가 자동 호출됨)\n";
+        echo "   (fanout_on_friend_request()가 자동 호출됨)\n";
         echo "   (receiver_id: {$aliceId}, post_author_id: {$bobId}, count: {$feedCount})\n\n";
     } else {
         echo "❌ Alice의 feed_entries에 전파된 글 개수가 예상과 다릅니다.\n";
@@ -223,9 +224,9 @@ try {
         throw new Exception("전파된 글 개수가 예상과 다릅니다.");
     }
 
-    // 6단계: get_feed_entries()로 Alice의 피드 조회 시 Bob의 글들이 포함되는지 확인
-    echo "[6단계] get_feed_entries()로 Alice의 피드 조회 중...\n";
-    $feed = get_feed_entries(['me' => $aliceId, 'limit' => 20, 'offset' => 0]);
+    // 6단계: get_posts_from_feed_entries()로 Alice의 피드 조회 시 Bob의 글들이 포함되는지 확인
+    echo "[6단계] get_posts_from_feed_entries()로 Alice의 피드 조회 중...\n";
+    $feed = get_posts_from_feed_entries(['me' => $aliceId, 'limit' => 20, 'offset' => 0]);
 
     $bobPostCount = 0;
     foreach ($feed as $item) {
@@ -235,10 +236,10 @@ try {
     }
 
     if ($bobPostCount === 5) {
-        echo "✅ get_feed_entries() 결과에 Bob의 글 5개가 포함되어 있습니다.\n";
+        echo "✅ get_posts_from_feed_entries() 결과에 Bob의 글 5개가 포함되어 있습니다.\n";
         echo "   (author_id: {$bobId}, count: {$bobPostCount})\n\n";
     } else {
-        echo "❌ get_feed_entries() 결과에 Bob의 글 개수가 예상과 다릅니다.\n";
+        echo "❌ get_posts_from_feed_entries() 결과에 Bob의 글 개수가 예상과 다릅니다.\n";
         echo "   예상: 5개, 실제: {$bobPostCount}개\n";
         echo "   피드 조회 결과:\n";
         var_dump($feed);
@@ -274,13 +275,13 @@ try {
     echo "📋 테스트 요약:\n";
     echo "   1. request_friend(): 친구 요청 생성 ✅\n";
     echo "   2. friendships: pending 상태로 저장 ✅\n";
-    echo "   3. fanout_to_follower(): 자동 호출되어 피드 전파 ✅\n";
-    echo "   4. get_feed_entries(): 요청자 피드에 수신자 글 표시 ✅\n";
+    echo "   3. fanout_on_friend_request(): 자동 호출되어 피드 전파 ✅\n";
+    echo "   4. get_posts_from_feed_entries(): 요청자 피드에 수신자 글 표시 ✅\n";
     echo "   5. 중복 요청: 에러 없이 처리 ✅\n\n";
 
     echo "🎯 결론:\n";
     echo "   - 친구 요청 시 즉시 상대방의 글을 볼 수 있습니다.\n";
-    echo "   - fanout_to_follower()가 자동으로 호출되어 최근 글 100개를 전파합니다.\n";
+    echo "   - fanout_on_friend_request()가 자동으로 호출되어 최근 글 100개를 전파합니다.\n";
     echo "   - pending 상태에서 요청자는 수신자의 글을 볼 수 있습니다.\n\n";
 } catch (Exception $e) {
     echo "\n========================================\n";

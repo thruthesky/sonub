@@ -18,17 +18,17 @@ load_page_css();
 
 <?php
 // 로그인한 사용자의 피드 조회 (내 글 + 친구 글 + pending 상태 친구 글)
-// **중요: get_feed_entries()는 오직 feed_entries 테이블에서만 조회합니다**
+// **중요: get_posts_from_feed_entries()는 오직 feed_entries 테이블에서만 조회합니다**
 // 더 이상 posts 테이블에서 추가 조회하지 않으므로, fanout된 글만 표시됩니다.
 if (login()) {
     $offset = ($page - 1) * $per_page;
-    $feedItems = get_feed_entries([
+    $feedItems = get_posts_from_feed_entries([
         'me' => login()->id,
         'limit' => $per_page,
         'offset' => $offset
     ]);
 
-    // get_feed_entries()는 배열을 직접 반환하므로, list_posts() 형식으로 변환
+    // get_posts_from_feed_entries()는 배열을 직접 반환하므로, list_posts() 형식으로 변환
     $postList = [
         'posts' => $feedItems,
         'page' => $page,
@@ -595,9 +595,9 @@ if (login()) {
                     }
                     const nextPage = this.postList.page + 1;
                     try {
-                        // get_feed_entries() API 호출로 변경
+                        // get_posts_from_feed_entries API 호출: feed_entries 테이블에서 글 번호를 가져와 글 제목/내용/글쓴이 등의 정보를 함께 리턴
                         const offset = nextPage * <?= $per_page ?>;
-                        const feedItems = await func('get_feed_entries', {
+                        const feedItems = await func('get_posts_from_feed_entries', {
                             me: <?= login() ? login()->id : 'null' ?>,
                             limit: <?= $per_page ?>,
                             offset: offset,
@@ -686,14 +686,7 @@ if (login()) {
                  * @returns {string} 작성자 이름
                  */
                 getAuthorName(post) {
-                    // first_name, middle_name, last_name을 조합하여 전체 이름 반환
-                    const parts = [
-                        post.first_name,
-                        post.middle_name,
-                        post.last_name
-                    ].filter(name => name && name.trim() !== '');
-
-                    return parts.length > 0 ? parts.join(' ') : 'Anonymous';
+                    return post?.author?.first_name || 'No name';
                 },
                 /**
                  * 작성자 프로필 사진 URL 반환
