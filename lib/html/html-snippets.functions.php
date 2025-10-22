@@ -24,7 +24,7 @@ function display_file(string $file): void
     }
 }
 
-
+// NOTE: that this function is cannot be used as children of another vue.js component
 function login_user_profile_photo(): void
 {
     static $id = 0;

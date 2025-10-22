@@ -101,7 +101,6 @@ $user = login();
     .quick-user-menu-widget {
         background-color: white;
         border-radius: 8px;
-        overflow: hidden;
     }
 
     /* 메뉴 리스트 */

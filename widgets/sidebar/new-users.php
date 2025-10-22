@@ -12,7 +12,7 @@ inject_new_users_widget_language();
 // 최근 가입한 사용자 16명 가져오기
 $result = list_users(['page' => 1, 'per_page' => 16]);
 $users = $result['users'] ?? [];
-$displayUsers = array_slice($users, 0, 16);
+$displayUsers = array_slice($users, 0, 9);
 $userCount = count($displayUsers);
 
 // 사용자 검색 컴포넌트 자동 로드
@@ -63,7 +63,6 @@ load_deferred_js('vue-components/user-search.component');
         border: 1px solid var(--bs-border-color);
         border-radius: 8px;
         padding: 0;
-        overflow: hidden;
     }
 
     .new-users-widget .widget-header {
@@ -139,7 +138,7 @@ load_deferred_js('vue-components/user-search.component');
     /* Grid layout - No gaps, clean borders */
     .new-users-widget .users-grid {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 0;
         padding: 0;
         width: 100%;
@@ -213,6 +212,8 @@ load_deferred_js('vue-components/user-search.component');
 
     /* Responsive design */
     @media (max-width: 768px) {
+
+
         .new-users-widget .widget-header {
             padding: 1rem 1rem 0.625rem 1rem;
         }

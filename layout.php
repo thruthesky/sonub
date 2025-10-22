@@ -144,14 +144,14 @@ if (file_exists($module_path)) {
     <div class="sonub-container">
         <div class="row">
             <!-- Left Sidebar -->
-            <aside class="sticky-sidebar d-none d-lg-flex flex-column gap-4 col-12 col-md-3 col-lg-3">
+            <aside class="sticky-sidebar d-none d-md-flex d-lg-flex flex-column gap-4 col-12 col-md-4 col-lg-3">
                 <?php include_once WIDGET_DIR . '/sidebar/quick-user-menu.php'; ?>
                 <?php include_once WIDGET_DIR . '/sidebar/new-users.php'; ?>
                 <?php include_once WIDGET_DIR . '/sidebar/quick-links.php'; ?>
             </aside>
 
             <!-- Main Content -->
-            <main class="col-12 col-md-6 col-lg-6">
+            <main class="col-12 col-md-8 col-lg-6">
                 <?php include page() ?>
             </main>
 
