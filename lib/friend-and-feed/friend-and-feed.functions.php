@@ -1109,23 +1109,8 @@ function get_posts_from_feed_entries(array $input): array
 function finalize_feed_with_visibility(int $me, array $items): array
 {
     $out = [];
-    // // 친구 목록 캐시(루프 내 DB 호출 줄이기)
-    // // accepted 상태의 친구만 조회
-    // $friend_ids = get_friend_ids(['me' => $me]);
 
-    // // pending 상태에서 내가 요청한 사용자 ID 목록 조회 (내가 요청자인 경우 상대방 글을 볼 수 있음)
-    // $pdo = pdo();
-    // $sql = "SELECT CASE WHEN user_id_a = :me1 THEN user_id_b ELSE user_id_a END AS friend_id
-    //         FROM friendships
-    //         WHERE (user_id_a = :me2 OR user_id_b = :me3)
-    //           AND status = 'pending'
-    //           AND requested_by = :me4";
-    // $stmt = $pdo->prepare($sql);
-    // $stmt->execute([':me1' => $me, ':me2' => $me, ':me3' => $me, ':me4' => $me]);
-    // $pending_ids = array_map(fn($r) => (int)$r['friend_id'], $stmt->fetchAll());
 
-    // // 전체 허용 ID 목록 (accepted + pending 요청자)
-    // $allowed_author_ids = array_unique([...$friend_ids, ...$pending_ids]);
 
     foreach ($items as $r) {
         $post = get_post_row((int)$r['post_id'], with_user: true);
@@ -1143,10 +1128,8 @@ function finalize_feed_with_visibility(int $me, array $items): array
 
         // visibility 검증
         if ($vis === 'private' && $author !== $me) continue;
-        // friends: 본인 또는 accepted 친구 또는 내가 요청한 pending 상태의 사용자
-        // Get the user and check if it's you, accepted friend, or pending requester
-        // $visible = is_visible_friendship($me, $author);
-        // if ($vis === 'friends' && $author !== $me && !$visible) continue;
+
+        // 그 외는 허용: public, friends 의 경우, 친구니까, feed_entries에 전파된 상태인 것이다.
 
         // files 필드를 배열로 변환 (콤마로 구분된 문자열 → 배열)
         $files = [];
