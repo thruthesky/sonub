@@ -4,6 +4,8 @@ $per_page = 10;
 $page = 1;
 inject_index_language();
 load_deferred_js('infinite-scroll');
+// file-upload 컴포넌트를 post 컴포넌트보다 먼저 로드 (의존성)
+load_deferred_js('vue-components/file-upload.component');
 load_deferred_js('vue-components/post.component');
 load_page_css();
 ?>
@@ -51,333 +53,6 @@ if (login()) {
     #my-page {
         min-height: 50vh;
         /* Allow natural growth for infinite scroll */
-    }
-
-    /* 게시물 카드 스타일 */
-    .post-card {
-        background-color: white;
-        border-radius: 8px;
-        border: 1px solid #e4e6eb;
-        margin-bottom: 16px;
-    }
-
-    /* 게시물 헤더 */
-    .post-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 16px;
-        border-bottom: 1px solid #e4e6eb;
-    }
-
-    .post-header-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        object-fit: cover;
-        margin-right: 12px;
-        background-color: #e4e6eb;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .post-header-avatar i {
-        font-size: 20px;
-        color: #65676b;
-    }
-
-    .post-header-info {
-        flex: 1;
-    }
-
-    .post-header-name {
-        font-size: 15px;
-        font-weight: 600;
-        color: #050505;
-        line-height: 1.3;
-    }
-
-    .post-header-meta {
-        font-size: 13px;
-        color: #65676b;
-        line-height: 1.3;
-    }
-
-    /* 게시물 본문 */
-    .post-body {
-        padding: 16px;
-    }
-
-    .post-title {
-        font-size: 18px;
-        font-weight: 600;
-        color: #050505;
-        margin-bottom: 8px;
-    }
-
-    .post-content {
-        font-size: 15px;
-        color: #050505;
-        line-height: 1.5;
-        margin-bottom: 12px;
-    }
-
-    /* 게시물 이미지 */
-    .post-images {
-        margin-top: 12px;
-    }
-
-    .post-images img {
-        width: 100%;
-        border-radius: 8px;
-        cursor: pointer;
-    }
-
-    .post-images-placeholder {
-        background-color: #f0f2f5;
-        border-radius: 8px;
-        height: 200px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #65676b;
-    }
-
-    /* 게시물 액션 버튼 */
-    .post-actions {
-        display: flex;
-        border-top: 1px solid #e4e6eb;
-        padding: 4px 16px;
-    }
-
-    .post-action-btn {
-        flex: 1;
-        background: none;
-        border: none;
-        padding: 8px;
-        color: #65676b;
-        font-size: 15px;
-        font-weight: 600;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        border-radius: 4px;
-        transition: background-color 0.15s ease;
-    }
-
-    .post-action-btn:hover {
-        background-color: #f0f2f5;
-    }
-
-    .post-action-btn i {
-        font-size: 18px;
-    }
-
-    /* 댓글 섹션 */
-    .post-comments-section {
-        border-top: 1px solid #e4e6eb;
-        padding: 12px 16px;
-    }
-
-    /* 댓글 입력 박스 */
-    .comment-input-box {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 12px;
-    }
-
-    .comment-input-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        object-fit: cover;
-        background-color: #e4e6eb;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .comment-input-avatar i {
-        font-size: 16px;
-        color: #65676b;
-    }
-
-    .comment-input-wrapper {
-        flex: 1;
-        display: flex;
-        gap: 8px;
-    }
-
-    .comment-input {
-        flex: 1;
-        border: 1px solid #ccc;
-        border-radius: 18px;
-        padding: 8px 12px;
-        font-size: 15px;
-        outline: none;
-        background-color: #f0f2f5;
-    }
-
-    .comment-input:focus {
-        background-color: white;
-        border-color: #0866ff;
-    }
-
-    .comment-submit-btn {
-        background: none;
-        border: none;
-        color: #0866ff;
-        font-size: 15px;
-        font-weight: 600;
-        cursor: pointer;
-        padding: 8px 12px;
-    }
-
-    .comment-submit-btn:disabled {
-        color: #bcc0c4;
-        cursor: not-allowed;
-    }
-
-    /* 댓글 목록 */
-    .comments-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .comment-item {
-        display: flex;
-        gap: 8px;
-    }
-
-    .comment-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        object-fit: cover;
-        background-color: #e4e6eb;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-    .comment-avatar i {
-        font-size: 16px;
-        color: #65676b;
-    }
-
-    .comment-content-wrapper {
-        flex: 1;
-    }
-
-    .comment-bubble {
-        background-color: #f0f2f5;
-        border-radius: 18px;
-        padding: 8px 12px;
-        display: inline-block;
-    }
-
-    .comment-author {
-        font-size: 13px;
-        font-weight: 600;
-        color: #050505;
-        margin-bottom: 2px;
-    }
-
-    .comment-text {
-        font-size: 15px;
-        color: #050505;
-        line-height: 1.3333;
-    }
-
-    .comment-meta {
-        font-size: 12px;
-        color: #65676b;
-        margin-top: 4px;
-        padding-left: 12px;
-    }
-
-    /* 반응형 디자인 */
-    @media (max-width: 768px) {
-        .post-header-avatar {
-            width: 36px;
-            height: 36px;
-        }
-
-        .post-action-btn {
-            font-size: 13px;
-        }
-
-        .comment-input {
-            font-size: 14px;
-        }
-    }
-
-    /* 게시물 메뉴 드롭다운 */
-    .post-menu-dropdown {
-        min-width: 120px;
-        z-index: 1000;
-    }
-
-    .post-menu-dropdown button:hover {
-        background-color: #f0f2f5;
-    }
-
-    .post-menu-dropdown button.text-danger:hover {
-        background-color: #ffe8e8;
-    }
-
-    /* 스켈레톤 로더 스타일 */
-    .skeleton {
-        background: linear-gradient(90deg, #f0f2f5 25%, #e4e6eb 50%, #f0f2f5 75%);
-        background-size: 200% 100%;
-        animation: shimmer 1.5s infinite;
-        border-radius: 4px;
-    }
-
-    @keyframes shimmer {
-        0% {
-            background-position: 200% 0;
-        }
-
-        100% {
-            background-position: -200% 0;
-        }
-    }
-
-    .skeleton-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        margin-right: 12px;
-        flex-shrink: 0;
-    }
-
-    .skeleton-text {
-        border-radius: 4px;
-    }
-
-    .skeleton-image {
-        width: 100%;
-        height: 200px;
-        border-radius: 8px;
-    }
-
-    /* Image delete button in edit mode */
-    .image-delete-btn {
-        transition: all 0.2s ease;
-    }
-
-    .image-delete-btn:hover {
-        opacity: 1 !important;
-        transform: scale(1.1);
     }
 </style>
 
@@ -453,7 +128,10 @@ if (login()) {
                     <!-- 게시물 목록 -->
                     <div v-else>
                         <article v-for="post in postList.posts" :key="post.post_id" class="post-card">
-                            <post-component :post="post"></post-component>
+                            <post-component
+                                :post="post"
+                                @post-deleted="handlePostDeleted"
+                            ></post-component>
                         </article>
                     </div>
             `,
@@ -467,7 +145,6 @@ if (login()) {
                 };
             },
             methods: {
-
                 async loadNextPage() {
                     if (this.postList.isLastPage) {
                         console.log('마지막 페이지에 도달했습니다.');
@@ -502,6 +179,19 @@ if (login()) {
                  */
                 refreshPosts() {
                     window.location.reload();
+                },
+                /**
+                 * 게시물 삭제 이벤트 핸들러
+                 * post-component에서 @post-deleted 이벤트가 발생하면 호출됨
+                 * @param {number} postId - 삭제된 게시물 ID
+                 */
+                handlePostDeleted(postId) {
+                    console.log('Post deleted event received:', postId);
+                    const index = this.postList.posts.findIndex(p => p.post_id === postId);
+                    if (index !== -1) {
+                        this.postList.posts.splice(index, 1);
+                        console.log('Post removed from list. Remaining posts:', this.postList.posts.length);
+                    }
                 },
             },
             mounted() {

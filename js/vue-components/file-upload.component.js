@@ -82,7 +82,7 @@ window.FileUploadComponent = {
                 :value="hiddenInputValue">
 
             <!-- 업로드된 파일들 표시 영역 -->
-            <nav v-if="uploadedFiles.length > 0" class="uploaded-files my-3">
+            <nav v-if="showUploadedFiles && uploadedFiles.length > 0" class="uploaded-files my-3">
                 <!-- Single 모드 -->
                 <div v-if="single && currentFileUrl" class="single-file-display position-relative">
                     <img
@@ -217,7 +217,13 @@ window.FileUploadComponent = {
             type: String,
             default: '',
             description: '기본 파일 URL (쉼표로 구분된 문자열)'
+        },
+        showUploadedFiles: { 
+            type: Boolean,
+            default: true,
+            description: "Show uploaded files preview"
         }
+
     },
 
     emits: ['uploaded', 'deleted', 'update:modelValue'],

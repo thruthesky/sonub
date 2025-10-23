@@ -684,3 +684,105 @@ function delete_post(array $params)
 
     return $post;
 }
+
+/**
+ * Delete a specific image from a post
+ *
+ * Removes a specific image URL from the post's files field and deletes the file from storage.
+ * Only the post owner can delete images from their posts.
+ *
+ * @param array $input Image deletion parameters
+ *                     - id|post_id: Post ID (required)
+ *                     - url: Image URL to delete (required)
+ *
+ * @return PostModel Updated post object with the image removed
+ *
+ * @throws ApiException If user is not logged in
+ * @throws ApiException If post_id or url is missing
+ * @throws ApiException If post is not found
+ * @throws ApiException If user is not the post owner
+ *
+ * @example
+ * Delete an image from a post
+ * $result = delete_file_from_post([
+ *     'id' => 123,
+ *     'url' => 'https://example.com/uploads/photo.jpg'
+ * ]);
+ */
+function delete_file_from_post(array $input)
+{
+    error_if_not_logged_in();
+    $user = login();
+    $user_id = $user->id;
+
+
+    $post_id = $input['id'] ?? null;
+    error_if_empty($post_id, 'invalid-post-id', tr([
+        'en' => 'Invalid post ID.',
+        'ko' => '잘못된 게시글 ID입니다.',
+        'ja' => '無効な投稿IDです。',
+        'zh' => '无效的帖子ID。'
+    ]));
+
+    $url = $input['url'] ?? null;
+    error_if_empty($url, 'invalid-url', tr([
+        'en' => 'File URL is required.',
+        'ko' => '이미지 URL이 필요합니다.',
+        'ja' => '画像URLが必要です。',
+        'zh' => '需要图片URL。'
+    ]));
+
+
+    $post = get_post_by_id($post_id);
+    error_if_empty($post, 'post-not-found', tr([
+        'en' => 'Post not found.',
+        'ko' => '게시글을 찾을 수 없습니다.',
+        'ja' => '投稿が見つかりません。',
+        'zh' => '找不到帖子。'
+    ]));
+
+    if ($post->user_id !== $user_id) {
+        error('permission-denied', tr([
+            'en' => 'You can only delete images from your own posts.',
+            'ko' => '본인 게시글의 이미지만 삭제할 수 있습니다.',
+            'ja' => '自分の投稿の画像のみ削除できます。',
+            'zh' => '您只能删除自己帖子的图片。'
+        ]), response_code: 403);
+    }
+
+
+    $files_string = implode(',', $post->files);
+    $files_array = array_map('trim', explode(',', $files_string));
+
+    if (!in_array($url, $files_array)) {
+        error('file-url-not-found', tr([
+            'en' => 'File URL not found in this post.',
+            'ko' => '이 게시글에서 이미지 URL을 찾을 수 없습니다.',
+            'ja' => 'この投稿で画像URLが見つかりません。',
+            'zh' => '在此帖子中找不到图片URL。'
+        ]), response_code: 404);
+    }
+
+    $updated_files = [];
+    foreach ($files_array as $file_url) {
+        if ($file_url !== $url) {
+            $updated_files[] = $file_url;
+        }
+    }
+
+
+    $updated_files_string = implode(',', $updated_files);
+
+    $pdo = pdo();
+    $sql = 'UPDATE posts SET files = :files, updated_at = :updated_at WHERE id = :id';
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(':files', $updated_files_string, PDO::PARAM_STR);
+    $stmt->bindValue(':updated_at', time(), PDO::PARAM_INT);
+    $stmt->bindValue(':id', $post_id, PDO::PARAM_INT);
+    $stmt->execute();
+
+    // Delete the file from storage (with error handling)
+    file_delete(['url' => $url]);
+
+    return get_post_by_id($post_id);
+}

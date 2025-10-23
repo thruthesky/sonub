@@ -1,9 +1,14 @@
+
 /**
  * Post Component
  * - Display a single post with its content, author, metadata, actions and comments.
  * - Supports editing and deleting the post.
  */
+
 const postComponent = {
+    components: {
+        'file-upload-component': window.FileUploadComponent
+    },
     props: {
         post: {
             type: Object,
@@ -64,6 +69,8 @@ const postComponent = {
         <!-- Edit Mode -->
         {{edit.enabled ? 'Editing Post' : 'Viewing Post'}}
         <div v-if="edit.enabled">
+
+
             <!-- Edit Content Textarea -->
             <textarea
                 v-model="edit.content"
@@ -84,7 +91,7 @@ const postComponent = {
 
                             <!-- Delete button (X) on top right -->
                             <button
-                                @click="removeImageFromEdit(post, index)"
+                                @click="removeImageFromEdit(index)"
                                 type="button"
                                 class="btn btn-sm btn-danger position-absolute image-delete-btn"
                                 style="top: 8px; right: 8px; width: 28px; height: 28px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0.9; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"
@@ -94,6 +101,18 @@ const postComponent = {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- File Upload Component (for adding new images) -->
+            <div class="mb-3">
+                <label class="form-label small text-muted">Add More Images</label>
+                <file-upload-component
+                    :single="false"
+                    :show-uploaded-files="false"
+                    :show-upload-button="true"
+                    accept="image/*,video/*"
+                    @uploaded="handleFileUploaded">
+                </file-upload-component>
             </div>
 
             <!-- Edit Visibility -->
@@ -265,34 +284,30 @@ const postComponent = {
             });
         },
 
-
         /**
          * 게시물 삭제 핸들러
-         * @param {Object} post - 게시물 객체
          */
-        async handleDeletePost(post) {
+        async handleDeletePost() {
             const confirmed = confirm('이 게시물을 삭제하시겠습니까?');
             if (!confirmed) {
                 return;
             }
 
             try {
-                console.log('Deleting post:', post.post_id);
+                console.log('Deleting post:', this.post.post_id);
                 await func('delete_post', {
-                    id: post.post_id,
+                    id: this.post.post_id,
                     auth: true
                 });
 
-                // 목록에서 제거
-                const index = this.postList.posts.findIndex(p => p.post_id === post.post_id);
-                if (index !== -1) {
-                    this.postList.posts.splice(index, 1);
-                }
+                // Emit event to parent component
+                // Parent component should listen for this event and update its own data
+                this.$emit('post-deleted', this.post.post_id);
 
                 alert('Post deleted successfully!');
             } catch (error) {
-                console.error('Error deleting post:', error);
-                alert('Failed to delete post. Please try again.');
+                console.error('Failed to delete post:', error);
+                alert('Failed to delete post: ' + (error.message || 'Unknown error'));
             }
         },
 
@@ -322,23 +337,55 @@ const postComponent = {
 
         /**
          * Remove image from edit mode
-         * @param {Object} post - 게시물 객체
          * @param {number} index - Image index to remove
          */
-        removeImageFromEdit(post, index) {
-            if (!post.editFiles || !Array.isArray(post.editFiles)) {
-                return;
-            }
-
+        async removeImageFromEdit(index) {
             // Confirm deletion
             const confirmed = confirm('Are you sure you want to remove this image?');
             if (!confirmed) {
                 return;
             }
 
-            // Remove the image from editFiles array
-            post.editFiles.splice(index, 1);
-            console.log('Image removed, remaining files:', post.editFiles);
+            // Get the image URL to delete
+            const imageUrl = this.edit.files[index];
+
+             // Call API to delete the image from the post
+             console.log('Deleting image from post:', imageUrl);
+             const result = await func('delete_file_from_post', {
+                 id: this.post.post_id,
+                 url: imageUrl,
+                 auth: true
+             });
+
+             console.log('Image deleted successfully:', result);
+
+             // Remove the image from edit.files array (local state)
+             this.edit.files.splice(index, 1);
+
+             // Update the post object with the result
+             if (result && result.files) {
+                 // Convert files string to array if needed
+                 if (typeof result.files === 'string') {
+                     this.post.files = result.files.split(',').map(f => f.trim()).filter(f => f);
+                 } else {
+                     this.post.files = result.files;
+                 }
+             }
+
+             console.log('Image removed, remaining files:', this.edit.files);
+        },
+
+        /**
+         * 파일 업로드 완료 이벤트 핸들러
+         * file-upload 컴포넌트에서 @uploaded 이벤트 발생 시 호출됨
+         * @param {Object} data - { url: string, qr_code?: string }
+         */
+        handleFileUploaded(data) {
+            console.log('File uploaded:', data.url);
+            // 새로 업로드된 파일을 edit.files 배열에 추가
+            if (data.url && !this.edit.files.includes(data.url)) {
+                this.edit.files.push(data.url);
+            }
         },
 
 
@@ -354,14 +401,11 @@ const postComponent = {
             this.edit.files = this.post.files ? [...this.post.files] : [];
         },
 
-
-
         /**
          * Cancel edit mode
-         * @param {Object} post - 게시물 객체
          */
         cancelEdit() {
-            this.edit.enabledd = false;
+            this.edit.enabled = false;
             this.edit.content = '';
             this.edit.visibility = 'public';
             this.edit.files = [];
