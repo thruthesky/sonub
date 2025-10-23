@@ -262,6 +262,16 @@ function create_post(array $input)
     }
 }
 
+function update_post(array $input)
+{
+    // This is a placeholder for the update_post function.
+    // Implementation would go here.
+    $post_id = $input['id'];
+    $post = get_post_by_id($post_id);
+    $post->content = 'Updated: ' . $post->content;
+    return $post;
+}
+
 /**
  * ID로 게시글 조회
  *

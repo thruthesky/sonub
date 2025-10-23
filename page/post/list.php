@@ -16,7 +16,7 @@
 // ========================================================================
 $category = http_param('category');
 $page = 1; // 첫 페이지 (SSR용)
-$per_page = 20; // 페이지당 게시글 수
+$per_page = 5; // 페이지당 게시글 수
 
 // ========================================================================
 // 2단계: 첫 페이지 게시글 목록 조회 (SSR용)
@@ -33,6 +33,7 @@ $postList = list_posts([
 // 3단계: Infinite Scroll JS 로드
 // ========================================================================
 load_deferred_js('infinite-scroll');
+load_deferred_js('vue-components/post.component');
 
 // 번역 함수 호출
 inject_post_list_language();
@@ -164,52 +165,14 @@ load_page_css();
         // Vue 앱 초기화 (무한 스크롤용)
         // ============================================================
         const app = Vue.createApp({
+            components: {
+                'post-component': postComponent,
+            },
             template: `
             <div>
                 <!-- Vue로 로드된 게시글 목록 -->
                 <article v-for="post in posts" :key="post.id" class="post-card">
-                    <!-- 게시글 헤더 -->
-                    <div class="post-header">
-                        <div class="d-flex align-items-start gap-2">
-                            <div class="user-avatar flex-shrink-0">
-                                <i class="fa-solid fa-user"></i>
-                            </div>
-                            <div class="flex-grow-1 min-w-0">
-                                <div class="user-name"><?= t()->사용자 ?> #{{ post.user_id }}</div>
-                                <div class="post-time">{{ formatDate(post.created_at) }}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 게시글 제목 -->
-                    <h2 v-if="post.title" class="post-title">{{ post.title }}</h2>
-
-                    <!-- 게시글 내용 -->
-                    <div v-if="post.content" class="post-content" v-html="formatContent(post.content)"></div>
-
-                    <!-- 게시글 이미지 -->
-                    <div v-if="post.files && post.files.length > 0" class="post-images px-1 pb-1">
-                        <img v-for="(file, index) in post.files" :key="index"
-                             :src="file" alt="게시글 이미지" class="post-image rounded">
-                    </div>
-
-                    <!-- 게시글 푸터 -->
-                    <div class="post-footer">
-                        <div class="post-actions">
-                            <button type="button" class="action-btn" :aria-label="'<?= t()->좋아요 ?>'">
-                                <i class="fa-regular fa-heart"></i>
-                                <span><?= t()->좋아요 ?></span>
-                            </button>
-                            <button type="button" class="action-btn" :aria-label="'<?= t()->댓글 ?>'">
-                                <i class="fa-regular fa-comment"></i>
-                                <span><?= t()->댓글 ?></span>
-                            </button>
-                            <a :href="'/post/view?id=' + post.id" class="action-btn" :aria-label="'<?= t()->보기 ?>'">
-                                <i class="fa-regular fa-arrow-up-right-from-square"></i>
-                                <span><?= t()->보기 ?></span>
-                            </a>
-                        </div>
-                    </div>
+                    <post-component :post="post"></post-component>
                 </article>
             </div>
         `,
@@ -269,27 +232,6 @@ load_page_css();
                         document.getElementById('loading-indicator').style.display = 'none';
                     }
                 },
-                /**
-                 * 게시물 내용 포맷팅 (줄바꿈 처리)
-                 */
-                formatContent(content) {
-                    if (!content) return '';
-                    return content.replace(/\n/g, '<br>');
-                },
-                /**
-                 * 날짜 포맷팅
-                 */
-                formatDate(timestamp) {
-                    if (!timestamp) return '';
-                    const date = new Date(timestamp * 1000);
-                    return date.toLocaleString('ko-KR', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                }
             },
             mounted() {
                 console.log('Vue 앱 마운트 완료');
