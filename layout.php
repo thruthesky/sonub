@@ -279,9 +279,9 @@ if (file_exists($module_path)) {
     } ?>
 
 
+    <script src="/js/vue.global.prod.js"></script>
     <?php include ROOT_DIR . '/etc/firebase/firebase-setup.php'; ?>
     <script src="/js/axios.js"></script>
-    <script src="/js/vue.global.prod.js"></script>
     <?php include_once ROOT_DIR . '/etc/php-hot-reload-client.php'; ?>
     <link href="/css/app.css?v=<?= APP_VERSION ?>" rel="stylesheet">
     <script src="/js/app.js" defer></script>

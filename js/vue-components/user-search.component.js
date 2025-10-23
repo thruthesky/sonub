@@ -30,7 +30,7 @@ window.UserSearchComponent = {
 
         <!-- Friend Search Modal with higher z-index for proper layering -->
         <div class="modal fade" :id="modalId" tabindex="-1" :aria-labelledby="modalId + '-label'" aria-hidden="true" style="z-index: 9999;">
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" :id="modalId + '-label'">{{ t.친구_검색 }}</h5>
@@ -77,7 +77,7 @@ window.UserSearchComponent = {
                                         <a :href="\`\${profileUrl}?id=\${user.id}\`"
                                             class="flex-grow-1 min-w-0 text-decoration-none">
                                             <h6 class="card-title mb-0 text-truncate text-dark">
-                                                {{ user.display_name }}
+                                                {{ user.first_name }}
                                             </h6>
                                             <p class="card-text text-muted mb-0" style="font-size: 0.75rem;">
                                                 {{ formatDate(user.created_at) }}
@@ -222,9 +222,6 @@ window.UserSearchComponent = {
     },
 
     methods: {
-        state() {
-            return window.Store.state;
-        },
         /**
          * 친구 검색 모달 열기
          */
@@ -388,11 +385,11 @@ window.UserSearchComponent = {
  */
 ready(() => {
     // .user-search-component 클래스를 가진 모든 요소 찾기
-    console.log('user-search-component: ready start')
+    // console.log('user-search-component: ready start')
     const userSearchApps = document.querySelectorAll('.user-search-component');
 
     if (userSearchApps.length > 0) {
-        console.log(`[user-search] ${userSearchApps.length}개의 .user-search-component 요소 발견`);
+        // console.log(`[user-search] ${userSearchApps.length}개의 .user-search-component 요소 발견`);
 
         // 각 요소에 Vue 앱 마운트
         userSearchApps.forEach((element, index) => {
@@ -405,15 +402,10 @@ ready(() => {
             console.log(`[user-search] 요소 ${index}에 Vue 앱 마운트 중...`);
 
             try {
-                // setTimeout(()=> { 
-                //     const app = Vue.createApp(window.UserSearchComponent);
-                //     app.mount(element);
-                // }, 100);
+                const app = Vue.createApp(window.UserSearchComponent);
+                app.mount(element);
 
-                    const app = Vue.createApp(window.UserSearchComponent);
-                    app.mount(element);
-
-                console.log(`[user-search] 요소 ${index}에 Vue 앱 마운트 완료`);
+                // console.log(`[user-search] 요소 ${index}에 Vue 앱 마운트 완료`);
             } catch (error) {
                 console.error(`[user-search] 요소 ${index} 마운트 실패:`, error);
             }
@@ -423,5 +415,5 @@ ready(() => {
     }
 
 
-    console.log('user-search-component: ready ended')
+    // console.log('user-search-component: ready ended')
 });

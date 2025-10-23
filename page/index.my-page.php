@@ -368,6 +368,16 @@ if (login()) {
         height: 200px;
         border-radius: 8px;
     }
+
+    /* Image delete button in edit mode */
+    .image-delete-btn {
+        transition: all 0.2s ease;
+    }
+
+    .image-delete-btn:hover {
+        opacity: 1 !important;
+        transform: scale(1.1);
+    }
 </style>
 
 <div id="my-page" class="mt-4">
@@ -486,21 +496,89 @@ if (login()) {
 
                             <!-- 게시물 본문 -->
                             <div class="post-body">
-                                <!-- 제목 -->
-                                <div v-if="post.title" class="post-title">{{ post.title }}</div>
+                                <!-- Edit Mode -->
+                                <div v-if="post.editMode">
+                                    <!-- Edit Content Textarea -->
+                                    <textarea
+                                        v-model="post.editContent"
+                                        class="post-content-input form-control mb-3"
+                                        placeholder="What's on your mind?"
+                                        rows="4"></textarea>
 
-                                <!-- 내용 -->
-                                <div v-if="post.content" class="post-content" v-html="formatContent(post.content)"></div>
+                                    <!-- Preview existing images (editable in edit mode) -->
+                                    <div v-if="hasPhotos(post.editFiles)" class="mb-3">
+                                        <label class="form-label small text-muted">Attached Images</label>
+                                        <div class="row g-2">
+                                            <div v-for="(fileUrl, index) in getValidPhotos(post.editFiles)" :key="index"
+                                                 :class="getPhotoColumnClass(getValidPhotos(post.editFiles).length)">
+                                                <div class="position-relative">
+                                                    <img :src="thumbnail(fileUrl, 400, 400, 'cover', 85, 'ffffff')"
+                                                         :alt="'Photo ' + (index + 1)"
+                                                         style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
 
-                                <!-- 이미지 -->
-                                <div class="post-images">
-                                    <div v-if="hasPhotos(post.files)" class="row g-2">
-                                        <div v-for="(fileUrl, index) in getValidPhotos(post.files)" :key="index"
-                                             :class="getPhotoColumnClass(getValidPhotos(post.files).length)">
-                                            <img :src="thumbnail(fileUrl, 400, 400, 'cover', 85, 'ffffff')"
-                                                 :alt="'Photo ' + (index + 1)"
-                                                 style="width: 100%; height: 200px; object-fit: cover;"
-                                                 @click="openPhotoModal(fileUrl)">
+                                                    <!-- Delete button (X) on top right -->
+                                                    <button
+                                                        @click="removeImageFromEdit(post, index)"
+                                                        type="button"
+                                                        class="btn btn-sm btn-danger position-absolute image-delete-btn"
+                                                        style="top: 8px; right: 8px; width: 28px; height: 28px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0.9; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"
+                                                        title="Remove image">
+                                                        <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Edit Visibility -->
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted">Visibility</label>
+                                        <div class="d-flex gap-2">
+                                            <div class="post-select-wrapper">
+                                                <i class="fa-solid fa-earth-americas" v-if="post.editVisibility === 'public'" style="font-size: 12px; margin-right: 4px;"></i>
+                                                <i class="fa-solid fa-user-group" v-if="post.editVisibility === 'friends'" style="font-size: 12px; margin-right: 4px;"></i>
+                                                <i class="fa-solid fa-lock" v-if="post.editVisibility === 'private'" style="font-size: 12px; margin-right: 4px;"></i>
+                                                <select v-model="post.editVisibility" class="post-select">
+                                                    <option value="public">Public</option>
+                                                    <option value="friends">Friends</option>
+                                                    <option value="private">Only Me</option>
+                                                </select>
+                                                <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px;"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Edit Action Buttons -->
+                                    <div class="d-flex gap-2 justify-content-end">
+                                        <button @click="cancelEdit(post)" class="btn btn-sm btn-secondary">
+                                            <i class="fa-solid fa-xmark me-1"></i>
+                                            Cancel
+                                        </button>
+                                        <button @click="saveEdit(post)" class="btn btn-sm btn-primary">
+                                            <i class="fa-solid fa-check me-1"></i>
+                                            Save
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- View Mode -->
+                                <div v-else>
+                                    <!-- 제목 -->
+                                    <div v-if="post.title" class="post-title">{{ post.title }}</div>
+
+                                    <!-- 내용 -->
+                                    <div v-if="post.content" class="post-content" v-html="formatContent(post.content)"></div>
+
+                                    <!-- 이미지 -->
+                                    <div class="post-images">
+                                        <div v-if="hasPhotos(post.files)" class="row g-2">
+                                            <div v-for="(fileUrl, index) in getValidPhotos(post.files)" :key="index"
+                                                 :class="getPhotoColumnClass(getValidPhotos(post.files).length)">
+                                                <img :src="thumbnail(fileUrl, 400, 400, 'cover', 85, 'ffffff')"
+                                                     :alt="'Photo ' + (index + 1)"
+                                                     style="width: 100%; height: 200px; object-fit: cover;"
+                                                     @click="openPhotoModal(fileUrl)">
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -808,8 +886,86 @@ if (login()) {
                 handleEditPost(post) {
                     console.log('Edit post:', post.post_id);
                     post.showMenu = false;
-                    // TODO: 게시물 수정 모달 또는 페이지로 이동
-                    alert('게시물 수정 기능은 준비 중입니다.');
+
+                    // Enable edit mode
+                    post.editMode = true;
+                    post.editContent = post.content || '';
+                    post.editVisibility = post.visibility || 'public';
+                    // Clone the files array for editing
+                    post.editFiles = post.files ? [...post.files] : [];
+                },
+
+                /**
+                 * Remove image from edit mode
+                 * @param {Object} post - 게시물 객체
+                 * @param {number} index - Image index to remove
+                 */
+                removeImageFromEdit(post, index) {
+                    if (!post.editFiles || !Array.isArray(post.editFiles)) {
+                        return;
+                    }
+
+                    // Confirm deletion
+                    const confirmed = confirm('Are you sure you want to remove this image?');
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    // Remove the image from editFiles array
+                    post.editFiles.splice(index, 1);
+                    console.log('Image removed, remaining files:', post.editFiles);
+                },
+
+                /**
+                 * Cancel edit mode
+                 * @param {Object} post - 게시물 객체
+                 */
+                cancelEdit(post) {
+                    post.editMode = false;
+                    post.editContent = '';
+                    post.editVisibility = 'public';
+                    post.editFiles = [];
+                },
+
+                /**
+                 * Save edited post
+                 * @param {Object} post - 게시물 객체
+                 */
+                async saveEdit(post) {
+                    if (!post.editContent || !post.editContent.trim()) {
+                        alert('Please enter post content.');
+                        return;
+                    }
+
+                    try {
+                        console.log('Saving post:', post.post_id);
+
+                        // Convert editFiles array to comma-separated string (if needed by API)
+                        const filesString = post.editFiles && post.editFiles.length > 0
+                            ? post.editFiles.filter(f => f && f.trim() !== '').join(',')
+                            : '';
+
+                        const result = await func('update_post', {
+                            id: post.post_id,
+                            content: post.editContent,
+                            visibility: post.editVisibility,
+                            files: filesString,
+                            auth: true
+                        });
+
+                        console.log('Update result:', result);
+
+                        // Update the post in the list
+                        post.content = post.editContent;
+                        post.visibility = post.editVisibility;
+                        post.files = post.editFiles;
+                        post.editMode = false;
+
+                        alert('Post updated successfully!');
+                    } catch (error) {
+                        console.error('Error updating post:', error);
+                        alert('Failed to update post. Please try again.');
+                    }
                 },
 
                 /**
@@ -826,11 +982,10 @@ if (login()) {
 
                     try {
                         console.log('Deleting post:', post.post_id);
-                        // TODO: API 호출로 게시물 삭제
-                        // await func('delete_post', {
-                        //     post_id: post.post_id,
-                        //     auth: true
-                        // });
+                        await func('delete_post', {
+                            id: post.post_id,
+                            auth: true
+                        });
 
                         // 목록에서 제거
                         const index = this.postList.posts.findIndex(p => p.post_id === post.post_id);
@@ -838,10 +993,10 @@ if (login()) {
                             this.postList.posts.splice(index, 1);
                         }
 
-                        alert('게시물이 삭제되었습니다.');
+                        alert('Post deleted successfully!');
                     } catch (error) {
-                        console.error('게시물 삭제 오류:', error);
-                        alert('게시물 삭제 중 오류가 발생했습니다.');
+                        console.error('Error deleting post:', error);
+                        alert('Failed to delete post. Please try again.');
                     }
                 }
             },
