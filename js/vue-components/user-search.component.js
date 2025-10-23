@@ -157,7 +157,7 @@ window.UserSearchComponent = {
             modalInstance: null, // Bootstrap 모달 인스턴스
 
             // 전역 상태 관리
-            state: window.Store.state,
+            state: {},
 
             // 프로필 URL
             profileUrl: '/user/profile'
@@ -222,6 +222,9 @@ window.UserSearchComponent = {
     },
 
     methods: {
+        state() {
+            return window.Store.state;
+        },
         /**
          * 친구 검색 모달 열기
          */
@@ -340,8 +343,8 @@ window.UserSearchComponent = {
     },
 
     mounted() {
+        console.log('user-search component mounted')
         // console.log(`[user-search-${this.instanceId}] mounted() 호출됨, modalId: ${this.modalId}`);
-
         // Vue가 DOM을 완전히 렌더링할 때까지 대기
         this.$nextTick(() => {
             // Bootstrap Modal 초기화
@@ -385,31 +388,40 @@ window.UserSearchComponent = {
  */
 ready(() => {
     // .user-search-component 클래스를 가진 모든 요소 찾기
+    console.log('user-search-component: ready start')
     const userSearchApps = document.querySelectorAll('.user-search-component');
 
     if (userSearchApps.length > 0) {
-        // console.log(`[user-search] ${userSearchApps.length}개의 .user-search-component 요소 발견`);
+        console.log(`[user-search] ${userSearchApps.length}개의 .user-search-component 요소 발견`);
 
         // 각 요소에 Vue 앱 마운트
         userSearchApps.forEach((element, index) => {
             // 이미 마운트된 요소는 건너뛰기 (중복 마운트 방지)
             if (element.__vue_app__) {
-                // console.log(`[user-search] 요소 ${index}는 이미 마운트되어 있습니다.`);
+                console.log(`[user-search] 요소 ${index}는 이미 마운트되어 있습니다.`);
                 return;
             }
 
-            // console.log(`[user-search] 요소 ${index}에 Vue 앱 마운트 중...`);
+            console.log(`[user-search] 요소 ${index}에 Vue 앱 마운트 중...`);
 
             try {
-                const app = Vue.createApp(window.UserSearchComponent);
-                app.mount(element);
+                // setTimeout(()=> { 
+                //     const app = Vue.createApp(window.UserSearchComponent);
+                //     app.mount(element);
+                // }, 100);
 
-                // console.log(`[user-search] 요소 ${index}에 Vue 앱 마운트 완료`);
+                    const app = Vue.createApp(window.UserSearchComponent);
+                    app.mount(element);
+
+                console.log(`[user-search] 요소 ${index}에 Vue 앱 마운트 완료`);
             } catch (error) {
-                // console.error(`[user-search] 요소 ${index} 마운트 실패:`, error);
+                console.error(`[user-search] 요소 ${index} 마운트 실패:`, error);
             }
         });
     } else {
-        // console.log('[user-search] .user-search-component 요소를 찾지 못했습니다.');
+        console.log('[user-search] .user-search-component 요소를 찾지 못했습니다.');
     }
+
+
+    console.log('user-search-component: ready ended')
 });

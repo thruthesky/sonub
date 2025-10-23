@@ -125,6 +125,8 @@ if (file_exists($module_path)) {
                 getters,
                 actions
             };
+
+            console.log('window.Store is loaded');
         });
     </script>
 

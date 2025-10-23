@@ -370,7 +370,6 @@ $is_me = login() && login()->id === $user->id;
                         await func('request_friend', {
                             me: myUserId,
                             other: otherUserId,
-                            auth: true // Firebase 인증 포함
                         });
 
                         // 성공: 친구 상태 업데이트
