@@ -29,9 +29,31 @@ function file_delete(array $params)
         return error('file-not-found', tr(['en' => 'File not found.', 'ko' => '파일을 찾을 수 없습니다.']), ['path' => $file_path]);
     }
 
-    $deleted = unlink($file_path);
+    $deleted = @unlink($file_path);
     if (! $deleted) {
         return error('file-delete-failed', tr(['en' => 'File delete failed.', 'ko' => '파일 삭제에 실패했습니다.']), ['path' => $file_path]);
     }
     return ['deleted' => true, 'path' => $file_path];
+}
+
+/**
+ * 여러 파일 삭제
+ * 
+ * 글/코멘트의 첨부 파일들을 일괄 삭제할 때 사용한다.
+ * 참고로, 이 함수는 배열을 입력 받을 수 있으며, 파일 경로들을 콤마(,)로 구분한 문자열을 인자로도 받는다.
+ *
+ * @param mixed $file_paths
+ * - 삭제할 파일 경로들을 콤마(,)로 구분한 문자열
+ * - 또는 파일 경로들의 배열
+ * 
+ * @return void
+ */
+function delete_files(mixed $file_paths)
+{
+    if (is_string($file_paths)) {
+        $file_paths = array_map('trim', explode(',', $file_paths));
+    }
+    foreach ($file_paths as $file_url) {
+        file_delete(['url' => $file_url]);
+    }
 }

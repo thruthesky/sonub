@@ -425,8 +425,8 @@ if (login()) {
         const scrollController = InfiniteScroll.init('body', {
             onScrolledToBottom: () => {
                 console.log('하단 도달: 더 많은 데이터 로드');
-                if (window.myWallVm) {
-                    window.myWallVm.loadNextPage();
+                if (window.myPageApp) {
+                    window.myPageApp.loadNextPage();
                 }
             },
             threshold: 10,
@@ -941,9 +941,9 @@ if (login()) {
                         console.log('Saving post:', post.post_id);
 
                         // Convert editFiles array to comma-separated string (if needed by API)
-                        const filesString = post.editFiles && post.editFiles.length > 0
-                            ? post.editFiles.filter(f => f && f.trim() !== '').join(',')
-                            : '';
+                        const filesString = post.editFiles && post.editFiles.length > 0 ?
+                            post.editFiles.filter(f => f && f.trim() !== '').join(',') :
+                            '';
 
                         const result = await func('update_post', {
                             id: post.post_id,
@@ -1015,7 +1015,7 @@ if (login()) {
         console.log('Vue 인스턴스 마운트됨:', vm);
 
         // Vue 인스턴스를 전역 변수로 노출
-        window.myWallVm = vm;
+        window.myPageApp = vm;
     });
 </script>
 

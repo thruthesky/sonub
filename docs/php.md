@@ -52,11 +52,11 @@ function request_friend(array $input): array
 {
     $me = (int)($input['me'] ?? 0);
     $other = (int)($input['other'] ?? 0);
-    
+
     if ($me <= 0) {
         error('invalid-me', '유효하지 않은 사용자 ID입니다');
     }
-    
+
     return ['message' => '친구 요청을 보냈습니다'];
 }
 ```
@@ -69,7 +69,67 @@ function request_friend(int $me, int $other): void {
 }
 ```
 
-상세한 내용은 coding-guideline.md의 이전 버전 또는 Git 히스토리를 참조하세요.
+### API 함수 반환 형식
+
+**🔥🔥🔥 2025-01-19 업데이트: api.php가 단일 값 자동 변환 지원 🔥🔥🔥**
+
+이제 PHP 함수가 단일 값(숫자, 문자열, 불리언)을 리턴하면, `api.php`가 자동으로 `['data' => 값, 'func' => '함수명']` 형태로 변환합니다.
+
+**반환 형식 규칙:**
+
+1. **배열 반환**: 배열을 직접 반환하면 그대로 전달됨
+   ```php
+   function get_friends(array $input): array {
+       return [['id' => 1, 'name' => 'Alice'], ['id' => 2, 'name' => 'Bob']];
+   }
+   // JavaScript에서 받는 값: [{'id': 1, 'name': 'Alice'}, {'id': 2, 'name': 'Bob'}]
+   ```
+
+2. **객체 반환**: Model 객체는 toArray() 메서드로 자동 변환됨
+   ```php
+   function get_user(array $input): UserModel {
+       return UserModel::find($input['id']);
+   }
+   // JavaScript에서 받는 값: {'id': 1, 'name': 'Alice', 'email': '...'}
+   ```
+
+3. **단일 값 반환** (NEW!): 숫자, 문자열, 불리언을 직접 반환 가능
+   ```php
+   // 숫자 직접 반환
+   function get_user_count(): int {
+       return 42;
+   }
+   // JavaScript에서 받는 값: {'data': 42, 'func': 'get_user_count'}
+
+   // 문자열 직접 반환
+   function get_welcome_message(): string {
+       return 'Welcome to Sonub!';
+   }
+   // JavaScript에서 받는 값: {'data': 'Welcome to Sonub!', 'func': 'get_welcome_message'}
+
+   // 불리언 직접 반환
+   function check_email_exists(array $input): bool {
+       $email = $input['email'] ?? '';
+       return db()->exists('users', 'email', $email);
+   }
+   // JavaScript에서 받는 값: {'data': true, 'func': 'check_email_exists'}
+   ```
+
+**JavaScript에서 사용:**
+```javascript
+// 배열 반환 함수
+const friends = await func('get_friends', { limit: 10 });
+console.log(friends);  // 친구 배열
+
+// 단일 값 반환 함수
+const count = await func('get_user_count');
+console.log(count.data);  // 42
+
+const exists = await func('check_email_exists', { email: 'test@example.com' });
+console.log(exists.data);  // true
+```
+
+상세한 내용은 [docs/api.md](./api.md)를 참조하세요.
 
 ### 에러 처리 표준
 

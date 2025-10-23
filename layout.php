@@ -284,7 +284,7 @@ if (file_exists($module_path)) {
     <script src="/js/axios.js"></script>
     <?php include_once ROOT_DIR . '/etc/php-hot-reload-client.php'; ?>
     <link href="/css/app.css?v=<?= APP_VERSION ?>" rel="stylesheet">
-    <script src="/js/app.js" defer></script>
+    <script src="/js/app.js?v=<?= APP_VERSION ?>" defer></script>
 
     <style>
         /* Sticky sidebars */

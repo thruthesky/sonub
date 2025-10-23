@@ -1236,3 +1236,29 @@ function is_visible_friendship(int $me, int $other): bool
     $status = get_friendship_status($me, $other);
     return $status === 'accepted' || $status === 'following';
 }
+
+
+
+/**
+ * 피드 캐시에서 특정 게시글 삭제 함수 (내부용)
+ *
+ * 게시글이 삭제될 때 feed_entries 테이블에서 해당 게시글을 삭제합니다.
+ * (내부 전용 - 게시글 삭제 시 자동 호출)
+ *
+ * @param int $post_id 삭제할 게시글 ID
+ * @return int 삭제된 행 수
+ *
+ * @example
+ * $deleted_count = delete_post_from_feed_entries(123);
+ * echo "{$deleted_count}개의 피드 항목이 삭제되었습니다.";
+ */
+function delete_post_from_feed_entries(int $post_id): int
+{
+    $pdo = pdo();
+    // Delete from in feed entries
+    $sql = 'DELETE from feed_entries WHERE post_id = :post_id';
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(':post_id', $post_id, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->rowCount();
+}

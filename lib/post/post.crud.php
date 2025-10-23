@@ -610,93 +610,67 @@ function count_posts(?array $filters = []): int
  */
 function delete_post(array $params)
 {
-    if (login() == false) {
-        error('login-required', tr(['en' => 'Login is required.', 'ko' => '로그인이 필요합니다.', 'ja' => 'ログインが必要です。', 'zh' => '需要登录。']));
-    }
 
-    // Extract post_id from params
-    $post_id = $params['id'] ?? $params['post_id'] ?? null;
 
-    if (empty($post_id) || !is_numeric($post_id)) {
-        error('invalid-id', tr([
-            'en' => 'Invalid post ID.',
-            'ko' => '잘못된 게시글 ID입니다.',
-            'ja' => '無効な投稿IDです。',
-            'zh' => '无效的帖子ID。'
-        ]));
-        return;
-    }
 
+    // VALIDATE
+    error_if_not_logged_in();
     $user = login();
     $user_id = $user->id;
 
 
-    $post = get_post_by_id($post_id);
+    //
+    $post_id = $params['id'] ?? $params['post_id'] ?? null;
+    error_if_empty($post_id, 'invalid-post-id', tr([
+        'en' => 'Invalid post ID.',
+        'ko' => '잘못된 게시글 ID입니다.',
+        'ja' => '無効な投稿IDです。',
+        'zh' => '无效的帖子ID。'
+    ]));
 
-    if (!$post) {
-        error('post-not-found', tr([
-            'en' => 'Post not found or you do not have permission to delete it.',
-            'ko' => '게시글을 찾을 수 없거나 삭제 권한이 없습니다.',
-            'ja' => '投稿が見つからないか、削除する権限がありません。',
-            'zh' => '找不到帖子或您没有删除权限。'
-        ]));
+    $post = get_post_by_id($post_id);
+    error_if_empty($post, 'post-not-found', tr([
+        'en' => 'Post not found',
+        'ko' => '게시글을 찾을 수 없습니다.',
+        'ja' => '投稿が見つかりません。',
+        'zh' => '找不到帖子。'
+    ]));
+
+
+    //
+    if ($post->user_id !== $user_id) {
+        error('permission-denied', tr([
+            'en' => 'This is not your post.',
+            'ko' => '회원님의 글이 아닙니다.',
+            'ja' => 'これはあなたの投稿ではありません。',
+            'zh' => '这不是您的帖子。'
+        ]), response_code: 403);
     }
 
     $pdo = pdo();
 
-    try {
-        // Delete from in feed entries
-        $sql = 'DELETE from feed_entries WHERE post_id = :post_id';
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindValue(':post_id', $post_id, PDO::PARAM_INT);
-        $stmt->execute();
+    // Delete from posts
+    $sql = 'DELETE FROM posts WHERE id = :id';
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(':id', $post_id, PDO::PARAM_INT);
+    $stmt->execute();
 
-        // Delete from posts
-        $sql = 'DELETE FROM posts WHERE id = :id AND user_id = :user_id';
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
-        $stmt->bindValue(':id', $post_id, PDO::PARAM_INT);
-        $stmt->execute();
 
-        if ($stmt->rowCount() === 0) {
-            error('delete-failed', tr([
-                'en' => 'Failed to delete post.',
-                'ko' => '게시글 삭제에 실패했습니다.',
-                'ja' => '投稿の削除に失敗しました。',
-                'zh' => '删除帖子失败。'
-            ]));
+    delete_post_from_feed_entries($post_id);
+
+    // Delete attached files (if any)
+    // $post->files is a comma-separated string of file URLs
+    // Convert to array and delete each file
+    if (!empty($post->files) && is_string($post->files)) {
+        // Convert comma-separated string to array and trim whitespace
+        $file_paths = array_map('trim', explode(',', $post->files));
+        // Filter out empty strings (handles empty files field: '')
+        $file_paths = array_filter($file_paths, fn($path) => !empty($path));
+        // Only call delete_files if there are actual file paths
+        if (!empty($file_paths)) {
+            delete_files($file_paths);
         }
-
-        // Delete attached files
-        // $post->files is an array of file paths (e.g., ["/var/uploads/123/file.jpg", ...])
-        if (!empty($post->files) && is_array($post->files)) {
-            foreach ($post->files as $file_url) {
-                // Skip empty file paths
-                if (empty($file_url)) {
-                    continue;
-                }
-
-                // Delete the file
-                try {
-                    file_delete(['url' => $file_url]);
-                } catch (Throwable $e) {
-                    // Log the error but continue deleting the post
-                    // (file might already be deleted or path might be invalid)
-                    error_log("Failed to delete file: {$file_url}, Error: " . $e->getMessage());
-                }
-            }
-        }
-
-        return [
-            'message' => tr([
-                'en' => 'Post deleted successfully.',
-                'ko' => '게시글이 삭제되었습니다.',
-                'ja' => '投稿が削除されました。',
-                'zh' => '帖子已删除。'
-            ]),
-        ];
-    } catch (PDOException $e) {
-        error_log('게시글 개수 조회 실패: ' . $e->getMessage());
-        return 0;
     }
+
+    return $post;
 }

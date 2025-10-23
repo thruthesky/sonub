@@ -63,16 +63,20 @@ Sonub는 **API First** 설계 철학을 따르는 웹 애플리케이션입니�
 **Sonub는 API First 클래스 시스템입니다:**
 
 - ✅ **모든 함수는 API를 통해 직접 호출 가능하다**
-- ✅ **모든 함수는 배열 또는 객체를 리턴해야하며, 클라이언트에게 JSON으로 리턴한다**
+- ✅ **모든 함수는 배열, 객체 또는 단일 값(스칼라)을 리턴할 수 있으며, 클라이언트에게 JSON으로 리턴한다**
+- ✅ **단일 값(숫자, 문자열, 불리언)을 리턴하는 경우, api.php가 자동으로 `['data' => 값, 'func' => '함수명']` 형태로 변환한다**
 - ✅ **모든 함수는 에러 발생 시 `error()` 함수를 호출하여 `ApiException`을 throw한다**
 - ✅ **`api.php`에서 try/catch 블록으로 `ApiException`을 catch하여 JSON 에러 응답으로 변환한다**
 - ✅ **Model 객체(UserModel, PostModel 등)를 리턴하는 경우, 반드시 toArray() 메서드를 구현해야 한다**
-- ✅ **함수 반환 형식: 배열/객체는 직접 반환, 스칼라 값은 `['data' => ...]` 형태로 반환**
 - ✅ RESTful 클라이언트가 API를 통해 모든 기능에 접근 가능
 - ✅ 프론트엔드와 백엔드가 명확히 분리됨
 - ✅ 모바일 앱, 웹 앱, 서드파티 서비스 등 다양한 클라이언트 지원
 
 ### API 함수 반환 형식 규칙
+
+**🔥🔥🔥 2025-01-19 업데이트: api.php가 단일 값 자동 변환 지원 🔥🔥🔥**
+
+이제 PHP 함수가 단일 값(숫자, 문자열, 불리언)을 리턴하면, `api.php`가 자동으로 `['data' => 값, 'func' => '함수명']` 형태로 변환합니다.
 
 **배열/객체 반환 (직접 반환):**
 - 여러 데이터를 포함하는 배열: 직접 반환
@@ -99,24 +103,30 @@ function request_friend(array $input): array {
 }
 ```
 
-**스칼라 값 반환 (`['data' => ...]` 형태):**
-- 단일 문자열, 숫자, 불리언 값: `['data' => ...]`로 래핑
+**단일 값(스칼라) 반환:**
+- 단일 문자열, 숫자, 불리언 값: **직접 반환 가능** (api.php가 자동 변환)
 
 ```php
-// ✅ 올바른 예: 스칼라 값을 'data' 키로 래핑
-function get_user_count(): array {
-    $count = 42;
-    return ['data' => $count];  // {'data': 42}
-}
-
-// ✅ 올바른 예: 단일 문자열 반환
-function get_app_version(): array {
-    return ['data' => '2025-10-18-17-35-04'];
-}
-
-// ❌ 잘못된 예: 스칼라 값 직접 반환
+// ✅ 방법 1: 단일 값 직접 반환 (권장 - api.php가 자동 변환)
 function get_user_count(): int {
-    return 42;  // 에러: response-not-array-or-object
+    return 42;  // api.php가 자동으로 ['data' => 42, 'func' => 'get_user_count']로 변환
+}
+
+// ✅ 방법 2: 수동으로 ['data' => ...] 형태로 반환 (기존 방식 - 여전히 지원)
+function get_app_version(): array {
+    return ['data' => '2025-10-18-17-35-04'];  // 수동으로 래핑
+}
+
+// ✅ 올바른 예: 불리언 직접 반환
+function check_email_exists(array $input): bool {
+    $email = $input['email'] ?? '';
+    // ... 이메일 존재 여부 확인 ...
+    return true;  // api.php가 자동으로 ['data' => true, 'func' => 'check_email_exists']로 변환
+}
+
+// ✅ 올바른 예: 문자열 직접 반환
+function get_welcome_message(): string {
+    return 'Welcome to Sonub!';  // api.php가 자동으로 ['data' => 'Welcome to Sonub!', 'func' => 'get_welcome_message']로 변환
 }
 ```
 
@@ -124,17 +134,42 @@ function get_user_count(): int {
 ```javascript
 // 배열 직접 반환 함수
 const friends = await func('get_friends', { me: 5, limit: 10 });
-console.log(friends);  // 친구 배열
+console.log(friends);  // 친구 배열 (배열이 그대로 리턴됨)
 
 const friendIds = await func('get_friend_ids', { me: 5 });
-console.log(friendIds);  // [1, 2, 3, 4, 5]
+console.log(friendIds);  // [1, 2, 3, 4, 5] (배열이 그대로 리턴됨)
 
-// 스칼라 값 반환 함수
+// 단일 값 반환 함수 (api.php가 자동 변환)
 const result = await func('get_user_count');
 console.log(result.data);  // 42
+console.log(result.func);  // 'get_user_count'
 
 const version = await func('get_app_version');
 console.log(version.data);  // '2025-10-18-17-35-04'
+
+const emailExists = await func('check_email_exists', { email: 'test@example.com' });
+console.log(emailExists.data);  // true
+console.log(emailExists.func);  // 'check_email_exists'
+
+const message = await func('get_welcome_message');
+console.log(message.data);  // 'Welcome to Sonub!'
+```
+
+**api.php 자동 변환 로직:**
+```php
+// api.php 내부 처리
+$res = $func_name(http_params());
+
+// 단일 값(숫자, 문자열, 불리언)인 경우 자동으로 ['data' => 값] 형태로 변환
+if (is_numeric($res) || is_string($res) || is_bool($res)) {
+    $res = ['data' => $res];
+}
+
+// 'func' 필드 자동 추가
+$res['func'] = $func_name;
+
+// JSON 응답 출력
+echo json_encode($res, JSON_UNESCAPED_UNICODE);
 ```
 
 ---
@@ -213,18 +248,10 @@ try {
     // 함수 호출
     $res = $func_name(http_params());
 
-    // 리턴 타입 검증
-    if (!is_array($res) && !is_object($res)) {
-        http_response_code(500);
-        $error_response = [
-            'error_code' => 'response-not-array-or-object',
-            'error_message' => '함수가 배열이나 객체를 리턴하지 않았습니다.',
-            'error_data' => ['type' => gettype($res)],
-            'error_response_code' => 500,
-            'func' => $func_name
-        ];
-        echo json_encode($error_response, JSON_UNESCAPED_UNICODE);
-        exit;
+    // 리턴 타입 검증 및 변환
+    // 단일 값(숫자, 문자열, 불리언)인 경우 ['data' => 값] 형태로 변환
+    if (is_numeric($res) || is_string($res) || is_bool($res)) {
+        $res = ['data' => $res];
     }
 
     // 객체를 배열로 변환 (Model 객체 지원)
@@ -619,7 +646,7 @@ function app_version(): array {
    }
    ```
 
-3. **리턴 타입**: 함수는 반드시 배열이나 객체를 리턴해야 함
+3. **리턴 타입**: 함수는 배열, 객체 또는 단일 값(숫자, 문자열, 불리언)을 리턴할 수 있음
    ```php
    // ✅ 올바른 예 1: 배열 리턴
    function getUser() {
@@ -641,14 +668,20 @@ function app_version(): array {
        return create_post($input);  // PostModel 객체 리턴
    }
 
-   // ❌ 잘못된 예: 문자열 리턴
-   function getUser() {
-       return '홍길동';  // 문자열 리턴 시 에러 (response-not-array-or-object)
+   // ✅ 올바른 예 4: 단일 값 리턴 (api.php가 자동 변환)
+   function getUserCount() {
+       return 42;  // api.php가 자동으로 ['data' => 42, 'func' => 'getUserCount']로 변환
    }
 
-   // ❌ 잘못된 예: 숫자 리턴
-   function getUserCount() {
-       return 42;  // 숫자 리턴 시 에러 (response-not-array-or-object)
+   // ✅ 올바른 예 5: 문자열 리턴 (api.php가 자동 변환)
+   function getWelcomeMessage() {
+       return 'Welcome!';  // api.php가 자동으로 ['data' => 'Welcome!', 'func' => 'getWelcomeMessage']로 변환
+   }
+
+   // ✅ 올바른 예 6: 불리언 리턴 (api.php가 자동 변환)
+   function checkEmailExists($params) {
+       $email = http_params('email');
+       return true;  // api.php가 자동으로 ['data' => true, 'func' => 'checkEmailExists']로 변환
    }
    ```
 

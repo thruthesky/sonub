@@ -50,18 +50,10 @@ try {
     // ====================================================================
     // 리턴 타입 검증
     // ====================================================================
-    // 함수는 반드시 배열 또는 객체를 리턴해야 합니다
-    if (!is_array($res) && !is_object($res)) {
-        http_response_code(500);
-        $error_response = [
-            'error_code' => 'response-not-array-or-object',
-            'error_message' => '함수가 배열이나 객체를 리턴하지 않았습니다.',
-            'error_data' => ['type' => gettype($res)],
-            'error_response_code' => 500,
-            'func' => $func_name
-        ];
-        echo json_encode($error_response, JSON_UNESCAPED_UNICODE);
-        exit;
+    // 함수가 숫자, 문자열, 불리언을 리턴한 경우,
+    // 이를 배열에 `data` 속성으로 저장하여 일관된 JSON 응답 구조를 유지합니다.
+    if (is_numeric($res) || is_string($res) || is_bool($res)) {
+        $res = ['data' => $res];
     }
 
     // ====================================================================

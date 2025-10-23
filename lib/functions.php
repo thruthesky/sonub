@@ -196,3 +196,25 @@ function clear_session_cookie()
         path: '/',
     );
 }
+
+
+
+function error_if_not_logged_in(): void
+{
+    if (!login()) {
+        error('login-required', tr([
+            'en' => 'Login is required.',
+            'ko' => '로그인이 필요합니다.',
+            'ja' => 'ログインが必要です。',
+            'zh' => '需要登录。'
+        ]));
+    }
+}
+
+
+function error_if_empty(mixed $value, string $code,  string $message = 'Value is required.', array $data = []): void
+{
+    if (empty($value)) {
+        error($code, $message, $data, response_code: 401);
+    }
+}
