@@ -6,8 +6,6 @@
 # nginx log files are in ~/apps/sonub/var/log/nginx
 # php log files are in ~/apps/sonub/var/logs/php
 
-
-
 services:
   # Sonub web server
   nginx:

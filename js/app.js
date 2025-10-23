@@ -256,6 +256,32 @@ function get_axios_error_message(err, options = {}) {
 
 
 
+
+
+// 썸네일 이미지 생성 함수
+function thumbnail(fileUrl, width, height, fit = 'cover', quality = 85, bgColor = 'ffffff') {
+    // lib/file/file.functions.php의 thumbnail_url()과 동일한 기능
+    const url = new URL(appConfig.api.thumbnail_url, window.location.origin);
+    url.searchParams.set('src', encodeURIComponent(fileUrl));
+    url.searchParams.set('w', width);
+    url.searchParams.set('h', height);
+    url.searchParams.set('fit', fit);
+    url.searchParams.set('q', quality);
+    url.searchParams.set('bg', bgColor);
+    return url.toString();
+}
+
+
+// 다국어 번역 함수
+// 예제: tr({ en: 'Hello', ko: '안녕하세요' });
+function tr(texts = {}) {
+    const lang = window.Store.state.lang || 'en';
+    return texts[lang] || texts['en'] || '';
+}
+
+
+
+
 // 사용자 프로필 아이콘 컴포넌트
 // 여러 개의 .user-profile-icon 요소가 있을 수 있으므로 각각에 대해 Vue 앱 마운트
 ready(() => {
@@ -280,24 +306,63 @@ ready(() => {
 });
 
 
+/**
+ * Initialize Vue 3 Global Store State before running any code by ready() function.
+ * It is safe to use the state on any ready() functions because this function is called first.
+ * 
+ * Why:
+ * - ready() functions is called on DOMContentLoaded event and there is no guarantee the order of execution.
+ * - So, we need to initialize the global store state before running any ready() functions to avoid undefined state.
+ * 
+ * How:
+ * - This function is called in layout.php before any ready() functions are registered.
+ * - It checks if window.Store is already defined to avoid re-initialization.
+ * - If not defined, it initializes the global store state with reactive properties and actions.
+ * - Finally, it assigns the store to window.Store for global access.
+ * 
+ * @see layout.php
+ * @returns void
+ */
+function initialize_on_ready() {
+    if (window.Store) {
+        // 이미 초기화 되었으면 종료
+        return;
+    }
+    const {
+        reactive,
+        computed
+    } = Vue;
 
-// 썸네일 이미지 생성 함수
-function thumbnail(fileUrl, width, height, fit = 'cover', quality = 85, bgColor = 'ffffff') {
-    // lib/file/file.functions.php의 thumbnail_url()과 동일한 기능
-    const url = new URL(appConfig.api.thumbnail_url, window.location.origin);
-    url.searchParams.set('src', encodeURIComponent(fileUrl));
-    url.searchParams.set('w', width);
-    url.searchParams.set('h', height);
-    url.searchParams.set('fit', fit);
-    url.searchParams.set('q', quality);
-    url.searchParams.set('bg', bgColor);
-    return url.toString();
-}
+    // 1️⃣ 상태 (state)
+    const state = reactive({
+        user: window.__HYDRATE__?.user ?? {}, // index.php에서 주입된 로그인 사용자 정보
+        lang: window.__HYDRATE__?.lang || 'en' // index.php에서 주입된 사용자 언어 정보
+    });
 
+    // 2️⃣ 계산값 (getters)
+    const getters = {
+        doubled: computed(() => state.count * 2)
+    };
 
-// 다국어 번역 함수
-// 예제: tr({ en: 'Hello', ko: '안녕하세요' });
-function tr(texts = {}) {
-    const lang = window.Store.state.lang;
-    return texts[lang] || texts['en'] || '';
+    // 3️⃣ 액션 (actions)
+    const actions = {
+        setUser(u) {
+            state.user = u;
+        },
+        setUserPhotoUrl(url) {
+            state.user = {
+                ...state.user,
+                photo_url: url
+            };
+        }
+    };
+
+    // 4️⃣ 전역 노출 (모든 Vue 앱이 동일한 인스턴스를 사용)
+    window.Store = {
+        state,
+        getters,
+        actions
+    };
+
+    console.log('window.Store is loaded');
 }
