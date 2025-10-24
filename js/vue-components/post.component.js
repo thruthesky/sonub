@@ -186,7 +186,7 @@ const postComponent = {
         </div>
     </div>
 
-    {{post}}
+    
 
     <!-- 게시물 액션 버튼 -->
     <div class="post-actions">
@@ -351,13 +351,13 @@ const postComponent = {
             try {
                 console.log('Deleting post:', this.post.id);
                 await func('delete_post', {
-                    id: this.post.post_id,
+                    id: this.post.id,
                     auth: true
                 });
 
                 // Emit event to parent component
                 // Parent component should listen for this event and update its own data
-                this.$emit('post-deleted', this.post.post_id);
+                this.$emit('post-deleted', this.post.id);
 
                 alert('Post deleted successfully!');
             } catch (error) {
@@ -404,30 +404,30 @@ const postComponent = {
             // Get the image URL to delete
             const imageUrl = this.edit.files[index];
 
-             // Call API to delete the image from the post
-             console.log('Deleting image from post:', imageUrl);
-             const result = await func('delete_file_from_post', {
-                 id: this.post.post_id,
-                 url: imageUrl,
-                 auth: true
-             });
+            // Call API to delete the image from the post
+            console.log('Deleting image from post:', imageUrl);
+            const result = await func('delete_file_from_post', {
+                id: this.post.id,
+                url: imageUrl,
+                auth: true
+            });
 
-             console.log('Image deleted successfully:', result);
+            console.log('Image deleted successfully:', result);
 
-             // Remove the image from edit.files array (local state)
-             this.edit.files.splice(index, 1);
+            // Remove the image from edit.files array (local state)
+            this.edit.files.splice(index, 1);
 
-             // Update the post object with the result
-             if (result && result.files) {
-                 // Convert files string to array if needed
-                 if (typeof result.files === 'string') {
-                     this.post.files = result.files.split(',').map(f => f.trim()).filter(f => f);
-                 } else {
-                     this.post.files = result.files;
-                 }
-             }
+            // Update the post object with the result
+            if (result && result.files) {
+                // Convert files string to array if needed
+                if (typeof result.files === 'string') {
+                    this.post.files = result.files.split(',').map(f => f.trim()).filter(f => f);
+                } else {
+                    this.post.files = result.files;
+                }
+            }
 
-             console.log('Image removed, remaining files:', this.edit.files);
+            console.log('Image removed, remaining files:', this.edit.files);
         },
 
         /**
@@ -504,7 +504,7 @@ const postComponent = {
                 return;
             }
 
-            console.log('Saving post:', this.post.post_id);
+            console.log('Saving post:', this.post.id);
 
             // Convert editFiles array to comma-separated string (if needed by API)
             const filesString = this.edit.files && this.edit.files.length > 0 ?
@@ -512,7 +512,7 @@ const postComponent = {
                 '';
 
             const result = await func('update_post', {
-                id: this.post.post_id,
+                id: this.post.id,
                 content: this.edit.content,
                 visibility: this.edit.visibility,
                 category: this.edit.visibility === 'public' ? this.edit.category : '', // 공개일 때만 카테고리 저장
@@ -554,7 +554,7 @@ const postComponent = {
          * @param {Object} post - 게시물 객체
          */
         handleLike(post) {
-            console.log('Like clicked:', post.post_id);
+            console.log('Like clicked:', post.id);
             // TODO: API 호출로 좋아요 추가/제거
         },
         /**
@@ -573,7 +573,7 @@ const postComponent = {
          * @param {Object} post - 게시물 객체
          */
         handleShare(post) {
-            console.log('Share clicked:', post.post_id);
+            console.log('Share clicked:', post.id);
             // TODO: 공유 모달 표시
         },
 
@@ -589,7 +589,7 @@ const postComponent = {
             try {
                 // TODO: API 호출로 댓글 저장
                 // const result = await func('create_comment', {
-                //     post_id: post.post_id,
+                //     post_id: post.id,
                 //     content: post.newComment.trim(),
                 //     auth: true
                 // });

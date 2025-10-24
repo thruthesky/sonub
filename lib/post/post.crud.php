@@ -51,7 +51,6 @@ function get_post(array $input): ?PostModel
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$row) return null;
 
-    assign_author_info($row);
 
     if ($with_comments) {
         $row['comments'] = get_comments(['post_id' => $post_id]);
@@ -683,10 +682,7 @@ function list_posts(array $filters = []): PostListModel
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // PostModel 객체 배열로 변환
-        $posts = $data ? array_map(function ($item) {
-            assign_author_info($item);
-            return new PostModel($item);
-        }, $data) : [];
+        $posts = $data ? array_map(fn($item) => new PostModel($item), $data) : [];
 
         // ====================================================================
         // 7단계: 전체 게시글 개수 조회 (페이지네이션용)

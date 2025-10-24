@@ -218,20 +218,3 @@ function error_if_empty(mixed $value, string $code,  string $message = 'Value is
         error($code, $message, $data, response_code: 401);
     }
 }
-
-
-/**
- * Extracts author information from a post array.
- * 
- * @param array $post The post data array.
- * @return array An associative array containing author information.
- */
-function assign_author_info(array &$post): void
-{
-    $post['author'] = [
-        'first_name'    => $post['first_name'] ?? '',
-        'photo_url'    => $post['photo_url'] ?? '',
-        'firebase_uid' => $post['firebase_uid'] ?? '',
-    ];
-    unset($post['first_name'], $post['photo_url'], $post['firebase_uid']);
-}

@@ -7,11 +7,12 @@ class AuthorModel
 
     public function __construct(array $data)
     {
-        if (isset($data['author'])) {
-            $this->first_name = $data['first_name'] ?? null;
-            $this->photo_url = $data['photo_url'] ?? null;
-            $this->firebase_uid = $data['firebase_uid'] ?? null;
-        }
+        $this->first_name = $data['first_name'] ?? null;
+        $this->photo_url = $data['photo_url'] ?? null;
+        $this->firebase_uid = $data['firebase_uid'] ?? null;
+
+        //
+        unset($data['first_name'], $data['photo_url'], $data['firebase_uid']);
     }
 
     /**
