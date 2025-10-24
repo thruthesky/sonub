@@ -112,6 +112,23 @@ if (login()) {
     });
 </script>
 
+  <script>
+      window.categoryData = <?= json_encode([
+          'rootCategories' => array_map(function($root) {
+              return [
+                  'display_name' => $root->display_name,
+                  'categories' => array_map(function($sub) {
+                      return [
+                          'category' => $sub->category,
+                          'name' => $sub->name
+                      ];
+                  }, $root->getCategories())
+              ];
+          }, config()->categories->getRootCategories())
+      ]) ?>;
+  </script>
+
+
 <script>
     ready(() => {
         // Vue 앱 초기화

@@ -262,14 +262,151 @@ function create_post(array $input)
     }
 }
 
+
+/**
+ * Update post function (Fan-out on Write automatically applied)
+ *
+ * Updates an existing post's information in the database.
+ * Uses PDO prepared statements to prevent SQL injection.
+ * Uses Unix timestamp (seconds) for time information.
+ *
+ * **Important: Feed propagation is automatically updated when visibility changes.**
+ * - Changing visibility to 'private' removes the post from friends' feeds
+ * - Changing visibility to 'public' or 'friends' propagates the post to friends' feeds
+ *
+ * @param array $input Input values for post update
+ *                     - id|post_id: Post ID (required)
+ *                     - title: Post title (optional, keeps existing if not provided)
+ *                     - content: Post content (optional, keeps existing if not provided)
+ *                     - category: Category (optional, keeps existing if not provided)
+ *                     - files: Attached file URLs (optional, comma-separated, keeps existing if not provided)
+ *                     - visibility: Visibility scope (optional, keeps existing if not provided)
+ *                       * 'public': Public to all + propagate to friends' feeds
+ *                       * 'friends': Friends only + propagate to friends' feeds
+ *                       * 'private': Private only + remove from feeds
+ *
+ * @return PostModel Updated PostModel object
+ *
+ * @throws ApiException If user is not logged in (login-required)
+ * @throws ApiException If post ID is invalid (invalid-post-id)
+ * @throws ApiException If post is not found (post-not-found)
+ * @throws ApiException If user is not the post owner (permission-denied, 403)
+ *
+ * @example
+ * // Update post title and content
+ * $post = update_post([
+ *     'id' => 123,
+ *     'title' => 'Updated title',
+ *     'content' => 'Updated content'
+ * ]);
+ *
+ * // Change visibility to private (removes from friends' feeds)
+ * $post = update_post([
+ *     'id' => 123,
+ *     'visibility' => 'private'
+ * ]);
+ *
+ * // Change private post to public (propagates to friends' feeds)
+ * $post = update_post([
+ *     'id' => 123,
+ *     'visibility' => 'public'
+ * ]);
+ *
+ * // Update files (overwrites existing files)
+ * $post = update_post([
+ *     'id' => 123,
+ *     'files' => 'https://example.com/new-photo.jpg,https://example.com/new-file.pdf'
+ * ]);
+ *
+ * // Update only title (keeps other fields unchanged)
+ * $post = update_post([
+ *     'id' => 123,
+ *     'title' => 'New title'
+ * ]);
+ */
 function update_post(array $input)
 {
-    // This is a placeholder for the update_post function.
-    // Implementation would go here.
-    $post_id = $input['id'];
+
+    error_if_not_logged_in();
+    $user = login();
+    $user_id = $user->id;
+
+
+    $post_id = $input['id'] ?? $input['post_id'] ?? null;
+    error_if_empty($post_id, 'invalid-post-id', tr([
+        'en' => 'Invalid post ID.',
+        'ko' => '잘못된 게시글 ID입니다.',
+        'ja' => '無効な投稿IDです。',
+        'zh' => '无效的帖子ID。'
+    ]));
+
+
     $post = get_post_by_id($post_id);
-    $post->content = 'Updated: ' . $post->content;
-    return $post;
+    error_if_empty($post, 'post-not-found', tr([
+        'en' => 'Post not found.',
+        'ko' => '게시글을 찾을 수 없습니다.',
+        'ja' => '投稿が見つかりません。',
+        'zh' => '找不到帖子。'
+    ]));
+
+    if ($post->user_id !== $user_id) {
+        error('permission-denied', tr([
+            'en' => 'This is not your post.',
+            'ko' => '회원님의 글이 아닙니다.',
+            'ja' => 'これはあなたの投稿ではありません。',
+            'zh' => '这不是您的帖子。'
+        ]), response_code: 403);
+    }
+
+
+    $title = isset($input['title']) ? trim((string)$input['title']) : $post->title;
+    $content = isset($input['content']) ? trim((string)$input['content']) : $post->content;
+    $files = isset($input['files']) ? trim((string)$input['files']) : (is_array($post->files) ? implode(',', $post->files) : $post->files);
+    $visibility = isset($input['visibility']) ? trim((string)$input['visibility']) : $post->visibility;
+
+    if (isset($input['category'])) {
+        $category = trim((string)$input['category']);
+    } else {
+        $category = $post->category;
+    }
+
+    if ($visibility !== 'public') {
+        $category = $visibility;
+    }
+
+    if (!in_array($visibility, ['public', 'friends', 'private'], true)) {
+        $visibility = $post->visibility;
+    }
+    $now = time();
+
+
+    $db = pdo();
+
+    $sql = 'UPDATE posts
+                SET title = :title, content = :content, category = :category,
+                    files = :files, visibility = :visibility, updated_at = :updated_at
+                WHERE id = :id';
+
+    $stmt = $db->prepare($sql);
+
+    $stmt->bindValue(':title', $title, PDO::PARAM_STR);
+    $stmt->bindValue(':content', $content, PDO::PARAM_STR);
+    $stmt->bindValue(':category', $category, PDO::PARAM_STR);
+    $stmt->bindValue(':files', $files, PDO::PARAM_STR);
+    $stmt->bindValue(':visibility', $visibility, PDO::PARAM_STR);
+    $stmt->bindValue(':updated_at', $now, PDO::PARAM_INT);
+    $stmt->bindValue(':id', $post_id, PDO::PARAM_INT);
+
+    $stmt->execute();
+
+    //  Fan-out on Write
+    if ($visibility !== 'private') {
+        fanout_post_to_friends($user_id, $post_id, $now);
+    } else {
+        delete_post_from_feed_entries($post_id);
+    }
+
+    return get_post_by_id($post_id);
 }
 
 /**

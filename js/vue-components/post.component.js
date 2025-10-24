@@ -16,6 +16,7 @@ const postComponent = {
         },
     },
     template: /*html*/ `
+    <div ref="postContainer" :class="{ 'border border-warning border-1 rounded-3': edit.enabled }" style="transition: all 0.1s ease;">
     <!-- 게시물 헤더 (사용자 정보) -->
     <header class="post-header">
         <div class="d-flex align-items-center">
@@ -34,12 +35,15 @@ const postComponent = {
                 <div class="post-header-meta">
                     {{ formatDate(post.created_at) }} ·
                     <span class="badge bg-secondary">{{ post.visibility || 'public' }}</span>
+                    <span v-if="edit.enabled" class="badge bg-warning bg-opacity-75 text-dark ms-2">
+                        <i class="fa-solid fa-pen-to-square me-1"></i>Editing
+                    </span>
                 </div>
             </div>
         </div>
 
         <!-- 게시물 메뉴 (본인 게시물인 경우에만 표시) -->
-        <div class="dropdown">
+        <div v-if="isMyPost" class="dropdown">
             <button class="btn btn-sm btn-link text-muted p-1" data-bs-toggle="dropdown" data-bs-auto-close="auto">
                 <i class="fa-solid fa-ellipsis"></i>
             </button>
@@ -67,10 +71,7 @@ const postComponent = {
     <!-- 게시물 본문 -->
     <div class="post-body">
         <!-- Edit Mode -->
-        {{edit.enabled ? 'Editing Post' : 'Viewing Post'}}
         <div v-if="edit.enabled">
-
-
             <!-- Edit Content Textarea -->
             <textarea
                 v-model="edit.content"
@@ -103,43 +104,59 @@ const postComponent = {
                 </div>
             </div>
 
+            <div class="mb-3 d-flex justify-content-between align-items-center">
             <!-- File Upload Component (for adding new images) -->
-            <div class="mb-3">
-                <label class="form-label small text-muted">Add More Images</label>
-                <file-upload-component
-                    :single="false"
-                    :show-uploaded-files="false"
-                    :show-upload-button="true"
-                    accept="image/*,video/*"
-                    @uploaded="handleFileUploaded">
-                </file-upload-component>
-            </div>
+                <div> 
+                    <label class="form-label small text-muted">Add More Images</label>
+                    <file-upload-component
+                        :single="false"
+                        :show-uploaded-files="false"
+                        :show-upload-button="true"
+                        accept="image/*,video/*"
+                        @uploaded="handleFileUploaded">
+                    </file-upload-component>
+                </div>
 
-            <!-- Edit Visibility -->
-            <div class="mb-3">
-                <label class="form-label small text-muted">Visibility</label>
-                <div class="d-flex gap-2">
-                    <div class="post-select-wrapper">
-                        <i class="fa-solid fa-earth-americas" v-if="edit.visibility === 'public'" style="font-size: 12px; margin-right: 4px;"></i>
-                        <i class="fa-solid fa-user-group" v-if="edit.visibility === 'friends'" style="font-size: 12px; margin-right: 4px;"></i>
-                        <i class="fa-solid fa-lock" v-if="edit.visibility === 'private'" style="font-size: 12px; margin-right: 4px;"></i>
-                        <select v-model="edit.visibility" class="post-select">
-                            <option value="public">Public</option>
-                            <option value="friends">Friends</option>
-                            <option value="private">Only Me</option>
-                        </select>
-                        <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px;"></i>
+
+                <div class="d-flex gap-2 flex-column justify-content-end">
+
+                    <div class="post-select-wrapper justify-content-between">
+                        <div>
+                            <i class="fa-solid fa-earth-americas" v-if="edit.visibility === 'public'" style="font-size: 12px; margin-right: 4px;"></i>
+                            <i class="fa-solid fa-user-group" v-if="edit.visibility === 'friends'" style="font-size: 12px; margin-right: 4px;"></i>
+                            <i class="fa-solid fa-lock" v-if="edit.visibility === 'private'" style="font-size: 12px; margin-right: 4px;"></i>
+                            <select v-model="edit.visibility" class="post-select">
+                                <option value="public">Public</option>
+                                <option value="friends">Friends</option>
+                                <option value="private">Only Me</option>
+                            </select>
+                        </div>
+                            <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px;"></i>
+                    </div>
+
+                <!-- Edit Visibility -->
+                    <div v-if="edit.visibility === 'public'" class="post-select-wrapper">
+                        <i class="fa-solid fa-folder" style="font-size: 12px; margin-right: 4px;"></i>
+                        <select v-model="edit.category" class="post-select">
+                            <optgroup v-for="root in categories" :key="root.display_name" :label="root.display_name">
+                                <option v-for="sub in root.categories" :key="sub.category" :value="sub.category">
+                                    {{ sub.name }}
+                                </option>
+                            </optgroup>
+                         </select>
+
+                        <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px; pointer-events: none;"></i>
                     </div>
                 </div>
             </div>
 
             <!-- Edit Action Buttons -->
             <div class="d-flex gap-2 justify-content-end">
-                <button @click="cancelEdit()" class="btn btn-sm btn-secondary">
+                <button @click="cancelEdit()" class="btn btn-sm btn-link text-muted text-decoration-none">
                     <i class="fa-solid fa-xmark me-1"></i>
                     Cancel
                 </button>
-                <button @click="saveEdit()" class="btn btn-sm btn-primary">
+                <button @click="saveEdit()" class="btn btn-sm btn-link text-decoration-none">
                     <i class="fa-solid fa-check me-1"></i>
                     Save
                 </button>
@@ -237,17 +254,51 @@ const postComponent = {
             </div>
         </div>
     </div>
+    </div>
 `,
     data() {
+        // Safely get categories data
+        const categoriesData = window.categoryData?.rootCategories;
+
+        // Convert object to array if needed
+        let categories = [];
+        if (categoriesData) {
+            if (Array.isArray(categoriesData)) {
+                categories = categoriesData;
+            } else if (typeof categoriesData === 'object') {
+                // Convert object to array of values
+                categories = Object.values(categoriesData);
+            }
+        }
+
         return {
             post: this.post,
+            categories: categories,
             edit: {
                 enabled: false,
                 content: '',
                 visibility: 'public',
+                category: 'story',
                 files: [],
             }
         };
+    },
+    computed: {
+        /**
+         * 현재 로그인한 사용자가 이 게시물의 작성자인지 확인
+         * @returns {boolean} 본인 게시물이면 true
+         */
+        isMyPost() {
+            // Validate Store and user exist
+            if (!window.Store || !window.Store.state || !window.Store.state.user) {
+                return false;
+            }
+
+            const currentUserId = window.Store.state.user.id;
+            const postAuthorId = this.post.author_id;
+
+            return postAuthorId === currentUserId;
+        }
     },
     methods: {
         thumbnail: thumbnail,
@@ -393,12 +444,39 @@ const postComponent = {
          * 게시물 수정 핸들러
          */
         handleEditPost() {
-            // Enable edit mode
-            this.edit.enabled = true;
-            this.edit.content = this.post.content || '';
-            this.edit.visibility = this.post.visibility || 'public';
-            // Clone the files array for editing
-            this.edit.files = this.post.files ? [...this.post.files] : [];
+            // Toggle edit mode
+            this.edit.enabled = !this.edit.enabled;
+
+            // 수정 모드로 진입하는 경우에만 데이터 초기화 및 스크롤
+            if (this.edit.enabled) {
+                this.edit.content = this.post.content || '';
+                this.edit.visibility = this.post.visibility || 'public';
+
+                // 카테고리 설정: post의 카테고리가 있으면 사용, 없으면 'story' 기본값
+                let category = this.post.category || 'story';
+                // 카테고리가 유효한지 확인 (옵션 목록에 존재하는지)
+                const categoryExists = Array.isArray(this.categories) && this.categories.some(root =>
+                    Array.isArray(root.categories) && root.categories.some(sub => sub.category === category)
+                );
+                this.edit.category = categoryExists ? category : 'story';
+
+                // Clone the files array for editing
+                this.edit.files = this.post.files ? [...this.post.files] : [];
+
+                // Scroll post into view with smooth animation and offset
+                this.$nextTick(() => {
+                    if (this.$refs.postContainer) {
+                        const element = this.$refs.postContainer;
+                        const elementPosition = element.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.scrollY - 100;
+
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            }
         },
 
         /**
@@ -408,6 +486,7 @@ const postComponent = {
             this.edit.enabled = false;
             this.edit.content = '';
             this.edit.visibility = 'public';
+            this.edit.category = 'story'; // 기본값: story
             this.edit.files = [];
         },
 
@@ -432,6 +511,7 @@ const postComponent = {
                 id: this.post.post_id,
                 content: this.edit.content,
                 visibility: this.edit.visibility,
+                category: this.edit.visibility === 'public' ? this.edit.category : '', // 공개일 때만 카테고리 저장
                 files: filesString
             });
 
