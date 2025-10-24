@@ -2,6 +2,64 @@
 
 declare(strict_types=1);
 
+
+
+// ============================================================================
+// PostRepository 함수들 (게시글 관리)
+// ============================================================================
+// 주의: create_post() 함수는 lib/post/post.crud.php에 이미 정의되어 있습니다.
+// 여기서는 추가 함수들만 정의합니다.
+
+/**
+ * 게시글 단일 행 조회 함수 (내부용)
+ *
+ * 게시글 ID로 posts 테이블의 단일 행을 연관 배열로 반환합니다.
+ * PostModel 객체를 리턴
+ * (내부 전용 - API로 호출되지 않음)
+ *
+ * @param int $post_id 조회할 게시글 ID
+ * @param bool $with_user 사용자 정보 조인 여부 (기본값: false)
+ *       true로 설정하면 users 테이블과 JOIN하여 작성자 정보 중, first_name, photo_url, firebase_uid 세개의 필드만 포함한다.
+ * @return PostModel|null 게시글 데이터 배열 또는 null
+ *
+ * @example
+ * $row = get_post(123);
+ * if ($row) {
+ *     echo $row['title'];
+ * }
+ */
+function get_post(array $input): ?PostModel
+{
+    $pdo = pdo();
+    $post_id = (int)($input['post_id'] ?? 0);
+    $with_user = (bool)($input['with_user'] ?? false);
+    $with_comments = (bool)($input['with_comments'] ?? false);
+
+    if ($with_user) {
+        $sql = "SELECT p.*, u.first_name, u.photo_url, u.firebase_uid
+                  FROM posts p
+             LEFT JOIN users u ON p.user_id = u.id
+                 WHERE p.id = :id
+                 LIMIT 1";
+    } else {
+        $sql = "SELECT * FROM posts
+                 WHERE id = :id
+                 LIMIT 1";
+    }
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([':id' => $post_id]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$row) return null;
+
+    assign_author_info($row);
+
+    if ($with_comments) {
+        $row['comments'] = get_comments(['post_id' => $post_id]);
+    }
+
+    return new PostModel($row);
+}
+
 /**
  * 게시글 생성 함수 (Fan-out on Write 자동 적용)
  *
@@ -540,46 +598,60 @@ function list_posts(array $filters = []): PostListModel
     // 3단계: 동적 WHERE 조건 빌드
     // ========================================================================
     // 필터 조건에 따라 WHERE 절과 파라미터 배열을 동적으로 생성합니다.
+    // LEFT JOIN 사용 시 테이블 별칭(alias)을 명시해야 합니다 (p. prefix)
     $conditions = [];
     $params = [];
 
     // 카테고리 필터
+    // p.category: posts 테이블의 category 컬럼
     if (isset($filters['category'])) {
-        $conditions[] = 'category = ?';
+        $conditions[] = 'p.category = ?';
         $params[] = $filters['category'];
     }
 
     // 사용자 ID 필터
+    // p.user_id: posts 테이블의 user_id 컬럼
     if (isset($filters['user_id'])) {
-        $conditions[] = 'user_id = ?';
+        $conditions[] = 'p.user_id = ?';
         $params[] = $filters['user_id'];
     }
 
     // 생성일 이후 필터 (Unix timestamp)
+    // p.created_at: posts 테이블의 created_at 컬럼
     if (isset($filters['created_after'])) {
-        $conditions[] = 'created_at >= ?';
+        $conditions[] = 'p.created_at >= ?';
         $params[] = $filters['created_after'];
     }
 
     // 생성일 이전 필터 (Unix timestamp)
+    // p.created_at: posts 테이블의 created_at 컬럼
     if (isset($filters['created_before'])) {
-        $conditions[] = 'created_at <= ?';
+        $conditions[] = 'p.created_at <= ?';
         $params[] = $filters['created_before'];
     }
 
     // ========================================================================
     // 4단계: SQL 쿼리 빌드
     // ========================================================================
-    // 기본 SELECT 쿼리
-    $sql = 'SELECT * FROM posts';
+    // 기본 SELECT 쿼리 + LEFT JOIN으로 사용자 정보 가져오기
+    // p.*: posts 테이블의 모든 컬럼
+    // u.first_name, u.photo_url, u.firebase_uid: users 테이블의 특정 컬럼
+    // LEFT JOIN: posts.user_id와 users.id를 연결
+    //   - posts에 매칭되는 사용자가 없어도 게시글은 반환됨
+    //   - 사용자가 없으면 first_name, photo_url, firebase_uid는 NULL
+    $sql = 'SELECT p.*, u.first_name as first_name, u.photo_url as photo_url, u.firebase_uid as firebase_uid
+            FROM posts p
+            LEFT JOIN users u ON p.user_id = u.id';
 
     // WHERE 절 추가 (조건이 있는 경우)
+    // LEFT JOIN 이후에 WHERE 절을 추가해야 함
     if (count($conditions) > 0) {
         $sql .= ' WHERE ' . implode(' AND ', $conditions);
     }
 
     // ORDER BY 절 추가 (최신순 정렬)
-    $sql .= ' ORDER BY created_at DESC';
+    // p.created_at: posts 테이블의 created_at 컬럼
+    $sql .= ' ORDER BY p.created_at DESC';
 
     // LIMIT 절 추가 (제한이 있는 경우)
     if (isset($filters['limit']) && is_int($filters['limit']) && $filters['limit'] > 0) {
@@ -611,7 +683,10 @@ function list_posts(array $filters = []): PostListModel
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // PostModel 객체 배열로 변환
-        $posts = $data ? array_map(fn($item) => new PostModel($item), $data) : [];
+        $posts = $data ? array_map(function ($item) {
+            assign_author_info($item);
+            return new PostModel($item);
+        }, $data) : [];
 
         // ====================================================================
         // 7단계: 전체 게시글 개수 조회 (페이지네이션용)
@@ -678,37 +753,40 @@ function count_posts(?array $filters = []): int
     // ========================================================================
     // 2단계: 동적 WHERE 조건 빌드
     // ========================================================================
+    // LEFT JOIN을 사용하지 않으므로 테이블 별칭이 필요 없지만,
+    // list_posts()와 일관성을 위해 p. prefix를 사용합니다.
     $conditions = [];
     $params = [];
 
     // 카테고리 필터
     if (isset($filters['category'])) {
-        $conditions[] = 'category = ?';
+        $conditions[] = 'p.category = ?';
         $params[] = $filters['category'];
     }
 
     // 사용자 ID 필터
     if (isset($filters['user_id'])) {
-        $conditions[] = 'user_id = ?';
+        $conditions[] = 'p.user_id = ?';
         $params[] = $filters['user_id'];
     }
 
     // 생성일 이후 필터 (Unix timestamp)
     if (isset($filters['created_after'])) {
-        $conditions[] = 'created_at >= ?';
+        $conditions[] = 'p.created_at >= ?';
         $params[] = $filters['created_after'];
     }
 
     // 생성일 이전 필터 (Unix timestamp)
     if (isset($filters['created_before'])) {
-        $conditions[] = 'created_at <= ?';
+        $conditions[] = 'p.created_at <= ?';
         $params[] = $filters['created_before'];
     }
 
     // ========================================================================
     // 3단계: SQL 쿼리 빌드
     // ========================================================================
-    $sql = 'SELECT COUNT(*) FROM posts';
+    // COUNT 쿼리에서도 테이블 별칭 사용 (list_posts()와 일관성 유지)
+    $sql = 'SELECT COUNT(*) FROM posts p';
 
     // WHERE 절 추가 (조건이 있는 경우)
     if (count($conditions) > 0) {

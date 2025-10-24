@@ -37,6 +37,9 @@ include_once ROOT_DIR . '/lib/file/file.delete.php';
 include_once ROOT_DIR . '/lib/file/file.functions.php';
 
 include_once ROOT_DIR . '/lib/friend-and-feed/friend-and-feed.functions.php';
+include_once ROOT_DIR . '/lib/friend-and-feed/feed-entry-model.php';
+
+include_once ROOT_DIR . '/lib/model/author.model.php';
 
 include_once ROOT_DIR . '/etc/config/app.config.php';
 include_once ROOT_DIR . '/lib/pagination/basic.pagination.php';

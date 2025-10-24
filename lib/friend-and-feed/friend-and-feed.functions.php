@@ -767,49 +767,6 @@ function is_blocked_either_way(int $a, int $b): bool
     return (bool)$stmt->fetchColumn();
 }
 
-// ============================================================================
-// PostRepository 함수들 (게시글 관리)
-// ============================================================================
-// 주의: create_post() 함수는 lib/post/post.crud.php에 이미 정의되어 있습니다.
-// 여기서는 추가 함수들만 정의합니다.
-
-/**
- * 게시글 단일 행 조회 함수 (내부용)
- *
- * 게시글 ID로 posts 테이블의 단일 행을 연관 배열로 반환합니다.
- * PostModel 객체가 아닌 raw array를 반환합니다.
- * (내부 전용 - API로 호출되지 않음)
- *
- * @param int $post_id 조회할 게시글 ID
- * @param bool $with_user 사용자 정보 조인 여부 (기본값: false)
- *       true로 설정하면 users 테이블과 JOIN하여 작성자 정보 중, first_name, photo_url, firebase_uid 세개의 필드만 포함한다.
- * @return array|null 게시글 데이터 배열 또는 null
- *
- * @example
- * $row = get_post_row(123);
- * if ($row) {
- *     echo $row['title'];
- * }
- */
-function get_post_row(int $post_id, bool $with_user = false): ?array
-{
-    $pdo = pdo();
-    if ($with_user) {
-        $sql = "SELECT p.*, u.first_name, u.photo_url, u.firebase_uid
-                  FROM posts p
-             LEFT JOIN users u ON p.user_id = u.id
-                 WHERE p.id = :id
-                 LIMIT 1";
-    } else {
-        $sql = "SELECT * FROM posts
-                 WHERE id = :id
-                 LIMIT 1";
-    }
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([':id' => $post_id]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $row ?: null;
-}
 
 // ============================================================================
 // FeedRepository 함수들 (피드 캐시 관리) - 일부 API 호출 가능
@@ -943,7 +900,7 @@ function fanout_on_friend_request(int $follower_id, int $followed_id)
  * @param int $me 피드를 조회할 사용자 ID
  * @param int $limit 조회할 최대 개수
  * @param int $offset 시작 위치 (페이지네이션용)
- * @return array 피드 항목 배열 (post_id, post_author_id, created_at)
+ * @return FeedEntryModel[] 피드 항목 배열 (post_id, post_author_id, created_at)
  *
  * @example
  * $feed = get_feeds_from_feed_entries(10, 20, 0); // 사용자 10의 피드 20개 조회
@@ -961,7 +918,10 @@ function get_feeds_from_feed_entries(int $me, int $limit, int $offset = 0): arra
     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // FeedEntryModel 객체 배열로 변환
+    return array_map(fn($row) => new FeedEntryModel($row), $rows);
 }
 
 /**
@@ -1085,9 +1045,9 @@ function get_posts_from_feed_entries(array $input): array
         $offset = 0;
     }
 
-    // 캐시에서만 조회
-    $cached = get_feeds_from_feed_entries($me, $limit, $offset);
-    return finalize_feed_with_visibility($me, $cached);
+    // 1단계: feed_entries에서 피드 조회
+    $feeds = get_feeds_from_feed_entries($me, $limit, $offset);
+    return finalize_feed_with_visibility($me, $feeds);
 }
 
 /**
@@ -1103,64 +1063,44 @@ function get_posts_from_feed_entries(array $input): array
  * (내부 전용 - get_posts_from_feed_entries()에서 사용)
  *
  * @param int $me 피드를 조회하는 사용자 ID
- * @param array $items 피드 항목 배열 (post_id, post_author_id, created_at)
- * @return array 최종 검증된 피드 항목 배열
+ * @param FeedEntryModel[] $feeds 피드 항목 배열 (post_id, post_author_id, created_at)
+ * @return PostModel[] 최종 검증된 피드 항목 배열
  */
-function finalize_feed_with_visibility(int $me, array $items): array
+function finalize_feed_with_visibility(int $me, array $feeds): array
 {
+    /**
+     * @var PostModel[] $out
+     */
     $out = [];
 
 
 
-    foreach ($items as $r) {
-        $post = get_post_row((int)$r['post_id'], with_user: true);
-        if (!$post) continue;
+    foreach ($feeds as $f) {
 
-        $author = (int)$post['user_id'];
-        $vis = $post['visibility'];
-
-        // 차단 확인 (양방향)
-        if (is_blocked_either_way($me, $author)) {
+        // 1. 차단 확인 (양방향)
+        if (is_blocked_either_way($me, $f->post_author_id)) {
             continue;
         }
 
+        // 2. NO post? return
+        $post = get_post(['post_id' => $f->post_id, 'with_user' => true, 'with_comments' => true]);
+        if (!$post) continue;
+
+        // 3. No visible? return 게시글 가시성
+        $vis = $post->visibility;
+        if ($vis === 'private' && $post->user_id !== $me) continue;
 
 
-        // visibility 검증
-        if ($vis === 'private' && $author !== $me) continue;
-
-        // 그 외는 허용: public, friends 의 경우, 친구니까, feed_entries에 전파된 상태인 것이다.
-
-        // files 필드를 배열로 변환 (콤마로 구분된 문자열 → 배열)
-        $files = [];
-        if (!empty($post['files'])) {
-            $files = array_map('trim', explode(',', $post['files']));
-        }
-
-        // Load comments for this post
-        $comments = get_comments((int)$post['id']);
-
-        $out[] = [
-            'post_id'    => (int)$post['id'],
-            'author_id'  => $author,
-            'category'   => $post['category'],
-            'title'      => $post['title'],
-            'content'    => $post['content'],
-            'files'      => $files,
-            'comments'   => $comments,
-            'created_at' => (int)$post['created_at'],
-            'visibility' => $vis,
-            'author' => [
-                'first_name'   => $post['first_name'] ?? '',
-                'photo_url'    => $post['photo_url'] ?? '',
-                'firebase_uid' => $post['firebase_uid'] ?? '',
-            ],
-        ];
+        // 4.
+        $out[] = $post;
     }
 
     // 안전하게 최신순 보장
     // TODO: delete this after checking if it's really needed
-    usort($out, fn($a, $b) => $b['created_at'] <=> $a['created_at']);
+    usort($out, fn($a, $b) => $b->created_at <=> $a->created_at);
+
+
+    //
     return $out;
 }
 

@@ -1,0 +1,30 @@
+<?php
+class AuthorModel
+{
+    public ?string $first_name;
+    public ?string $photo_url;
+    public ?string $firebase_uid;
+
+    public function __construct(array $data)
+    {
+        if (isset($data['author'])) {
+            $this->first_name = $data['first_name'] ?? null;
+            $this->photo_url = $data['photo_url'] ?? null;
+            $this->firebase_uid = $data['firebase_uid'] ?? null;
+        }
+    }
+
+    /**
+     * AuthorModel 객체를 배열로 변환
+     *
+     * @return array 작성자 정보 배열
+     */
+    public function toArray(): array
+    {
+        return [
+            'first_name' => $this->first_name,
+            'photo_url' => $this->photo_url,
+            'firebase_uid' => $this->firebase_uid,
+        ];
+    }
+}

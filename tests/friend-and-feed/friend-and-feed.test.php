@@ -510,14 +510,14 @@ assert_throws(
 echo "\n";
 
 // ============================================================================
-// 테스트 12: get_post_row() 내부 함수
+// 테스트 12: get_post() 내부 함수
 // ============================================================================
 
-echo "테스트 12: get_post_row() 함수\n";
+echo "테스트 12: get_post() 함수\n";
 echo "----------------------------------------\n";
 
 // 존재하지 않는 게시글
-$post = get_post_row(999999);
+$post = get_post(999999);
 assert_true($post === null, "존재하지 않는 게시글은 null 반환");
 
 // 실제 게시글 조회 (첫 번째 게시글)
@@ -525,7 +525,7 @@ $stmt = $pdo->query("SELECT id FROM posts ORDER BY id ASC LIMIT 1");
 $first_post = $stmt->fetch(PDO::FETCH_ASSOC);
 if ($first_post) {
     $post_id = (int)$first_post['id'];
-    $post = get_post_row($post_id);
+    $post = get_post($post_id);
     assert_true($post !== null, "실제 게시글 조회 성공");
     assert_true((int)$post['id'] === $post_id, "게시글 ID가 올바름");
 } else {

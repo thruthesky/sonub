@@ -16,12 +16,13 @@ function count_comments(?array $input = []): int
  * @param array $input Input parameters
  *   - post_id (int, required): Post ID
  *   - limit (int, optional): Number of comments to fetch (default: 50)
- * @return array Array of comment data with author information
+ * @return CommentModel[] Array of comment data with author information
  */
-function get_comments(int $post_id): array
+function get_comments(array $input): array
 {
 
     $pdo = pdo();
+    $post_id = isset($input['post_id']) ? (int)$input['post_id'] : 0;
     $limit = isset($input['limit']) ? (int)$input['limit'] : 10;
 
     // JOIN comments with users table to get author information
@@ -34,7 +35,8 @@ function get_comments(int $post_id): array
             c.created_at,
             c.updated_at,
             u.first_name as first_name,
-            u.photo_url as author_photo_url
+            u.photo_url as photo_url,
+            u.firebase_uid as firebase_uid
         FROM comments c
         LEFT JOIN users u ON c.user_id = u.id
         WHERE c.post_id = ?
@@ -46,19 +48,5 @@ function get_comments(int $post_id): array
     $stmt->execute([$post_id, $limit]);
     $rows = $stmt->fetchAll();
 
-    // Convert each row to CommentModel and add author info
-    $comments = [];
-    foreach ($rows as $row) {
-        $comment = new CommentModel($row);
-        $commentData = $comment->toArray();
-
-        // Add author information
-        $commentData['comment_id'] = $commentData['id'];
-        $commentData['first_name'] = $row['first_name'] ?? 'Anonymous';
-        $commentData['author_photo_url'] = $row['author_photo_url'];
-
-        $comments[] = $commentData;
-    }
-
-    return $comments;
+    return array_map(fn($row) => new CommentModel($row), $rows);
 }

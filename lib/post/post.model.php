@@ -9,9 +9,20 @@ class PostModel
     public string $content;
     public string $visibility;
     public array $files;
+
+
+    /**
+     * Comments
+     * @var CommentModel[] $comments Array of CommentModel objects
+     */
     public array $comments;
     public int $created_at;
     public int $updated_at;
+
+
+
+
+    public AuthorModel|null $author = null;
 
     public function __construct(array $data)
     {
@@ -25,6 +36,10 @@ class PostModel
         $this->comments = $data['comments'] ?? [];
         $this->created_at = $data['created_at'] ?? 0;
         $this->updated_at = $data['updated_at'] ?? 0;
+
+
+        // 작성자 정보가 있으면 AuthorModel 생성
+        $this->author = new AuthorModel($data);
     }
 
     /**
@@ -35,7 +50,7 @@ class PostModel
      */
     public function toArray(): array
     {
-        return [
+        $data = [
             'id' => $this->id,
             'user_id' => $this->user_id,
             'category' => $this->category,
@@ -46,7 +61,9 @@ class PostModel
             'comments' => $this->comments,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'author' => $this->author ? $this->author->toArray() : null,
         ];
+        return $data;
     }
 
     public function data(): array

@@ -5,7 +5,7 @@
  *
  * 테스트 대상 함수:
  * 1. is_blocked_either_way()
- * 2. get_post_row()
+ * 2. get_post()
  * 3. fanout_post_to_friends()
  * 4. get_feeds_from_feed_entries()
  * 5. get_feed_from_read_join()
@@ -177,9 +177,9 @@ test_assert(
 echo "\n";
 
 // ============================================================================
-// 테스트 2: get_post_row() 함수
+// 테스트 2: get_post() 함수
 // ============================================================================
-echo "테스트 2: get_post_row() 함수\n";
+echo "테스트 2: get_post() 함수\n";
 echo "----------------------------------------\n";
 
 // 게시글 생성
@@ -194,7 +194,7 @@ $post1 = create_test_post(
 $post_id_1 = $post1['id'];
 
 // 게시글 조회
-$row = get_post_row($post_id_1);
+$row = get_post($post_id_1);
 test_assert($row !== null, "존재하는 게시글은 배열을 반환해야 함");
 test_assert(
     is_array($row) && $row['title'] === 'COMPREHENSIVE_TEST_POST_1',
@@ -206,7 +206,7 @@ test_assert(
 );
 
 // 존재하지 않는 게시글
-$row_null = get_post_row(999999999);
+$row_null = get_post(999999999);
 test_assert($row_null === null, "존재하지 않는 게시글은 null을 반환해야 함");
 
 echo "\n";
