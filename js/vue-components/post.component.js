@@ -297,7 +297,9 @@ const postComponent = {
             }
 
             const currentUserId = window.Store.state.user.id;
-            const postAuthorId = this.post.author_id;
+            console.log(window.Store.state);
+            const postAuthorId = this.post.user_id;
+
 
             return postAuthorId === currentUserId;
         }
@@ -347,7 +349,7 @@ const postComponent = {
             }
 
             try {
-                console.log('Deleting post:', this.post.post_id);
+                console.log('Deleting post:', this.post.id);
                 await func('delete_post', {
                     id: this.post.post_id,
                     auth: true

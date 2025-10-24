@@ -229,9 +229,9 @@ function error_if_empty(mixed $value, string $code,  string $message = 'Value is
 function assign_author_info(array &$post): void
 {
     $post['author'] = [
-        'last_name'    => $post['last_name'] ?? '',
+        'first_name'    => $post['first_name'] ?? '',
         'photo_url'    => $post['photo_url'] ?? '',
         'firebase_uid' => $post['firebase_uid'] ?? '',
     ];
-    unset($post['last_name'], $post['photo_url'], $post['firebase_uid']);
+    unset($post['first_name'], $post['photo_url'], $post['firebase_uid']);
 }

@@ -30,18 +30,18 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
 <!-- Inject categories data for JavaScript -->
 <script>
     window.categoryData = <?= json_encode([
-        'rootCategories' => array_values(array_map(function($root) {
-            return [
-                'display_name' => $root->display_name,
-                'categories' => array_values(array_map(function($sub) {
-                    return [
-                        'category' => $sub->category,
-                        'name' => $sub->name
-                    ];
-                }, $root->getCategories()))
-            ];
-        }, config()->categories->getRootCategories()))
-    ]) ?>;
+                                'rootCategories' => array_values(array_map(function ($root) {
+                                    return [
+                                        'display_name' => $root->display_name,
+                                        'categories' => array_values(array_map(function ($sub) {
+                                            return [
+                                                'category' => $sub->category,
+                                                'name' => $sub->name
+                                            ];
+                                        }, $root->getCategories()))
+                                    ];
+                                }, config()->categories->getRootCategories()))
+                            ]) ?>;
 </script>
 
 id: <?= login()->id ?>

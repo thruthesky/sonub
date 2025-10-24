@@ -19,9 +19,6 @@ class PostModel
     public int $created_at;
     public int $updated_at;
 
-
-
-
     public AuthorModel|null $author = null;
 
     public function __construct(array $data)

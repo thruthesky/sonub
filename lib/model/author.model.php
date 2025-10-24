@@ -1,9 +1,9 @@
 <?php
 class AuthorModel
 {
-    public ?string $first_name;
-    public ?string $photo_url;
-    public ?string $firebase_uid;
+    public ?string $first_name = null;
+    public ?string $photo_url = null;
+    public ?string $firebase_uid = null;
 
     public function __construct(array $data)
     {
