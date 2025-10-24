@@ -44,7 +44,6 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
                             ]) ?>;
 </script>
 
-id: <?= login()->id ?>
 <style>
     .post-create-trigger {
         flex: 1;
@@ -311,7 +310,7 @@ id: <?= login()->id ?>
             data() {
                 return {
                     content: '',
-                    expanded: true,
+                    expanded: false,
                     hasFiles: false,
                     visibility: 'public',
                     category: '<?= $category ?>',
@@ -397,7 +396,8 @@ id: <?= login()->id ?>
 
                         if (post && post.id) {
                             // 작성 성공 시, 페이지 새로고침
-                            window.location.reload();
+                            window.Store.state.postList.posts.unshift(post);
+                            this.cancel();
                         }
                     } catch (error) {
                         console.error('게시물 작성 실패:', error);

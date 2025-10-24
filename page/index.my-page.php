@@ -1,6 +1,6 @@
 <?php
 
-$per_page = 10;
+$per_page = 5;
 $page = 1;
 inject_index_language();
 load_deferred_js('infinite-scroll');
@@ -20,33 +20,24 @@ load_page_css();
 
 
 <?php
-// 로그인한 사용자의 피드 조회 (내 글 + 친구 글 + pending 상태 친구 글)
 // **중요: get_posts_from_feed_entries()는 오직 feed_entries 테이블에서만 조회합니다**
 // 더 이상 posts 테이블에서 추가 조회하지 않으므로, fanout된 글만 표시됩니다.
-if (login()) {
-    $offset = ($page - 1) * $per_page;
-    $feedItems = get_posts_from_feed_entries([
-        'me' => login()->id,
-        'limit' => $per_page,
-        'offset' => $offset
-    ]);
 
-    // get_posts_from_feed_entries()는 배열을 직접 반환하므로, list_posts() 형식으로 변환
-    $postList = [
-        'posts' => $feedItems,
-        'page' => $page,
-        'isEmpty' => empty($feedItems),
-        'isLastPage' => count($feedItems) < $per_page
-    ];
-} else {
-    // 비로그인 사용자: 빈 피드 표시
-    $postList = [
-        'posts' => [],
-        'page' => 1,
-        'isEmpty' => true,
-        'isLastPage' => true
-    ];
-}
+$offset = ($page - 1) * $per_page;
+$feedItems = get_posts_from_feed_entries([
+    'me' => login()->id,
+    'limit' => $per_page,
+    'offset' => $offset
+]);
+
+// get_posts_from_feed_entries()는 배열을 직접 반환하므로, list_posts() 형식으로 변환
+$postList = [
+    'posts' => $feedItems,
+    'page' => $page,
+    'isEmpty' => empty($feedItems),
+    'isLastPage' => count($feedItems) < $per_page
+];
+
 ?>
 
 <style>
@@ -112,21 +103,21 @@ if (login()) {
     });
 </script>
 
-  <script>
-      window.categoryData = <?= json_encode([
-          'rootCategories' => array_map(function($root) {
-              return [
-                  'display_name' => $root->display_name,
-                  'categories' => array_map(function($sub) {
-                      return [
-                          'category' => $sub->category,
-                          'name' => $sub->name
-                      ];
-                  }, $root->getCategories())
-              ];
-          }, config()->categories->getRootCategories())
-      ]) ?>;
-  </script>
+<script>
+    window.categoryData = <?= json_encode([
+                                'rootCategories' => array_map(function ($root) {
+                                    return [
+                                        'display_name' => $root->display_name,
+                                        'categories' => array_map(function ($sub) {
+                                            return [
+                                                'category' => $sub->category,
+                                                'name' => $sub->name
+                                            ];
+                                        }, $root->getCategories())
+                                    ];
+                                }, config()->categories->getRootCategories())
+                            ]) ?>;
+</script>
 
 
 <script>
@@ -136,7 +127,7 @@ if (login()) {
             components: {
                 'post-component': postComponent,
             },
-            template: /*html*/ `
+            template: `
                     <!-- 게시물이 없을 때 -->
                     <div v-if="postList.isEmpty" class="text-center py-5">
                         <p class="text-muted">아직 게시물이 없습니다.</p>
@@ -153,9 +144,11 @@ if (login()) {
                     </div>
             `,
             data() {
+
+                Object.assign(window.Store.state.postList, <?= json_encode($postList, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>);
                 return {
                     // 서버에서 hydrate된 게시물 목록
-                    postList: <?= json_encode($postList, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>,
+                    postList: window.Store.state.postList,
                     toogleCommentBox: false,
                     // 현재 로그인한 사용자 프로필 사진
                     currentUserPhoto: <?= login() && login()->photo_url ? json_encode(login()->photo_url) : 'null' ?>
@@ -190,12 +183,6 @@ if (login()) {
                     } catch (error) {
                         console.error('게시물 로드 중 오류 발생:', error);
                     }
-                },
-                /**
-                 * 게시물 새로고침
-                 */
-                refreshPosts() {
-                    window.location.reload();
                 },
                 /**
                  * 게시물 삭제 이벤트 핸들러

@@ -336,7 +336,13 @@ function initialize_on_ready() {
     // 1️⃣ 상태 (state)
     const state = reactive({
         user: window.__HYDRATE__?.user ?? {}, // index.php에서 주입된 로그인 사용자 정보
-        lang: window.__HYDRATE__?.lang || 'en' // index.php에서 주입된 사용자 언어 정보
+        lang: window.__HYDRATE__?.lang || 'en', // index.php에서 주입된 사용자 언어 정보
+        postList: {
+            isEmpty: false,
+            isLastPage: false,
+            page: 1,
+            posts: [],
+        }
     });
 
     // 2️⃣ 계산값 (getters)

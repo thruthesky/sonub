@@ -95,7 +95,7 @@ try {
     // 정상 응답 처리
     // ====================================================================
     // 함수 이름 추가 (어떤 함수가 실행되었는지 표시)
-    $res['func'] = $func_name;
+    // $res['func'] = $func_name;
 
     // JSON 응답 출력
     echo json_encode($res, JSON_UNESCAPED_UNICODE);
