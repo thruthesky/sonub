@@ -48,40 +48,8 @@ $postList = [
 </style>
 
 <div id="my-page" class="mt-4">
-    <!-- 로딩 스켈레톤 (Vue 마운트 전에만 표시) -->
-    <div id="skeleton-loader">
-        <!-- 스켈레톤 게시물 카드 1 -->
-        <article class="post-card skeleton-card">
-            <div class="post-header">
-                <div class="skeleton skeleton-avatar"></div>
-                <div style="flex: 1;">
-                    <div class="skeleton skeleton-text" style="width: 150px; height: 16px; margin-bottom: 8px;"></div>
-                    <div class="skeleton skeleton-text" style="width: 100px; height: 14px;"></div>
-                </div>
-            </div>
-            <div class="post-body">
-                <div class="skeleton skeleton-text" style="width: 100%; height: 16px; margin-bottom: 8px;"></div>
-                <div class="skeleton skeleton-text" style="width: 80%; height: 16px; margin-bottom: 8px;"></div>
-                <div class="skeleton skeleton-text" style="width: 60%; height: 16px;"></div>
-                <div class="skeleton skeleton-image" style="margin-top: 12px;"></div>
-            </div>
-        </article>
 
-        <!-- 스켈레톤 게시물 카드 2 -->
-        <article class="post-card skeleton-card">
-            <div class="post-header">
-                <div class="skeleton skeleton-avatar"></div>
-                <div style="flex: 1;">
-                    <div class="skeleton skeleton-text" style="width: 150px; height: 16px; margin-bottom: 8px;"></div>
-                    <div class="skeleton skeleton-text" style="width: 100px; height: 14px;"></div>
-                </div>
-            </div>
-            <div class="post-body">
-                <div class="skeleton skeleton-text" style="width: 100%; height: 16px; margin-bottom: 8px;"></div>
-                <div class="skeleton skeleton-text" style="width: 90%; height: 16px; margin-bottom: 8px;"></div>
-            </div>
-        </article>
-    </div>
+    <?php include WIDGET_DIR . '/loading/skeleton.php' ?>
 
     <!-- Vue 앱이 여기에 렌더링됩니다 -->
 </div>

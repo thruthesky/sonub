@@ -18,21 +18,25 @@ const postComponent = {
     template: /*html*/ `
     <div ref="postContainer" :class="{ 'border border-warning border-1 rounded-3': edit.enabled }" style="transition: all 0.1s ease;">
     <!-- 게시물 헤더 (사용자 정보) -->
-    <header class="post-header">
-        <div class="d-flex align-items-center">
-            <!-- 프로필 사진 -->
-            <div class="post-header-avatar">
+    <header class="d-flex align-items-center justify-content-between p-3 border-bottom" style="border-color: #e4e6eb;">
+        <div class="d-flex align-items-center gap-2">
+            <!-- 프로필 사진 (Bootstrap 유틸리티 클래스 사용) -->
+            <div class="d-flex align-items-center justify-content-center bg-light rounded-circle flex-shrink-0"
+                 style="width: 40px; height: 40px; background-color: #e4e6eb;">
                 <img v-if="getAuthorPhoto(post)"
                         :src="getAuthorPhoto(post)"
                         :alt="getAuthorName(post)"
-                        style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                <i v-else class="fa-solid fa-user"></i>
+                        class="rounded-circle"
+                        style="width: 100%; height: 100%; object-fit: cover;">
+                <i v-else class="fa-solid fa-user text-secondary" style="font-size: 20px; color: #65676b;"></i>
             </div>
 
             <!-- 사용자 이름, 날짜, 공개범위 -->
-            <div class="post-header-info">
-                <div class="post-header-name">{{ getAuthorName(post) }}</div>
-                <div class="post-header-meta">
+            <div class="flex-grow-1">
+                <div class="fw-semibold" style="font-size: 15px; color: #050505; line-height: 1.3;">
+                    {{ getAuthorName(post) }}
+                </div>
+                <div class="small" style="font-size: 13px; color: #65676b; line-height: 1.3;">
                     {{ formatDate(post.created_at) }} ·
                     <span class="badge bg-secondary">{{ post.visibility || 'public' }}</span>
                     <span v-if="edit.enabled" class="badge bg-warning bg-opacity-75 text-dark ms-2">
@@ -49,7 +53,7 @@ const postComponent = {
             </button>
 
             <!-- 드롭다운 메뉴 -->
-            <ul class="dropdown-menu">
+            <ul class="dropdown-menu" style="min-width: 120px;">
                 <li>
                     <button @click="handleEditPost()"
                             class="btn btn-sm w-100 text-start d-flex align-items-center gap-2 py-2 px-3 border-0">
@@ -68,16 +72,17 @@ const postComponent = {
         </div>
     </header>
 
-    <!-- 게시물 본문 -->
-    <div class="post-body">
+    <!-- 게시물 본문 (Bootstrap 패딩 사용) -->
+    <div class="p-3">
         <!-- Edit Mode -->
         <div v-if="edit.enabled">
             <!-- Edit Content Textarea -->
             <textarea
                 v-model="edit.content"
-                class="post-content-input form-control mb-3"
+                class="form-control mb-3"
                 placeholder="What's on your mind?"
-                rows="4"></textarea>
+                rows="4"
+                style="border: 1px solid #ced4da; border-radius: 8px; font-size: 15px;"></textarea>
 
             <!-- Preview existing images (editable in edit mode) -->
             <div v-if="hasPhotos(edit.files)" class="mb-3">
@@ -165,20 +170,23 @@ const postComponent = {
 
         <!-- View Mode -->
         <div v-else>
-            <!-- 제목 -->
-            <div v-if="post.title" class="post-title">{{ post.title }}</div>
+            <!-- 제목 (Bootstrap 타이포그래피) -->
+            <div v-if="post.title" class="fw-semibold mb-2" style="font-size: 18px; color: #050505; line-height: 1.4;">
+                {{ post.title }}
+            </div>
 
-            <!-- 내용 -->
-            <div v-if="post.content" class="post-content" v-html="formatContent(post.content)"></div>
+            <!-- 내용 (Bootstrap 타이포그래피) -->
+            <div v-if="post.content" class="mb-3" style="font-size: 15px; color: #050505; line-height: 1.5; white-space: pre-wrap; word-break: break-word;" v-html="formatContent(post.content)"></div>
 
             <!-- 이미지 -->
-            <div class="post-images">
+            <div>
                 <div v-if="hasPhotos(post.files)" class="row g-2">
                     <div v-for="(fileUrl, index) in getValidPhotos(post.files)" :key="index"
                             :class="getPhotoColumnClass(getValidPhotos(post.files).length)">
                         <img :src="thumbnail(fileUrl, 400, 400, 'cover', 85, 'ffffff')"
                                 :alt="'Photo ' + (index + 1)"
-                                style="width: 100%; height: 200px; object-fit: cover;"
+                                class="rounded"
+                                style="width: 100%; height: 200px; object-fit: cover; cursor: pointer;"
                                 @click="openPhotoModal(fileUrl)">
                     </div>
                 </div>
@@ -186,75 +194,167 @@ const postComponent = {
         </div>
     </div>
 
-    
 
-    <!-- 게시물 액션 버튼 -->
-    <div class="post-actions">
-        <button class="post-action-btn" @click="handleLike(post)">
-            <i class="fa-regular fa-thumbs-up"></i>
+
+    <!-- 게시물 액션 버튼 (Bootstrap 버튼 그룹) -->
+    <div class="d-flex border-top" style="border-color: #e4e6eb;">
+        <button class="btn btn-link text-decoration-none text-secondary flex-fill py-2 border-0"
+                style="font-size: 15px; font-weight: 600;"
+                @click="handleLike(post)">
+            <i class="fa-regular fa-thumbs-up me-2"></i>
             <span>Like</span>
         </button>
-        <button class="post-action-btn" @click="toggleCommentBox(post)">
-            <i class="fa-regular fa-comment"></i>
-            <span>Comment</span>
+        <button class="btn btn-link text-decoration-none text-secondary flex-fill py-2 border-0"
+                style="font-size: 15px; font-weight: 600;"
+                @click="showMoreComments">
+            <i class="fa-regular fa-comment me-2"></i>
+            <span>Comment{{ post.comment_count > 0 ? ' (' + post.comment_count + ')' : '' }}</span>
         </button>
-        <button class="post-action-btn" @click="handleShare(post)">
-            <i class="fa-regular fa-share-from-square"></i>
+        <button class="btn btn-link text-decoration-none text-secondary flex-fill py-2 border-0"
+                style="font-size: 15px; font-weight: 600;"
+                @click="handleShare(post)">
+            <i class="fa-regular fa-share-from-square me-2"></i>
             <span>Share</span>
         </button>
     </div>
 
-    <!-- 댓글 섹션 -->
-    <div v-if="post.showComments" class="post-comments-section">
-        <!-- 댓글 입력 박스 -->
-        <div class="comment-input-box">
-            <div class="comment-input-avatar">
+    <!-- 댓글 섹션 (Bootstrap 패딩) -->
+    <div class="border-top p-3" style="border-color: #e4e6eb; background-color: #f0f2f5;">
+        <!-- 댓글 입력 박스 (Bootstrap Flexbox) -->
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <!-- 댓글 작성자 아바타 (Bootstrap 유틸리티) -->
+            <div class="d-flex align-items-center justify-content-center bg-light rounded-circle flex-shrink-0"
+                 style="width: 32px; height: 32px; background-color: #e4e6eb;">
                 <img v-if="currentUserPhoto"
                         :src="currentUserPhoto"
                         alt="My avatar"
-                        style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                <i v-else class="fa-solid fa-user"></i>
+                        class="rounded-circle"
+                        style="width: 100%; height: 100%; object-fit: cover;">
+                <i v-else class="fa-solid fa-user text-secondary" style="font-size: 14px;"></i>
             </div>
-            <div class="comment-input-wrapper">
+            <!-- 댓글 입력 필드 (Bootstrap Input Group) -->
+            <div class="flex-grow-1 d-flex align-items-center gap-2 bg-white rounded-pill px-3 py-1" style="border: 1px solid #ced4da;">
                 <input
                     type="text"
-                    class="comment-input"
+                    class="form-control border-0 px-0"
+                    style="font-size: 14px; box-shadow: none;"
                     placeholder="Write a comment..."
                     v-model="post.newComment"
                     @keyup.enter="submitComment(post)">
                 <button
-                    class="comment-submit-btn"
+                    class="btn btn-link text-primary text-decoration-none p-0"
+                    style="font-size: 16px;"
                     :disabled="!post.newComment || !post.newComment.trim()"
-                    @click="submitComment(post)">
-                    Post
+                    @click="submitComment(post)"
+                    title="Send comment">
+                    <i class="fa-solid fa-paper-plane"></i>
                 </button>
             </div>
         </div>
 
-        <!-- 댓글 목록 -->
-        <div v-if="post.comments && post.comments.length > 0" class="comments-list">
-            <div v-for="comment in post.comments" :key="comment.comment_id" class="comment-item">
-                <!-- 댓글 작성자 아바타 -->
-                <div class="comment-avatar">
-                    <img v-if="comment.author_photo_url"
-                            :src="comment.author_photo_url"
-                            :alt="comment.author_name"
-                            style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                    <i v-else class="fa-solid fa-user"></i>
-                </div>
 
-                <!-- 댓글 내용 -->
-                <div class="comment-content-wrapper">
-                    <div class="comment-bubble">
-                        <div class="comment-author">{{ comment.author_name || 'Anonymous' }}</div>
-                        <div class="comment-text">{{ comment.content }}</div>
+        <!-- 댓글 더보기 버튼 (댓글 목록 위) -->
+        <div v-if="post.comment_count > post.comments.length"
+             class="text-center my-3">
+            <button @click="showMoreComments"
+                    class="btn btn-link text-decoration-none text-muted p-2">
+                <i class="fa-regular fa-comment-dots me-2"></i>
+                <span class="small">{{ more_comment_count }}개의 댓글이 더 있습니다. <b>더보기</b></span>
+            </button>
+        </div>
+
+        <!-- 댓글 목록 -->
+        <section v-if="post.comments && post.comments.length > 0">
+            <div v-for="comment in post.comments" :key="comment.id" class="mb-2" :style="getCommentIndentStyle(comment.depth)">
+               <div class="d-flex align-items-start gap-2">
+                    <!-- 댓글 작성자 아바타 (Bootstrap 유틸리티) -->
+                    <div class="d-flex align-items-center justify-content-center bg-light rounded-circle flex-shrink-0"
+                         style="width: 32px; height: 32px; background-color: #e4e6eb;">
+                        <img v-if="comment.author && comment.author.photo_url"
+                                :src="comment.author.photo_url"
+                                :alt="comment.author.first_name || 'Anonymous'"
+                                class="rounded-circle"
+                                style="width: 100%; height: 100%; object-fit: cover;">
+                        <i v-else class="fa-solid fa-user text-secondary" style="font-size: 14px;"></i>
                     </div>
-                    <div class="comment-meta">
-                        {{ formatDate(comment.created_at) }}
+
+                    <!-- 댓글 내용 -->
+                    <div class="flex-grow-1">
+                        <!-- 첫 번째 줄: 이름 + 날짜 -->
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <span class="fw-semibold" style="font-size: 13px; color: #050505;">
+                                {{ (comment.author && comment.author.first_name) || 'Anonymous' }}
+                            </span>
+                            <span class="text-muted" style="font-size: 12px;">
+                                {{ formatDate(comment.created_at) }}
+                            </span>
+                        </div>
+
+                        <!-- 두 번째 줄: 댓글 내용 (연한 회색 배경 박스) -->
+                        <div class="rounded-3 px-2 py-1 mb-1" style="background-color: #f8f9fa; border: 1px solid #e4e6eb; font-size: 14px; color: #050505; line-height: 1.3; word-break: break-word;">
+                            {{ comment.content }}
+                        </div>
+
+                        <!-- 세 번째 줄: 액션 버튼 (좌측: Like/Reply, 우측: Edit/Delete) -->
+                        <div class="d-flex align-items-center justify-content-between">
+                            <!-- 좌측: Like, Reply -->
+                            <div class="d-flex align-items-center gap-2">
+                                <button class="btn btn-link text-decoration-none text-muted p-0 fw-semibold" style="font-size: 11px;">
+                                    Like
+                                </button>
+                                <button @click="toggleReply(comment.id)" class="btn btn-link text-decoration-none text-muted p-0 fw-semibold" style="font-size: 11px;">
+                                    Reply
+                                </button>
+                            </div>
+
+                            <!-- 우측: Edit, Delete -->
+                            <div class="d-flex align-items-center gap-2">
+                                <button class="btn btn-link text-decoration-none text-muted p-0" style="font-size: 13px;" title="Edit">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button class="btn btn-link text-decoration-none text-danger p-0" style="font-size: 13px;" title="Delete">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 답글 입력창 (Reply 버튼 클릭 시 표시) -->
+                        <div v-if="replyingTo === (comment.id)" class="d-flex align-items-center gap-2 mt-2">
+                            <!-- 답글 작성자 아바타 -->
+                            <div class="d-flex align-items-center justify-content-center bg-light rounded-circle flex-shrink-0"
+                                 style="width: 32px; height: 32px; background-color: #e4e6eb;">
+                                <img v-if="currentUserPhoto"
+                                        :src="currentUserPhoto"
+                                        alt="My avatar"
+                                        class="rounded-circle"
+                                        style="width: 100%; height: 100%; object-fit: cover;">
+                                <i v-else class="fa-solid fa-user text-secondary" style="font-size: 14px;"></i>
+                            </div>
+                            <!-- 답글 입력 필드 -->
+                            <div class="flex-grow-1 d-flex align-items-center gap-2 bg-white rounded-pill px-3 py-1" style="border: 1px solid #ced4da;">
+                                <input
+                                    type="text"
+                                    class="form-control border-0 px-0"
+                                    style="font-size: 14px; box-shadow: none;"
+                                    placeholder="Write a reply..."
+                                    v-model="replyContent"
+                                    @keyup.enter="submitReply(comment.id)"
+                                    @keyup.esc="cancelReply()">
+                                <button
+                                    class="btn btn-link text-primary text-decoration-none p-0"
+                                    style="font-size: 16px;"
+                                    :disabled="!replyContent || !replyContent.trim()"
+                                    @click="submitReply(comment.id)"
+                                    title="Send reply">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
+
     </div>
     </div>
 `,
@@ -276,13 +376,16 @@ const postComponent = {
         return {
             post: this.post,
             categories: categories,
+            more_comment_count: this.post.comment_count - (this.post.comments ? this.post.comments.length : 0),
             edit: {
                 enabled: false,
                 content: '',
                 visibility: 'public',
                 category: 'story',
                 files: [],
-            }
+            },
+            replyingTo: null, // 현재 답글을 작성 중인 댓글 ID
+            replyContent: '', // 답글 내용
         };
     },
     computed: {
@@ -302,10 +405,21 @@ const postComponent = {
 
 
             return postAuthorId === currentUserId;
+        },
+        /**
+         * 현재 로그인한 사용자의 프로필 사진
+         * @returns {string|null} 프로필 사진 URL 또는 null
+         */
+        currentUserPhoto() {
+            if (!window.Store || !window.Store.state || !window.Store.state.user) {
+                return null;
+            }
+            return window.Store.state.user.photo_url || null;
         }
     },
     methods: {
         thumbnail: thumbnail,
+        shortDateTime: shortDateTime,
         /**
          * 작성자 이름 반환 (없으면 기본값)
          * @param {Object} post - 게시물 객체
@@ -325,18 +439,12 @@ const postComponent = {
         },
 
         /**
-         * 날짜 포맷팅
+         * 날짜 포맷팅 (shortDateTime 함수 사용)
+         * - 오늘 날짜: "오후 3:45" 형식
+         * - 과거 날짜: "2025-10-24" 형식
          */
         formatDate(timestamp) {
-            if (!timestamp) return '';
-            const date = new Date(timestamp * 1000);
-            return date.toLocaleString('ko-KR', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+            return shortDateTime(timestamp);
         },
 
         /**
@@ -561,11 +669,17 @@ const postComponent = {
          * Toggle comment box
          * @param {Object} post - Post object
          */
-        toggleCommentBox(post) {
-            post.showComments = !post.showComments;
-
+        async showMoreComments() {
             // Comments are already loaded from list_posts(), no need to fetch
             // Just toggle visibility
+
+            const moreComments = await func('get_comments', {
+                post_id: this.post.id,
+                limit: 99999, // Load all comments
+            });
+
+            console.log('Loaded more comments:', moreComments);
+            this.post.comments = moreComments;
         },
 
         /**
@@ -586,28 +700,24 @@ const postComponent = {
                 return;
             }
 
-            try {
-                // TODO: API 호출로 댓글 저장
-                // const result = await func('create_comment', {
-                //     post_id: post.id,
-                //     content: post.newComment.trim(),
-                //     auth: true
-                // });
+            const newComment = await func('create_comment', {
+                post_id: post.id,
+                content: post.newComment.trim(),
+            });
 
-                // 임시: 댓글을 로컬에 추가 (실제로는 API 응답 사용)
-                const newComment = {
-                    content: post.newComment.trim(),
-                    created_at: new Date().toISOString()
-                };
-
+            // parent_id가 없으면 맨 아래에 추가
+            if (!newComment.parent_id) {
                 post.comments.push(newComment);
-                post.newComment = '';
-
-                console.log('Comment submitted:', newComment);
-            } catch (error) {
-                console.error('댓글 작성 오류:', error);
-                alert('댓글 작성 중 오류가 발생했습니다.');
+            } else {
+                // parent_id가 있으면 부모의 형제들 중 맨 아래 위치를 찾아서 삽입
+                const insertIndex = this.findInsertPositionAfterSiblings(post.comments, newComment.parent_id);
+                post.comments.splice(insertIndex, 0, newComment);
             }
+
+            post.newComment = '';
+
+            console.log('Comment submitted:', newComment);
+
         },
 
         /**
@@ -628,6 +738,134 @@ const postComponent = {
         isMyPost(post) {
             const myUserId = Store.user?.id;
             return myUserId && post.user_id === myUserId;
+        },
+
+        /**
+         * 부모 댓글의 형제들 중 맨 아래 위치를 찾아서 삽입 인덱스 반환
+         * @param {Array} comments - 전체 댓글 배열
+         * @param {number} parentId - 부모 댓글 ID
+         * @returns {number} 삽입할 인덱스
+         */
+        findInsertPositionAfterSiblings(comments, parentId) {
+            // 부모 댓글 찾기
+            const parentIndex = comments.findIndex(c => c.id === parentId);
+            if (parentIndex === -1) {
+                // 부모를 찾지 못하면 맨 아래에 추가
+                return comments.length;
+            }
+
+            const parent = comments[parentIndex];
+            const parentDepth = parent.depth || 1;
+
+            // 부모 다음부터 탐색 시작
+            let lastSiblingIndex = parentIndex;
+
+            for (let i = parentIndex + 1; i < comments.length; i++) {
+                const currentComment = comments[i];
+                const currentDepth = currentComment.depth || 1;
+
+                // 부모보다 depth가 작거나 같으면 형제/조상 레벨이므로 탐색 종료
+                if (currentDepth <= parentDepth) {
+                    break;
+                }
+
+                // 부모의 직계 자식 (depth가 parentDepth + 1)이면 형제 후보
+                if (currentDepth === parentDepth + 1) {
+                    lastSiblingIndex = i;
+                }
+
+                // 더 깊은 depth (손자, 증손자 등)는 건너뛰고 계속 탐색
+            }
+
+            // 마지막 형제의 다음 위치에 삽입
+            return lastSiblingIndex + 1;
+        },
+
+        /**
+         * 댓글 depth에 따른 들여쓰기 스타일 반환
+         * @param {number} depth - 댓글 깊이 (1, 2, 3, 4, 5+)
+         * @returns {object} 스타일 객체
+         */
+        getCommentIndentStyle(depth) {
+            // depth에 따른 margin-left 값 설정
+            let marginLeft = 0;
+            if (depth === 1) {
+                marginLeft = 32; // 32px
+            } else if (depth === 2) {
+                marginLeft = 64; // 64px
+            } else if (depth === 3) {
+                marginLeft = 80; // 80px
+            } else if (depth === 4) {
+                marginLeft = 96; // 96px
+            } else if (depth >= 5) {
+                marginLeft = 112; // 112px (최대 들여쓰기 고정)
+            }
+
+            return {
+                marginLeft: `${marginLeft}px`
+            };
+        },
+
+        /**
+         * 답글 입력창 토글
+         * @param {number} commentId - 댓글 ID
+         */
+        toggleReply(commentId) {
+            console.log('Toggle reply for comment:', commentId);
+            console.log('Current replyingTo:', this.replyingTo);
+            console.log('Type of commentId:', typeof commentId);
+            console.log('Are they equal?', this.replyingTo === commentId);
+
+            if (this.replyingTo === commentId) {
+                // 이미 열려있으면 닫기
+                this.replyingTo = null;
+                this.replyContent = '';
+            } else {
+                // 새로 열기
+                this.replyingTo = commentId;
+                this.replyContent = '';
+            }
+
+            console.log('After toggle, replyingTo:', this.replyingTo);
+        },
+
+        /**
+         * 답글 작성 취소
+         */
+        cancelReply() {
+            this.replyingTo = null;
+            this.replyContent = '';
+        },
+
+        /**
+         * 답글 제출
+         * @param {number} parentCommentId - 부모 댓글 ID
+         */
+        async submitReply(parentCommentId) {
+            if (!this.replyContent || !this.replyContent.trim()) {
+                return;
+            }
+
+            try {
+                const newReply = await func('create_comment', {
+                    post_id: this.post.id,
+                    parent_id: parentCommentId,
+                    content: this.replyContent.trim(),
+                });
+
+                console.log('Reply submitted:', newReply);
+
+                // 부모의 형제들 중 맨 아래 위치를 찾아서 삽입
+                const insertIndex = this.findInsertPositionAfterSiblings(this.post.comments, parentCommentId);
+                this.post.comments.splice(insertIndex, 0, newReply);
+
+                // 입력창 닫기
+                this.replyingTo = null;
+                this.replyContent = '';
+            } catch (error) {
+                console.error('Failed to submit reply:', error);
+                alert('Failed to submit reply: ' + (error.message || 'Unknown error'));
+            }
         },
 
     },

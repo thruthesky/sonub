@@ -372,3 +372,38 @@ function initialize_on_ready() {
 
     console.log('window.Store is loaded');
 }
+
+
+
+// Return hh:mm aa format if timestamp is today, otherwise return yyyy-mm-dd
+function shortDateTime(timestamp) {
+    if (!timestamp) return '';
+
+    // Convert to milliseconds if it's a Unix timestamp (seconds)
+    const time = timestamp < 9999999999 ? timestamp * 1000 : timestamp;
+    const date = new Date(time);
+    const today = new Date();
+
+    // Check if the date is today
+    const isToday = date.getDate() === today.getDate() &&
+        date.getMonth() === today.getMonth() &&
+        date.getFullYear() === today.getFullYear();
+
+    if (isToday) {
+        // Return time in localized format (e.g., "오후 3:45" for Korean, "3:45 PM" for English)
+        const timeStr = date.toLocaleTimeString(navigator.language || 'ko-KR', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+
+        return timeStr;
+    } else {
+        // Return date in yyyy-mm-dd format
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        return `${year}-${month}-${day}`;
+    }
+}

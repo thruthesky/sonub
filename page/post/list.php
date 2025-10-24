@@ -4,7 +4,8 @@
  * 게시글 목록 페이지
  *
  * SEO를 위해 첫 페이지는 PHP로 SSR(Server-Side Rendering)하고,
- * 이후 무한 스크롤은 Vue.js로 처리하는 하이브리드 방식을 사용합니다.
+ * Vue.js Hydration으로 동적 기능을 추가한 후,
+ * 무한 스크롤로 다음 페이지를 로드하는 하이브리드 방식을 사용합니다.
  *
  * @package Sonub
  * @subpackage Pages
@@ -12,144 +13,68 @@
  */
 
 // ========================================================================
-// 1단계: 파라미터 가져오기
+// 1단계: 파라미터 및 설정
 // ========================================================================
 $category = http_param('category');
-$page = 1; // 첫 페이지 (SSR용)
-$per_page = 5; // 페이지당 게시글 수
+$per_page = 5;
+$page = 1;
 
 // ========================================================================
-// 2단계: 첫 페이지 게시글 목록 조회 (SSR용)
+// 2단계: JavaScript 및 CSS 로드
+// ========================================================================
+inject_post_list_language();
+load_deferred_js('infinite-scroll');
+// file-upload 컴포넌트를 post 컴포넌트보다 먼저 로드 (의존성)
+load_deferred_js('vue-components/file-upload.component');
+load_deferred_js('vue-components/post.component');
+load_page_css();
+
+// ========================================================================
+// 3단계: 첫 페이지 게시글 목록 조회 (SSR용)
 // ========================================================================
 $offset = ($page - 1) * $per_page;
-$postList = list_posts([
+$postListData = list_posts([
     'category' => $category,
     'limit' => $per_page,
     'offset' => $offset,
     'page' => $page
 ]);
 
-// ========================================================================
-// 3단계: Infinite Scroll JS 로드
-// ========================================================================
-load_deferred_js('infinite-scroll');
-load_deferred_js('vue-components/post.component');
-
-// 번역 함수 호출
-inject_post_list_language();
-load_page_css();
+// list_posts()의 PostListModel을 배열 형식으로 변환
+$postList = [
+    'posts' => $postListData->posts,
+    'page' => $page,
+    'isEmpty' => $postListData->isEmpty(),
+    'isLastPage' => !$postListData->hasNextPage()
+];
 ?>
 
-<!-- 페이지 컨테이너 -->
-<div class="container-fluid px-0 py-3">
-    <div class="row g-0">
-        <div class="col-12">
+<!-- 게시글 작성 위젯 -->
+<div>
+    <?php include WIDGET_DIR . '/post/post-list-create.php'; ?>
+</div>
 
-            <!-- 게시글 작성 위젯 -->
-            <?php include WIDGET_DIR . '/post/post-list-create.php'; ?>
+<style>
+    #post-list {
+        min-height: 50vh;
+        /* Allow natural growth for infinite scroll */
+    }
+</style>
 
-            <!-- 게시글 목록 컨테이너 -->
-            <div id="post-list-container" class="mt-3">
+<!-- 게시글 목록 컨테이너 -->
+<div id="post-list" class="mt-4">
+    <?php include_once WIDGET_DIR . '/post/list-seo.php' ?>
 
-                <!-- 첫 페이지 게시글 목록 (PHP SSR - SEO용) -->
-                <?php if ($postList->isEmpty()): ?>
-                    <!-- 게시글이 없을 때 -->
-                    <div class="text-center py-5 text-muted">
-                        <i class="fa-regular fa-comment-dots fa-3x mb-3 opacity-25"></i>
-                        <p class="mb-0"><?= t()->아직_게시글이_없습니다 ?></p>
-                    </div>
-                <?php else: ?>
-                    <!-- 게시글 목록 -->
-                    <div class="d-flex flex-column gap-3" id="ssr-posts">
-                        <?php foreach ($postList->posts as $post): ?>
-                            <article class="post-card">
-                                <!-- 게시글 헤더 -->
-                                <div class="post-header">
-                                    <div class="d-flex align-items-start gap-2">
-                                        <div class="user-avatar flex-shrink-0">
-                                            <i class="fa-solid fa-user"></i>
-                                        </div>
-                                        <div class="flex-grow-1 min-w-0">
-                                            <div class="user-name"><?= t()->사용자 ?> #<?= $post->user_id ?></div>
-                                            <div class="post-time"><?= date('Y.m.d H:i', $post->created_at) ?></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- 게시글 제목 -->
-                                <?php if (!empty($post->title)): ?>
-                                    <h2 class="post-title"><?= htmlspecialchars($post->title) ?></h2>
-                                <?php endif; ?>
-
-                                <!-- 게시글 내용 -->
-                                <?php if (!empty($post->content)): ?>
-                                    <div class="post-content"><?= nl2br(htmlspecialchars($post->content)) ?></div>
-                                <?php endif; ?>
-
-                                <!-- 게시글 이미지 -->
-                                <?php if (!empty($post->files)): ?>
-                                    <?php
-                                    $files = is_string($post->files) ? explode(',', $post->files) : $post->files;
-                                    ?>
-                                    <div class="post-images px-1 pb-1">
-                                        <?php foreach ($files as $file): ?>
-                                            <img src="<?= htmlspecialchars(trim($file)) ?>"
-                                                alt="게시글 이미지"
-                                                class="post-image rounded">
-                                        <?php endforeach; ?>
-                                    </div>
-                                <?php endif; ?>
-
-                                <!-- 게시글 푸터 -->
-                                <div class="post-footer">
-                                    <div class="post-actions">
-                                        <button type="button" class="action-btn" aria-label="<?= t()->좋아요 ?>">
-                                            <i class="fa-regular fa-heart"></i>
-                                            <span><?= t()->좋아요 ?></span>
-                                        </button>
-                                        <button type="button" class="action-btn" aria-label="<?= t()->댓글 ?>">
-                                            <i class="fa-regular fa-comment"></i>
-                                            <span><?= t()->댓글 ?></span>
-                                        </button>
-                                        <a href="<?= href()->post->view($post->id) ?>"
-                                            class="action-btn"
-                                            aria-label="<?= t()->보기 ?>">
-                                            <i class="fa-regular fa-arrow-up-right-from-square"></i>
-                                            <span><?= t()->보기 ?></span>
-                                        </a>
-                                    </div>
-                                </div>
-                            </article>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-
-                <!-- Vue.js 동적 게시글 목록 (무한 스크롤용) -->
-                <div id="vue-posts" class="d-flex flex-column gap-3 mt-3"></div>
-
-                <!-- 로딩 인디케이터 -->
-                <div id="loading-indicator" class="text-center" style="display: none;">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden"><?= t()->로딩_중 ?></span>
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
-    </div>
 </div>
 
 <script>
     ready(() => {
-        // ============================================================
-        // Infinite Scroll 초기화
-        // ============================================================
+        // InfiniteScroll 초기화
         const scrollController = InfiniteScroll.init('body', {
             onScrolledToBottom: () => {
                 console.log('하단 도달: 더 많은 데이터 로드');
-                if (window.postListVm) {
-                    window.postListVm.loadNextPage();
+                if (window.postListApp) {
+                    window.postListApp.loadNextPage();
                 }
             },
             threshold: 10,
@@ -161,88 +86,123 @@ load_page_css();
 
 <script>
     ready(() => {
-        // ============================================================
-        // Vue 앱 초기화 (무한 스크롤용)
-        // ============================================================
+        // Vue 앱 초기화
         const app = Vue.createApp({
             components: {
                 'post-component': postComponent,
             },
             template: `
-            <div>
-                <!-- Vue로 로드된 게시글 목록 -->
-                <article v-for="post in posts" :key="post.id" class="post-card">
-                    <post-component :post="post"></post-component>
-                </article>
-            </div>
-        `,
+                <!-- 게시물이 없을 때 -->
+                <div v-if="postList.isEmpty" class="text-center py-5">
+                    <i class="fa-regular fa-comment-dots fa-3x mb-3 opacity-25"></i>
+                    <p class="text-muted"><?= t()->아직_게시글이_없습니다 ?></p>
+                </div>
+
+                <!-- 게시물 목록 -->
+                <div v-else>
+                    <article v-for="post in postList.posts" :key="post.id" class="post-card">
+                        <post-component
+                            :post="post"
+                            @post-deleted="handlePostDeleted"
+                        ></post-component>
+                    </article>
+                </div>
+            `,
             data() {
+                // 서버에서 받은 데이터를 window.Store.state.postList에 저장
+                Object.assign(window.Store.state.postList, <?= json_encode($postList, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>);
+
                 return {
-                    posts: [], // Vue로 로드된 게시글 (2페이지부터)
-                    currentPage: 1, // 현재 페이지 (첫 페이지는 PHP SSR)
-                    isLoading: false,
-                    isLastPage: <?= !$postList->hasNextPage() ? 'true' : 'false' ?>
+                    // 서버에서 hydrate된 게시물 목록 (window.Store 사용)
+                    postList: window.Store.state.postList,
+                    category: '<?= $category ?>',
+                    perPage: <?= $per_page ?>,
+                    // 현재 로그인한 사용자 프로필 사진
+                    currentUserPhoto: <?= login() && login()->photo_url ? json_encode(login()->photo_url) : 'null' ?>
                 };
             },
             methods: {
+                /**
+                 * 다음 페이지 로드 (무한 스크롤)
+                 */
                 async loadNextPage() {
-                    // 이미 로딩 중이거나 마지막 페이지인 경우 무시
-                    if (this.isLoading || this.isLastPage) {
-                        console.log('로딩 중이거나 마지막 페이지입니다.');
+                    if (this.postList.isLastPage) {
+                        console.log('마지막 페이지에 도달했습니다.');
                         return;
                     }
 
-                    const nextPage = this.currentPage + 1;
-                    this.isLoading = true;
-
-                    // 로딩 인디케이터 표시
-                    document.getElementById('loading-indicator').style.display = 'block';
+                    const nextPage = this.postList.page + 1;
 
                     try {
-                        const obj = await func('list_posts', {
-                            category: '<?= $category ?>',
-                            limit: <?= $per_page ?>,
+                        // list_posts API 호출
+                        const result = await func('list_posts', {
+                            category: this.category,
+                            limit: this.perPage,
                             page: nextPage,
                             alertOnError: true,
                         });
 
-                        console.log('다음 페이지 데이터:', obj);
+                        console.log('다음 페이지 데이터:', result);
 
-                        if (obj.posts && obj.posts.length > 0) {
+                        if (result && result.posts && result.posts.length > 0) {
                             // files 문자열을 배열로 변환
-                            obj.posts.forEach(post => {
+                            result.posts.forEach(post => {
                                 if (post.files && typeof post.files === 'string') {
-                                    post.files = post.files.split(',').map(f => f.trim());
+                                    post.files = post.files.split(',').map(f => f.trim()).filter(f => f);
                                 }
+                                // comments 초기화
+                                post.comments = post.comments || [];
                             });
 
-                            this.posts.push(...obj.posts);
-                            this.currentPage = nextPage;
-                            this.isLastPage = obj.posts.length < <?= $per_page ?>;
-                            console.log(nextPage + '번째 페이지 로드 완료, 총 게시물 수:', this.posts.length);
+                            this.postList.posts.push(...result.posts);
+                            this.postList.page = nextPage;
+                            this.postList.isLastPage = result.posts.length < this.perPage;
+                            console.log(nextPage + '번째 페이지 로드 완료, 총 게시물 수:', this.postList.posts.length);
                         } else {
-                            this.isLastPage = true;
+                            this.postList.isLastPage = true;
                             console.log('더 이상 로드할 게시물이 없습니다.');
                         }
                     } catch (error) {
                         console.error('게시물 로드 중 오류 발생:', error);
-                    } finally {
-                        this.isLoading = false;
-                        // 로딩 인디케이터 숨김
-                        document.getElementById('loading-indicator').style.display = 'none';
+                    }
+                },
+
+                /**
+                 * 게시물 삭제 이벤트 핸들러
+                 * post-component에서 @post-deleted 이벤트가 발생하면 호출됨
+                 * @param {number} postId - 삭제된 게시물 ID
+                 */
+                handlePostDeleted(postId) {
+                    console.log('Post deleted event received:', postId);
+                    const index = this.postList.posts.findIndex(p => p.id === postId);
+                    if (index !== -1) {
+                        this.postList.posts.splice(index, 1);
+                        console.log('Post removed from list. Remaining posts:', this.postList.posts.length);
+
+                        // 게시물이 없으면 isEmpty 상태 업데이트
+                        if (this.postList.posts.length === 0) {
+                            this.postList.isEmpty = true;
+                        }
                     }
                 },
             },
             mounted() {
-                console.log('Vue 앱 마운트 완료');
+                console.log('Vue 앱 마운트 완료, 게시물 목록:', this.postList);
+
+                // SSR 콘텐츠 제거 (Vue가 리렌더링하므로)
+                const ssrContent = document.getElementById('ssr-content');
+                if (ssrContent) {
+                    ssrContent.remove();
+                    console.log('✅ SSR 콘텐츠 제거 완료 (Vue가 post-component로 리렌더링)');
+                }
             }
         });
 
-        const vm = app.mount('#vue-posts');
+        const vm = app.mount('#post-list');
         console.log('Vue 인스턴스 마운트됨:', vm);
 
         // Vue 인스턴스를 전역 변수로 노출
-        window.postListVm = vm;
+        window.postListApp = vm;
     });
 </script>
 

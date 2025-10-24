@@ -53,7 +53,7 @@ function get_post(array $input): ?PostModel
 
 
     if ($with_comments) {
-        $row['comments'] = get_comments(['post_id' => $post_id]);
+        $row['comments'] = get_comments(['post_id' => $post_id, 'last' => 5]);
     }
 
     return new PostModel($row);
@@ -466,6 +466,34 @@ function update_post(array $input)
     return get_post_by_id($post_id);
 }
 
+
+/**
+ * 게시글의 댓글 수 업데이트
+ *
+ * 지정된 게시글 ID에 대해 comments 테이블에서 댓글 수를 계산하여
+ * posts 테이블의 comment_count 필드를 업데이트합니다.
+ *
+ * @param int $post_id 댓글 수를 업데이트할 게시글 ID
+ *
+ * @example
+ * update_post_comment_count(123);
+ */
+function update_post_comment_count(int $post_id): void
+{
+    $db = pdo();
+
+    $sql = 'UPDATE posts
+                SET comment_count = (
+                    SELECT COUNT(*) FROM comments WHERE post_id = ?
+                )
+                WHERE id = ?';
+
+    $stmt = $db->prepare($sql);
+    $stmt->execute([$post_id, $post_id]);
+}
+
+
+
 /**
  * ID로 게시글 조회
  *
@@ -682,7 +710,10 @@ function list_posts(array $filters = []): PostListModel
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // PostModel 객체 배열로 변환
-        $posts = $data ? array_map(fn($item) => new PostModel($item), $data) : [];
+        $posts = $data ? array_map(function ($post) {
+            $post['comments'] = get_comments(['post_id' => $post['id'], 'last' => 5]);
+            return new PostModel($post);
+        }, $data) : [];
 
         // ====================================================================
         // 7단계: 전체 게시글 개수 조회 (페이지네이션용)
@@ -870,11 +901,15 @@ function delete_post(array $params)
 
     $pdo = pdo();
 
-    // Delete from posts
-    $sql = 'DELETE FROM posts WHERE id = :id';
+    // Delete all comments for this post
+    $sql = 'DELETE FROM comments WHERE post_id = ?';
     $stmt = $pdo->prepare($sql);
-    $stmt->bindValue(':id', $post_id, PDO::PARAM_INT);
-    $stmt->execute();
+    $stmt->execute([$post_id]);
+
+    // Delete from posts
+    $sql = 'DELETE FROM posts WHERE id = ?';
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$post_id]);
 
 
     delete_post_from_feed_entries($post_id);

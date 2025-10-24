@@ -45,7 +45,8 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
 </script>
 
 <style>
-    .post-create-trigger {
+    /* 게시물 작성 위젯 전용 스타일 */
+    #post-list-create .post-create-trigger {
         flex: 1;
         background-color: #f0f2f5;
         border: none;
@@ -58,11 +59,11 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
         transition: background-color 0.15s ease;
     }
 
-    .post-create-trigger:hover {
+    #post-list-create .post-create-trigger:hover {
         background-color: #e4e6eb;
     }
 
-    .post-content-input {
+    #post-list-create .post-content-input {
         width: 100%;
         border: none;
         outline: none;
@@ -77,12 +78,12 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
         background: transparent;
     }
 
-    .post-content-input::placeholder {
+    #post-list-create .post-content-input::placeholder {
         color: #65676b;
     }
 
     /* 커스텀 드롭다운 래퍼 */
-    .post-select-wrapper {
+    #post-list-create .post-select-wrapper {
         display: inline-flex;
         align-items: center;
         background-color: #e4e6eb;
@@ -93,12 +94,12 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
         position: relative;
     }
 
-    .post-select-wrapper:hover {
+    #post-list-create .post-select-wrapper:hover {
         background-color: #d8dadf;
     }
 
     /* 커스텀 select 스타일 */
-    .post-select {
+    #post-list-create .post-select {
         background: transparent;
         border: none;
         outline: none;
@@ -113,18 +114,17 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
         padding-right: 4px;
     }
 
-    .post-select:focus {
+    #post-list-create .post-select:focus {
         outline: none;
     }
 
     /* 아이콘 색상 */
-    .post-select-wrapper i {
+    #post-list-create .post-select-wrapper i {
         color: #65676b;
     }
 
-
     /* 하단 액션 영역 */
-    .post-create-actions {
+    #post-list-create .post-create-actions {
         display: flex;
         align-items: center;
         gap: 12px;
@@ -158,7 +158,7 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
     }
 
     /* 게시 버튼 */
-    .btn-post {
+    #post-list-create .btn-post {
         background-color: #0866ff;
         border: none;
         padding: 8px 24px;
@@ -170,11 +170,11 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
         transition: background-color 0.15s ease;
     }
 
-    .btn-post:hover {
+    #post-list-create .btn-post:hover {
         background-color: #0757d6;
     }
 
-    .btn-post:disabled {
+    #post-list-create .btn-post:disabled {
         background-color: #e4e6eb;
         color: #bcc0c4;
         cursor: not-allowed;
@@ -186,20 +186,22 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
         <div class="post-body">
             <form @submit.prevent="submit_post">
                 <!-- 축소된 상태: 프로필 + 클릭 가능한 버튼 -->
-                <div v-if="!expanded" class="d-flex align-items-center">
-                    <!-- 프로필 사진 -->
-                    <div class="post-header-avatar">
+                <div v-if="!expanded" class="d-flex align-items-center gap-2">
+                    <!-- 프로필 사진 (Bootstrap 유틸리티 클래스 사용) -->
+                    <div class="d-flex align-items-center justify-content-center bg-light rounded-circle flex-shrink-0"
+                         style="width: 40px; height: 40px;">
                         <img v-if="userPhoto"
                             :src="userPhoto"
                             :alt="userName"
-                            style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                        <i v-else class="fa-solid fa-user"></i>
+                            class="rounded-circle"
+                            style="width: 100%; height: 100%; object-fit: cover;">
+                        <i v-else class="fa-solid fa-user text-secondary" style="font-size: 20px;"></i>
                     </div>
 
                     <!-- 클릭 가능한 버튼 -->
                     <button type="button"
                         @click="expand"
-                        class="post-create-trigger">
+                        class="post-create-trigger flex-grow-1">
                         {{ placeholder }}
                     </button>
                 </div>
@@ -207,17 +209,24 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
                 <!-- 확장된 상태: 전체 폼 -->
                 <div v-if="expanded">
                     <!-- 사용자 프로필 헤더 -->
-                    <div class="post-header" style="padding: 0 0 12px 0; border: none;">
-                        <div class="post-header-avatar">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <!-- 프로필 사진 (Bootstrap 유틸리티 클래스 사용) -->
+                        <div class="d-flex align-items-center justify-content-center bg-light rounded-circle flex-shrink-0"
+                             style="width: 40px; height: 40px;">
                             <img v-if="userPhoto"
                                 :src="userPhoto"
                                 :alt="userName"
-                                style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                            <i v-else class="fa-solid fa-user"></i>
+                                class="rounded-circle"
+                                style="width: 100%; height: 100%; object-fit: cover;">
+                            <i v-else class="fa-solid fa-user text-secondary" style="font-size: 20px;"></i>
                         </div>
-                        <div class="post-header-info">
-                            <div class="post-header-name">{{ userName }}</div>
-                            <div class="post-header-meta d-flex gap-2 align-items-center">
+
+                        <!-- 사용자 정보 -->
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold" style="font-size: 15px; color: #050505; line-height: 1.3;">
+                                {{ userName }}
+                            </div>
+                            <div class="d-flex gap-2 align-items-center" style="font-size: 13px; color: #65676b; line-height: 1.3;">
                                 <!-- 공개범위 선택 -->
                                 <div class="post-select-wrapper">
                                     <i class="fa-solid fa-earth-americas" v-if="visibility === 'public'" style="font-size: 12px; margin-right: 4px;"></i>

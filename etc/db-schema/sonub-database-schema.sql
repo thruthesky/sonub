@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: sonub-mariadb
--- Generation Time: Oct 24, 2025 at 11:31 AM
+-- Generation Time: Oct 24, 2025 at 12:15 PM
 -- Server version: 11.7.2-MariaDB-ubu2404
 -- PHP Version: 8.3.6
 
@@ -44,8 +44,11 @@ CREATE TABLE `comments` (
   `id` int(10) UNSIGNED NOT NULL,
   `user_id` int(10) UNSIGNED NOT NULL,
   `post_id` int(10) UNSIGNED NOT NULL,
+  `parent_id` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_estonian_ci NOT NULL DEFAULT '',
   `files` text CHARACTER SET utf8mb4 COLLATE utf8mb4_estonian_ci NOT NULL DEFAULT '',
+  `depth` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
+  `sort` varchar(64) NOT NULL DEFAULT '',
   `created_at` int(10) UNSIGNED NOT NULL,
   `updated_at` int(10) UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -94,6 +97,7 @@ CREATE TABLE `posts` (
   `content` longtext NOT NULL DEFAULT '',
   `visibility` enum('public','friends','private') NOT NULL DEFAULT 'public',
   `files` text NOT NULL DEFAULT '\'\'',
+  `comment_count` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `created_at` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `updated_at` int(10) UNSIGNED NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -137,7 +141,8 @@ ALTER TABLE `comments`
   ADD PRIMARY KEY (`id`),
   ADD KEY `user_id` (`user_id`),
   ADD KEY `post_id` (`post_id`),
-  ADD KEY `created_at` (`created_at`);
+  ADD KEY `created_at` (`created_at`),
+  ADD KEY `sort` (`sort`);
 
 --
 -- Indexes for table `feed_entries`
