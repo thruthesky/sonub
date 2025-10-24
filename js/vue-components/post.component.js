@@ -186,6 +186,8 @@ const postComponent = {
         </div>
     </div>
 
+    {{post}}
+
     <!-- 게시물 액션 버튼 -->
     <div class="post-actions">
         <button class="post-action-btn" @click="handleLike(post)">
@@ -554,14 +556,14 @@ const postComponent = {
             // TODO: API 호출로 좋아요 추가/제거
         },
         /**
-         * 댓글 박스 토글
-         * @param {Object} post - 게시물 객체
+         * Toggle comment box
+         * @param {Object} post - Post object
          */
         toggleCommentBox(post) {
             post.showComments = !post.showComments;
-            if (post.showComments && (!post.comments || post.comments.length === 0)) {
-                this.loadComments(post);
-            }
+
+            // Comments are already loaded from list_posts(), no need to fetch
+            // Just toggle visibility
         },
 
         /**
@@ -614,23 +616,6 @@ const postComponent = {
             // Bootstrap 모달이나 라이트박스를 사용할 수 있습니다
             // 간단하게 새 창으로 열기
             window.open(photoUrl, '_blank');
-        },
-
-        /**
-         * 댓글 목록 로드
-         * @param {Object} post - 게시물 객체
-         */
-        async loadComments(post) {
-            try {
-                // TODO: API 호출로 댓글 목록 가져오기
-                // const comments = await func('get_comments', { post_id: post.post_id });
-                // post.comments = comments;
-
-                // 임시 데이터 (실제로는 API에서 가져옴)
-                console.log('Loading comments for post:', post.post_id);
-            } catch (error) {
-                console.error('댓글 로드 오류:', error);
-            }
         },
 
         /**

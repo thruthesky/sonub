@@ -9,6 +9,7 @@ class PostModel
     public string $content;
     public string $visibility;
     public array $files;
+    public array $comments;
     public int $created_at;
     public int $updated_at;
 
@@ -21,6 +22,7 @@ class PostModel
         $this->content = $data['content'] ?? '';
         $this->visibility = $data['visibility'] ?? '';
         $this->files = explode(',', $data['files'] ?? '');
+        $this->comments = $data['comments'] ?? [];
         $this->created_at = $data['created_at'] ?? 0;
         $this->updated_at = $data['updated_at'] ?? 0;
     }
@@ -41,6 +43,7 @@ class PostModel
             'content' => $this->content,
             'visibility' => $this->visibility,
             'files' => $this->files,
+            'comments' => $this->comments,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

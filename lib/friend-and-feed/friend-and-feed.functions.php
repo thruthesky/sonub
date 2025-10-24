@@ -1137,6 +1137,9 @@ function finalize_feed_with_visibility(int $me, array $items): array
             $files = array_map('trim', explode(',', $post['files']));
         }
 
+        // Load comments for this post
+        $comments = get_comments((int)$post['id']);
+
         $out[] = [
             'post_id'    => (int)$post['id'],
             'author_id'  => $author,
@@ -1144,6 +1147,7 @@ function finalize_feed_with_visibility(int $me, array $items): array
             'title'      => $post['title'],
             'content'    => $post['content'],
             'files'      => $files,
+            'comments'   => $comments,
             'created_at' => (int)$post['created_at'],
             'visibility' => $vis,
             'author' => [
