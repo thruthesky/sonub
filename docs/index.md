@@ -20,7 +20,7 @@
 2. [php.md](#phpmd) - PHP 코딩 표준
 3. [database.md](#databasemd) - 데이터베이스 접근 및 PDO 사용법
 4. [javascript.md](#javascriptmd) - JavaScript, Vue.js 사용법
-5. [api.md](#apimd) - API First 설계 및 func() 함수
+5. [Sonub API SKILL](../.claude/skills/sonub-api/SKILL.md) - API First 설계 및 func() 함수
 6. [test.md](#testmd) - PHP Unit/E2E 테스트, Playwright E2E 테스트
 
 ### 🎨 디자인 및 UI
@@ -200,9 +200,9 @@ ready(() => {
 
 ---
 
-### api.md
+### Sonub API SKILL
 
-**경로**: `docs/api.md`
+**경로**: `.claude/skills/sonub-api/SKILL.md`
 
 **핵심 내용**:
 - **API First 설계 철학**: 모든 함수는 API를 통해 호출 가능
@@ -610,7 +610,7 @@ docker logs sonub-nginx
 - [friends-and-feeds.md](#friends-and-feedsmd) - 친구 관계 및 피드 테이블 설계
 
 ### API 개발을 하려면?
-- [api.md](#apimd) - API First 설계, func() 함수
+- [Sonub API SKILL](../.claude/skills/sonub-api/SKILL.md) - API First 설계, func() 함수
 - [php.md](#phpmd) - API 함수 규칙
 
 ### UI/디자인 작업을 하려면?

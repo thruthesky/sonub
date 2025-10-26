@@ -129,7 +129,7 @@ const exists = await func('check_email_exists', { email: 'test@example.com' });
 console.log(exists.data);  // true
 ```
 
-상세한 내용은 [docs/api.md](./api.md)를 참조하세요.
+상세한 내용은 [Sonub API SKILL 문서](../.claude/skills/sonub-api/SKILL.md)를 참조하세요.
 
 ### 에러 처리 표준
 

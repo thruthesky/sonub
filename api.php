@@ -1,4 +1,18 @@
 <?php
+
+/**
+ * API 엔드포인트
+ * - HTTP 요청에서 'func' 파라미터를 읽어 해당 함수를 호출하고 JSON 응답을 반환합니다.
+ * - 함수가 존재하지 않거나 허용되지 않은 경우, 적절한 에러 응답을 반환합니다.
+ * - 함수 호출 시 모든 HTTP 파라미터를 배열로 전달합니다.
+ * - 함수가 숫자, 문자열, 불리언을 리턴한 경우, 이를 배열의 'data' 속성으로 감싸서 일관된 JSON 응답을 제공합니다.
+ * - 함수가 Model 객체를 리턴한 경우, toArray() 메서드를 호출하여 배열로 변환 후 JSON 인코딩합니다.
+ * - ApiException이 throw된 경우, 이를 catch하여 JSON 에러 응답으로 변환합니다.
+ * 참고: lib/etc/api_exception.php
+ * 참고: [Sonub API 문서](./.claude/skills/sonub-api/SKILL.md)
+ * 
+ * 
+ */
 const API_CALL = true;
 const ROOT_DIR = __DIR__;
 include_once ROOT_DIR . '/etc/includes.php';

@@ -5,7 +5,9 @@ Sonub (sonub.com) 웹사이트 개발 가이드라인 및 규칙:
 
 Sonub 프로젝트는 Docker 기반에 LEMP(Linux, Nginx, MySQL, PHP) 스택으로 동작합니다.
 
-## Docker 컨테이너 구성
+## Docker 컨테이너 및 백엔드 구성
+
+- **백엔드 운영**: 백엔드 서버는 항상, 반드시, 올바로 동작 중에 있으며, 반드시 그렇게 가정하세요. 백엔드가 동작하고 있지 않아나 백엔드가 올바로 동작하지 않는다면, 직접 docker 를 실행하지 말고, 개발자에게 경고를 해 주세요.
 
 - `sonub-nginx`: Nginx 웹 서버
 - `sonub-php`: PHP-FPM 서버
@@ -17,10 +19,10 @@ Sonub 프로젝트는 Docker 기반에 LEMP(Linux, Nginx, MySQL, PHP) 스택으�
 
 ## 1단계: 문서 검토 및 개발자 통보 (필수)
 
-1. **관련 문서 검색**: [llms-txt.md](./docs/llms-txt.md) 를 즉시 읽고, 추가적으로 `docs/**/*.md` 내의 관련 문서를 즉시 검색
+1. **관련 문서 검색**: [index.md](./docs/index.md) 를 즉시 읽고, 추가적으로 `docs/**/*.md` 내의 관련 문서를 즉시 검색
 2. **개발자에게 통보**:
    ```
-   📋 참고 문서: 개발자가 요청을 하면, 항상 그리고 반드시 [llms-txt.md](./docs/llms-txt.md) 문서를 먼저 읽고, 이 문서에서 제시하는 docs/xxx.md 세부 문서의 요약과 예제를 보고, 개발자가 요청하는 내용과 관련이 있는 문서를 1개 이상 참고하여 그 문서의 지침을 따른다.
+   📋 참고 문서: 개발자가 요청을 하면, 항상 그리고 반드시 [index.md](./docs/index.md) 문서를 먼저 읽고, 이 문서에서 제시하는 docs/xxx.md 세부 문서의 요약과 예제를 보고, 개발자가 요청하는 내용과 관련이 있는 문서를 1개 이상 참고하여 그 문서의 지침을 따른다.
       - 그리고 어떤 문서를 참고하는지 개발자에게 알려준다.
    🔤 인코딩: UTF-8로 모든 파일 생성/수정
    🌐 언어: 모든 주석 및 문서는 한국어로 작성
@@ -36,7 +38,7 @@ Sonub 프로젝트는 Docker 기반에 LEMP(Linux, Nginx, MySQL, PHP) 스택으�
 ## 3단계: 개발 작업 수행
 
 위의 1단계와 2단계를 완료한 후에만 실제 개발 작업을 진행합니다.
-특히, 반드시 [llms-txt.md](./docs/llms-txt.md) 를 먼저 참고로 개발자의 질문과 관련이 있는 문서를 찾아 읽고, 그 문서의 지침을 따라야 합니다.
+특히, 반드시 [index.md](./docs/index.md) 를 먼저 참고로 개발자의 질문과 관련이 있는 문서를 찾아 읽고, 그 문서의 지침을 따라야 합니다.
 
 ---
 
@@ -525,7 +527,7 @@ Store.actions.setUser(newUser);
 
 ## 확인 방법
 ```bash
-file -I docs/api.md
+file -I docs/index.md
 # 출력: charset=utf-8
 ```
 

@@ -1098,13 +1098,80 @@ function searchUsers($keyword, $page = 1, $perPage = 20) {
 id: Primary Key (자동 증가)
 post_id: posts 테이블의 id를 참조 (외래키 관계이지만 실제 제약은 없음)
 user_id: users 테이블의 id를 참조 (외래키 관계이지만 실제 제약은 없음)
+parent_id: 부모 댓글 ID (0이면 최상위 댓글, 0보다 크면 답글)
 content: LONGTEXT 타입으로 댓글 내용 저장
 files: TEXT 타입으로 파일 정보 저장
+comment_count: 직접 자식 댓글 수 (1단계 하위 댓글만 카운트, 손자는 포함 안 됨)
+depth: 댓글 깊이 (0: 최상위 댓글, 1: 답글, 2: 답글의 답글, ...)
+sort: 댓글 정렬 순서 문자열
 created_at: 생성 시간 (UNIX timestamp)
 updated_at: 수정 시간 (UNIX timestamp)
+
 인덱스:
 
 id: Primary Key
 post_id: 특정 게시글의 댓글을 빠르게 조회하기 위한 인덱스
 user_id: 특정 사용자의 댓글을 빠르게 조회하기 위한 인덱스
+
+### `comment_count` 필드
+
+**목적**: 각 댓글의 직접 자식 댓글 수를 저장합니다.
+
+**중요 사항**:
+- **직접 자식만 카운트**: 1단계 하위 댓글만 계산하며, 손자 댓글은 포함하지 않습니다
+- **DB에 저장**: 동적으로 계산하지 않고 DB 필드에 저장됩니다
+- **자동 업데이트**: 댓글 생성/삭제 시 자동으로 부모 댓글의 `comment_count`가 업데이트됩니다
+
+**자동 업데이트 로직**:
+
+1. **`create_comment()` 함수**:
+   - 댓글 생성 후 `parent_id`가 0보다 크면 (답글인 경우)
+   - 부모 댓글의 `comment_count`를 자동 증가
+
+2. **`delete_comment()` 함수**:
+   - 댓글 삭제 후 `parent_id`가 0보다 크면 (답글인 경우)
+   - 부모 댓글의 `comment_count`를 자동 감소
+
+3. **`update_comment_child_count()` 헬퍼 함수**:
+   - 특정 댓글의 직접 자식 수를 재계산하여 DB에 업데이트
+   - `create_comment()`와 `delete_comment()`에서 자동 호출됨
+
+**예시**:
+
+```
+최상위 댓글 (comment_count = 3)
+  ├─ 답글 1 (comment_count = 2)
+  │   ├─ 답글 1-1 (comment_count = 0)
+  │   └─ 답글 1-2 (comment_count = 0)
+  ├─ 답글 2 (comment_count = 0)
+  └─ 답글 3 (comment_count = 1)
+      └─ 답글 3-1 (comment_count = 0)
+```
+
+위 구조에서:
+- 최상위 댓글의 `comment_count` = 3 (직접 자식: 답글 1, 2, 3)
+- 답글 1의 `comment_count` = 2 (직접 자식: 답글 1-1, 1-2)
+- 답글 3의 `comment_count` = 1 (직접 자식: 답글 3-1)
+- 나머지 댓글들은 `comment_count` = 0 (자식 없음)
+
+**사용 방법**:
+
+```php
+// get_comments()로 댓글 가져오기 - comment_count 포함됨
+$comments = get_comments(['post_id' => 123]);
+
+foreach ($comments as $comment) {
+    echo "댓글 ID: {$comment->id}\n";
+    echo "자식 댓글 수: {$comment->comment_count}\n";
+}
+```
+
+**테스트 파일**: `tests/comment/comment-count-db.test.php`
+
+**관련 함수**:
+- `update_comment_child_count(int $comment_id)`: 특정 댓글의 자식 수 재계산
+- `create_comment(array $input)`: 댓글 생성 시 부모의 count 자동 증가
+- `delete_comment(array $input)`: 댓글 삭제 시 부모의 count 자동 감소
+- `get_comment(array $input)`: 댓글 조회 시 comment_count 포함
+- `get_comments(array $input)`: 댓글 목록 조회 시 comment_count 포함
 created_at: 시간순 정렬을 위한 인덱스

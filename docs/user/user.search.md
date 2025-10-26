@@ -554,7 +554,7 @@ console.log(window.Store.state.language); // "en", "ko", "ja", "zh"
 - [사용자 관리 문서](./user.md)
 - [Vue.js 컴포넌트 개발 가이드](../coding-guideline.md)
 - [다국어 번역 가이드](../translation.md)
-- [API 문서](../api.md)
+- [Sonub API SKILL 문서](../../.claude/skills/sonub-api/SKILL.md)
 
 ---
 

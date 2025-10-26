@@ -35,7 +35,11 @@
  * Props:
  * - single: Boolean - 단일 파일 모드 (기존 파일 자동 교체)
  * - input-name: String - hidden input의 name 속성
+ * - show-upload-button: Boolean - 업로드 버튼 표시 여부
+ * - upload-button-type: String - 업로드 버튼 타입 ("default" 또는 "camera-icon")
+ * - show-uploaded-files: Boolean - 업로드된 파일 미리보기 표시 여부
  * - show-delete-icon: Boolean - 삭제 아이콘 표시 여부
+ * - show-progress-bar: Boolean - Progress bar 표시 여부
  * - decode-qr-code: Boolean - QR 코드 디코딩 활성화
  * - accept: String - 파일 타입 제한 (예: "image/*")
  * - default-files: String - 기본 파일 URL (쉼표로 구분된 문자열)
@@ -43,6 +47,7 @@
  * Events:
  * - @uploaded: 파일 업로드 완료 시 발생 (payload: { url, qr_code })
  * - @deleted: 파일 삭제 완료 시 발생 (payload: 삭제 응답 데이터)
+ * - @uploading-progress: 업로드 진행률 변경 시 발생 (payload: { progress, uploading })
  */
 
 // 인스턴스 카운터 초기화
@@ -50,12 +55,21 @@ if (typeof window.fileUploadInstanceCounter === 'undefined') {
     window.fileUploadInstanceCounter = 0;
 }
 
+// 파일 업로드 컴포넌트 인스턴스 맵 (외부 컴포넌트에서 접근용)
+if (typeof window.fileUploadInstances === 'undefined') {
+    window.fileUploadInstances = new Map();
+}
+
 // 파일 업로드 컴포넌트 정의 (Options API)
 window.FileUploadComponent = {
     template: `
         <div class="file-upload-wrapper">
-            <!-- 파일 선택 버튼 -->
-            <div class="file-input-wrapper" v-if="showUploadButton">
+            <!-- 파일 선택 버튼 (label로 통합) -->
+            <label
+                v-if="showUploadButton && (!single || !currentFileUrl)"
+                :for="'file-input-' + instanceId"
+                :class="uploadButtonClass"
+                style="cursor: pointer; margin: 0;">
                 <input
                     type="file"
                     :id="'file-input-' + instanceId"
@@ -64,16 +78,9 @@ window.FileUploadComponent = {
                     @change="handleFileChange"
                     ref="fileInput"
                     style="display: none;">
-
-                <!-- 커스텀 업로드 버튼 (Single 모드에서 이미지가 있으면 이미지 클릭으로 대체) -->
-                <label
-                    v-if="!single || !currentFileUrl"
-                    :for="'file-input-' + instanceId"
-                    class="btn btn-outline-secondary">
-                    <i class="bi bi-upload me-2"></i>
-                    {{ single ? t.파일_선택 : t.파일들_선택 }}
-                </label>
-            </div>
+                <i :class="uploadIconClass"></i>
+                <span v-if="uploadButtonText">{{ uploadButtonText }}</span>
+            </label>
 
             <!-- Hidden Input (서버에 전송할 URL 값 저장) -->
             <input
@@ -166,7 +173,7 @@ window.FileUploadComponent = {
             </nav>
 
             <!-- Progress Bar -->
-            <div v-if="uploading" class="my-3 file-upload-progress-container">
+            <div v-if="uploading && showProgressBar" class="my-3 file-upload-progress-container">
                 <div class="progress" role="progressbar" aria-label="File upload progress">
                     <div
                         class="progress-bar"
@@ -198,6 +205,11 @@ window.FileUploadComponent = {
             default: true,
             description: '업로드 버튼 표시 여부'
         },
+        uploadButtonType: {
+            type: String,
+            default: 'default',
+            description: '업로드 버튼 타입 ("default" 또는 "camera-icon")'
+        },
         showDeleteIcon: {
             type: Boolean,
             default: false,
@@ -218,15 +230,20 @@ window.FileUploadComponent = {
             default: '',
             description: '기본 파일 URL (쉼표로 구분된 문자열)'
         },
-        showUploadedFiles: { 
+        showUploadedFiles: {
             type: Boolean,
             default: true,
             description: "Show uploaded files preview"
+        },
+        showProgressBar: {
+            type: Boolean,
+            default: true,
+            description: "Show progress bar during upload"
         }
 
     },
 
-    emits: ['uploaded', 'deleted', 'update:modelValue'],
+    emits: ['uploaded', 'deleted', 'update:modelValue', 'uploading-progress'],
 
     data() {
         return {
@@ -273,6 +290,36 @@ window.FileUploadComponent = {
                 업로드_설정_오류: tr({ ko: '파일 업로드 설정 오류', en: 'File upload configuration error', ja: 'ファイルアップロード設定エラー', zh: '文件上传配置错误' }),
                 파일_삭제_오류: tr({ ko: '파일 삭제 오류', en: 'File deletion error', ja: 'ファイル削除エラー', zh: '文件删除错误' })
             };
+        },
+
+        /**
+         * 업로드 버튼 클래스
+         */
+        uploadButtonClass() {
+            if (this.uploadButtonType === 'camera-icon') {
+                return 'file-upload-camera-icon';
+            }
+            return 'btn btn-outline-secondary';
+        },
+
+        /**
+         * 업로드 아이콘 클래스
+         */
+        uploadIconClass() {
+            if (this.uploadButtonType === 'camera-icon') {
+                return 'fa-solid fa-camera fs-2';
+            }
+            return 'bi bi-upload me-2';
+        },
+
+        /**
+         * 업로드 버튼 텍스트
+         */
+        uploadButtonText() {
+            if (this.uploadButtonType === 'camera-icon') {
+                return '';
+            }
+            return this.single ? this.t.파일_선택 : this.t.파일들_선택;
         }
     },
 
@@ -495,6 +542,16 @@ window.FileUploadComponent = {
 
         // Props로부터 초기 파일 설정
         this.initializeFiles();
+
+        // 인스턴스를 글로벌 맵에 등록 (외부 컴포넌트에서 접근용)
+        window.fileUploadInstances.set(this.instanceId, this);
+    },
+
+    unmounted() {
+        console.log(`[file-upload-${this.instanceId}] Component unmounted`);
+
+        // 인스턴스를 글로벌 맵에서 제거
+        window.fileUploadInstances.delete(this.instanceId);
     },
 
     watch: {
@@ -510,6 +567,17 @@ window.FileUploadComponent = {
                 } else {
                     this.uploadedFiles = [];
                 }
+            },
+            immediate: false
+        },
+
+        // uploadProgress 변경 시 부모 컴포넌트로 이벤트 emit
+        uploadProgress: {
+            handler(newValue) {
+                this.$emit('uploading-progress', {
+                    progress: newValue,
+                    uploading: this.uploading
+                });
             },
             immediate: false
         }
@@ -612,5 +680,81 @@ window.FileUploadComponent = {
  *         </ul>
  *     `
  * }).mount('#app');
+ * ```
+ *
+ * === 커스텀 Progress Bar 사용 예제 ===
+ *
+ * 컴포넌트 내부의 progress bar를 숨기고, 부모 컴포넌트에서 원하는 위치에 커스텀 progress bar를 표시할 수 있습니다.
+ *
+ * ```html
+ * <div id="custom-progress-app">
+ *     <!-- 커스텀 Progress Bar 표시 영역 -->
+ *     <div v-if="isUploading" class="mb-3">
+ *         <div class="alert alert-info">
+ *             <strong>업로드 중...</strong> {{ uploadProgress }}%
+ *         </div>
+ *         <div class="progress" style="height: 30px;">
+ *             <div
+ *                 class="progress-bar progress-bar-striped progress-bar-animated"
+ *                 role="progressbar"
+ *                 :style="{ width: uploadProgress + '%' }"
+ *                 :aria-valuenow="uploadProgress"
+ *                 aria-valuemin="0"
+ *                 aria-valuemax="100">
+ *                 {{ uploadProgress }}%
+ *             </div>
+ *         </div>
+ *     </div>
+ *
+ *     <!-- File Upload 컴포넌트 (내부 progress bar 숨김) -->
+ *     <file-upload
+ *         :single="false"
+ *         :show-progress-bar="false"
+ *         accept="image/*"
+ *         @uploading-progress="handleUploadProgress"
+ *         @uploaded="handleUploaded">
+ *     </file-upload>
+ *
+ *     <!-- 업로드 완료 메시지 -->
+ *     <div v-if="uploadComplete" class="alert alert-success mt-3">
+ *         파일 업로드 완료!
+ *     </div>
+ * </div>
+ *
+ * <script>
+ * ready(() => {
+ *     Vue.createApp({
+ *         components: {
+ *             'file-upload': window.FileUploadComponent
+ *         },
+ *         data() {
+ *             return {
+ *                 uploadProgress: 0,
+ *                 isUploading: false,
+ *                 uploadComplete: false
+ *             };
+ *         },
+ *         methods: {
+ *             handleUploadProgress(data) {
+ *                 // data = { progress: 0-100, uploading: true/false }
+ *                 this.uploadProgress = data.progress;
+ *                 this.isUploading = data.uploading;
+ *                 this.uploadComplete = false;
+ *
+ *                 console.log('Upload progress:', data.progress + '%');
+ *             },
+ *             handleUploaded(data) {
+ *                 console.log('File uploaded:', data.url);
+ *                 this.uploadComplete = true;
+ *
+ *                 // 3초 후 완료 메시지 숨김
+ *                 setTimeout(() => {
+ *                     this.uploadComplete = false;
+ *                 }, 3000);
+ *             }
+ *         }
+ *     }).mount('#custom-progress-app');
+ * });
+ * </script>
  * ```
  */

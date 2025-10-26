@@ -18,10 +18,10 @@ The Sonub project runs on a Docker-based LEMP (Linux, Nginx, MySQL, PHP) stack.
 
 ## Step 1: Document Review and Developer Notification (Required)
 
-1. **Search Related Documents**: Immediately read [llms-txt.md](./docs/llms-txt.md), and additionally search for related documents in `docs/**/*.md`
+1. **Search Related Documents**: Immediately read [index.md](./docs/index.md), and additionally search for related documents in `docs/**/*.md`
 2. **Notify Developer**:
    ```
-   📋 Reference Documents: When a developer makes a request, always and must first read the [llms-txt.md](./docs/llms-txt.md) document, review the summary and examples of docs/xxx.md detailed documents presented in this document, and refer to at least one document related to the developer's request to follow the instructions in that document.
+   📋 Reference Documents: When a developer makes a request, always and must first read the [index.md](./docs/index.md) document, review the summary and examples of docs/xxx.md detailed documents presented in this document, and refer to at least one document related to the developer's request to follow the instructions in that document.
       - Inform the developer which documents are being referenced.
    🔤 Encoding: Create/modify all files in UTF-8
    🌐 Language: All comments and documents are written in Korean
@@ -37,7 +37,7 @@ The Sonub project runs on a Docker-based LEMP (Linux, Nginx, MySQL, PHP) stack.
 ## Step 3: Perform Development Work
 
 Proceed with actual development work only after completing Steps 1 and 2 above.
-In particular, you must first refer to [llms-txt.md](./docs/llms-txt.md) to find documents related to the developer's question and follow the instructions in those documents.
+In particular, you must first refer to [index.md](./docs/index.md) to find documents related to the developer's question and follow the instructions in those documents.
 
 ---
 
@@ -511,7 +511,7 @@ See `docs/coding-guideline.md` for detailed examples
 
 ## Verification Method
 ```bash
-file -I docs/api.md
+file -I docs/index.md
 # Output: charset=utf-8
 ```
 

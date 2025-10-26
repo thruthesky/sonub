@@ -497,9 +497,9 @@ function load_deferred_js(string $path, int $priority = 0)
 <?php
 // 위젯 또는 페이지 파일 상단에서 호출
 
-// 예제 1: /js/ 폴더의 파일 로드 (확장자 제외)
-load_deferred_js('file-upload');
-// → <script defer src="/js/file-upload.js?v=..."></script>
+// 예제 1: Vue 컴포넌트 로드 (확장자 제외)
+load_deferred_js('vue-components/file-upload.component');
+// → <script defer src="/js/vue-components/file-upload.component.js?v=..."></script>
 
 // 예제 2: 전체 경로로 파일 로드
 load_deferred_js('/lib/utils/helper.js');
@@ -551,8 +551,8 @@ load_deferred_js('file-upload');
 ```
 
 **결과:**
-- 두 위젯 모두 `load_deferred_js('file-upload')`를 호출
-- 하지만 `/js/file-upload.js` 파일은 HTML 문서 맨 아래에서 **한 번만** 로드됨
+- 두 위젯 모두 `load_deferred_js('vue-components/file-upload.component')`를 호출
+- 하지만 `/js/vue-components/file-upload.component.js` 파일은 HTML 문서 맨 아래에서 **한 번만** 로드됨
 - 중복 로드 방지 및 성능 향상
 
 ### 우선순위 시스템
@@ -595,10 +595,10 @@ load_deferred_js('plugin');
 <!-- ❌ 절대 금지: 각 위젯에서 직접 <script> 태그 사용 -->
 
 <!-- /widgets/post/post-list-create.php -->
-<script defer src="/js/file-upload.js"></script>  <!-- 중복 로드 발생! -->
+<script defer src="/js/vue-components/file-upload.component.js"></script>  <!-- 중복 로드 발생! -->
 
 <!-- /widgets/user/profile-photo-upload.php -->
-<script defer src="/js/file-upload.js"></script>  <!-- 중복 로드 발생! -->
+<script defer src="/js/vue-components/file-upload.component.js"></script>  <!-- 중복 로드 발생! -->
 
 <!-- 결과: 동일한 파일이 두 번 로드되어 성능 저하 및 오류 발생 -->
 ```
@@ -609,12 +609,12 @@ load_deferred_js('plugin');
 <!-- ✅ 올바른 방법: load_deferred_js() 함수 사용 -->
 
 <!-- /widgets/post/post-list-create.php -->
-<?php load_deferred_js('file-upload'); ?>
+<?php load_deferred_js('vue-components/file-upload.component'); ?>
 
 <!-- /widgets/user/profile-photo-upload.php -->
-<?php load_deferred_js('file-upload'); ?>
+<?php load_deferred_js('vue-components/file-upload.component'); ?>
 
-<!-- 결과: /js/file-upload.js 파일이 HTML 문서 맨 아래에서 한 번만 로드됨 -->
+<!-- 결과: /js/vue-components/file-upload.component.js 파일이 HTML 문서 맨 아래에서 한 번만 로드됨 -->
 ```
 
 ### 장점

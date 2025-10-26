@@ -415,6 +415,19 @@ function update_post(array $input)
         ]), response_code: 403);
     }
 
+    // ========================================================================
+    // 댓글 존재 여부 확인 (댓글이 있으면 글 수정 불가)
+    // ========================================================================
+    $comment_count = count_comments(['post_id' => $post_id]);
+    if ($comment_count > 0) {
+        error('post-has-comments', tr([
+            'en' => 'Cannot update post with existing comments.',
+            'ko' => '댓글이 있는 경우 글 수정을 할 수 없습니다.',
+            'ja' => 'コメントがある投稿は編集できません。',
+            'zh' => '有评论的帖子无法编辑。'
+        ]), response_code: 400);
+    }
+
 
     $title = isset($input['title']) ? trim((string)$input['title']) : $post->title;
     $content = isset($input['content']) ? trim((string)$input['content']) : $post->content;
@@ -897,6 +910,19 @@ function delete_post(array $params)
             'ja' => 'これはあなたの投稿ではありません。',
             'zh' => '这不是您的帖子。'
         ]), response_code: 403);
+    }
+
+    // ========================================================================
+    // 댓글 존재 여부 확인 (댓글이 있으면 글 삭제 불가)
+    // ========================================================================
+    $comment_count = count_comments(['post_id' => $post_id]);
+    if ($comment_count > 0) {
+        error('post-has-comments', tr([
+            'en' => 'Cannot delete post with existing comments.',
+            'ko' => '댓글이 있는 경우 글 삭제를 할 수 없습니다.',
+            'ja' => 'コメントがある投稿は削除できません。',
+            'zh' => '有评论的帖子无法删除。'
+        ]), response_code: 400);
     }
 
     $pdo = pdo();

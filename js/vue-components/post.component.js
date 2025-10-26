@@ -46,29 +46,14 @@ const postComponent = {
             </div>
         </div>
 
-        <!-- 게시물 메뉴 (본인 게시물인 경우에만 표시) -->
-        <div v-if="isMyPost" class="dropdown">
-            <button class="btn btn-sm btn-link text-muted p-1" data-bs-toggle="dropdown" data-bs-auto-close="auto">
-                <i class="fa-solid fa-ellipsis"></i>
+        <!-- 게시물 수정/삭제 버튼 (본인 게시물인 경우에만 표시) -->
+        <div v-if="isMyPost" class="d-flex align-items-center gap-2">
+            <button @click="handleEditPost()" class="btn btn-link text-decoration-none text-muted p-0" style="font-size: 18px;" title="Edit">
+                <i class="fa-solid fa-pen-to-square"></i>
             </button>
-
-            <!-- 드롭다운 메뉴 -->
-            <ul class="dropdown-menu" style="min-width: 120px;">
-                <li>
-                    <button @click="handleEditPost()"
-                            class="btn btn-sm w-100 text-start d-flex align-items-center gap-2 py-2 px-3 border-0">
-                        <i class="fa-solid fa-pen-to-square"></i>
-                        <span>Edit</span>
-                    </button>
-                </li>
-                <li>
-                    <button @click="handleDeletePost(post)"
-                            class="btn btn-sm w-100 text-start text-danger d-flex align-items-center gap-2 py-2 px-3 border-0">
-                        <i class="fa-solid fa-trash"></i>
-                        <span>Delete</span>
-                    </button>
-                </li>
-            </ul>
+            <button @click="handleDeletePost()" class="btn btn-link text-decoration-none text-danger p-0" style="font-size: 18px;" title="Delete">
+                <i class="fa-solid fa-trash"></i>
+            </button>
         </div>
     </header>
 
@@ -117,6 +102,7 @@ const postComponent = {
                         :single="false"
                         :show-uploaded-files="false"
                         :show-upload-button="true"
+                        :upload-button-type="'camera-icon'"
                         accept="image/*,video/*"
                         @uploaded="handleFileUploaded">
                     </file-upload-component>
@@ -220,8 +206,8 @@ const postComponent = {
 
     <!-- 댓글 섹션 (Bootstrap 패딩) -->
     <div class="border-top p-3" style="border-color: #e4e6eb; background-color: #f0f2f5;">
-        <!-- 댓글 입력 박스 (Bootstrap Flexbox) -->
-        <div class="d-flex align-items-center gap-2 mb-3">
+        <!-- 가짜 댓글 입력 박스 (클릭 시 Modal 열림) -->
+        <div class="d-flex align-items-center gap-2 mb-3" @click="openCommentModal()" style="cursor: pointer;">
             <!-- 댓글 작성자 아바타 (Bootstrap 유틸리티) -->
             <div class="d-flex align-items-center justify-content-center bg-light rounded-circle flex-shrink-0"
                  style="width: 32px; height: 32px; background-color: #e4e6eb;">
@@ -232,23 +218,10 @@ const postComponent = {
                         style="width: 100%; height: 100%; object-fit: cover;">
                 <i v-else class="fa-solid fa-user text-secondary" style="font-size: 14px;"></i>
             </div>
-            <!-- 댓글 입력 필드 (Bootstrap Input Group) -->
-            <div class="flex-grow-1 d-flex align-items-center gap-2 bg-white rounded-pill px-3 py-1" style="border: 1px solid #ced4da;">
-                <input
-                    type="text"
-                    class="form-control border-0 px-0"
-                    style="font-size: 14px; box-shadow: none;"
-                    placeholder="Write a comment..."
-                    v-model="post.newComment"
-                    @keyup.enter="submitComment(post)">
-                <button
-                    class="btn btn-link text-primary text-decoration-none p-0"
-                    style="font-size: 16px;"
-                    :disabled="!post.newComment || !post.newComment.trim()"
-                    @click="submitComment(post)"
-                    title="Send comment">
-                    <i class="fa-solid fa-paper-plane"></i>
-                </button>
+            <!-- 가짜 댓글 입력 필드 (읽기 전용) -->
+            <div class="flex-grow-1 d-flex align-items-center gap-2 bg-white rounded-pill px-3 py-2" style="border: 1px solid #ced4da;">
+                <span class="text-muted" style="font-size: 14px;">Write a comment...</span>
+                <i class="fa-solid fa-paper-plane text-muted ms-auto" style="font-size: 16px;"></i>
             </div>
         </div>
 
@@ -291,8 +264,22 @@ const postComponent = {
                         </div>
 
                         <!-- 두 번째 줄: 댓글 내용 (연한 회색 배경 박스) -->
-                        <div class="rounded-3 px-2 py-1 mb-1" style="background-color: #f8f9fa; border: 1px solid #e4e6eb; font-size: 14px; color: #050505; line-height: 1.3; word-break: break-word;">
+                        <div class="rounded-3 px-2 py-1 mb-1" style="background-color: #f8f9fa; border: 1px solid #e4e6eb; font-size: 14px; color: #050505; line-height: 1.3; word-break: break-word; white-space: pre-wrap;">
                             {{ comment.content }}
+                        </div>
+
+                        <!-- 댓글 첨부 이미지 -->
+                        <div v-if="hasPhotos(comment.files)" class="mb-2">
+                            <div class="row g-1">
+                                <div v-for="(fileUrl, index) in getValidPhotos(comment.files)" :key="index"
+                                        :class="getPhotoColumnClass(getValidPhotos(comment.files).length)">
+                                    <img :src="thumbnail(fileUrl, 300, 300, 'cover', 85, 'ffffff')"
+                                            :alt="'Photo ' + (index + 1)"
+                                            class="rounded"
+                                            style="width: 100%; height: 120px; object-fit: cover; cursor: pointer;"
+                                            @click="openPhotoModal(fileUrl)">
+                                </div>
+                            </div>
                         </div>
 
                         <!-- 세 번째 줄: 액션 버튼 (좌측: Like/Reply, 우측: Edit/Delete) -->
@@ -302,51 +289,18 @@ const postComponent = {
                                 <button class="btn btn-link text-decoration-none text-muted p-0 fw-semibold" style="font-size: 11px;">
                                     Like
                                 </button>
-                                <button @click="toggleReply(comment.id)" class="btn btn-link text-decoration-none text-muted p-0 fw-semibold" style="font-size: 11px;">
-                                    Reply
+                                <button @click="openReplyModal(comment.id)" class="btn btn-link text-decoration-none text-muted p-0 fw-semibold" style="font-size: 11px;">
+                                    Reply {{ comment.comment_count > 0 ? '(' + comment.comment_count + ')' : '' }}
                                 </button>
                             </div>
 
-                            <!-- 우측: Edit, Delete -->
-                            <div class="d-flex align-items-center gap-2">
-                                <button class="btn btn-link text-decoration-none text-muted p-0" style="font-size: 13px;" title="Edit">
+                            <!-- 우측: Edit, Delete (본인 댓글인 경우에만 표시) -->
+                            <div v-if="isMyComment(comment)" class="d-flex align-items-center gap-2">
+                                <button @click="openEditCommentModal(comment)" class="btn btn-link text-decoration-none text-muted p-0" style="font-size: 13px;" title="Edit">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
-                                <button class="btn btn-link text-decoration-none text-danger p-0" style="font-size: 13px;" title="Delete">
+                                <button @click="handleDeleteComment(comment)" class="btn btn-link text-decoration-none text-danger p-0" style="font-size: 13px;" title="Delete">
                                     <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- 답글 입력창 (Reply 버튼 클릭 시 표시) -->
-                        <div v-if="replyingTo === (comment.id)" class="d-flex align-items-center gap-2 mt-2">
-                            <!-- 답글 작성자 아바타 -->
-                            <div class="d-flex align-items-center justify-content-center bg-light rounded-circle flex-shrink-0"
-                                 style="width: 32px; height: 32px; background-color: #e4e6eb;">
-                                <img v-if="currentUserPhoto"
-                                        :src="currentUserPhoto"
-                                        alt="My avatar"
-                                        class="rounded-circle"
-                                        style="width: 100%; height: 100%; object-fit: cover;">
-                                <i v-else class="fa-solid fa-user text-secondary" style="font-size: 14px;"></i>
-                            </div>
-                            <!-- 답글 입력 필드 -->
-                            <div class="flex-grow-1 d-flex align-items-center gap-2 bg-white rounded-pill px-3 py-1" style="border: 1px solid #ced4da;">
-                                <input
-                                    type="text"
-                                    class="form-control border-0 px-0"
-                                    style="font-size: 14px; box-shadow: none;"
-                                    placeholder="Write a reply..."
-                                    v-model="replyContent"
-                                    @keyup.enter="submitReply(comment.id)"
-                                    @keyup.esc="cancelReply()">
-                                <button
-                                    class="btn btn-link text-primary text-decoration-none p-0"
-                                    style="font-size: 16px;"
-                                    :disabled="!replyContent || !replyContent.trim()"
-                                    @click="submitReply(comment.id)"
-                                    title="Send reply">
-                                    <i class="fa-solid fa-paper-plane"></i>
                                 </button>
                             </div>
                         </div>
@@ -355,6 +309,109 @@ const postComponent = {
             </div>
         </section>
 
+    </div>
+
+    <!-- 댓글/답글 작성 통합 Bootstrap Modal -->
+    <!-- commentMode에 따라 최상위 댓글 또는 답글 작성 -->
+    <!-- commentMode: 'comment' (최상위 댓글) | 'reply' (답글) -->
+    <div class="modal fade" :id="'commentModal-' + post.id" tabindex="-1" aria-labelledby="commentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <!-- Modal Header -->
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title" id="commentModalLabel">
+                        <i :class="modalIcon + ' me-2 text-primary'"></i>
+                        {{ modalTitle }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="modal-body p-3">
+                    <!-- 댓글 입력 텍스트 영역 -->
+                    <div class="mb-3">
+                        <label for="commentContentTextarea" class="form-label small text-muted mb-2">
+                            <i class="fa-solid fa-comment-dots me-1"></i>
+                            Comment
+                        </label>
+                        <textarea
+                            id="commentContentTextarea"
+                            ref="commentTextarea"
+                            v-model="commentContent"
+                            class="form-control"
+                            rows="4"
+                            :placeholder="modalPlaceholder"
+                            style="border: 1px solid #ced4da; border-radius: 8px; font-size: 14px;"></textarea>
+                    </div>
+
+                    <!-- 하단 액션 영역: 카메라 아이콘 + 버튼들 -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <!-- 왼쪽: 파일 업로드 카메라 아이콘 + 진행률 -->
+                        <div class="d-flex align-items-center gap-2">
+                            <file-upload-component
+                                :single="false"
+                                :show-uploaded-files="false"
+                                :show-upload-button="true"
+                                :show-progress-bar="false"
+                                upload-button-type="camera-icon"
+                                accept="image/*"
+                                @uploaded="handleFileUploaded"
+                                @uploading-progress="handleUploadProgress">
+                            </file-upload-component>
+
+                            <!-- 업로드 진행률 표시 (Bootstrap Progress Bar) -->
+                            <div v-if="isUploading" class="progress" style="width: 100px; height: 20px;">
+                                <div class="progress-bar"
+                                     role="progressbar"
+                                     :style="{ width: uploadProgress + '%' }"
+                                     :aria-valuenow="uploadProgress"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100">
+                                    <small>{{ uploadProgress }}%</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 오른쪽: Cancel, Submit 버튼 -->
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
+                                <i class="fa-solid fa-xmark me-1"></i>
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-primary"
+                                :disabled="!commentContent || !commentContent.trim()"
+                                @click="submitComment()">
+                                <i class="fa-solid fa-paper-plane me-1"></i>
+                                {{ submitButtonText }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 업로드된 파일 미리보기 (빈 박스 없음) -->
+                    <div v-if="commentFiles.length > 0" class="row g-2">
+                        <div v-for="(fileUrl, index) in commentFiles" :key="index" class="col-4">
+                            <div class="position-relative border rounded" style="padding-bottom: 100%; background-color: #f8f9fa;">
+                                <img :src="thumbnail(fileUrl, 300, 300, 'cover', 85, 'ffffff')"
+                                        :alt="'Image ' + (index + 1)"
+                                        class="position-absolute top-0 start-0 rounded"
+                                        style="width: 100%; height: 100%; object-fit: cover;">
+                                <!-- 삭제 버튼 -->
+                                <button
+                                    @click="removeFile(index)"
+                                    type="button"
+                                    class="btn btn-sm btn-danger position-absolute"
+                                    style="top: 4px; right: 4px; width: 24px; height: 24px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10;"
+                                    title="Remove image">
+                                    <i class="fa-solid fa-xmark" style="font-size: 12px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     </div>
 `,
@@ -384,8 +441,14 @@ const postComponent = {
                 category: 'story',
                 files: [],
             },
-            replyingTo: null, // 현재 답글을 작성 중인 댓글 ID
-            replyContent: '', // 답글 내용
+            // 댓글/답글/수정 통합 모달 관련 데이터
+            commentMode: 'comment', // 댓글 모드: 'comment' (최상위 댓글) | 'reply' (답글) | 'edit' (수정)
+            replyingTo: null, // 답글 작성 시 부모 댓글 ID (commentMode === 'reply'일 때만 사용)
+            editingCommentId: null, // 수정 중인 댓글 ID (commentMode === 'edit'일 때만 사용)
+            commentContent: '', // 댓글/답글/수정 내용
+            commentFiles: [], // 댓글/답글/수정 첨부 파일 URL 배열
+            uploadProgress: 0, // 파일 업로드 진행률 (0-100)
+            isUploading: false, // 파일 업로드 중 여부
         };
     },
     computed: {
@@ -415,6 +478,46 @@ const postComponent = {
                 return null;
             }
             return window.Store.state.user.photo_url || null;
+        },
+
+        /**
+         * 모달 제목 (댓글 모드에 따라 동적 변경)
+         * @returns {string} 모달 제목
+         */
+        modalTitle() {
+            if (this.commentMode === 'edit') return 'Edit Comment';
+            if (this.commentMode === 'reply') return 'Write a Reply';
+            return 'Write a Comment';
+        },
+
+        /**
+         * 모달 아이콘 CSS 클래스 (댓글 모드에 따라 동적 변경)
+         * @returns {string} Font Awesome 아이콘 클래스
+         */
+        modalIcon() {
+            if (this.commentMode === 'edit') return 'fa-solid fa-pen-to-square';
+            if (this.commentMode === 'reply') return 'fa-solid fa-reply';
+            return 'fa-solid fa-comment';
+        },
+
+        /**
+         * 제출 버튼 텍스트 (댓글 모드에 따라 동적 변경)
+         * @returns {string} 버튼 텍스트
+         */
+        submitButtonText() {
+            if (this.commentMode === 'edit') return 'Save Changes';
+            if (this.commentMode === 'reply') return 'Send Reply';
+            return 'Send Comment';
+        },
+
+        /**
+         * Textarea placeholder 텍스트 (댓글 모드에 따라 동적 변경)
+         * @returns {string} Placeholder 텍스트
+         */
+        modalPlaceholder() {
+            if (this.commentMode === 'edit') return 'Edit your comment...';
+            if (this.commentMode === 'reply') return 'Write your reply here...';
+            return 'Write your comment here...';
         }
     },
     methods: {
@@ -451,6 +554,12 @@ const postComponent = {
          * 게시물 삭제 핸들러
          */
         async handleDeletePost() {
+            // 하위 댓글이 있으면 삭제 불가
+            if (this.post.comment_count && this.post.comment_count > 0) {
+                alert('하위 댓글이 있는 경우 삭제 할 수 없습니다.');
+                return;
+            }
+
             const confirmed = confirm('이 게시물을 삭제하시겠습니까?');
             if (!confirmed) {
                 return;
@@ -471,6 +580,48 @@ const postComponent = {
             } catch (error) {
                 console.error('Failed to delete post:', error);
                 alert('Failed to delete post: ' + (error.message || 'Unknown error'));
+            }
+        },
+
+        /**
+         * 댓글 삭제 핸들러
+         * @param {Object} comment - 삭제할 댓글 객체
+         */
+        async handleDeleteComment(comment) {
+            // 하위 댓글이 있으면 삭제 불가
+            if (comment.comment_count && comment.comment_count > 0) {
+                alert('하위 댓글이 있는 경우 삭제 할 수 없습니다.');
+                return;
+            }
+
+            // 삭제 확인 대화상자
+            const confirmed = confirm('정말 이 댓글을 삭제하시겠습니까?');
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                console.log('Deleting comment:', comment.id);
+                await func('delete_comment', {
+                    comment_id: comment.id,
+                    auth: true
+                });
+
+                // 댓글 목록에서 제거 (Vue reactivity)
+                const index = this.post.comments.findIndex(c => c.id === comment.id);
+                if (index !== -1) {
+                    this.post.comments.splice(index, 1);
+                }
+
+                // comment_count 감소 (UI 즉시 반영)
+                if (this.post.comment_count > 0) {
+                    this.post.comment_count--;
+                }
+
+                alert('댓글이 삭제되었습니다.');
+            } catch (error) {
+                console.error('Failed to delete comment:', error);
+                alert('댓글 삭제에 실패했습니다: ' + (error.message || 'Unknown error'));
             }
         },
 
@@ -556,6 +707,15 @@ const postComponent = {
          * 게시물 수정 핸들러
          */
         handleEditPost() {
+            // 수정 모드로 진입 시도: comment_count 검사
+            if (!this.edit.enabled) {
+                // 하위 댓글이 있으면 수정 불가
+                if (this.post.comment_count && this.post.comment_count > 0) {
+                    alert('하위 댓글이 있는 경우 수정 할 수 없습니다.');
+                    return;
+                }
+            }
+
             // Toggle edit mode
             this.edit.enabled = !this.edit.enabled;
 
@@ -741,6 +901,23 @@ const postComponent = {
         },
 
         /**
+         * 본인 댓글인지 확인
+         * @param {Object} comment - 댓글 객체
+         * @returns {boolean} 본인 댓글이면 true
+         */
+        isMyComment(comment) {
+            // Validate Store and user exist
+            if (!window.Store || !window.Store.state || !window.Store.state.user) {
+                return false;
+            }
+
+            const currentUserId = window.Store.state.user.id;
+            const commentAuthorId = comment.user_id;
+
+            return commentAuthorId === currentUserId;
+        },
+
+        /**
          * 부모 댓글의 형제들 중 맨 아래 위치를 찾아서 삽입 인덱스 반환
          * @param {Array} comments - 전체 댓글 배열
          * @param {number} parentId - 부모 댓글 ID
@@ -807,65 +984,251 @@ const postComponent = {
         },
 
         /**
-         * 답글 입력창 토글
-         * @param {number} commentId - 댓글 ID
+         * 답글 작성 Modal 열기
+         * @param {number} commentId - 부모 댓글 ID
          */
-        toggleReply(commentId) {
-            console.log('Toggle reply for comment:', commentId);
-            console.log('Current replyingTo:', this.replyingTo);
-            console.log('Type of commentId:', typeof commentId);
-            console.log('Are they equal?', this.replyingTo === commentId);
+        openReplyModal(commentId) {
+            console.log('Opening reply modal for comment:', commentId);
 
-            if (this.replyingTo === commentId) {
-                // 이미 열려있으면 닫기
-                this.replyingTo = null;
-                this.replyContent = '';
+            // 답글 모드로 설정
+            this.commentMode = 'reply';
+            this.replyingTo = commentId;
+            this.commentContent = '';
+            this.commentFiles = [];
+            this.uploadProgress = 0;
+            this.isUploading = false;
+
+            // Bootstrap Modal 열기 (통합 모달 사용)
+            const modalId = 'commentModal-' + this.post.id;
+            const modalElement = document.getElementById(modalId);
+            if (modalElement) {
+                // Modal이 완전히 열린 후 textarea에 포커스
+                modalElement.addEventListener('shown.bs.modal', () => {
+                    if (this.$refs.commentTextarea) {
+                        this.$refs.commentTextarea.focus();
+                    }
+                }, { once: true });
+
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
             } else {
-                // 새로 열기
-                this.replyingTo = commentId;
-                this.replyContent = '';
+                console.error('Modal element not found:', modalId);
+            }
+        },
+
+        /**
+         * 댓글 수정 Modal 열기
+         * @param {Object} comment - 수정할 댓글 객체
+         */
+        openEditCommentModal(comment) {
+            // 하위 댓글이 있으면 수정 불가
+            if (comment.comment_count && comment.comment_count > 0) {
+                alert('하위 댓글이 있는 경우 수정 할 수 없습니다.');
+                return;
             }
 
-            console.log('After toggle, replyingTo:', this.replyingTo);
-        },
+            console.log('Opening edit modal for comment:', comment.id);
 
-        /**
-         * 답글 작성 취소
-         */
-        cancelReply() {
+            // 수정 모드로 설정
+            this.commentMode = 'edit';
+            this.editingCommentId = comment.id;
             this.replyingTo = null;
-            this.replyContent = '';
+            this.commentContent = comment.content; // 기존 댓글 내용 로드
+
+            // 기존 첨부 파일 로드 (문자열일 경우 배열로 변환, 빈 값 필터링)
+            if (typeof comment.files === 'string') {
+                this.commentFiles = comment.files.split(',').map(f => f.trim()).filter(f => f);
+            } else if (Array.isArray(comment.files)) {
+                this.commentFiles = comment.files.filter(f => f && f.trim() !== '');
+            } else {
+                this.commentFiles = [];
+            }
+
+            this.uploadProgress = 0;
+            this.isUploading = false;
+
+            // Bootstrap Modal 열기 (통합 모달 사용)
+            const modalId = 'commentModal-' + this.post.id;
+            const modalElement = document.getElementById(modalId);
+            if (modalElement) {
+                // Modal이 완전히 열린 후 textarea에 포커스
+                modalElement.addEventListener('shown.bs.modal', () => {
+                    if (this.$refs.commentTextarea) {
+                        this.$refs.commentTextarea.focus();
+                    }
+                }, { once: true });
+
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            } else {
+                console.error('Modal element not found:', modalId);
+            }
         },
 
         /**
-         * 답글 제출
-         * @param {number} parentCommentId - 부모 댓글 ID
+         * Modal에서 댓글/답글/수정 제출 (통합 메서드)
+         * commentMode에 따라 최상위 댓글, 답글 생성 또는 댓글 수정
          */
-        async submitReply(parentCommentId) {
-            if (!this.replyContent || !this.replyContent.trim()) {
+        async submitComment() {
+            if (!this.commentContent || !this.commentContent.trim()) {
+                return;
+            }
+
+            // 답글 모드일 때 parent_id 확인
+            if (this.commentMode === 'reply' && !this.replyingTo) {
+                console.error('No parent comment ID for reply');
+                return;
+            }
+
+            // 수정 모드일 때 댓글 ID 확인
+            if (this.commentMode === 'edit' && !this.editingCommentId) {
+                console.error('No comment ID for edit');
                 return;
             }
 
             try {
-                const newReply = await func('create_comment', {
+                // 파일 URL을 콤마로 구분된 문자열로 변환
+                const filesString = this.commentFiles.length > 0 ? this.commentFiles.join(',') : '';
+
+                // 수정 모드
+                if (this.commentMode === 'edit') {
+                    const params = {
+                        comment_id: this.editingCommentId,
+                        content: this.commentContent.trim(),
+                        files: filesString,
+                    };
+
+                    const updatedComment = await func('update_comment', params);
+
+                    console.log('Comment updated:', updatedComment);
+
+                    // 댓글 목록에서 기존 댓글 찾아서 업데이트
+                    const index = this.post.comments.findIndex(c => c.id === this.editingCommentId);
+                    if (index !== -1) {
+                        // Vue reactivity를 위해 splice 사용
+                        this.post.comments.splice(index, 1, updatedComment);
+                    }
+
+                    // Modal 닫기
+                    this.closeModal();
+                    return;
+                }
+
+                // 생성 모드 (댓글 또는 답글)
+                const params = {
                     post_id: this.post.id,
-                    parent_id: parentCommentId,
-                    content: this.replyContent.trim(),
-                });
+                    content: this.commentContent.trim(),
+                    files: filesString,
+                };
 
-                console.log('Reply submitted:', newReply);
+                // 답글 모드일 때만 parent_id 추가
+                if (this.commentMode === 'reply') {
+                    params.parent_id = this.replyingTo;
+                }
 
-                // 부모의 형제들 중 맨 아래 위치를 찾아서 삽입
-                const insertIndex = this.findInsertPositionAfterSiblings(this.post.comments, parentCommentId);
-                this.post.comments.splice(insertIndex, 0, newReply);
+                const newComment = await func('create_comment', params);
 
-                // 입력창 닫기
-                this.replyingTo = null;
-                this.replyContent = '';
+                console.log(this.commentMode === 'reply' ? 'Reply submitted:' : 'Comment submitted:', newComment);
+
+                // 댓글 목록에 추가
+                if (this.commentMode === 'reply') {
+                    // 답글: 부모의 형제들 중 맨 아래 위치를 찾아서 삽입
+                    const insertIndex = this.findInsertPositionAfterSiblings(this.post.comments, this.replyingTo);
+                    this.post.comments.splice(insertIndex, 0, newComment);
+                } else {
+                    // 최상위 댓글: 맨 아래에 추가
+                    this.post.comments.push(newComment);
+                }
+
+                // Modal 닫기
+                this.closeModal();
             } catch (error) {
-                console.error('Failed to submit reply:', error);
-                alert('Failed to submit reply: ' + (error.message || 'Unknown error'));
+                console.error('Failed to submit comment:', error);
+                alert('Failed to submit comment: ' + (error.message || 'Unknown error'));
             }
+        },
+
+        /**
+         * 최상위 댓글 작성 Modal 열기
+         */
+        openCommentModal() {
+            console.log('Opening comment modal for post:', this.post.id);
+
+            // 댓글 모드로 설정
+            this.commentMode = 'comment';
+            this.replyingTo = null;
+            this.commentContent = '';
+            this.commentFiles = [];
+            this.uploadProgress = 0;
+            this.isUploading = false;
+
+            // Bootstrap Modal 열기
+            const modalId = 'commentModal-' + this.post.id;
+            const modalElement = document.getElementById(modalId);
+            if (modalElement) {
+                // Modal이 완전히 열린 후 textarea에 포커스
+                modalElement.addEventListener('shown.bs.modal', () => {
+                    if (this.$refs.commentTextarea) {
+                        this.$refs.commentTextarea.focus();
+                    }
+                }, { once: true });
+
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            } else {
+                console.error('Comment modal element not found:', modalId);
+            }
+        },
+
+        /**
+         * 댓글/답글 작성 Modal 닫기 (통합 메서드)
+         */
+        closeModal() {
+            const modalId = 'commentModal-' + this.post.id;
+            const modalElement = document.getElementById(modalId);
+            if (modalElement) {
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) {
+                    modal.hide();
+                }
+            }
+
+            // 상태 초기화
+            this.commentMode = 'comment';
+            this.replyingTo = null;
+            this.editingCommentId = null;
+            this.commentContent = '';
+            this.commentFiles = [];
+            this.uploadProgress = 0;
+            this.isUploading = false;
+        },
+
+        /**
+         * 파일 업로드 이벤트 핸들러 (댓글/답글 공통)
+         * @param {Object} data - { url: string, qr_code?: string }
+         */
+        handleFileUploaded(data) {
+            console.log('File uploaded:', data.url);
+            if (data.url && !this.commentFiles.includes(data.url)) {
+                this.commentFiles.push(data.url);
+            }
+        },
+
+        /**
+         * 업로드 진행률 이벤트 핸들러 (댓글/답글 공통)
+         * @param {Object} data - { progress: number, uploading: boolean }
+         */
+        handleUploadProgress(data) {
+            this.uploadProgress = data.progress;
+            this.isUploading = data.uploading;
+        },
+
+        /**
+         * 파일 삭제 (댓글/답글 공통)
+         * @param {number} index - 파일 인덱스
+         */
+        removeFile(index) {
+            this.commentFiles.splice(index, 1);
         },
 
     },
