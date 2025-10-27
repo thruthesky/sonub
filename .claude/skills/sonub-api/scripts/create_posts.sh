@@ -1,44 +1,97 @@
 #!/bin/bash
 
 # Sonub API - create_posts script
-# Purpose: Create multiple posts using test account
+# 목적: 테스트 계정으로 여러 개의 게시글 생성
+# 주의: bash 기본 명령어만 사용 (jq, perl 등 외부 도구 금지)
 #
-# Usage: ./create_posts.sh [options]
-# Examples:
+# 사용법: ./create_posts.sh [옵션]
+# 예제:
 #   ./create_posts.sh --count 5
-#   ./create_posts.sh --count 10 --api-url "https://local.sonub.com/api.php"
+#   ./create_posts.sh --count 10 --category discussion
 #   ./create_posts.sh --count 3 --user banana --api-url "https://local.sonub.com/api.php"
 
-# Default values
+# 기본값
 API_URL="${API_URL:-https://sonub.com/api.php}"
 POST_COUNT=3
 TEST_USER="banana"
 TEST_PHONE="+11234567891"
+POST_CATEGORY=""
 
-# Post categories
-CATEGORIES=("discussion" "qna" "story")
-
-# Image base URL (picsum.photos)
+# 이미지 기본 URL
 IMAGE_BASE="https://picsum.photos"
 
-# Help function
+# 도움말 함수
 show_help() {
-    echo "Usage: $0 [options]"
-    echo ""
-    echo "Options:"
-    echo "  --count N          Number of posts to create (default: 3, min: 1, max: 50)"
-    echo "  --user NAME        Test user name (default: banana)"
-    echo "  --api-url URL      API URL (default: https://sonub.com/api.php)"
-    echo "  -h, --help         Show this help message"
-    echo ""
-    echo "Examples:"
-    echo "  $0 --count 5"
-    echo "  $0 --count 10 --api-url 'https://local.sonub.com/api.php'"
-    echo "  $0 --count 3 --user apple --api-url 'https://local.sonub.com/api.php'"
+    cat << 'EOF'
+사용법: ./create_posts.sh [옵션]
+
+옵션:
+  --count N          생성할 게시글 수 (기본값: 3, 범위: 1-50)
+  --user NAME        테스트 계정명 (기본값: banana)
+  --category CAT     카테고리 지정 (기본값: 랜덤)
+  --api-url URL      API URL (기본값: https://sonub.com/api.php)
+  -h, --help         이 도움말 표시
+
+테스트 계정:
+  apple, banana, cherry, durian, elderberry
+  fig, grape, honeydew, jackfruit, kiwi, lemon, mango
+
+사용 가능한 카테고리:
+  커뮤니티 (community):
+    - discussion (자유토론)
+    - qna (질문과답변)
+    - story (나의 이야기)
+    - relationships (관계)
+    - fitness (운동)
+    - beauty (뷰티)
+    - cooking (요리)
+    - pets (반려동물)
+    - parenting (육아)
+
+  장터 (buyandsell):
+    - electronics (전자제품)
+    - fashion (패션)
+    - furniture (가구)
+    - books (책)
+    - sports-equipment (스포츠용품)
+    - vehicles (차량)
+    - real-estate (부동산)
+
+  뉴스 (news):
+    - technology (기술)
+    - business (비즈니스)
+    - ai (인공지능)
+    - movies (영화)
+    - drama (드라마)
+    - music (음악)
+
+  부동산 (realestate):
+    - buy (구매)
+    - sell (판매)
+    - rent (임대)
+
+  구인구직 (jobs):
+    - full-time (전일제)
+    - part-time (시간제)
+    - freelance (프리랜서)
+
+사용 예제:
+  $0 --count 5
+  $0 --count 10 --category discussion
+  $0 --count 3 --user apple --api-url 'https://local.sonub.com/api.php'
+  $0 --count 5 --category qna --user cherry --api-url 'https://local.sonub.com/api.php'
+EOF
     exit 0
 }
 
-# Parse arguments
+# JSON 특수문자 이스케이프 함수 (printf와 sed 사용으로 인코딩 문제 해결)
+escape_json() {
+    local string="$1"
+    # printf를 사용하여 문자열을 안전하게 처리하고, sed 에러는 무시
+    printf '%s\n' "$string" | sed 's/\\/\\\\/g; s/"/\\"/g' 2>/dev/null
+}
+
+# 인자 파싱
 while [[ $# -gt 0 ]]; do
     case $1 in
         --count)
@@ -49,6 +102,10 @@ while [[ $# -gt 0 ]]; do
             TEST_USER="$2"
             shift 2
             ;;
+        --category)
+            POST_CATEGORY="$2"
+            shift 2
+            ;;
         --api-url)
             API_URL="$2"
             shift 2
@@ -57,14 +114,14 @@ while [[ $# -gt 0 ]]; do
             show_help
             ;;
         *)
-            echo "Unknown option: $1"
-            echo "Run $0 --help for usage information"
+            echo "알 수 없는 옵션: $1"
+            echo "$0 --help 를 실행하여 사용법을 확인하세요"
             exit 1
             ;;
     esac
 done
 
-# Map test user to phone number
+# 테스트 사용자를 전화번호로 매핑
 case "$TEST_USER" in
     apple) TEST_PHONE="+11234567890" ;;
     banana) TEST_PHONE="+11234567891" ;;
@@ -79,88 +136,119 @@ case "$TEST_USER" in
     lemon) TEST_PHONE="+11234567900" ;;
     mango) TEST_PHONE="+11234567901" ;;
     *)
-        echo "Error: Unknown test user: $TEST_USER"
-        echo "Allowed users: apple, banana, cherry, durian, elderberry, fig, grape, honeydew, jackfruit, kiwi, lemon, mango"
+        echo "오류: 알 수 없는 테스트 사용자: $TEST_USER"
+        echo "허용된 사용자: apple, banana, cherry, durian, elderberry, fig, grape, honeydew, jackfruit, kiwi, lemon, mango"
         exit 1
         ;;
 esac
 
-# Validate post count
+# 게시글 수 검증
 if ! [[ "$POST_COUNT" =~ ^[0-9]+$ ]] || [ "$POST_COUNT" -lt 1 ] || [ "$POST_COUNT" -gt 50 ]; then
-    echo "Error: Post count must be between 1 and 50"
+    echo "오류: 게시글 수는 1 이상 50 이하여야 합니다"
     exit 1
 fi
 
+# 카테고리 검증
+if [ -n "$POST_CATEGORY" ]; then
+    case "$POST_CATEGORY" in
+        discussion|qna|story|relationships|fitness|beauty|cooking|pets|parenting|\
+        electronics|fashion|furniture|books|sports-equipment|vehicles|real-estate|\
+        technology|business|ai|movies|drama|music|\
+        buy|sell|rent|\
+        full-time|part-time|freelance)
+            # 유효한 카테고리
+            ;;
+        *)
+            echo "오류: 알 수 없는 카테고리: $POST_CATEGORY"
+            echo "$0 --help 를 실행하여 사용 가능한 카테고리를 확인하세요"
+            exit 1
+            ;;
+    esac
+fi
+
+# 사용 가능한 카테고리 배열
+CATEGORIES=(
+    "discussion" "qna" "story" "relationships" "fitness" "beauty" "cooking" "pets" "parenting"
+    "electronics" "fashion" "furniture" "books" "sports-equipment" "vehicles" "real-estate"
+    "technology" "business" "ai" "movies" "drama" "music"
+    "buy" "sell" "rent"
+    "full-time" "part-time" "freelance"
+)
+
 echo "=========================================="
-echo "Create Multiple Posts - Sonub API Script"
+echo "게시글 생성 - Sonub API 스크립트"
 echo "=========================================="
 echo ""
-echo "Configuration:"
+echo "설정:"
 echo "  API URL: $API_URL"
-echo "  Posts to create: $POST_COUNT"
-echo "  Test user: $TEST_USER"
-echo "  Phone: $TEST_PHONE"
+echo "  생성할 게시글 수: $POST_COUNT"
+echo "  테스트 사용자: $TEST_USER"
+echo "  전화번호: $TEST_PHONE"
+[ -n "$POST_CATEGORY" ] && echo "  카테고리: $POST_CATEGORY"
 echo ""
 
-# Step 1: Login and get session cookie
-echo "Step 1: Logging in with test account..."
+# 1단계: 로그인 및 세션 쿠키 획득
+echo "1단계: 테스트 계정으로 로그인 중..."
 echo ""
 
-LOGIN_JSON='{
-  "func": "login_with_firebase",
-  "firebase_uid": "'"$TEST_USER"'",
-  "phone_number": "'"$TEST_PHONE"'"
-}'
+LOGIN_JSON="{\"func\": \"login_with_firebase\", \"firebase_uid\": \"$TEST_USER\", \"phone_number\": \"$TEST_PHONE\"}"
 
 COOKIE_JAR=$(mktemp)
 LOGIN_RESPONSE=$(curl -s -k -c "$COOKIE_JAR" -X POST "$API_URL" \
     -H "Content-Type: application/json" \
     -d "$LOGIN_JSON")
 
-# Check login response
+# 로그인 응답 확인
 if echo "$LOGIN_RESPONSE" | grep -q "error_code"; then
-    echo "Error: Login failed"
-    echo "$LOGIN_RESPONSE" | jq '.' 2>/dev/null || echo "$LOGIN_RESPONSE"
+    echo "오류: 로그인 실패"
+    echo "$LOGIN_RESPONSE"
     rm -f "$COOKIE_JAR"
     exit 1
 fi
 
-USER_ID=$(echo "$LOGIN_RESPONSE" | jq -r '.id // empty' 2>/dev/null)
+# bash로 JSON에서 필드 추출 (grep + cut 사용으로 한글 인코딩 문제 해결)
+USER_ID=$(echo "$LOGIN_RESPONSE" | grep -o '"id":[0-9]*' | cut -d: -f2)
 if [ -z "$USER_ID" ]; then
-    echo "Error: Could not get user ID from login response"
-    echo "$LOGIN_RESPONSE" | jq '.' 2>/dev/null || echo "$LOGIN_RESPONSE"
+    echo "오류: 로그인 응답에서 사용자 ID를 가져올 수 없습니다"
+    echo "$LOGIN_RESPONSE"
     rm -f "$COOKIE_JAR"
     exit 1
 fi
 
-USER_NAME=$(echo "$LOGIN_RESPONSE" | jq -r '.first_name // "Unknown"' 2>/dev/null)
-echo "✓ Login successful!"
-echo "  User ID: $USER_ID"
-echo "  Name: $USER_NAME"
+USER_NAME=$(echo "$LOGIN_RESPONSE" | grep -o '"first_name":"[^"]*"' | cut -d'"' -f4)
+[ -z "$USER_NAME" ] && USER_NAME="Unknown"
+
+echo "✓ 로그인 성공!"
+echo "  사용자 ID: $USER_ID"
+echo "  이름: $USER_NAME"
 echo ""
 
-# Step 2: Create posts
-echo "Step 2: Creating posts..."
+# 2단계: 게시글 생성
+echo "2단계: 게시글 생성 중..."
 echo ""
 
 SUCCESS_COUNT=0
 FAIL_COUNT=0
 
 for i in $(seq 1 "$POST_COUNT"); do
-    # Random category
-    CATEGORY_INDEX=$((RANDOM % ${#CATEGORIES[@]}))
-    CATEGORY="${CATEGORIES[$CATEGORY_INDEX]}"
+    # 카테고리 선택
+    if [ -n "$POST_CATEGORY" ]; then
+        CATEGORY="$POST_CATEGORY"
+    else
+        CATEGORY_INDEX=$((i % ${#CATEGORIES[@]}))
+        CATEGORY="${CATEGORIES[$CATEGORY_INDEX]}"
+    fi
 
-    # Random image count (0-7)
-    IMAGE_COUNT=$((RANDOM % 8))
+    # 이미지 개수 결정 (0-7)
+    IMAGE_COUNT=$((i % 8))
 
-    # Generate image URLs
+    # 이미지 URL 생성
     IMAGE_URLS=""
     if [ "$IMAGE_COUNT" -gt 0 ]; then
         for j in $(seq 1 "$IMAGE_COUNT"); do
-            IMAGE_ID=$((RANDOM % 1000))
-            IMAGE_WIDTH=$((200 + RANDOM % 400))
-            IMAGE_HEIGHT=$((200 + RANDOM % 400))
+            IMAGE_ID=$((i * 1000 + j))
+            IMAGE_WIDTH=$((200 + i * 50))
+            IMAGE_HEIGHT=$((200 + i * 50))
             IMAGE_URL="$IMAGE_BASE/${IMAGE_WIDTH}/${IMAGE_HEIGHT}?random=$IMAGE_ID"
 
             if [ -z "$IMAGE_URLS" ]; then
@@ -171,59 +259,57 @@ for i in $(seq 1 "$POST_COUNT"); do
         done
     fi
 
-    # Generate post content
-    TITLE="Test Post #$i - $(date +'%Y-%m-%d %H:%M:%S')"
-    CONTENT="This is an auto-generated test post.\\n\\nCategory: $CATEGORY\\nImages: $IMAGE_COUNT\\n\\nFor testing purposes only."
+    # 게시글 제목 및 내용 생성
+    TITLE="게시글 $i - $(date +'%Y-%m-%d %H:%M:%S')"
+    CONTENT="자동 생성된 테스트 게시글입니다.\n\n카테고리: $CATEGORY\n이미지: $IMAGE_COUNT개"
 
-    # Create post JSON
-    POST_JSON='{
-      "func": "create_post",
-      "title": "'"$(echo "$TITLE" | sed 's/"/\\"/g')"'",
-      "content": "'"$(echo "$CONTENT" | sed 's/"/\\"/g')"'",
-      "category": "'"$CATEGORY"'",
-      "visibility": "public"'
+    # 특수문자 이스케이프
+    TITLE_ESCAPED=$(escape_json "$TITLE")
+    CONTENT_ESCAPED=$(escape_json "$CONTENT")
+    IMAGE_URLS_ESCAPED=$(escape_json "$IMAGE_URLS")
 
+    # 게시글 JSON 생성 (bash 기본 명령어만 사용)
     if [ -n "$IMAGE_URLS" ]; then
-        POST_JSON="$POST_JSON"',
-      "files": "'"$(echo "$IMAGE_URLS" | sed 's/"/\\"/g')"'"'
+        POST_JSON="{\"func\": \"create_post\", \"title\": \"$TITLE_ESCAPED\", \"content\": \"$CONTENT_ESCAPED\", \"category\": \"$CATEGORY\", \"visibility\": \"public\", \"files\": \"$IMAGE_URLS_ESCAPED\"}"
+    else
+        POST_JSON="{\"func\": \"create_post\", \"title\": \"$TITLE_ESCAPED\", \"content\": \"$CONTENT_ESCAPED\", \"category\": \"$CATEGORY\", \"visibility\": \"public\"}"
     fi
 
-    POST_JSON="$POST_JSON"'
-    }'
-
-    # Call create_post API
+    # create_post API 호출
     POST_RESPONSE=$(curl -s -k -b "$COOKIE_JAR" -X POST "$API_URL" \
         -H "Content-Type: application/json" \
         -d "$POST_JSON")
 
-    # Check response
-    POST_ID=$(echo "$POST_RESPONSE" | jq -r '.id // empty' 2>/dev/null)
+    # 응답 확인 (grep + cut 사용)
+    POST_ID=$(echo "$POST_RESPONSE" | grep -o '"id":[0-9]*' | cut -d: -f2)
     if [ -n "$POST_ID" ]; then
         SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
-        echo "  ✓ Post #$i created (ID: $POST_ID, Category: $CATEGORY, Images: $IMAGE_COUNT)"
+        echo "  ✓ 게시글 #$i 생성 완료 (ID: $POST_ID, 카테고리: $CATEGORY, 이미지: $IMAGE_COUNT개)"
     else
         FAIL_COUNT=$((FAIL_COUNT + 1))
-        ERROR_CODE=$(echo "$POST_RESPONSE" | jq -r '.error_code // "unknown"' 2>/dev/null)
-        ERROR_MSG=$(echo "$POST_RESPONSE" | jq -r '.error_message // "Unknown error"' 2>/dev/null)
-        echo "  ✗ Post #$i failed (Error: $ERROR_CODE - $ERROR_MSG)"
+        ERROR_CODE=$(echo "$POST_RESPONSE" | grep -o '"error_code":"[^"]*"' | cut -d'"' -f4)
+        ERROR_MSG=$(echo "$POST_RESPONSE" | grep -o '"error_message":"[^"]*"' | cut -d'"' -f4)
+        [ -z "$ERROR_CODE" ] && ERROR_CODE="unknown"
+        [ -z "$ERROR_MSG" ] && ERROR_MSG="알 수 없는 오류"
+        echo "  ✗ 게시글 #$i 생성 실패 (오류: $ERROR_CODE - $ERROR_MSG)"
     fi
 done
 
 echo ""
 echo "=========================================="
-echo "Results"
+echo "결과"
 echo "=========================================="
 echo ""
-echo "Total requests: $POST_COUNT"
-echo "Successful: $SUCCESS_COUNT"
-echo "Failed: $FAIL_COUNT"
+echo "총 요청: $POST_COUNT"
+echo "성공: $SUCCESS_COUNT"
+echo "실패: $FAIL_COUNT"
 echo ""
 
-# Cleanup
+# 정리
 rm -f "$COOKIE_JAR"
 
 if [ "$FAIL_COUNT" -gt 0 ]; then
     exit 1
 fi
 
-echo "Done!"
+echo "완료!"
