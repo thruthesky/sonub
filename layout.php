@@ -77,7 +77,15 @@ if (file_exists($module_path)) {
                     return;
                 }
                 // 파이어베이스 app 초기화: Firebase (and user) available immediately after this line.
-                firebase.initializeApp(firebaseConfig);
+                firebase.initializeApp({
+                    apiKey: "AIzaSyCXAFYnNf7QYcZNpIngCA-lOhb9YRRLDTY",
+                    authDomain: "sonub-firebase.firebaseapp.com",
+                    projectId: "sonub-firebase",
+                    storageBucket: "sonub-firebase.firebasestorage.app",
+                    messagingSenderId: "406320255657",
+                    appId: "1:406320255657:web:79b39117a353878b8e8fb8",
+                    measurementId: "G-3XX2YB4JV0"
+                });
                 // console.log("---> Firebase 초기화 됨");
                 callback();
             })
@@ -358,7 +366,6 @@ if (file_exists($module_path)) {
 
 
     <script src="/js/vue.global.prod.js"></script>
-    <?php include ROOT_DIR . '/etc/firebase/firebase-setup.php'; ?>
     <script src="/js/axios.js"></script>
     <?php include_once ROOT_DIR . '/etc/php-hot-reload-client.php'; ?>
     <link href="/css/app.css?v=<?= APP_VERSION ?>" rel="stylesheet">
