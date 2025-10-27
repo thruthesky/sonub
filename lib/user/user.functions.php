@@ -289,3 +289,14 @@ function login_with_firebase(array $params): array
 
     return $user;
 }
+
+
+function is_admin(): bool
+{
+    $user = login();
+    if (empty($user)) {
+        return false;
+    }
+
+    return false;
+}

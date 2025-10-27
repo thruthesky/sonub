@@ -329,25 +329,26 @@ if (file_exists($module_path)) {
                         <p class="mb-0 text-muted small">&copy; 2024 Sonub Application. All rights reserved.</p>
                     </div>
                 </div>
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <div class="app-version text-center">
-                            <span class="version-label">Version</span>
-                            <span class="version-number">
-                                <?php
-                                // APP_VERSION을 사람이 읽기 편한 형식으로 변환
-                                // 형식: 2025-10-13-23-01-54 → 2025년 10월 13일 23:01:54
-                                $version_parts = explode('-', APP_VERSION);
-                                if (count($version_parts) === 6) {
-                                    echo $version_parts[0] . '년 ' . $version_parts[1] . '월 ' . $version_parts[2] . '일 ' . $version_parts[3] . ':' . $version_parts[4] . ':' . $version_parts[5];
-                                } else {
-                                    echo APP_VERSION;
-                                }
-                                ?>
-                            </span>
+                <?php if (is_admin()): ?>
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="app-version text-center">
+                                <span class="version-number">
+                                    <?php
+                                    // APP_VERSION을 사람이 읽기 편한 형식으로 변환
+                                    // 형식: 2025-10-13-23-01-54 → 2025년 10월 13일 23:01:54
+                                    $version_parts = explode('-', APP_VERSION);
+                                    if (count($version_parts) === 6) {
+                                        echo $version_parts[0] . '년 ' . $version_parts[1] . '월 ' . $version_parts[2] . '일 ' . $version_parts[3] . ':' . $version_parts[4] . ':' . $version_parts[5];
+                                    } else {
+                                        echo APP_VERSION;
+                                    }
+                                    ?>
+                                </span>
+                            </div>
                         </div>
                     </div>
-                </div>
+                <?php endif; ?>
             </div>
 
         </footer>
