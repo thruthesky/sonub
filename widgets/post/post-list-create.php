@@ -128,9 +128,7 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
         display: flex;
         align-items: center;
         gap: 12px;
-        margin-top: 12px;
-        padding-top: 12px;
-        border-top: 1px solid #e4e6eb;
+        padding: 12px 16px;
     }
 
     #post-list-create .post-action-btn {
@@ -182,14 +180,14 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
 </style>
 <section id="post-list-create" class="mb-3" v-cloak>
     <!-- 게시물 작성 카드 (post-card 스타일 적용) -->
-    <article class="post-card">
+    <article class="post-card" style="margin-top: 12px !important;">
         <div class="post-body">
             <form @submit.prevent="submit_post">
                 <!-- 축소된 상태: 프로필 + 클릭 가능한 버튼 -->
-                <div v-if="!expanded" class="d-flex align-items-center gap-2">
+                <div v-if="!expanded" class="d-flex align-items-center p-3 gap-2">
                     <!-- 프로필 사진 (Bootstrap 유틸리티 클래스 사용) -->
                     <div class="d-flex align-items-center justify-content-center bg-light rounded-circle flex-shrink-0"
-                         style="width: 40px; height: 40px;">
+                        style="width: 40px; height: 40px;">
                         <img v-if="userPhoto"
                             :src="userPhoto"
                             :alt="userName"
@@ -208,102 +206,129 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
 
                 <!-- 확장된 상태: 전체 폼 -->
                 <div v-if="expanded">
-                    <!-- 사용자 프로필 헤더 -->
-                    <div class="d-flex align-items-center gap-2 mb-3">
-                        <!-- 프로필 사진 (Bootstrap 유틸리티 클래스 사용) -->
-                        <div class="d-flex align-items-center justify-content-center bg-light rounded-circle flex-shrink-0"
-                             style="width: 40px; height: 40px;">
-                            <img v-if="userPhoto"
-                                :src="userPhoto"
-                                :alt="userName"
-                                class="rounded-circle"
-                                style="width: 100%; height: 100%; object-fit: cover;">
-                            <i v-else class="fa-solid fa-user text-secondary" style="font-size: 20px;"></i>
+                    <!-- 헤더 섹션 (사용자 프로필) -->
+                    <header class="d-flex align-items-center justify-content-between p-3 border-bottom" style="border-color: #e4e6eb;">
+                        <div class="d-flex align-items-center gap-2" style="flex: 1;">
+                            <!-- 프로필 사진 -->
+                            <div class="d-flex align-items-center justify-content-center bg-light rounded-circle flex-shrink-0"
+                                style="width: 40px; height: 40px;">
+                                <img v-if="userPhoto"
+                                    :src="userPhoto"
+                                    :alt="userName"
+                                    class="rounded-circle"
+                                    style="width: 100%; height: 100%; object-fit: cover;">
+                                <i v-else class="fa-solid fa-user text-secondary" style="font-size: 20px;"></i>
+                            </div>
+
+                            <!-- 사용자 정보 -->
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold" style="font-size: 15px; color: #050505; line-height: 1.3;">
+                                    {{ userName }}
+                                </div>
+                                <div class="d-flex gap-2 align-items-center" style="font-size: 13px; color: #65676b; line-height: 1.3;">
+                                    <!-- 공개범위 선택 -->
+                                    <div class="post-select-wrapper">
+                                        <i class="fa-solid fa-earth-americas" v-if="visibility === 'public'" style="font-size: 12px; margin-right: 4px;"></i>
+                                        <i class="fa-solid fa-user-group" v-if="visibility === 'friends'" style="font-size: 12px; margin-right: 4px;"></i>
+                                        <i class="fa-solid fa-lock" v-if="visibility === 'private'" style="font-size: 12px; margin-right: 4px;"></i>
+                                        <select v-model="visibility" class="post-select">
+                                            <option value="public"><?= t()->공개 ?></option>
+                                            <option value="friends"><?= t()->친구만 ?></option>
+                                            <option value="private"><?= t()->나만_보기 ?></option>
+                                        </select>
+                                        <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px; pointer-events: none;"></i>
+                                    </div>
+
+                                    <!-- 카테고리 선택 (공개일 때만) -->
+                                    <div v-if="visibility === 'public'" class="post-select-wrapper">
+                                        <i class="fa-solid fa-folder" style="font-size: 12px; margin-right: 4px;"></i>
+                                        <select v-model="category" class="post-select">
+                                            <?php foreach (config()->categories->getRootCategories() as $root) : ?>
+                                                <optgroup label="<?= htmlspecialchars($root->display_name) ?>">
+                                                    <?php foreach ($root->getCategories() as $sub) : ?>
+                                                        <option value="<?= htmlspecialchars($sub->category) ?>"><?= htmlspecialchars($sub->name) ?></option>
+                                                    <?php endforeach; ?>
+                                                </optgroup>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px; pointer-events: none;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    <!-- 본문 섹션 -->
+                    <div class="p-3">
+                        <!-- 게시물 내용 입력 -->
+                        <textarea
+                            ref="textarea"
+                            v-model="content"
+                            class="post-content-input mb-3"
+                            name="content"
+                            :placeholder="placeholder"
+                            @input="autoResize"></textarea>
+
+                        <!-- 업로드된 이미지 미리보기 -->
+                        <div v-if="uploadedFiles.length > 0" class="mb-3">
+                            <div class="row g-2">
+                                <div v-for="(fileUrl, index) in uploadedFiles" :key="index"
+                                    :class="getPhotoColumnClass(uploadedFiles.length)">
+                                    <div class="position-relative">
+                                        <img :src="thumbnail(fileUrl, 400, 400, 'cover', 85, 'ffffff')"
+                                            :alt="'Photo ' + (index + 1)"
+                                            style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
+
+                                        <!-- Delete button (X) on top right -->
+                                        <button
+                                            @click="removeFile(index)"
+                                            type="button"
+                                            class="btn btn-sm btn-danger position-absolute"
+                                            style="top: 8px; right: 8px; width: 28px; height: 28px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0.9; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"
+                                            title="Remove image">
+                                            <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- 사용자 정보 -->
-                        <div class="flex-grow-1">
-                            <div class="fw-semibold" style="font-size: 15px; color: #050505; line-height: 1.3;">
-                                {{ userName }}
-                            </div>
-                            <div class="d-flex gap-2 align-items-center" style="font-size: 13px; color: #65676b; line-height: 1.3;">
-                                <!-- 공개범위 선택 -->
-                                <div class="post-select-wrapper">
-                                    <i class="fa-solid fa-earth-americas" v-if="visibility === 'public'" style="font-size: 12px; margin-right: 4px;"></i>
-                                    <i class="fa-solid fa-user-group" v-if="visibility === 'friends'" style="font-size: 12px; margin-right: 4px;"></i>
-                                    <i class="fa-solid fa-lock" v-if="visibility === 'private'" style="font-size: 12px; margin-right: 4px;"></i>
-                                    <select v-model="visibility" class="post-select">
-                                        <option value="public"><?= t()->공개 ?></option>
-                                        <option value="friends"><?= t()->친구만 ?></option>
-                                        <option value="private"><?= t()->나만_보기 ?></option>
-                                    </select>
-                                    <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px; pointer-events: none;"></i>
-                                </div>
-
-                                <!-- 카테고리 선택 (공개일 때만) -->
-                                <div v-if="visibility === 'public'" class="post-select-wrapper">
-                                    <i class="fa-solid fa-folder" style="font-size: 12px; margin-right: 4px;"></i>
-                                    <select v-model="category" class="post-select">
-                                        <?php foreach (config()->categories->getRootCategories() as $root) : ?>
-                                            <optgroup label="<?= htmlspecialchars($root->display_name) ?>">
-                                                <?php foreach ($root->getCategories() as $sub) : ?>
-                                                    <option value="<?= htmlspecialchars($sub->category) ?>"><?= htmlspecialchars($sub->name) ?></option>
-                                                <?php endforeach; ?>
-                                            </optgroup>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px; pointer-events: none;"></i>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- Hidden file upload component -->
+                        <file-upload-component
+                            ref="upload"
+                            :multiple="true"
+                            :accept="'image/*,video/*'"
+                            :show-upload-button="false"
+                            :show-uploaded-files="false"
+                            :input-name="'files'"
+                            @uploaded="handleFileUploaded">
+                        </file-upload-component>
                     </div>
-
-                    <!-- 게시물 내용 입력 -->
-                    <textarea
-                        ref="textarea"
-                        v-model="content"
-                        class="post-content-input"
-                        name="content"
-                        :placeholder="placeholder"
-                        @input="autoResize"></textarea>
-
-                    <!-- 카테고리 선택 (공개일 때만) -->
-
-                    <!-- 파일 업로드 컴포넌트 -->
-                    <file-upload-component
-                        ref="upload"
-                        :multiple="true"
-                        :accept="'image/*,video/*'"
-                        :show-upload-button="false"
-                        :show-delete-icon="true"
-                        :input-name="'files'"
-                        @change="onFileChange">
-                    </file-upload-component>
-
 
                     <!-- 하단 액션 영역 -->
-                    <div class="post-create-actions">
-                        <!-- 사진/비디오 업로드 버튼 -->
-                        <label class="post-action-btn">
-                            <i class="fa-solid fa-image" style="color: #45bd62;"></i>
-                            <span><?= t()->사진_동영상 ?></span>
-                            <input type="file"
-                                multiple
-                                accept="image/*,video/*"
-                                style="display: none;"
-                                @change="$refs.upload.handleFileChange($event)">
-                        </label>
+                    <div class="border-top" style="border-color: #e4e6eb;">
+                        <div class="post-create-actions">
+                            <!-- 사진/비디오 업로드 버튼 -->
+                            <label class="post-action-btn">
+                                <i class="fa-solid fa-image" style="color: #45bd62;"></i>
+                                <span><?= t()->사진_동영상 ?></span>
+                                <input type="file"
+                                    multiple
+                                    accept="image/*,video/*"
+                                    style="display: none;"
+                                    @change="$refs.upload.handleFileChange($event)">
+                            </label>
 
-                        <!-- 오른쪽: 취소 및 게시 버튼 -->
-                        <div style="display: flex; gap: 8px; margin-left: auto;">
-                            <button type="submit"
-                                class="btn-post"
-                                :disabled="!canSubmit">
-                                <?= t()->게시 ?>
-                            </button>
+                            <!-- 오른쪽: 게시 버튼 -->
+                            <div style="display: flex; gap: 8px; margin-left: auto;">
+                                <button type="submit"
+                                    class="btn-post"
+                                    :disabled="!canSubmit">
+                                    <?= t()->게시 ?>
+                                </button>
+                            </div>
                         </div>
                     </div>
-
                 </div>
             </form>
         </div>
@@ -320,7 +345,7 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
                 return {
                     content: '',
                     expanded: false,
-                    hasFiles: false,
+                    uploadedFiles: [], // 업로드된 파일 URL 배열
                     visibility: 'public',
                     category: '<?= $category ?>',
                     userPhoto: '<?= htmlspecialchars($user_photo) ?>',
@@ -333,10 +358,72 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
                  * 게시 버튼 활성화 여부
                  */
                 canSubmit() {
-                    return this.content.trim().length > 0 || this.hasFiles;
+                    return this.content.trim().length > 0 || this.uploadedFiles.length > 0;
                 }
             },
             methods: {
+                /**
+                 * thumbnail 함수 (전역 함수 사용)
+                 */
+                thumbnail: thumbnail,
+
+                /**
+                 * 사진 개수에 따른 Bootstrap column 클래스 반환
+                 * @param {number} photoCount - 사진 개수
+                 * @returns {string} Bootstrap column 클래스
+                 */
+                getPhotoColumnClass(photoCount) {
+                    if (photoCount === 1) return 'col-12';
+                    if (photoCount === 2) return 'col-6';
+                    if (photoCount === 3) return 'col-4';
+                    return 'col-6 col-md-4 col-lg-3'; // 4개 이상
+                },
+
+                /**
+                 * 파일 업로드 완료 이벤트 핸들러
+                 * @param {Object} data - { url: string }
+                 */
+                handleFileUploaded(data) {
+                    console.log('File uploaded:', data.url);
+                    if (data.url && !this.uploadedFiles.includes(data.url)) {
+                        this.uploadedFiles.push(data.url);
+                    }
+                },
+
+                /**
+                 * 파일 삭제 (file-upload 컴포넌트와 동일한 기능)
+                 * @param {number} index - 삭제할 파일 인덱스
+                 */
+                async removeFile(index) {
+                    // 삭제 확인
+                    if (!confirm('<?= t()->파일_삭제_확인 ?>')) {
+                        return;
+                    }
+
+                    const url = this.uploadedFiles[index];
+
+                    try {
+                        // API 호출하여 서버에서 파일 삭제
+                        const response = await axios.get(appConfig.api.file_delete_url, {
+                            params: {
+                                url: url
+                            }
+                        });
+
+                        console.log('File deleted successfully:', response.data);
+                    } catch (error) {
+                        const msg = get_axios_error_message(error);
+                        // file-not-found 에러는 무시 (이미 삭제된 파일)
+                        if (msg.indexOf('file-not-found') === -1) {
+                            console.error('Delete error:', error);
+                            alert('<?= t()->파일_삭제_오류 ?>: ' + msg);
+                        }
+                    }
+
+                    // 파일 목록에서 제거
+                    this.uploadedFiles.splice(index, 1);
+                },
+
                 /**
                  * 폼 확장
                  */
@@ -356,14 +443,8 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
                 cancel() {
                     this.content = '';
                     this.expanded = false;
-                    this.hasFiles = false;
+                    this.uploadedFiles = [];
                     this.visibility = 'public';
-
-                    // 파일 업로드 영역 초기화
-                    const filesDiv = document.getElementById('files');
-                    if (filesDiv) {
-                        filesDiv.innerHTML = '';
-                    }
                 },
 
                 /**
@@ -388,23 +469,22 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
                     }
 
                     try {
-                        // 파일 업로드된 파일들의 URL 가져오기
-                        const filesInput = document.querySelector('[name="files"]');
-                        const filesValue = filesInput ? filesInput.value : '';
+                        // 업로드된 파일들의 URL을 콤마로 구분된 문자열로 변환
+                        const filesString = this.uploadedFiles.length > 0 ? this.uploadedFiles.join(',') : '';
 
                         // API 호출하여 게시물 작성
                         const post = await func('create_post', {
                             category: this.visibility === 'public' ? this.category : '<?= $category ?>',
                             visibility: this.visibility,
                             content: this.content,
-                            files: filesValue,
+                            files: filesString,
                             alertOnError: true,
                         });
 
                         console.log('게시물 작성 응답:', post);
 
                         if (post && post.id) {
-                            // 작성 성공 시, 페이지 새로고침
+                            // 작성 성공 시, 게시물 목록에 추가
                             window.Store.state.postList.posts.unshift(post);
                             this.cancel();
                         }
@@ -516,6 +596,18 @@ function inject_post_list_create_language()
             'en' => 'Cancel',
             'ja' => 'キャンセル',
             'zh' => '取消'
+        ],
+        '파일_삭제_확인' => [
+            'ko' => '이 파일을 삭제하시겠습니까?',
+            'en' => 'Are you sure you want to delete this file?',
+            'ja' => 'このファイルを削除してもよろしいですか?',
+            'zh' => '您确定要删除此文件吗?'
+        ],
+        '파일_삭제_오류' => [
+            'ko' => '파일 삭제 중 오류가 발생했습니다',
+            'en' => 'An error occurred while deleting the file',
+            'ja' => 'ファイルの削除中にエラーが発生しました',
+            'zh' => '删除文件时发生错误'
         ],
     ]);
 }

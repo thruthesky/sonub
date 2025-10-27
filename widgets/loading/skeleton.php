@@ -76,46 +76,107 @@
 </style>
 
 <!-- 로딩 스켈레톤 (Vue 마운트 전에만 표시) -->
-<div id="skeleton-loader" class="d-flex flex-column gap-4">
+<div id="skeleton-loader" class="d-flex flex-column gap-3">
     <!-- 스켈레톤 게시물 카드 1 -->
-    <article class="post-card skeleton-card">
-        <div class="post-header d-flex">
-            <div class="skeleton skeleton-avatar"></div>
-            <div class="mt-2" style="flex: 1;">
-                <div class="skeleton skeleton-text" style="width: 150px; height: 16px; margin-bottom: 8px;"></div>
-                <div class="skeleton skeleton-text" style="width: 100px; height: 14px;"></div>
+    <article class="post-card" style="margin-top: 0px !important;">
+        <!-- 헤더 -->
+        <header class="d-flex align-items-center justify-content-between p-3 border-bottom" style="border-color: #e4e6eb;">
+            <div class="d-flex align-items-center gap-2" style="flex: 1;">
+                <div class="skeleton skeleton-avatar"></div>
+                <div style="flex: 1;">
+                    <div class="skeleton skeleton-text" style="width: 120px; height: 15px; margin-bottom: 6px;"></div>
+                    <div class="skeleton skeleton-text" style="width: 180px; height: 13px;"></div>
+                </div>
             </div>
+        </header>
+
+        <!-- 본문 -->
+        <div class="p-3">
+            <div class="skeleton skeleton-text mb-2" style="width: 100%; height: 14px;"></div>
+            <div class="skeleton skeleton-text mb-3" style="width: 80%; height: 14px;"></div>
+            <div class="skeleton skeleton-image"></div>
         </div>
-        <div class="post-body mt-2">
-            <div class="skeleton skeleton-image" style="margin-top: 12px;"></div>
+
+        <!-- 액션 버튼 -->
+        <div class="d-flex border-top" style="border-color: #e4e6eb;">
+            <div class="flex-fill py-2 text-center">
+                <div class="skeleton skeleton-text mx-auto" style="width: 60px; height: 16px;"></div>
+            </div>
+            <div class="flex-fill py-2 text-center">
+                <div class="skeleton skeleton-text mx-auto" style="width: 80px; height: 16px;"></div>
+            </div>
+            <div class="flex-fill py-2 text-center">
+                <div class="skeleton skeleton-text mx-auto" style="width: 60px; height: 16px;"></div>
+            </div>
         </div>
     </article>
 
-    <!-- 스켈레톤 게시물 카드 1 -->
-    <article class="post-card skeleton-card">
-        <div class="post-header d-flex">
-            <div class="skeleton skeleton-avatar"></div>
-            <div class="mt-2" style="flex: 1;">
-                <div class="skeleton skeleton-text" style="width: 150px; height: 16px; margin-bottom: 8px;"></div>
-                <div class="skeleton skeleton-text" style="width: 100px; height: 14px;"></div>
+    <!-- 스켈레톤 게시물 카드 2 -->
+    <article class="post-card">
+        <!-- 헤더 -->
+        <header class="d-flex align-items-center justify-content-between p-3 border-bottom" style="border-color: #e4e6eb;">
+            <div class="d-flex align-items-center gap-2" style="flex: 1;">
+                <div class="skeleton skeleton-avatar"></div>
+                <div style="flex: 1;">
+                    <div class="skeleton skeleton-text" style="width: 140px; height: 15px; margin-bottom: 6px;"></div>
+                    <div class="skeleton skeleton-text" style="width: 160px; height: 13px;"></div>
+                </div>
             </div>
+        </header>
+
+        <!-- 본문 -->
+        <div class="p-3">
+            <div class="skeleton skeleton-text mb-2" style="width: 95%; height: 14px;"></div>
+            <div class="skeleton skeleton-text mb-2" style="width: 88%; height: 14px;"></div>
+            <div class="skeleton skeleton-text mb-3" style="width: 70%; height: 14px;"></div>
+            <div class="skeleton skeleton-image"></div>
         </div>
-        <div class="post-body mt-2">
-            <div class="skeleton skeleton-image" style="margin-top: 12px;"></div>
+
+        <!-- 액션 버튼 -->
+        <div class="d-flex border-top" style="border-color: #e4e6eb;">
+            <div class="flex-fill py-2 text-center">
+                <div class="skeleton skeleton-text mx-auto" style="width: 60px; height: 16px;"></div>
+            </div>
+            <div class="flex-fill py-2 text-center">
+                <div class="skeleton skeleton-text mx-auto" style="width: 80px; height: 16px;"></div>
+            </div>
+            <div class="flex-fill py-2 text-center">
+                <div class="skeleton skeleton-text mx-auto" style="width: 60px; height: 16px;"></div>
+            </div>
         </div>
     </article>
 
-    <!-- 스켈레톤 게시물 카드 1 -->
-    <article class="post-card skeleton-card">
-        <div class="post-header d-flex">
-            <div class="skeleton skeleton-avatar"></div>
-            <div class="mt-2" style="flex: 1;">
-                <div class="skeleton skeleton-text" style="width: 150px; height: 16px; margin-bottom: 8px;"></div>
-                <div class="skeleton skeleton-text" style="width: 100px; height: 14px;"></div>
+    <!-- 스켈레톤 게시물 카드 3 -->
+    <article class="post-card">
+        <!-- 헤더 -->
+        <header class="d-flex align-items-center justify-content-between p-3 border-bottom" style="border-color: #e4e6eb;">
+            <div class="d-flex align-items-center gap-2" style="flex: 1;">
+                <div class="skeleton skeleton-avatar"></div>
+                <div style="flex: 1;">
+                    <div class="skeleton skeleton-text" style="width: 130px; height: 15px; margin-bottom: 6px;"></div>
+                    <div class="skeleton skeleton-text" style="width: 170px; height: 13px;"></div>
+                </div>
             </div>
+        </header>
+
+        <!-- 본문 -->
+        <div class="p-3">
+            <div class="skeleton skeleton-text mb-2" style="width: 100%; height: 14px;"></div>
+            <div class="skeleton skeleton-text mb-3" style="width: 75%; height: 14px;"></div>
+            <div class="skeleton skeleton-image"></div>
         </div>
-        <div class="post-body mt-2">
-            <div class="skeleton skeleton-image" style="margin-top: 12px;"></div>
+
+        <!-- 액션 버튼 -->
+        <div class="d-flex border-top" style="border-color: #e4e6eb;">
+            <div class="flex-fill py-2 text-center">
+                <div class="skeleton skeleton-text mx-auto" style="width: 60px; height: 16px;"></div>
+            </div>
+            <div class="flex-fill py-2 text-center">
+                <div class="skeleton skeleton-text mx-auto" style="width: 80px; height: 16px;"></div>
+            </div>
+            <div class="flex-fill py-2 text-center">
+                <div class="skeleton skeleton-text mx-auto" style="width: 60px; height: 16px;"></div>
+            </div>
         </div>
     </article>
 

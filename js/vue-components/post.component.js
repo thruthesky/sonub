@@ -16,7 +16,7 @@ const postComponent = {
         },
     },
     template: /*html*/ `
-    <div ref="postContainer" :class="{ 'border border-warning border-1 rounded-3': edit.enabled }" style="transition: all 0.1s ease;">
+    <div ref="postContainer" >
     <!-- 게시물 헤더 (사용자 정보) -->
     <header class="d-flex align-items-center justify-content-between p-3 border-bottom" style="border-color: #e4e6eb;">
         <div class="d-flex align-items-center gap-2">
@@ -48,26 +48,25 @@ const postComponent = {
 
         <!-- 게시물 수정/삭제 버튼 (본인 게시물인 경우에만 표시) -->
         <div v-if="isMyPost" class="d-flex align-items-center gap-2">
-            <button @click="handleEditPost()" class="btn btn-link text-decoration-none text-muted p-0" style="font-size: 18px;" title="Edit">
+            <button @click="handleEditPost()" class="btn btn-link text-decoration-none text-warning p-2 rounded" style="font-size: 16px; transition: background-color 0.2s ease;" title="Edit" onmouseover="this.style.backgroundColor='#fff3cd';" onmouseout="this.style.backgroundColor='transparent';">
                 <i class="fa-solid fa-pen-to-square"></i>
             </button>
-            <button @click="handleDeletePost()" class="btn btn-link text-decoration-none text-danger p-0" style="font-size: 18px;" title="Delete">
+            <button @click="handleDeletePost()" class="btn btn-link text-decoration-none text-danger p-2 rounded" style="font-size: 16px; transition: background-color 0.2s ease;" title="Delete" onmouseover="this.style.backgroundColor='#f8d7da';" onmouseout="this.style.backgroundColor='transparent';">
                 <i class="fa-solid fa-trash"></i>
             </button>
         </div>
     </header>
 
     <!-- 게시물 본문 (Bootstrap 패딩 사용) -->
-    <div class="p-3">
+    <div class="p-3" :class="{ 'border border-warning border-1 rounded-3': edit.enabled }" style="transition: all 0.1s ease;">
         <!-- Edit Mode -->
-        <div v-if="edit.enabled">
+        <div v-if="edit.enabled" >
             <!-- Edit Content Textarea -->
             <textarea
                 v-model="edit.content"
-                class="form-control mb-3"
+                class="post-content-input mb-3"
                 placeholder="What's on your mind?"
-                rows="4"
-                style="border: 1px solid #ced4da; border-radius: 8px; font-size: 15px;"></textarea>
+                rows="4"></textarea>
 
             <!-- Preview existing images (editable in edit mode) -->
             <div v-if="hasPhotos(edit.files)" class="mb-3">
@@ -116,19 +115,18 @@ const postComponent = {
                             <i class="fa-solid fa-earth-americas" v-if="edit.visibility === 'public'" style="font-size: 12px; margin-right: 4px;"></i>
                             <i class="fa-solid fa-user-group" v-if="edit.visibility === 'friends'" style="font-size: 12px; margin-right: 4px;"></i>
                             <i class="fa-solid fa-lock" v-if="edit.visibility === 'private'" style="font-size: 12px; margin-right: 4px;"></i>
-                            <select v-model="edit.visibility" class="post-select">
+                            <select v-model="edit.visibility" class="form-select">
                                 <option value="public">Public</option>
                                 <option value="friends">Friends</option>
                                 <option value="private">Only Me</option>
                             </select>
                         </div>
-                            <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px;"></i>
                     </div>
 
                 <!-- Edit Visibility -->
                     <div v-if="edit.visibility === 'public'" class="post-select-wrapper">
                         <i class="fa-solid fa-folder" style="font-size: 12px; margin-right: 4px;"></i>
-                        <select v-model="edit.category" class="post-select">
+                        <select v-model="edit.category" class="form-select">
                             <optgroup v-for="root in categories" :key="root.display_name" :label="root.display_name">
                                 <option v-for="sub in root.categories" :key="sub.category" :value="sub.category">
                                     {{ sub.name }}
@@ -136,7 +134,6 @@ const postComponent = {
                             </optgroup>
                          </select>
 
-                        <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px; pointer-events: none;"></i>
                     </div>
                 </div>
             </div>
@@ -162,7 +159,21 @@ const postComponent = {
             </div>
 
             <!-- 내용 (Bootstrap 타이포그래피) -->
-            <div v-if="post.content" class="mb-3" style="font-size: 15px; color: #050505; line-height: 1.5; white-space: pre-wrap; word-break: break-word;" v-html="formatContent(post.content)"></div>
+            <div v-if="post.content" class="mb-2" style="font-size: 15px; color: #050505; line-height: 1.5; white-space: pre-wrap; word-break: break-word;" v-html="formatContent(displayedContent)"></div>
+
+            <!-- See more / See less 버튼 -->
+            <div v-if="isContentTooLong" class="mb-3">
+                <button @click="toggleContentExpansion" class="btn btn-link text-decoration-none text-muted p-0" style="font-size: 14px; font-weight: 600;">
+                    <span v-if="!contentExpanded">
+                        See more
+                        <i class="fa-solid fa-chevron-down ms-1" style="font-size: 12px;"></i>
+                    </span>
+                    <span v-else>
+                        See less
+                        <i class="fa-solid fa-chevron-up ms-1" style="font-size: 12px;"></i>
+                    </span>
+                </button>
+            </div>
 
             <!-- 이미지 -->
             <div>
@@ -183,7 +194,7 @@ const postComponent = {
 
 
     <!-- 게시물 액션 버튼 (Bootstrap 버튼 그룹) -->
-    <div class="d-flex border-top" style="border-color: #e4e6eb;">
+    <div v-if="!edit.enabled" class="d-flex border-top" style="border-color: #e4e6eb;">
         <button class="btn btn-link text-decoration-none text-secondary flex-fill py-2 border-0"
                 style="font-size: 15px; font-weight: 600;"
                 @click="handleLike(post)">
@@ -205,7 +216,7 @@ const postComponent = {
     </div>
 
     <!-- 댓글 섹션 (Bootstrap 패딩) -->
-    <div class="border-top p-3" style="border-color: #e4e6eb; background-color: #f0f2f5;">
+    <div v-if="!edit.enabled" class="border-top p-3" style="border-color: #e4e6eb; background-color: #f0f2f5;">
         <!-- 가짜 댓글 입력 박스 (클릭 시 Modal 열림) -->
         <div class="d-flex align-items-center gap-2 mb-3" @click="openCommentModal()" style="cursor: pointer;">
             <!-- 댓글 작성자 아바타 (Bootstrap 유틸리티) -->
@@ -296,7 +307,7 @@ const postComponent = {
 
                             <!-- 우측: Edit, Delete (본인 댓글인 경우에만 표시) -->
                             <div v-if="isMyComment(comment)" class="d-flex align-items-center gap-2">
-                                <button @click="openEditCommentModal(comment)" class="btn btn-link text-decoration-none text-muted p-0" style="font-size: 13px;" title="Edit">
+                                <button @click="openEditCommentModal(comment)" class="btn btn-link text-decoration-none text-warning p-0" style="font-size: 13px;" title="Edit">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
                                 <button @click="handleDeleteComment(comment)" class="btn btn-link text-decoration-none text-danger p-0" style="font-size: 13px;" title="Delete">
@@ -449,6 +460,9 @@ const postComponent = {
             commentFiles: [], // 댓글/답글/수정 첨부 파일 URL 배열
             uploadProgress: 0, // 파일 업로드 진행률 (0-100)
             isUploading: false, // 파일 업로드 중 여부
+            // 게시물 내용 확장/축소 상태
+            contentExpanded: false, // 내용이 확장되었는지 여부
+            contentMaxLength: 300, // 최대 표시 길이 (문자 수)
         };
     },
     computed: {
@@ -518,11 +532,43 @@ const postComponent = {
             if (this.commentMode === 'edit') return 'Edit your comment...';
             if (this.commentMode === 'reply') return 'Write your reply here...';
             return 'Write your comment here...';
+        },
+
+        /**
+         * 게시물 내용이 길어서 축소가 필요한지 확인
+         * @returns {boolean} 내용이 최대 길이를 초과하면 true
+         */
+        isContentTooLong() {
+            if (!this.post.content) return false;
+            return this.post.content.length > this.contentMaxLength;
+        },
+
+        /**
+         * 표시할 게시물 내용 (축소 또는 전체)
+         * @returns {string} 축소된 내용 또는 전체 내용
+         */
+        displayedContent() {
+            if (!this.post.content) return '';
+
+            // 확장 상태이거나 내용이 짧으면 전체 내용 반환
+            if (this.contentExpanded || !this.isContentTooLong) {
+                return this.post.content;
+            }
+
+            // 축소 상태: 최대 길이만큼만 반환하고 끝에 ... 추가
+            return this.post.content.substring(0, this.contentMaxLength) + '...';
         }
     },
     methods: {
         thumbnail: thumbnail,
         shortDateTime: shortDateTime,
+        /**
+         * 게시물 내용 확장/축소 토글
+         */
+        toggleContentExpansion() {
+            this.contentExpanded = !this.contentExpanded;
+        },
+
         /**
          * 작성자 이름 반환 (없으면 기본값)
          * @param {Object} post - 게시물 객체

@@ -65,8 +65,9 @@ $result = list_posts(['limit' => 10]);
                 ?>
                 <a href="<?= href()->post->view($post->id) ?>" class="post-item d-flex align-items-start gap-2">
                     <i class="fa-solid fa-angle-right post-icon"></i>
-                    <span class="post-title"><?= htmlspecialchars($displayText) ?></span>
-                </a>
+                    <span class="post-title">
+                        <?= htmlspecialchars($displayText ?: 'Image post') ?>
+                    </span> </a>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
