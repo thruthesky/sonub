@@ -257,6 +257,10 @@ if (file_exists($module_path)) {
                             <a href="<?= href()->user->profile ?>" class="text-dark" title="Profile">
                                 <?php login_user_profile_photo() ?>
                             </a>
+                        <?php else: ?>
+                            <a href="<?= href()->user->login ?>" class="text-dark" title="Login">
+                                <i class="bi bi-person-circle fs-3"></i>
+                            </a>
                         <?php endif; ?>
 
                         <!-- 메뉴 아이콘 (로그아웃 대신) -->
