@@ -16,7 +16,7 @@ TEST_USER="banana"
 TEST_PHONE="+11234567891"
 
 # Post categories
-CATEGORIES=("discussion" "qna" "my-wall")
+CATEGORIES=("discussion" "qna" "story")
 
 # Image base URL (picsum.photos)
 IMAGE_BASE="https://picsum.photos"

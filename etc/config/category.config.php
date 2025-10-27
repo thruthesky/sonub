@@ -218,6 +218,8 @@ function get_all_categories(): CategoryList
     // 커뮤니티
     // ========================================
     $community = new CategoryGroup('community', tr(['ko' => '커뮤니티', 'en' => 'Community', 'ja' => 'コミュニティ', 'zh' => '社区']));
+    $community->add(new CategoryModel('discussion', tr(['ko' => '자유토론', 'en' => 'Discussion', 'ja' => 'ディスカッション', 'zh' => '讨论'])));
+    $community->add(new CategoryModel('qna', tr(['ko' => '질문과답변', 'en' => 'Q&A', 'ja' => '質問と回答', 'zh' => '问答'])));
     $community->add(new CategoryModel('story', tr(['ko' => '나의 이야기', 'en' => 'My Story', 'ja' => '私のストーリー', 'zh' => '我的故事'])));
     $community->add(new CategoryModel('relationships', tr(['ko' => '관계', 'en' => 'Relationships', 'ja' => '人間関係', 'zh' => '关系'])));
     $community->add(new CategoryModel('fitness', tr(['ko' => '운동', 'en' => 'Fitness', 'ja' => 'フィットネス', 'zh' => '健身'])));
