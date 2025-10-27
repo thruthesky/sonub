@@ -136,13 +136,13 @@
 
             <nav class="d-flex justify-content-between">
                 <aside>
-                    <!-- <button
+                    <button
                         type="button"
-                        class="btn btn-secondary my-5 px-3 py-2"
+                        class="btn btn-link my-5 px-3 py-2"
                         :class="{'d-none': !showResetButton}"
                         @click="resetForm">
-                        Input Phone Number Again
-                    </button> -->
+                        Try again
+                    </button>
                 </aside>
 
                 <aside>
