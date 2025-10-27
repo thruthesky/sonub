@@ -417,13 +417,14 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
                         if (confirm('<?= t()->글쓰기_로그인_확인 ?>')) {
                             // 로그인 페이지로 리다이렉트
                             window.location.href = "<?= href()->user->login ?>";
+                        } else {
+                            alert(tr({
+                                'ko': '로그인을 하지 않아 글 쓰기를 취소합니다.',
+                                'en': 'You are not logged in, cancelling post creation.',
+                                'ja': 'ログインしていないため、投稿の作成をキャンセルします。',
+                                'zh': '您未登录，取消发帖。'
+                            }));
                         }
-                        alert(tr({
-                            'ko': '로그인을 하지 않아 글 쓰기를 취소합니다.',
-                            'en': 'You are not logged in, cancelling post creation.',
-                            'ja': 'ログインしていないため、投稿の作成をキャンセルします。',
-                            'zh': '您未登录，取消发帖。'
-                        }));
                         return;
                     }
                     this.expanded = true;
