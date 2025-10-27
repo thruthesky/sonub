@@ -494,3 +494,13 @@ function shortDateTime(timestamp) {
         return `${year}-${month}-${day}`;
     }
 }
+
+// 로그인 여부 확인 함수
+function login() {
+    const user = window.Store.state.user;
+    if (user && user.id) {
+        return true;
+    } else {
+        return false;
+    }
+}

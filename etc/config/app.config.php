@@ -39,6 +39,24 @@ class AppConfigTest
     }
 }
 
+class HrefConfig
+{
+    public string $user_login;
+
+    public function __construct(
+        string $user_login,
+    ) {
+        $this->user_login = $user_login;
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'user_login' => $this->user_login,
+        ];
+    }
+}
+
 
 class AppConfig
 {
@@ -48,6 +66,7 @@ class AppConfig
     public AppConfigTest $test;
     public array $pages_without_footer = [];
     public CategoryList $categories;
+    public HrefConfig $href;
 
     /**
      * 테스트 계정 정보
@@ -149,6 +168,8 @@ class AppConfig
             'upload_path' => $this->upload_path,
             'test' => $this->test->toArray(),
             'pages_without_footer' => $this->pages_without_footer,
+            'categories' => $this->categories->toArray(),
+            'href' => $this->href->toArray(),
         ];
     }
 }
@@ -174,6 +195,10 @@ function config(): AppConfig
             '/page/post/list.php'
         ];
         $config->categories = category();
+
+        $config->href = new HrefConfig(
+            user_login: href()->user->login,
+        );
     }
     return $config;
 }

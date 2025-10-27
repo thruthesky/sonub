@@ -1029,12 +1029,77 @@ const postComponent = {
             };
         },
 
+        loginCheck() {
+            if (login()) return true;
+            if (!login()) {
+                if (confirm(tr({
+                    'ko': '댓글을 작성하려면 로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?',
+                    'en': 'You need to log in to write a comment. Would you like to go to the login page?',
+                    'ja': 'コメントを書くにはログインが必要です。ログインページに移動しますか？',
+                    'zh': '您需要登录才能发表评论。是否要前往登录页面？'
+                }))) {
+                    // 로그인 페이지로 리다이렉트
+                    window.location.href = appConfig.href.user_login;
+                    return false;
+                }
+                alert(tr({
+                    'ko': '로그인을 하지 않아 댓글 작성을 취소합니다.',
+                    'en': 'You are not logged in, cancelling comment creation.',
+                    'ja': 'ログインしていないため、コメントの作成をキャンセルします。',
+                    'zh': '您未登录，取消评论。'
+                }));
+            }
+            return false;
+        },
+
+
+        /**
+         * 최상위 댓글 작성 Modal 열기
+         */
+        openCommentModal() {
+            console.log('Opening comment modal for post:', this.post.id);
+
+            if (!this.loginCheck()) {
+                return;
+            }
+
+            // 댓글 모드로 설정
+            this.commentMode = 'comment';
+            this.replyingTo = null;
+            this.commentContent = '';
+            this.commentFiles = [];
+            this.uploadProgress = 0;
+            this.isUploading = false;
+
+            // Bootstrap Modal 열기
+            const modalId = 'commentModal-' + this.post.id;
+            const modalElement = document.getElementById(modalId);
+            if (modalElement) {
+                // Modal이 완전히 열린 후 textarea에 포커스
+                modalElement.addEventListener('shown.bs.modal', () => {
+                    if (this.$refs.commentTextarea) {
+                        this.$refs.commentTextarea.focus();
+                    }
+                }, { once: true });
+
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            } else {
+                console.error('Comment modal element not found:', modalId);
+            }
+        },
+
+
         /**
          * 답글 작성 Modal 열기
          * @param {number} commentId - 부모 댓글 ID
          */
         openReplyModal(commentId) {
             console.log('Opening reply modal for comment:', commentId);
+
+            if (!this.loginCheck()) {
+                return;
+            }
 
             // 답글 모드로 설정
             this.commentMode = 'reply';
@@ -1074,6 +1139,12 @@ const postComponent = {
             }
 
             console.log('Opening edit modal for comment:', comment.id);
+
+
+            if (!this.loginCheck()) {
+                return;
+            }
+
 
             // 수정 모드로 설정
             this.commentMode = 'edit';
@@ -1191,38 +1262,6 @@ const postComponent = {
             } catch (error) {
                 console.error('Failed to submit comment:', error);
                 alert('Failed to submit comment: ' + (error.message || 'Unknown error'));
-            }
-        },
-
-        /**
-         * 최상위 댓글 작성 Modal 열기
-         */
-        openCommentModal() {
-            console.log('Opening comment modal for post:', this.post.id);
-
-            // 댓글 모드로 설정
-            this.commentMode = 'comment';
-            this.replyingTo = null;
-            this.commentContent = '';
-            this.commentFiles = [];
-            this.uploadProgress = 0;
-            this.isUploading = false;
-
-            // Bootstrap Modal 열기
-            const modalId = 'commentModal-' + this.post.id;
-            const modalElement = document.getElementById(modalId);
-            if (modalElement) {
-                // Modal이 완전히 열린 후 textarea에 포커스
-                modalElement.addEventListener('shown.bs.modal', () => {
-                    if (this.$refs.commentTextarea) {
-                        this.$refs.commentTextarea.focus();
-                    }
-                }, { once: true });
-
-                const modal = new bootstrap.Modal(modalElement);
-                modal.show();
-            } else {
-                console.error('Comment modal element not found:', modalId);
             }
         },
 
