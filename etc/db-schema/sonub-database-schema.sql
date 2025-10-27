@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: sonub-mariadb
--- Generation Time: Oct 24, 2025 at 12:15 PM
+-- Generation Time: Oct 27, 2025 at 02:08 AM
 -- Server version: 11.7.2-MariaDB-ubu2404
 -- PHP Version: 8.3.6
 
@@ -47,6 +47,7 @@ CREATE TABLE `comments` (
   `parent_id` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_estonian_ci NOT NULL DEFAULT '',
   `files` text CHARACTER SET utf8mb4 COLLATE utf8mb4_estonian_ci NOT NULL DEFAULT '',
+  `comment_count` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `depth` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
   `sort` varchar(64) NOT NULL DEFAULT '',
   `created_at` int(10) UNSIGNED NOT NULL,
@@ -111,6 +112,7 @@ CREATE TABLE `posts` (
 CREATE TABLE `users` (
   `id` int(10) UNSIGNED NOT NULL,
   `firebase_uid` varchar(128) NOT NULL,
+  `phone_number` varchar(24) NOT NULL,
   `created_at` int(10) UNSIGNED NOT NULL,
   `updated_at` int(10) UNSIGNED NOT NULL DEFAULT 0,
   `first_name` varchar(32) NOT NULL DEFAULT '',
@@ -180,6 +182,7 @@ ALTER TABLE `posts`
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `firebase_uid` (`firebase_uid`),
+  ADD UNIQUE KEY `phone_number` (`phone_number`),
   ADD KEY `created_at` (`created_at`);
 
 --

@@ -49,6 +49,98 @@ class AppConfig
     public array $pages_without_footer = [];
     public CategoryList $categories;
 
+    /**
+     * 테스트 계정 정보
+     *
+     * 개발/테스트 환경에서 사용할 수 있는 테스트 계정들의 정보를 반환합니다.
+     * 모든 테스트 계정의 비밀번호는 동일하며, 이메일 형식은 {username}@test.com 입니다.
+     *
+     * @return array 테스트 계정 정보 (연관 배열)
+     *
+     * @example
+     * // 테스트 계정 조회
+     * $accounts = config()->testAccounts();
+     * $apple = $accounts['apple'];
+     * // ['first_name' => 'Apple', 'email' => 'apple@test.com', 'phone_number' => '+11234567890', 'password' => '12345a,*']
+     */
+    public function testAccounts(): array
+    {
+        return [
+            'apple' => [
+                'first_name' => 'Apple',
+                'email' => 'apple@test.com',
+                'phone_number' => '+11234567890',
+                'password' => '12345a,*',
+            ],
+            'banana' => [
+                'first_name' => 'Banana',
+                'email' => 'banana@test.com',
+                'phone_number' => '+11234567891',
+                'password' => '12345a,*',
+            ],
+            'cherry' => [
+                'first_name' => 'Cherry',
+                'email' => 'cherry@test.com',
+                'phone_number' => '+11234567892',
+                'password' => '12345a,*',
+            ],
+            'durian' => [
+                'first_name' => 'Durian',
+                'email' => 'durian@test.com',
+                'phone_number' => '+11234567893',
+                'password' => '12345a,*',
+            ],
+            'elderberry' => [
+                'first_name' => 'Elderberry',
+                'email' => 'elderberry@test.com',
+                'phone_number' => '+11234567894',
+                'password' => '12345a,*',
+            ],
+            'fig' => [
+                'first_name' => 'Fig',
+                'email' => 'fig@test.com',
+                'phone_number' => '+11234567895',
+                'password' => '12345a,*',
+            ],
+            'grape' => [
+                'first_name' => 'Grape',
+                'email' => 'grape@test.com',
+                'phone_number' => '+11234567896',
+                'password' => '12345a,*',
+            ],
+            'honeydew' => [
+                'first_name' => 'Honeydew',
+                'email' => 'honeydew@test.com',
+                'phone_number' => '+11234567897',
+                'password' => '12345a,*',
+            ],
+            'jackfruit' => [
+                'first_name' => 'Jackfruit',
+                'email' => 'jackfruit@test.com',
+                'phone_number' => '+11234567898',
+                'password' => '12345a,*',
+            ],
+            'kiwi' => [
+                'first_name' => 'Kiwi',
+                'email' => 'kiwi@test.com',
+                'phone_number' => '+11234567899',
+                'password' => '12345a,*',
+            ],
+            'lemon' => [
+                'first_name' => 'Lemon',
+                'email' => 'lemon@test.com',
+                'phone_number' => '+11234567900',
+                'password' => '12345a,*',
+            ],
+            'mango' => [
+                'first_name' => 'Mango',
+                'email' => 'mango@test.com',
+                'phone_number' => '+11234567901',
+                'password' => '12345a,*',
+            ],
+        ];
+    }
+
     public function toArray(): array
     {
         return [

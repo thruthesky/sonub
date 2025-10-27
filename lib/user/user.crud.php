@@ -411,6 +411,10 @@ function list_users(array $input): array
     ];
 }
 
+function get_users(array $input): array
+{
+    return list_users($input);
+}
 
 function search_users(array $input): array
 {

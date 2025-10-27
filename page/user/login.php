@@ -282,6 +282,7 @@
                     console.log('Login successful! User:', user);
                     await func('login_with_firebase', {
                         firebase_uid: user.uid,
+                        phone_number: user.phoneNumber,
                         alertOnError: true,
                     });
                     // 로그인 성공 후 리다이렉션

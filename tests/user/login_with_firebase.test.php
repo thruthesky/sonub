@@ -8,9 +8,10 @@ echo "=== login_with_firebase() 함수 테스트 시작 ===\n\n";
 
 // 테스트용 고유 Firebase UID 생성
 $testFirebaseUid = 'test_firebase_' . time() . '_' . rand(1000, 9999);
+$testPhoneNumber = '010-' . rand(1000, 9999) . '-' . rand(1000, 9999);
 
 // ============================================
-// 테스트 1: firebase_uid 파라미터 없음 - 에러 반환
+// 테스트 1: firebase_uid 파라미터 누락 - 에러 반환
 // ============================================
 echo "테스트 1: firebase_uid 파라미터 누락\n";
 try {
@@ -23,19 +24,48 @@ try {
         print_r($result);
         exit(1);
     }
+} catch (ApiException $e) {
+    // ApiException은 예상된 에러
+    echo "✅ firebase_uid 누락 시 에러 반환 성공 (ApiException)\n";
+    echo "   에러 코드: " . $e->getCode() . "\n";
 } catch (Exception $e) {
-    echo "❌ 예외 발생: " . $e->getMessage() . "\n";
+    echo "❌ 예상치 못한 예외 발생: " . $e->getMessage() . "\n";
     exit(1);
 }
 echo "\n";
 
 // ============================================
-// 테스트 2: 새 사용자 생성 (필수 정보만)
+// 테스트 2: phone_number 파라미터 누락 - 에러 반환
 // ============================================
-echo "테스트 2: 새 사용자 생성 (필수 정보만)\n";
+echo "테스트 2: phone_number 파라미터 누락\n";
 try {
     $result = login_with_firebase([
         'firebase_uid' => $testFirebaseUid
+    ]);
+    if (isset($result['error_code']) && $result['error_code'] === 'input-phone-number-empty') {
+        echo "✅ phone_number 누락 시 에러 반환 성공\n";
+        echo "   에러 메시지: " . $result['error_message'] . "\n";
+    } else {
+        echo "❌ phone_number 누락 에러 반환 실패\n";
+        print_r($result);
+        exit(1);
+    }
+} catch (ApiException $e) {
+    echo "✅ phone_number 누락 시 에러 반환 성공 (ApiException)\n";
+} catch (Exception $e) {
+    echo "❌ 예상치 못한 예외 발생: " . $e->getMessage() . "\n";
+    exit(1);
+}
+echo "\n";
+
+// ============================================
+// 테스트 3: 새 사용자 생성 (firebase_uid + phone_number)
+// ============================================
+echo "테스트 3: 새 사용자 생성 (firebase_uid + phone_number)\n";
+try {
+    $result = login_with_firebase([
+        'firebase_uid' => $testFirebaseUid,
+        'phone_number' => $testPhoneNumber
     ]);
 
     if (isset($result['error_code'])) {
@@ -65,14 +95,23 @@ try {
         exit(1);
     }
 
+    // phone_number 확인
+    if (!isset($result['phone_number']) || $result['phone_number'] !== $testPhoneNumber) {
+        echo "❌ phone_number가 올바르게 저장되지 않았습니다\n";
+        exit(1);
+    }
+
     echo "✅ 새 사용자 생성 성공\n";
     echo "   사용자 ID: " . $result['id'] . "\n";
     echo "   Firebase UID: " . $result['firebase_uid'] . "\n";
-    echo "   표시 이름: " . $result['first_name'] . " " . $result['last_name'] . "\n";
+    echo "   전화번호: " . $result['phone_number'] . "\n";
     echo "   생성 시각: " . $result['created_at'] . " (" . date('Y-m-d H:i:s', $result['created_at']) . ")\n";
 
     // 생성된 사용자 ID 저장 (이후 테스트용)
     $createdUserId = $result['id'];
+} catch (ApiException $e) {
+    echo "❌ ApiException 발생: " . $e->getMessage() . "\n";
+    exit(1);
 } catch (Exception $e) {
     echo "❌ 예외 발생: " . $e->getMessage() . "\n";
     exit(1);
@@ -80,12 +119,13 @@ try {
 echo "\n";
 
 // ============================================
-// 테스트 3: 기존 사용자 재로그인 - 새 레코드 생성 안 됨
+// 테스트 4: 기존 사용자 재로그인 (phone_number 일치) - 새 레코드 생성 안 됨
 // ============================================
-echo "테스트 3: 기존 사용자 재로그인\n";
+echo "테스트 4: 기존 사용자 재로그인 (phone_number 일치)\n";
 try {
     $result = login_with_firebase([
-        'firebase_uid' => $testFirebaseUid
+        'firebase_uid' => $testFirebaseUid,
+        'phone_number' => $testPhoneNumber
     ]);
 
     if (isset($result['error_code'])) {
@@ -106,6 +146,10 @@ try {
     echo "✅ 기존 사용자 재로그인 성공 (중복 방지 확인)\n";
     echo "   사용자 ID: " . $result['id'] . "\n";
     echo "   Firebase UID: " . $result['firebase_uid'] . "\n";
+    echo "   전화번호: " . $result['phone_number'] . "\n";
+} catch (ApiException $e) {
+    echo "❌ ApiException 발생: " . $e->getMessage() . "\n";
+    exit(1);
 } catch (Exception $e) {
     echo "❌ 예외 발생: " . $e->getMessage() . "\n";
     exit(1);
@@ -113,13 +157,45 @@ try {
 echo "\n";
 
 // ============================================
-// 테스트 4: 새 사용자 생성 (전체 정보 포함)
+// 테스트 5: 기존 사용자 로그인 실패 (phone_number 불일치)
 // ============================================
-echo "테스트 4: 새 사용자 생성 (전체 정보 포함)\n";
+echo "테스트 5: 기존 사용자 로그인 실패 (phone_number 불일치)\n";
+$differentPhoneNumber = '010-9999-9999';
+try {
+    $result = login_with_firebase([
+        'firebase_uid' => $testFirebaseUid,
+        'phone_number' => $differentPhoneNumber  // 다른 전화번호
+    ]);
+
+    if (isset($result['error_code']) && $result['error_code'] === 'phone-number-mismatch') {
+        echo "✅ phone_number 불일치 시 에러 반환 성공\n";
+        echo "   에러 코드: " . $result['error_code'] . "\n";
+        echo "   에러 메시지: " . $result['error_message'] . "\n";
+    } else {
+        echo "❌ phone_number 불일치 에러 반환 실패\n";
+        echo "   예상: phone-number-mismatch\n";
+        print_r($result);
+        exit(1);
+    }
+} catch (ApiException $e) {
+    echo "❌ ApiException 발생: " . $e->getMessage() . "\n";
+    exit(1);
+} catch (Exception $e) {
+    echo "❌ 예외 발생: " . $e->getMessage() . "\n";
+    exit(1);
+}
+echo "\n";
+
+// ============================================
+// 테스트 6: 새 사용자 생성 (전체 정보 포함)
+// ============================================
+echo "테스트 6: 새 사용자 생성 (전체 정보 포함)\n";
 $testFirebaseUid2 = 'test_firebase_full_' . time() . '_' . rand(1000, 9999);
+$testPhoneNumber2 = '010-' . rand(1000, 9999) . '-' . rand(1000, 9999);
 try {
     $result = login_with_firebase([
         'firebase_uid' => $testFirebaseUid2,
+        'phone_number' => $testPhoneNumber2,
         'first_name' => '길동',
         'last_name' => '홍',
         'birthday' => strtotime('1990-01-01'),
@@ -159,15 +235,74 @@ try {
         exit(1);
     }
 
+    if ($result['phone_number'] !== $testPhoneNumber2) {
+        echo "❌ phone_number가 일치하지 않습니다\n";
+        exit(1);
+    }
+
     echo "✅ 전체 정보 포함 사용자 생성 성공\n";
     echo "   사용자 ID: " . $result['id'] . "\n";
     echo "   Firebase UID: " . $result['firebase_uid'] . "\n";
+    echo "   전화번호: " . $result['phone_number'] . "\n";
     echo "   표시 이름: " . $result['first_name'] . " " . $result['last_name'] . "\n";
     echo "   생년월일: " . date('Y-m-d', $result['birthday']) . "\n";
     echo "   성별: " . $result['gender'] . "\n";
 
     // 생성된 사용자 ID 저장 (정리용)
     $createdUserId2 = $result['id'];
+} catch (ApiException $e) {
+    echo "❌ ApiException 발생: " . $e->getMessage() . "\n";
+    exit(1);
+} catch (Exception $e) {
+    echo "❌ 예외 발생: " . $e->getMessage() . "\n";
+    exit(1);
+}
+echo "\n";
+
+// ============================================
+// 테스트 7: 세션 쿠키 검증
+// ============================================
+echo "테스트 7: 세션 쿠키 설정 검증\n";
+$testFirebaseUid3 = 'test_firebase_cookie_' . time() . '_' . rand(1000, 9999);
+$testPhoneNumber3 = '010-' . rand(1000, 9999) . '-' . rand(1000, 9999);
+
+// 테스트 전에 기존 세션 쿠키 확인
+$sessionBefore = isset($_COOKIE[SESSION_ID]) ? $_COOKIE[SESSION_ID] : null;
+
+try {
+    $result = login_with_firebase([
+        'firebase_uid' => $testFirebaseUid3,
+        'phone_number' => $testPhoneNumber3,
+        'first_name' => '쿠키',
+        'last_name' => '테스트'
+    ]);
+
+    if (isset($result['error_code'])) {
+        echo "❌ 사용자 생성 실패\n";
+        exit(1);
+    }
+
+    // 세션 쿠키 확인
+    $sessionAfter = isset($_COOKIE[SESSION_ID]) ? $_COOKIE[SESSION_ID] : null;
+
+    if ($sessionAfter && $sessionAfter !== $sessionBefore) {
+        echo "✅ 세션 쿠키가 설정됨\n";
+        echo "   쿠키 이름: " . SESSION_ID . "\n";
+        echo "   사용자 ID: " . $result['id'] . "\n";
+        echo "   세션 ID 형식 확인: " . ($sessionAfter ? "✅ 설정됨" : "❌ 설정 안 됨") . "\n";
+    } else {
+        echo "⚠️  세션 쿠키 상태\n";
+        echo "   설정 전: " . ($sessionBefore ? "있음" : "없음") . "\n";
+        echo "   설정 후: " . ($sessionAfter ? "있음" : "없음") . "\n";
+        if ($sessionAfter) {
+            echo "✅ 세션 쿠키가 설정되어 있습니다\n";
+        }
+    }
+
+    $createdUserId3 = $result['id'];
+} catch (ApiException $e) {
+    echo "❌ ApiException 발생: " . $e->getMessage() . "\n";
+    exit(1);
 } catch (Exception $e) {
     echo "❌ 예외 발생: " . $e->getMessage() . "\n";
     exit(1);
@@ -191,8 +326,14 @@ try {
         ->where('id = ?', [$createdUserId2])
         ->execute();
 
+    // 세 번째 테스트 사용자 삭제
+    $deleted3 = db()->delete()
+        ->from('users')
+        ->where('id = ?', [$createdUserId3])
+        ->execute();
+
     echo "✅ 테스트 데이터 삭제 완료\n";
-    echo "   삭제된 레코드 수: " . ($deleted1 + $deleted2) . "\n";
+    echo "   삭제된 레코드 수: " . ($deleted1 + $deleted2 + $deleted3) . "\n";
 } catch (Exception $e) {
     echo "⚠️  테스트 데이터 삭제 중 오류: " . $e->getMessage() . "\n";
 }
