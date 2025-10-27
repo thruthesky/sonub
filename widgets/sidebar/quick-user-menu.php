@@ -70,7 +70,7 @@ $user = login();
             </a>
 
             <!-- 설정 -->
-            <a href="<?= href()->user->profile_edit ?>" class="menu-item">
+            <a href="<?= href()->user->settings ?>" class="menu-item">
                 <div class="menu-icon icon-settings">
                     <i class="fa-solid fa-gear"></i>
                 </div>

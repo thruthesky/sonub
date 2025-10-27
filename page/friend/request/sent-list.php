@@ -4,9 +4,13 @@
  * 보낸 친구 요청 목록 페이지
  */
 
+// 위젯 로드
+require_once __DIR__ . '/../../../widgets/page-header.php';
+
 $user = login();
 $requests = [];
 $sentCount = 0;
+$receivedCount = 0;
 
 if ($user) {
     $requests = get_friend_requests_sent([
@@ -14,6 +18,7 @@ if ($user) {
         'limit' => 50,
     ]);
     $sentCount = count_friend_requests_sent(['me' => $user->id]);
+    $receivedCount = count_friend_requests_received(['me' => $user->id]);
 }
 
 /**
@@ -88,90 +93,115 @@ function inject_friend_request_sent_list_language(): void
             'ja' => '友達申請をキャンセルしました',
             'zh' => '已取消好友请求',
         ],
+        '로그인_후_이용_가능' => [
+            'ko' => '로그인 후 친구 요청을 확인할 수 있습니다',
+            'en' => 'You can check friend requests after logging in',
+            'ja' => 'ログイン後に友達申請を確認できます',
+            'zh' => '登录后可以查看好友请求',
+        ],
+        '새로운_요청이_없으면_표시' => [
+            'ko' => '보낸 요청이 없으면 여기에 표시됩니다',
+            'en' => 'Sent requests will appear here',
+            'ja' => '送信した申請がここに表示されます',
+            'zh' => '已发送的请求将显示在这里',
+        ],
     ]);
 }
 
 inject_friend_request_sent_list_language();
 ?>
 
-<div class="container py-4">
-    TODO: Improve the UI Design
-    <div class="row justify-content-center">
-        <div class="col-12 col-lg-8">
-            <h1 class="mb-4"><?= t()->보낸_친구_요청 ?></h1>
+<?php
+// 헤더 위젯 표시
+page_header([
+    'title' => t()->보낸_친구_요청,
+    'icon' => 'fa-paper-plane',
+    'breadcrumbs' => [
+        ['label' => t()->홈, 'url' => href()->home, 'icon' => 'fa-house']
+    ],
+]);
+?>
 
-            <?php if (!$user): ?>
-                <div class="alert alert-warning" role="alert">
-                    <div class="d-flex flex-column flex-sm-row align-items-sm-center">
-                        <div class="flex-grow-1"><?= t()->로그인이_필요합니다 ?></div>
-                        <a class="btn btn-sm btn-primary mt-3 mt-sm-0 ms-sm-3" href="<?= href()->user->login ?>">
-                            <?= t()->로그인_페이지로_이동 ?>
-                        </a>
+<div class="row justify-content-center">
+    <div class="col-12">
+        <?php if (!$user): ?>
+            <!-- 로그인 필요 경고 -->
+            <div class="border-0">
+                <div class="p-4 text-center">
+                    <div class="mb-3">
+                        <i class="fa-solid fa-lock text-warning" style="font-size: 48px;"></i>
+                    </div>
+                    <h5 class="mb-2"><?= t()->로그인이_필요합니다 ?></h5>
+                    <p class="text-muted mb-4"><?= t()->로그인_후_이용_가능 ?></p>
+                    <a class="btn btn-primary" href="<?= href()->user->login ?>">
+                        <i class="fa-solid fa-sign-in-alt me-2"></i>
+                        <?= t()->로그인_페이지로_이동 ?>
+                    </a>
+                </div>
+            </div>
+        <?php else: ?>
+            <?php if (empty($requests)): ?>
+                <!-- 빈 상태 -->
+                <div class="border-0 ">
+                    <div class="p-5 text-center">
+                        <div class="mb-3">
+                            <i class="fa-solid fa-paper-plane text-muted" style="font-size: 64px;"></i>
+                        </div>
+                        <h5 class="mb-2"><?= t()->보낸_친구_요청이_없습니다 ?></h5>
+                        <p class="text-muted mb-0"><?= t()->새로운_요청이_없으면_표시 ?></p>
                     </div>
                 </div>
             <?php else: ?>
-                <div class="card border-0 shadow-sm mb-4 bg-gradient" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                    <div class="card-body d-flex justify-content-between align-items-center py-4">
-                        <div class="text-white">
-                            <div class="small opacity-75 mb-1"><?= t()->총_보낸_요청 ?></div>
-                            <div class="fs-3 fw-bold"><?= number_format($sentCount) ?></div>
-                        </div>
-                        <div class="text-white opacity-75">
-                            <i class="bi bi-send fs-1"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <?php if (empty($requests)): ?>
-                    <div class="alert alert-info" role="alert">
-                        <?= t()->보낸_친구_요청이_없습니다 ?>
-                    </div>
-                <?php else: ?>
-                    <div class="list-group shadow-sm" id="sent-requests-list">
+                <!-- 친구 요청 목록 -->
+                <div class="card border-0 shadow-sm">
+                    <div class="list-group list-group-flush" id="sent-requests-list">
                         <?php foreach ($requests as $request): ?>
-                            <div class="list-group-item border-0 border-bottom py-3 px-4 hover-bg-light" data-request-id="<?= $request['user_id'] ?>" style="transition: all 0.2s ease;">
-                                <div class="d-flex align-items-center flex-wrap gap-3">
+                            <?php
+                            // 전체 이름 생성
+                            $name_parts = [];
+                            if (!empty($request['first_name'])) $name_parts[] = $request['first_name'];
+                            if (!empty($request['middle_name'])) $name_parts[] = $request['middle_name'];
+                            if (!empty($request['last_name'])) $name_parts[] = $request['last_name'];
+                            $full_name = !empty($name_parts) ? implode(' ', $name_parts) : t()->이름_정보_없음;
+                            ?>
+                            <div class="list-group-item p-3 p-sm-4" data-request-id="<?= $request['user_id'] ?>">
+                                <div class="d-flex align-items-center gap-3">
                                     <!-- 프로필 이미지 -->
-                                    <div class="flex-shrink-0">
-                                        <?php
-                                        // first_name, middle_name, last_name을 조합하여 전체 이름 생성
-                                        $name_parts = [];
-                                        if (!empty($request['first_name'])) $name_parts[] = $request['first_name'];
-                                        if (!empty($request['middle_name'])) $name_parts[] = $request['middle_name'];
-                                        if (!empty($request['last_name'])) $name_parts[] = $request['last_name'];
-                                        $full_name = !empty($name_parts) ? implode(' ', $name_parts) : t()->이름_정보_없음;
-                                        ?>
+                                    <a href="<?= href()->user->profile ?>?id=<?= $request['user_id'] ?>" class="flex-shrink-0">
                                         <?php if (!empty($request['photo_url'])): ?>
                                             <img src="<?= htmlspecialchars($request['photo_url']) ?>"
                                                 alt="<?= htmlspecialchars($full_name) ?>"
-                                                class="rounded-circle border border-2 border-white shadow-sm"
-                                                style="width: 56px; height: 56px; object-fit: cover;">
+                                                class="rounded-circle"
+                                                style="width: 60px; height: 60px; object-fit: cover;">
                                         <?php else: ?>
-                                            <div class="rounded-circle bg-light border border-2 border-white shadow-sm d-flex align-items-center justify-content-center"
-                                                style="width: 56px; height: 56px;">
-                                                <i class="bi bi-person fs-4 text-secondary"></i>
+                                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center"
+                                                style="width: 60px; height: 60px;">
+                                                <i class="fa-solid fa-user text-secondary" style="font-size: 24px;"></i>
                                             </div>
                                         <?php endif; ?>
-                                    </div>
+                                    </a>
 
                                     <!-- 사용자 정보 -->
                                     <div class="flex-grow-1 min-w-0">
                                         <a href="<?= href()->user->profile ?>?id=<?= $request['user_id'] ?>"
-                                            class="text-decoration-none fw-semibold text-dark d-block mb-1 text-truncate">
-                                            <?= htmlspecialchars($full_name) ?>
+                                            class="text-decoration-none d-block mb-1"
+                                            style="color: inherit;"
+                                            onmouseover="this.style.textDecoration='underline'"
+                                            onmouseout="this.style.textDecoration='none'">
+                                            <h6 class="mb-1 fw-semibold"><?= htmlspecialchars($full_name) ?></h6>
                                         </a>
                                         <div class="text-muted small">
-                                            <i class="bi bi-clock me-1"></i>
-                                            <?= date('Y-m-d H:i', $request['updated_at'] ?: $request['created_at']) ?>
+                                            <i class="fa-regular fa-clock me-1"></i>
+                                            <?= t()->요청_시간 ?>: <?= date('Y-m-d H:i', $request['updated_at'] ?: $request['created_at']) ?>
                                         </div>
                                     </div>
 
                                     <!-- 취소 버튼 -->
                                     <div class="flex-shrink-0">
-                                        <button class="btn btn-sm btn-outline-danger cancel-btn d-flex align-items-center gap-1 px-3"
+                                        <button class="btn btn-outline-danger cancel-btn"
                                             data-user-id="<?= $request['user_id'] ?>"
                                             title="<?= t()->취소 ?>">
-                                            <i class="bi bi-x-circle"></i>
+                                            <i class="fa-solid fa-times me-1"></i>
                                             <span class="d-none d-sm-inline"><?= t()->취소 ?></span>
                                         </button>
                                     </div>
@@ -179,9 +209,9 @@ inject_friend_request_sent_list_language();
                             </div>
                         <?php endforeach; ?>
                     </div>
-                <?php endif; ?>
+                </div>
             <?php endif; ?>
-        </div>
+        <?php endif; ?>
     </div>
 </div>
 

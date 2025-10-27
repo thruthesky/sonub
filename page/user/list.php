@@ -1,5 +1,6 @@
 <?php
 
+require_once __DIR__ . '/../../widgets/page-header.php';
 /**
  * 사용자 목록 페이지
  *
@@ -225,12 +226,24 @@ load_deferred_js('infinite-scroll');
 load_deferred_js('vue-components/user-search.component');
 ?>
 
-<div class="container py-4">
+<div class="container">
     <!-- TODO: Friend request is broken 
         - When sending a friend request to the user and refreshing the page.
         - The display is 'add friend' instead show 'send friend request'
     -->
-    <h1 class="mb-4"><?= t()->사용자_목록 ?></h1>
+
+    <?php
+    // 헤더 위젯 표시
+    page_header([
+        'title' => t()->사용자_목록,
+        'icon' => 'fa-user',
+        'breadcrumbs' => [
+            ['label' => t()->홈, 'url' => href()->home, 'icon' => 'fa-house']
+        ],
+    ]);
+    ?>
+
+
 
     <!-- Friend Action Buttons -->
     <div class="mb-3 d-flex gap-2 flex-wrap">
