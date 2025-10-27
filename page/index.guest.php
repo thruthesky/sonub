@@ -1,1 +1,4 @@
-Welcome to Sonub! How can I assist you today?
+<?php
+
+inject_http_input('category', 'discussion');
+include __DIR__ . '/post/list.php';
