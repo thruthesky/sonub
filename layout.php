@@ -417,6 +417,11 @@ if (file_exists($module_path)) {
             })
         })
     </script>
+
+    <script defer src="https://www.gstatic.com/firebasejs/12.3.0/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/12.3.0/firebase-auth-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/12.3.0/firebase-messaging-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/12.3.0/firebase-database-compat.js"></script>
 </body>
 
 </html>
