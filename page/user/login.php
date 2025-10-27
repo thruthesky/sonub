@@ -34,69 +34,68 @@ $countriesJSON = json_encode(COUNTRIES, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_
         };
     });
 
-    firebase_ready(() => {
 
-        /**
-         * Firebase reCAPTCHA 인스턴스 초기화 및 렌더링
-         *
-         * 새 reCAPTCHA 인스턴스를 생성하고 렌더링합니다.
-         * 기존 인스턴스가 있으면 먼저 정리하고 새로 생성합니다.
-         *
-         * @returns {Promise<number>} reCAPTCHA widget ID
-         */
-        async function setupRecaptcha() {
-            // 기존 reCAPTCHA 인스턴스가 있으면 정리
-            if (window.recaptchaVerifier) {
-                try {
-                    window.recaptchaVerifier.clear();
-                    window.recaptchaVerifier = null;
-                    window.recaptchaWidgetId = undefined;
-                    console.log('Old reCAPTCHA instance cleared');
-                } catch (e) {
-                    console.warn('Failed to clear reCAPTCHA:', e);
-                }
-            }
-
-            // 새 reCAPTCHA 인스턴스 생성
-            window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
-                'sign-in-button', {
-                    size: 'invisible',
-                    callback: function(token) {
-                        // reCAPTCHA 통과 시 자동 호출 (토큰 발급)
-                        console.log('reCAPTCHA verified');
-                    },
-                    // 'expired-callback' 는 reCAPTCHA가 만료되었을 때 호출된다.
-                    // 즉, 사용자가 SMS 코드를 받고 나서, 오랜동안 SMS 코드 입력을 하지 않을 경우 호출된다.
-                    'expired-callback': function() {
-                        // 토큰 만료 시 호출: 새로운 인스턴스 생성 필요
-                        console.warn('reCAPTCHA token expired. Cleanup required.');
-                        window.recaptchaWidgetId = undefined;
-                    }
-                }
-            );
-
-            // reCAPTCHA 렌더링
-            // 사전 렌더링하여 사용자가 버튼을 클릭할 때 즉시 반응하도록 합니다.
+    /**
+     * Firebase reCAPTCHA 인스턴스 초기화 및 렌더링
+     *
+     * 새 reCAPTCHA 인스턴스를 생성하고 렌더링합니다.
+     * 기존 인스턴스가 있으면 먼저 정리하고 새로 생성합니다.
+     *
+     * @returns {Promise<number>} reCAPTCHA widget ID
+     */
+    async function setupRecaptcha() {
+        // 기존 reCAPTCHA 인스턴스가 있으면 정리
+        if (window.recaptchaVerifier) {
             try {
-                const widgetId = await window.recaptchaVerifier.render();
-                window.recaptchaWidgetId = widgetId;
-                console.log('reCAPTCHA rendered successfully with widgetId:', widgetId);
-                return widgetId;
-            } catch (error) {
-                console.error('Failed to render reCAPTCHA:', error);
-                // 렌더링 실패 시 인스턴스 정리
-                try {
-                    window.recaptchaVerifier.clear();
-                } catch (e) {
-                    console.warn('Failed to clear reCAPTCHA on render error:', e);
-                }
+                window.recaptchaVerifier.clear();
                 window.recaptchaVerifier = null;
                 window.recaptchaWidgetId = undefined;
-                throw error;
+                console.log('Old reCAPTCHA instance cleared');
+            } catch (e) {
+                console.warn('Failed to clear reCAPTCHA:', e);
             }
         }
 
-    })
+        // 새 reCAPTCHA 인스턴스 생성
+        window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+            'sign-in-button', {
+                size: 'invisible',
+                callback: function(token) {
+                    // reCAPTCHA 통과 시 자동 호출 (토큰 발급)
+                    console.log('reCAPTCHA verified');
+                },
+                // 'expired-callback' 는 reCAPTCHA가 만료되었을 때 호출된다.
+                // 즉, 사용자가 SMS 코드를 받고 나서, 오랜동안 SMS 코드 입력을 하지 않을 경우 호출된다.
+                'expired-callback': function() {
+                    // 토큰 만료 시 호출: 새로운 인스턴스 생성 필요
+                    console.warn('reCAPTCHA token expired. Cleanup required.');
+                    window.recaptchaWidgetId = undefined;
+                }
+            }
+        );
+
+        // reCAPTCHA 렌더링
+        // 사전 렌더링하여 사용자가 버튼을 클릭할 때 즉시 반응하도록 합니다.
+        try {
+            const widgetId = await window.recaptchaVerifier.render();
+            window.recaptchaWidgetId = widgetId;
+            console.log('reCAPTCHA rendered successfully with widgetId:', widgetId);
+            return widgetId;
+        } catch (error) {
+            console.error('Failed to render reCAPTCHA:', error);
+            // 렌더링 실패 시 인스턴스 정리
+            try {
+                window.recaptchaVerifier.clear();
+            } catch (e) {
+                console.warn('Failed to clear reCAPTCHA on render error:', e);
+            }
+            window.recaptchaVerifier = null;
+            window.recaptchaWidgetId = undefined;
+            throw error;
+        }
+    }
+
+
 
     /**
      * Phone number validation for login
