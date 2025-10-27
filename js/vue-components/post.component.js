@@ -773,10 +773,10 @@ const postComponent = {
                 // 카테고리 설정: post의 카테고리가 있으면 사용, 없으면 'story' 기본값
                 let category = this.post.category || 'story';
                 // 카테고리가 유효한지 확인 (옵션 목록에 존재하는지)
-                const categoryExists = Array.isArray(this.categories) && this.categories.some(root =>
-                    Array.isArray(root.categories) && root.categories.some(sub => sub.category === category)
-                );
-                this.edit.category = categoryExists ? category : 'story';
+                // const categoryExists = Array.isArray(this.categories) && this.categories.some(root =>
+                //     Array.isArray(root.categories) && root.categories.some(sub => sub.category === category)
+                // );
+                // this.edit.category = categoryExists ? category : 'story';
 
                 // Clone the files array for editing
                 this.edit.files = this.post.files ? [...this.post.files] : [];
