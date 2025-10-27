@@ -35,6 +35,8 @@ Sonub는 **API First** 설계 철학을 따르는 웹 애플리케이션입니�
   - [Scripts - 명령줄 API 호출 도구](#scripts---명령줄-api-호출-도구)
     - [빠른 시작](#빠른-시작)
     - [상세 문서](#상세-문서)
+  - [실전 예제 (Practical Examples)](#실전-예제-practical-examples)
+    - [내가 쓴 글 삭제하기](#내가-쓴-글-삭제하기)
   - [API 프로토콜 상세 가이드](#api-프로토콜-상세-가이드)
   - [보안 고려사항](#보안-고려사항)
 
@@ -342,6 +344,175 @@ sudo apt-get install jq  # Ubuntu/Debian
    - 새 스크립트 작성 가이드
    - cURL, jq 사용법
    - 문제 해결
+
+---
+
+## 실전 예제 (Practical Examples)
+
+### 내가 쓴 글 삭제하기
+
+**목표:** 로그인한 사용자가 자신이 작성한 게시글을 삭제합니다.
+
+**필요한 API 함수:**
+1. `login_with_firebase` - 사용자 로그인
+2. `list_posts` - 내가 작성한 글 목록 조회
+3. `delete_post` - 게시글 삭제
+
+#### 단계별 프로세스
+
+**1단계: 로그인하여 세션 정보 얻기**
+
+로그인하면 다음 정보를 얻을 수 있습니다:
+- **회원 번호 (ID)**: 데이터베이스의 사용자를 식별하는 고유 번호
+- **`sonub_session_id` 쿠키**: 인증된 세션을 나타내는 쿠키 값
+
+```bash
+# 로그인 요청
+curl -s -k -c cookies.txt -X POST "https://local.sonub.com/api.php" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "func": "login_with_firebase",
+    "firebase_uid": "banana",
+    "phone_number": "+11234567891"
+  }'
+
+# 응답 예제:
+# {
+#   "id": 31,
+#   "first_name": "Banana",
+#   "email": "banana@example.com",
+#   "func": "login_with_firebase"
+# }
+
+# 쿠키가 cookies.txt 파일에 저장됨
+```
+
+**2단계: 내가 작성한 글 목록 조회**
+
+로그인 후 쿠키를 사용하여 내가 작성한 글을 조회합니다:
+
+```bash
+# 내가 작성한 게시글 목록 조회
+curl -s -k -b cookies.txt -X POST "https://local.sonub.com/api.php" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "func": "list_posts",
+    "limit": 10
+  }'
+
+# 응답 예제:
+# {
+#   "posts": [
+#     {
+#       "id": 999157,
+#       "title": "게시글 5 - 2025-10-27 15:38:48",
+#       "content": "자동 생성된 테스트 게시글입니다.",
+#       "category": "discussion",
+#       "user_id": 31,
+#       "author": {
+#         "first_name": "Banana",
+#         "photo_url": "/var/uploads/31/바나나-1.jpg"
+#       },
+#       ...
+#     },
+#     ...
+#   ],
+#   "isEmpty": false,
+#   "isLastPage": true,
+#   "func": "list_posts"
+# }
+```
+
+**3단계: 글 삭제하기**
+
+조회한 게시글의 ID를 사용하여 글을 삭제합니다:
+
+```bash
+# 단일 게시글 삭제
+curl -s -k -b cookies.txt -X POST "https://local.sonub.com/api.php" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "func": "delete_post",
+    "id": 999157
+  }'
+
+# 응답 예제:
+# {
+#   "success": true,
+#   "message": "게시글이 삭제되었습니다.",
+#   "func": "delete_post"
+# }
+```
+
+#### 완전한 자동화 스크립트 예제
+
+여러 글을 한 번에 삭제하는 스크립트:
+
+```bash
+#!/bin/bash
+
+API_URL="https://local.sonub.com/api.php"
+COOKIE_JAR="cookies.txt"
+TEST_USER="banana"
+TEST_PHONE="+11234567891"
+
+# 1단계: 로그인
+echo "1단계: 로그인 중..."
+LOGIN_RESPONSE=$(curl -s -k -c "$COOKIE_JAR" -X POST "$API_URL" \
+  -H "Content-Type: application/json" \
+  -d "{\"func\": \"login_with_firebase\", \"firebase_uid\": \"$TEST_USER\", \"phone_number\": \"$TEST_PHONE\"}")
+
+USER_ID=$(echo "$LOGIN_RESPONSE" | grep -o '"id":[0-9]*' | cut -d: -f2)
+echo "✓ 로그인 성공! (사용자 ID: $USER_ID)"
+
+# 2단계: 내가 작성한 글 목록 조회
+echo "2단계: 내가 작성한 글 목록 조회 중..."
+LIST_RESPONSE=$(curl -s -k -b "$COOKIE_JAR" -X POST "$API_URL" \
+  -H "Content-Type: application/json" \
+  -d '{"func": "list_posts", "limit": 10}')
+
+# 게시글 ID 추출 (grep + cut 사용)
+POST_IDS=$(echo "$LIST_RESPONSE" | grep -o '"id":[0-9]*' | cut -d: -f2 | head -10)
+
+echo "발견된 게시글 ID들: $POST_IDS"
+
+# 3단계: 각 글 삭제
+echo "3단계: 글 삭제 중..."
+for POST_ID in $POST_IDS; do
+  DELETE_RESPONSE=$(curl -s -k -b "$COOKIE_JAR" -X POST "$API_URL" \
+    -H "Content-Type: application/json" \
+    -d "{\"func\": \"delete_post\", \"id\": $POST_ID}")
+
+  if echo "$DELETE_RESPONSE" | grep -q '"success":true'; then
+    echo "  ✓ 게시글 #$POST_ID 삭제 완료"
+  else
+    echo "  ✗ 게시글 #$POST_ID 삭제 실패"
+  fi
+done
+
+# 정리
+rm -f "$COOKIE_JAR"
+echo "완료!"
+```
+
+#### 중요 사항
+
+⚠️ **주의:**
+- `delete_post()` 함수는 **본인이 작성한 글만 삭제 가능**합니다
+- 다른 사용자가 작성한 글은 삭제할 수 없습니다 (권한 오류 발생)
+- 한 번 삭제된 글은 복구할 수 없으므로 신중하게 삭제하세요
+- 게시글을 삭제하면 관련된 댓글도 함께 삭제됩니다
+
+✅ **권장 사항:**
+- 프로덕션 환경에서는 실수 방지를 위해 삭제 전 확인 절차를 추가하세요
+- 중요한 글을 삭제하기 전에 백업하는 것이 좋습니다
+- 에러 처리를 충분히 구현하여 실패한 삭제 작업을 감지하세요
+
+#### 관련 API 함수
+
+- 📖 [`delete_post()`](sonub-api-endpoints.md#delete_post) - 게시글 삭제 상세 문서
+- 📖 [`list_posts()`](sonub-api-endpoints.md#list_posts) - 게시글 목록 조회 상세 문서
+- 📖 [`login_with_firebase()`](sonub-api-endpoints.md#login_with_firebase) - 로그인 상세 문서
 
 ---
 

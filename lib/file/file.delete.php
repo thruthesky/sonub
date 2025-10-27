@@ -40,7 +40,9 @@ function file_delete(array $params)
  * 여러 파일 삭제
  * 
  * 글/코멘트의 첨부 파일들을 일괄 삭제할 때 사용한다.
- * 참고로, 이 함수는 배열을 입력 받을 수 있으며, 파일 경로들을 콤마(,)로 구분한 문자열을 인자로도 받는다.
+ * 참고
+ * - 이 함수는 배열을 입력 받을 수 있으며, 파일 경로들을 콤마(,)로 구분한 문자열을 인자로도 받는다.
+ * - var/uploads 디렉토리 내부의 파일들만 삭제할 수 있다. 경로에 이 문구가 없으면 삭제하지 않는다.
  *
  * @param mixed $file_paths
  * - 삭제할 파일 경로들을 콤마(,)로 구분한 문자열
@@ -54,6 +56,9 @@ function delete_files(mixed $file_paths)
         $file_paths = array_map('trim', explode(',', $file_paths));
     }
     foreach ($file_paths as $file_url) {
+        if (strpos($file_url, '/var/uploads/') === false) {
+            continue;
+        }
         file_delete(['url' => $file_url]);
     }
 }
