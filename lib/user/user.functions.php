@@ -224,7 +224,7 @@ function login(): ?UserModel
  * echo $user['phone_number']; // 010-1234-5678
  * ```
  */
-function login_with_firebase(array $params)
+function login_with_firebase(array $params): array
 {
     // ## 파라미터 검증: Firebase UID 필수
     $firebase_uid = $params['firebase_uid'] ?? '';

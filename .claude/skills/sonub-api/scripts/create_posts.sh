@@ -17,21 +17,51 @@ TEST_USER="banana"
 TEST_PHONE="+11234567891"
 POST_CATEGORY=""
 
-# 이미지 기본 URL (DummyImage 사용 - 안정적이고 빠름)
-# 다양한 색상 조합 사용하여 시각적 다양성 확보
-IMAGE_BASE="https://dummyimage.com"
+# 실제 이미지 서비스 (고품질 무료 이미지)
+# - LoremFlickr: 카테고리별 실제 Flickr 이미지 (최적)
+# - Picsum Photos: 무료 이미지, 무한 다양성
+# - Unsplash: 최고 품질 이미지
 
-# 이미지 색상 팔레트 (다양한 시각적 효과)
-IMAGE_COLORS=(
-    "4CAF50/FFFFFF"  # 녹색 배경, 흰색 텍스트
-    "2196F3/FFFFFF"  # 파란색 배경, 흰색 텍스트
-    "FF9800/FFFFFF"  # 주황색 배경, 흰색 텍스트
-    "9C27B0/FFFFFF"  # 보라색 배경, 흰색 텍스트
-    "E91E63/FFFFFF"  # 분홍색 배경, 흰색 텍스트
-    "00BCD4/FFFFFF"  # 청록색 배경, 흰색 텍스트
-    "FF5722/FFFFFF"  # 빨간색 배경, 흰색 텍스트
-    "009688/FFFFFF"  # 청록색(진함) 배경, 흰색 텍스트
-)
+# 기본 이미지 베이스 URL (LoremFlickr 사용)
+# LoremFlickr 형식: https://loremflickr.com/{width}/{height}/{keyword1,keyword2,...}
+IMAGE_BASE="https://loremflickr.com"
+
+# 카테고리별 이미지 키워드 매핑 함수 (LoremFlickr용)
+# LoremFlickr은 comma-separated 키워드를 지원하여 더 정확한 이미지 제공
+get_category_image_keywords() {
+    local category="$1"
+    case "$category" in
+        discussion)     echo "people,conversation" ;;        # 자유토론 - 사람, 대화
+        qna)            echo "question,answer,help" ;;       # 질문과답변 - 질문, 답변, 도움
+        story)          echo "nature,landscape,beautiful" ;; # 나의 이야기 - 자연, 풍경
+        relationships)  echo "people,friends,together" ;;    # 관계 - 사람, 친구들
+        fitness)        echo "fitness,gym,sport,exercise" ;; # 운동 - 피트니스, 체육관, 운동
+        beauty)         echo "beauty,makeup,cosmetics" ;;    # 뷰티 - 뷰티, 화장, 화장품
+        cooking)        echo "food,cooking,recipe,kitchen" ;;# 요리 - 음식, 요리, 레시피
+        pets)           echo "animals,pets,dog,cat" ;;       # 반려동물 - 동물, 반려동물, 개, 고양이
+        parenting)      echo "family,kids,baby,children" ;;  # 육아 - 가족, 아이, 아기
+        electronics)    echo "technology,electronics,gadget" ;; # 전자제품 - 기술, 전자
+        fashion)        echo "fashion,clothing,style,clothes" ;; # 패션 - 패션, 의류, 스타일
+        furniture)      echo "furniture,interior,design,home" ;; # 가구 - 가구, 인테리어, 디자인
+        books)          echo "books,library,reading" ;;       # 책 - 책, 도서관, 독서
+        sports-equipment) echo "sports,equipment,fitness" ;;  # 스포츠용품 - 스포츠, 장비
+        vehicles)       echo "cars,automobile,vehicle,driving" ;; # 차량 - 자동차, 차량
+        real-estate)    echo "building,house,architecture,property" ;; # 부동산 - 건물, 집, 건축
+        technology)     echo "technology,computer,digital,tech" ;; # 기술 - 기술, 컴퓨터
+        business)       echo "business,office,meeting,work" ;; # 비즈니스 - 비즈니스, 사무실
+        ai)             echo "technology,artificial,robot,ai" ;; # 인공지능 - 기술, 로봇
+        movies)         echo "film,cinema,movie,entertainment" ;; # 영화 - 영화, 엔터테인먼트
+        drama)          echo "drama,emotion,scene,performance" ;; # 드라마 - 드라마, 감정, 공연
+        music)          echo "music,musician,concert,instrument" ;; # 음악 - 음악, 뮤지션, 콘서트
+        buy)            echo "shopping,shop,market,product" ;; # 구매 - 쇼핑, 상점, 제품
+        sell)           echo "shop,market,retail,commerce" ;; # 판매 - 상점, 마켓, 상거래
+        rent)           echo "building,apartment,housing,rent" ;; # 임대 - 건물, 아파트, 주택
+        full-time)      echo "office,work,professional,business" ;; # 전일제 - 사무실, 일, 비즈니스
+        part-time)      echo "people,work,job,part-time" ;;   # 시간제 - 사람, 일, 직업
+        freelance)      echo "work,computer,office,freelance" ;; # 프리랜서 - 일, 컴퓨터, 자유
+        *)              echo "people,nature" ;;                # 기본값
+    esac
+}
 
 # 도움말 함수
 show_help() {
@@ -252,24 +282,45 @@ for i in $(seq 1 "$POST_COUNT"); do
         CATEGORY="${CATEGORIES[$CATEGORY_INDEX]}"
     fi
 
-    # 이미지 개수 결정 (0-7)
-    IMAGE_COUNT=$((i % 8))
+    # 이미지 개수 결정 (1-3개, 더 현실적)
+    IMAGE_COUNT=$((1 + (i % 3)))
 
-    # 이미지 URL 생성 (DummyImage 사용)
+    # 카테고리에 맞는 이미지 키워드 획득
+    IMAGE_KEYWORDS=$(get_category_image_keywords "$CATEGORY")
+
+    # LoremFlickr 키워드에서 쉼표를 URL 인코딩 (%2C)으로 변환
+    # (파일 리스트 구분용 쉼표와 충돌 방지)
+    IMAGE_KEYWORDS_ENCODED="${IMAGE_KEYWORDS//,/%2C}"
+
+    # LoremFlickr 이미지 URL 생성
     IMAGE_URLS=""
     if [ "$IMAGE_COUNT" -gt 0 ]; then
         for j in $(seq 1 "$IMAGE_COUNT"); do
-            # 색상 선택 (반복 사용)
-            COLOR_INDEX=$(((i + j) % ${#IMAGE_COLORS[@]}))
-            COLOR="${IMAGE_COLORS[$COLOR_INDEX]}"
+            # 다양한 이미지 크기 (모바일, 태블릿, 데스크톱)
+            case $((j % 3)) in
+                0)
+                    # 세로형 이미지 (모바일)
+                    IMAGE_WIDTH=400
+                    IMAGE_HEIGHT=600
+                    ;;
+                1)
+                    # 가로형 이미지 (일반)
+                    IMAGE_WIDTH=600
+                    IMAGE_HEIGHT=400
+                    ;;
+                *)
+                    # 정사각형 이미지
+                    IMAGE_WIDTH=500
+                    IMAGE_HEIGHT=500
+                    ;;
+            esac
 
-            # 이미지 크기 (다양한 종횡비)
-            IMAGE_WIDTH=$((200 + i * 50))
-            IMAGE_HEIGHT=$((150 + i * 40))
-
-            # DummyImage 형식: https://dummyimage.com/{width}x{height}/{bgColor}/{textColor}/{text}
-            IMAGE_TEXT="Image%20$j"
-            IMAGE_URL="$IMAGE_BASE/${IMAGE_WIDTH}x${IMAGE_HEIGHT}/${COLOR}/${IMAGE_TEXT}"
+            # LoremFlickr: 카테고리별 실제 Flickr 이미지
+            # 형식: https://loremflickr.com/{width}/{height}/{keyword1%2Ckeyword2%2C...}?random={random_id}
+            # - 키워드의 쉼표는 %2C로 URL 인코딩 (파일 리스트 쉼표와 구분)
+            # - random 파라미터로 매번 다른 이미지 제공
+            RANDOM_ID=$((RANDOM * i + j))
+            IMAGE_URL="$IMAGE_BASE/${IMAGE_WIDTH}/${IMAGE_HEIGHT}/${IMAGE_KEYWORDS_ENCODED}?random=${RANDOM_ID}"
 
             if [ -z "$IMAGE_URLS" ]; then
                 IMAGE_URLS="$IMAGE_URL"
