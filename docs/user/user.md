@@ -4,8 +4,10 @@
 - [개요](#개요)
 - [사용자 테이블 구조](#사용자-테이블-구조)
 - [사용자 함수](#사용자-함수)
-  - [create_user_record](#create_user_record)
+  - [login_with_firebase](#login_with_firebase)
     - [세션 ID 쿠키 자동 설정](#세션-id-쿠키-자동-설정)
+  - [create_user_record](#create_user_record)
+    - [세션 ID 쿠키 자동 설정](#세션-id-쿠키-자동-설정-1)
   - [get_user](#get_user)
   - [list_users](#list_users)
     - [페이지네이션](#페이지네이션)
@@ -49,9 +51,242 @@ Sonub의 사용자 관리 시스템은 Firebase Authentication과 MariaDB를 함
 
 ## 사용자 함수
 
+### login_with_firebase
+
+Firebase 인증 후 **사용자 생성 또는 기존 사용자 로그인**을 처리하는 함수입니다.
+
+이 함수는 사용자 관리의 가장 중요한 함수로, Firebase 로그인 직후 즉시 호출되어야 합니다:
+- **기존 사용자**: 세션 쿠키를 설정하고 사용자 정보를 반환합니다
+- **신규 사용자**: users 테이블에 새 레코드를 생성하고, 세션 쿠키를 설정한 후 사용자 정보를 반환합니다
+
+**파일 위치**: `lib/user/user.functions.php`
+
+**🔥 중요**: 이 함수는 사용자 생성 시 **자동으로 세션 ID 쿠키를 설정**합니다.
+
+#### 함수 흐름
+
+1. **Firebase UID 검증**: 필수 파라미터 `firebase_uid` 확인
+2. **전화번호 검증**: 필수 파라미터 `phone_number` 확인
+3. **기존 사용자 조회**: Firebase UID로 users 테이블 검색
+4. **기존 사용자 존재**:
+   - 세션 쿠키 설정 (이미 생성되어 있음)
+   - 사용자 정보 반환
+5. **신규 사용자**:
+   - users 테이블에 새 레코드 생성
+   - 모든 파라미터 (phone_number, first_name, last_name, birthday 등) 저장
+   - 세션 쿠키 설정
+   - 생성된 사용자 정보 반환
+
+#### 세션 ID 쿠키 자동 설정
+
+사용자 생성 또는 기존 사용자 로그인 시 다음과 같은 세션 쿠키가 자동으로 설정됩니다:
+
+| 항목 | 값 |
+|------|--------|
+| **쿠키 이름** | `sonub_session_id` |
+| **유효기간** | 1년 (365일) |
+| **경로** | `/` (전체 사이트) |
+| **형식** | `{user_id}-{firebase_uid}-{hash}` |
+| **예시** | `1-abc123xyz-e5d8f2a1b3c4...` |
+
+이 쿠키는 서버에서 사용자 인증 상태를 유지하는 데 사용됩니다. 클라이언트는 별도로 쿠키를 설정할 필요가 없습니다.
+
+#### 파라미터
+
+| 파라미터 | 타입 | 필수 | 기본값 | 설명 |
+|----------|------|------|--------|------|
+| `firebase_uid` | string | ✅ | - | Firebase 로그인에서 받은 UID |
+| `phone_number` | string | ✅ | - | 사용자 전화번호 |
+| `first_name` | string | ❌ | '' | 사용자 이름 |
+| `last_name` | string | ❌ | '' | 사용자 성 |
+| `middle_name` | string | ❌ | '' | 중간 이름 |
+| `birthday` | int | ❌ | 0 | 생년월일 (Unix timestamp) |
+| `gender` | string | ❌ | '' | 성별 ('M' 또는 'F') |
+| `photo_url` | string | ❌ | '' | 프로필 사진 URL |
+
+#### 반환값
+
+**성공**: 사용자 정보 배열
+- `id` (int): 사용자 ID
+- `firebase_uid` (string): Firebase UID
+- `phone_number` (string): 사용자 전화번호
+- `first_name` (string): 사용자 이름
+- `last_name` (string): 사용자 성
+- `middle_name` (string): 중간 이름
+- `created_at` (int): 생성일 (Unix timestamp)
+- `updated_at` (int): 수정일 (Unix timestamp)
+- `birthday` (int): 생년월일 (Unix timestamp)
+- `gender` (string): 성별
+- `photo_url` (string): 프로필 사진 URL
+
+**실패**: 에러 배열
+- `error_code` (string): 에러 코드
+- `error_message` (string): 에러 메시지
+
+#### 에러 코드
+
+| 에러 코드 | 설명 |
+|-----------|------|
+| `input-firebase-uid-empty` | firebase_uid 파라미터가 누락됨 |
+| `input-phone-number-empty` | phone_number 파라미터가 누락됨 |
+| `phone-number-mismatch` | 기존 사용자의 전화번호와 요청한 전화번호가 일치하지 않음 (보안상 에러) |
+
+#### API 호출 예제
+
+```bash
+# Firebase 로그인 후 사용자 생성/조회
+curl -X POST https://local.sonub.com/api.php \
+  -H "Content-Type: application/json" \
+  -d '{
+    "func": "login_with_firebase",
+    "firebase_uid": "abc123xyz",
+    "phone_number": "010-1234-5678",
+    "first_name": "길동",
+    "last_name": "홍",
+    "middle_name": "",
+    "birthday": 631152000,
+    "gender": "M"
+  }'
+```
+
+#### 응답 예제
+
+**성공 응답 (신규 사용자 생성)** (HTTP 200):
+```json
+{
+  "id": 1,
+  "firebase_uid": "abc123xyz",
+  "phone_number": "010-1234-5678",
+  "first_name": "길동",
+  "last_name": "홍",
+  "middle_name": "",
+  "created_at": 1759646876,
+  "updated_at": 1759646876,
+  "birthday": 631152000,
+  "gender": "M",
+  "photo_url": "",
+  "func": "login_with_firebase"
+}
+```
+
+**응답 헤더 (세션 쿠키 자동 설정)**:
+```
+Set-Cookie: sonub_session_id=1-abc123xyz-e5d8f2a1b3c4...; Max-Age=31536000; Path=/
+```
+
+**에러 응답 (Firebase UID 누락)** (HTTP 400):
+```json
+{
+  "error_code": "input-firebase-uid-empty",
+  "error_message": "firebase_uid 파라미터가 비어있습니다.",
+  "func": "login_with_firebase"
+}
+```
+
+**에러 응답 (전화번호 누락)** (HTTP 400):
+```json
+{
+  "error_code": "input-phone-number-empty",
+  "error_message": "phone_number 파라미터가 비어있습니다.",
+  "func": "login_with_firebase"
+}
+```
+
+**에러 응답 (전화번호 불일치)** (HTTP 400):
+```json
+{
+  "error_code": "phone-number-mismatch",
+  "error_message": "전화번호가 일치하지 않습니다. Firebase UID와 일치하는 기존 사용자의 전화번호와 요청한 전화번호가 다릅니다.",
+  "func": "login_with_firebase"
+}
+```
+
+#### PHP 직접 호출 예제
+
+```php
+// Firebase 로그인 후 API 호출
+$user = login_with_firebase([
+    'firebase_uid' => 'abc123xyz',
+    'phone_number' => '010-1234-5678',
+    'first_name' => '길동',
+    'last_name' => '홍',
+    'gender' => 'M'
+]);
+
+// 세션 쿠키가 자동으로 설정됨
+echo "사용자 ID: " . $user['id'];  // 1
+echo "이름: " . $user['first_name'] . " " . $user['last_name'];  // 길동 홍
+echo "전화: " . $user['phone_number'];  // 010-1234-5678
+
+// 다음 요청부터 login() 함수로 로그인 정보 확인 가능
+$logged_user = login();
+echo $logged_user->first_name;  // 길동
+echo $logged_user->phone_number;  // 010-1234-5678
+```
+
+#### JavaScript에서 사용 예제
+
+```javascript
+// Firebase 로그인 후 API 호출
+firebase.auth().onAuthStateChanged(async (user) => {
+    if (user) {
+        try {
+            // 서버에 사용자 생성/조회 요청
+            const result = await func('login_with_firebase', {
+                firebase_uid: user.uid,
+                first_name: user.displayName?.split(' ')[0] || '',
+                last_name: user.displayName?.split(' ')[1] || '',
+                birthday: 0,
+                gender: ''
+            });
+
+            console.log('로그인 성공:', result.id);
+            console.log('사용자 이름:', result.first_name, result.last_name);
+
+            // 세션 쿠키가 자동으로 설정됨 - 추가 작업 불필요
+            // 이후 모든 요청에 자동으로 세션 쿠키가 포함됨
+
+        } catch (error) {
+            console.error('로그인 실패:', error);
+        }
+    }
+});
+```
+
+#### 주의사항
+
+1. **Firebase 로그인 필수**: `login_with_firebase`는 Firebase 인증 후 즉시 호출되어야 합니다
+2. **firebase_uid 필수**: `firebase_uid` 파라미터는 반드시 포함되어야 합니다
+3. **phone_number 필수 및 보안**: `phone_number` 파라미터는 반드시 포함되어야 합니다
+   - ⚠️ **중요**: `phone_number`는 **비밀번호처럼 매우 민감한 정보**입니다
+   - 🔒 **절대로 타 회원에게 노출되어서는 안 됩니다**
+   - API 응답에서 phone_number를 전달할 때는 로그인한 사용자 자신의 정보만 포함되어야 합니다
+   - 타 사용자의 프로필, 목록, 검색 결과 등에서 절대로 phone_number를 노출하지 마세요
+   - 기존 사용자의 phone_number가 변경되면 에러 (`phone-number-mismatch`)가 발생하여 보안을 유지합니다
+4. **세션 쿠키 자동 설정**: 함수 호출 후 자동으로 세션 쿠키가 설정되므로, 클라이언트에서 별도의 쿠키 설정 작업이 필요 없습니다
+5. **중복 사용자 방지**: Firebase UID가 이미 존재하면 phone_number 일치 여부를 확인합니다 (일치하지 않으면 에러)
+6. **선택 파라미터**: `first_name`, `last_name` 등은 선택 파라미터이므로, Firebase 로그인 정보가 불충분한 경우 빈 값으로 전달해도 됩니다
+
+#### 실제 사용 흐름
+
+```
+사용자 -> Firebase 로그인 -> 클라이언트에 Firebase ID Token 전달
+                          -> API 호출: login_with_firebase(firebase_uid)
+                          -> 서버에서 사용자 생성/조회
+                          -> 세션 쿠키 자동 설정
+                          -> 클라이언트에 사용자 정보 반환
+                          -> 이후 모든 요청에 세션 쿠키 포함
+```
+
+---
+
 ### create_user_record
 
+⚠️ **주의**: 이 함수는 **더 이상 권장되지 않습니다 (deprecated)**. 대신 [`login_with_firebase`](#login_with_firebase) 함수를 사용하세요.
+
 사용자 레코드를 생성합니다. Firebase에 로그인했지만 `users` 테이블에 레코드가 없는 경우 호출합니다.
+
+**참고**: `login_with_firebase` 함수가 `create_user_record`의 역할을 모두 포함하고 더 나은 기능을 제공하므로, 새로운 코드에서는 반드시 `login_with_firebase`를 사용하세요.
 
 **🔥 중요**: 이 함수는 사용자 레코드 생성 시 **자동으로 세션 ID 쿠키를 설정**합니다.
 
