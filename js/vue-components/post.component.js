@@ -34,7 +34,9 @@ const postComponent = {
             <!-- 사용자 이름, 날짜, 공개범위 -->
             <div class="flex-grow-1">
                 <div class="fw-semibold" style="font-size: 15px; color: #050505; line-height: 1.3;">
+                <a :href="'/user/profile?id=' + post.user_id" style="color: inherit; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
                     {{ getAuthorName(post) }}
+                </a>
                 </div>
                 <div class="small" style="font-size: 13px; color: #65676b; line-height: 1.3;">
                     {{ formatDate(post.created_at) }} ·
@@ -190,6 +192,7 @@ const postComponent = {
             </div>
         </div>
     </div>
+
 
 
 
@@ -428,7 +431,7 @@ const postComponent = {
 `,
     data() {
         // Safely get categories data
-        const categoriesData = window.categoryData?.rootCategories;
+        const categoriesData = appConfig.categories;
 
         // Convert object to array if needed
         let categories = [];

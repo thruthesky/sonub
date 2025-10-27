@@ -1,15 +1,15 @@
 <div id="language-selector-app">
     <div class="dropdown d-inline-block">
         <button class="btn btn-sm btn-light rounded-pill border dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="bi bi-translate text-primary"></i>
+            <i class="bi bi-translate text-primary me-2"></i>
             <span class="text-dark">{{ getCurrentLanguageName() }}</span>
         </button>
         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="languageDropdown">
             <li v-for="lang in languages" :key="lang.code">
                 <a class="dropdown-item d-flex align-items-center"
-                   href="#"
-                   @click.prevent="selectLanguage(lang.code)"
-                   :class="{ 'active': currentLanguage === lang.code }">
+                    href="#"
+                    @click.prevent="selectLanguage(lang.code)"
+                    :class="{ 'active': currentLanguage === lang.code }">
                     <i class="bi bi-check-circle-fill text-success me-2" v-if="currentLanguage === lang.code"></i>
                     <i class="bi bi-circle me-2 text-muted" v-else></i>
                     <span>{{ lang.name }}</span>

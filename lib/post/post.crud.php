@@ -291,10 +291,12 @@ function create_post(array $input)
                     fanout_post_to_friends($user_id, $id, $now);
                 }
 
-                // get_post_by_id() 함수로 방금 생성된 게시글을 조회합니다.
-                // 이렇게 하면 데이터베이스에 저장된 실제 값(기본값 등)을 포함한
+                // get_post() 함수로 방금 생성된 게시글을 조회합니다.
+                // with_user => true로 설정하여 작성자 정보를 포함합니다.
+                // 이렇게 하면 데이터베이스에 저장된 실제 값(기본값 등)과
+                // 작성자 정보(first_name, photo_url, firebase_uid)를 포함한
                 // 완전한 PostModel 객체를 얻을 수 있습니다.
-                return get_post_by_id($id);
+                return get_post(['post_id' => $id, 'with_user' => true]);
             }
         }
 
@@ -476,7 +478,7 @@ function update_post(array $input)
         delete_post_from_feed_entries($post_id);
     }
 
-    return get_post_by_id($post_id);
+    return get_post(['post_id' => $post_id, 'with_user' => true]);
 }
 
 
