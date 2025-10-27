@@ -462,7 +462,7 @@ const postComponent = {
             isUploading: false, // 파일 업로드 중 여부
             // 게시물 내용 확장/축소 상태
             contentExpanded: false, // 내용이 확장되었는지 여부
-            contentMaxLength: 300, // 최대 표시 길이 (문자 수)
+            contentMaxLength: 400, // 최대 표시 길이 (문자 수)
         };
     },
     computed: {
