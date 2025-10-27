@@ -77,7 +77,7 @@ $postList = [
                     window.postListApp.loadNextPage();
                 }
             },
-            threshold: 10,
+            threshold: 400,
             debounceDelay: 100,
             initialScrollToBottom: false
         });
