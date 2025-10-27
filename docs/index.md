@@ -42,10 +42,11 @@
 ### ⚙️ 환경 설정
 15. [setup/nginx-php-mariadb.md](#setupnginx-php-mariadbmd) - Docker LEMP 스택 설정
 16. [php-hot-reload.md](#php-hot-reloadmd) - PHP 핫 리로드 개발 서버
+17. [dev-info.md](#dev-infomd) - 개발 환경 정보 및 테스트 계정
 
 ### 📢 마케팅
-17. [marketing/marketing-strategies-and-plans.md](#marketingmarketing-strategies-and-plansmd) - 마케팅 전략 및 계획
-18. [marketing/sonub-facebook.md](#marketingsonub-facebookmd) - Facebook 마케팅
+18. [marketing/marketing-strategies-and-plans.md](#marketingmarketing-strategies-and-plansmd) - 마케팅 전략 및 계획
+19. [marketing/sonub-facebook.md](#marketingsonub-facebookmd) - Facebook 마케팅
 
 ---
 
@@ -576,6 +577,45 @@ docker logs sonub-nginx
 
 ---
 
+### dev-info.md
+
+**경로**: `docs/dev-info.md`
+
+**핵심 내용**:
+- **개발 환경 정보**: 테스트 계정, 서버, 도메인 정보
+- **테스트 계정 목록**: 12개의 과일 이름 기반 테스트 계정 (apple, banana, cherry, ...)
+- **테스트 로그인 방법**: 3가지 (로그인 페이지 직접 입력, Dev Login 패널, JavaScript 콘솔)
+- **특별한 로그인 형식**: `email:password` 형식으로 SMS 인증 스킵
+- **비밀번호**: 모든 테스트 계정 동일 (`12345a,*`)
+
+**테스트 계정 정보**:
+| 이름 | 이메일 | 전화번호 |
+|------|--------|---------|
+| Apple | `apple@test.com` | `+11234567890` |
+| Banana | `banana@test.com` | `+11234567891` |
+| Cherry | `cherry@test.com` | `+11234567892` |
+| ... | ... | ... |
+
+**주요 예제**:
+```
+# 방법 1: 로그인 페이지에서 직접 입력
+URL: https://local.sonub.com/user/login
+입력: banana@test.com:12345a,*
+→ SMS 인증 없이 즉시 로그인
+
+# 방법 2: Dev Login 패널 (개발 환경에서만)
+1. 오른쪽 하단의 👤 아이콘 클릭
+2. 드롭다운에서 "Banana" 선택
+3. 즉시 로그인 완료
+
+# 방법 3: JavaScript 콘솔
+login_as('banana');  // banana@test.com으로 로그인
+```
+
+**참조**: 개발 환경에서 빠르게 테스트 계정으로 로그인
+
+---
+
 ### marketing/marketing-strategies-and-plans.md
 
 **경로**: `docs/marketing/marketing-strategies-and-plans.md`
@@ -629,6 +669,14 @@ docker logs sonub-nginx
 - [user/user.md](#userusermd) - 사용자 관리
 - [user/user.search.md](#userusersearchmd) - 사용자 검색 컴포넌트
 
+### 테스트 계정으로 로그인하려면?
+- [dev-info.md](#dev-infomd) - 테스트 계정 목록, SMS 인증 스킵 로그인 방법
+
+### 개발 환경을 설정하려면?
+- [setup/nginx-php-mariadb.md](#setupnginx-php-mariadbmd) - Docker LEMP 스택
+- [php-hot-reload.md](#php-hot-reloadmd) - 핫 리로드 서버
+- [dev-info.md](#dev-infomd) - 개발 환경 정보 및 테스트 계정
+
 ---
 
 ## 📝 문서 작성 규칙
@@ -647,4 +695,4 @@ docker logs sonub-nginx
 
 ---
 
-**마지막 업데이트**: 2025-01-19
+**마지막 업데이트**: 2025-10-27
