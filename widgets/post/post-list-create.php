@@ -27,22 +27,7 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
 
 ?>
 
-<!-- Inject categories data for JavaScript -->
-<script>
-    window.categoryData = <?= json_encode([
-                                'rootCategories' => array_values(array_map(function ($root) {
-                                    return [
-                                        'display_name' => $root->display_name,
-                                        'categories' => array_values(array_map(function ($sub) {
-                                            return [
-                                                'category' => $sub->category,
-                                                'name' => $sub->name
-                                            ];
-                                        }, $root->getCategories()))
-                                    ];
-                                }, config()->categories->getRootCategories()))
-                            ]) ?>;
-</script>
+
 
 <style>
     /* 게시물 작성 위젯 전용 스타일 */
@@ -486,6 +471,8 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
                         if (post && post.id) {
                             // 작성 성공 시, 게시물 목록에 추가
                             window.Store.state.postList.posts.unshift(post);
+                            // isEmpty 플래그를 false로 업데이트 (첫 번째 게시글 작성 시에도 즉시 목록에 표시)
+                            window.Store.state.postList.isEmpty = false;
                             this.cancel();
                         }
                     } catch (error) {
