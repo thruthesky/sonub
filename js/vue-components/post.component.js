@@ -40,8 +40,9 @@ const postComponent = {
                 </div>
                 <div class="small" style="font-size: 13px; color: #65676b; line-height: 1.3;">
                     {{ formatDate(post.created_at) }} ·
-                    <span class="badge bg-secondary">{{ post.visibility || 'public' }}</span>
-                    <span v-if="edit.enabled" class="badge bg-warning bg-opacity-75 text-dark ms-2">
+                    <span class="badge bg-secondary me-1">{{ post.visibility || 'public' }}</span>
+                    <span class="badge bg-secondary me-1">{{ post.category }}</span>
+                    <span v-if="edit.enabled" class="badge bg-warning bg-opacity-75 text-dark">
                         <i class="fa-solid fa-pen-to-square me-1"></i>Editing
                     </span>
                 </div>
@@ -117,7 +118,7 @@ const postComponent = {
                             <i class="fa-solid fa-earth-americas" v-if="edit.visibility === 'public'" style="font-size: 12px; margin-right: 4px;"></i>
                             <i class="fa-solid fa-user-group" v-if="edit.visibility === 'friends'" style="font-size: 12px; margin-right: 4px;"></i>
                             <i class="fa-solid fa-lock" v-if="edit.visibility === 'private'" style="font-size: 12px; margin-right: 4px;"></i>
-                            <select v-model="edit.visibility" class="form-select">
+                            <select v-model="edit.visibility" class="">
                                 <option value="public">Public</option>
                                 <option value="friends">Friends</option>
                                 <option value="private">Only Me</option>
@@ -128,7 +129,7 @@ const postComponent = {
                 <!-- Edit Visibility -->
                     <div v-if="edit.visibility === 'public'" class="post-select-wrapper">
                         <i class="fa-solid fa-folder" style="font-size: 12px; margin-right: 4px;"></i>
-                        <select v-model="edit.category" class="form-select">
+                        <select v-model="edit.category" class="">
                             <optgroup v-for="root in categories" :key="root.display_name" :label="root.display_name">
                                 <option v-for="sub in root.categories" :key="sub.category" :value="sub.category">
                                     {{ sub.name }}
@@ -816,11 +817,6 @@ const postComponent = {
          * @param {Object} post - 게시물 객체
          */
         async saveEdit() {
-            if (!this.edit.content || !this.edit.content.trim()) {
-                alert('Please enter post content.');
-                return;
-            }
-
             console.log('Saving post:', this.post.id);
 
             // Convert editFiles array to comma-separated string (if needed by API)
