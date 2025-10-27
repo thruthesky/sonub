@@ -17,8 +17,21 @@ TEST_USER="banana"
 TEST_PHONE="+11234567891"
 POST_CATEGORY=""
 
-# 이미지 기본 URL
-IMAGE_BASE="https://picsum.photos"
+# 이미지 기본 URL (DummyImage 사용 - 안정적이고 빠름)
+# 다양한 색상 조합 사용하여 시각적 다양성 확보
+IMAGE_BASE="https://dummyimage.com"
+
+# 이미지 색상 팔레트 (다양한 시각적 효과)
+IMAGE_COLORS=(
+    "4CAF50/FFFFFF"  # 녹색 배경, 흰색 텍스트
+    "2196F3/FFFFFF"  # 파란색 배경, 흰색 텍스트
+    "FF9800/FFFFFF"  # 주황색 배경, 흰색 텍스트
+    "9C27B0/FFFFFF"  # 보라색 배경, 흰색 텍스트
+    "E91E63/FFFFFF"  # 분홍색 배경, 흰색 텍스트
+    "00BCD4/FFFFFF"  # 청록색 배경, 흰색 텍스트
+    "FF5722/FFFFFF"  # 빨간색 배경, 흰색 텍스트
+    "009688/FFFFFF"  # 청록색(진함) 배경, 흰색 텍스트
+)
 
 # 도움말 함수
 show_help() {
@@ -242,14 +255,21 @@ for i in $(seq 1 "$POST_COUNT"); do
     # 이미지 개수 결정 (0-7)
     IMAGE_COUNT=$((i % 8))
 
-    # 이미지 URL 생성
+    # 이미지 URL 생성 (DummyImage 사용)
     IMAGE_URLS=""
     if [ "$IMAGE_COUNT" -gt 0 ]; then
         for j in $(seq 1 "$IMAGE_COUNT"); do
-            IMAGE_ID=$((i * 1000 + j))
+            # 색상 선택 (반복 사용)
+            COLOR_INDEX=$(((i + j) % ${#IMAGE_COLORS[@]}))
+            COLOR="${IMAGE_COLORS[$COLOR_INDEX]}"
+
+            # 이미지 크기 (다양한 종횡비)
             IMAGE_WIDTH=$((200 + i * 50))
-            IMAGE_HEIGHT=$((200 + i * 50))
-            IMAGE_URL="$IMAGE_BASE/${IMAGE_WIDTH}/${IMAGE_HEIGHT}?random=$IMAGE_ID"
+            IMAGE_HEIGHT=$((150 + i * 40))
+
+            # DummyImage 형식: https://dummyimage.com/{width}x{height}/{bgColor}/{textColor}/{text}
+            IMAGE_TEXT="Image%20$j"
+            IMAGE_URL="$IMAGE_BASE/${IMAGE_WIDTH}x${IMAGE_HEIGHT}/${COLOR}/${IMAGE_TEXT}"
 
             if [ -z "$IMAGE_URLS" ]; then
                 IMAGE_URLS="$IMAGE_URL"

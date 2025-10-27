@@ -1510,6 +1510,113 @@ if (result.created) {
 
 ---
 
+### create_test_users
+
+**설명:** 테스트용 계정들을 데이터베이스에 자동으로 생성합니다. 개발 및 테스트 환경에서만 사용합니다.
+
+**함수 시그니처:**
+```php
+function create_test_users(array $input = []): array
+```
+
+**파라미터:**
+- 파라미터 없음 (선택 사항): 모든 테스트 계정이 자동으로 생성됩니다
+
+**반환값:**
+- `array`: 생성된 테스트 사용자들의 배열
+  - 각 사용자: `{ id, firebase_uid, first_name, email, phone_number, created_at, ... }`
+
+**생성되는 테스트 계정 목록:**
+
+| 계정명 | Firebase UID | 이메일 | 전화번호 |
+|--------|-------------|---------|----------|
+| Apple | apple | apple@test.com | +11234567890 |
+| Banana | banana | banana@test.com | +11234567891 |
+| Cherry | cherry | cherry@test.com | +11234567892 |
+| Durian | durian | durian@test.com | +11234567893 |
+| Elderberry | elderberry | elderberry@test.com | +11234567894 |
+| Fig | fig | fig@test.com | +11234567895 |
+| Grape | grape | grape@test.com | +11234567896 |
+| Honeydew | honeydew | honeydew@test.com | +11234567897 |
+| Jackfruit | jackfruit | jackfruit@test.com | +11234567898 |
+| Kiwi | kiwi | kiwi@test.com | +11234567899 |
+| Lemon | lemon | lemon@test.com | +11234567900 |
+| Mango | mango | mango@test.com | +11234567901 |
+
+**모든 계정의 패스워드:** `12345a,*`
+
+**사용 예제:**
+
+**JavaScript:**
+```javascript
+// 테스트 계정 생성
+const result = await func('create_test_users', {});
+console.log('생성된 계정 수:', Object.keys(result).length);
+
+// 생성된 계정 확인
+Object.entries(result).forEach(([uid, user]) => {
+    console.log(`${uid}: ${user.first_name} (${user.email})`);
+});
+```
+
+**PHP:**
+```php
+$users = create_test_users([]);
+foreach ($users as $firebaseUid => $user) {
+    echo $user['first_name'] . ' - ' . $user['email'] . "\n";
+}
+```
+
+**cURL (POST 요청):**
+```bash
+curl -X POST "https://sonub.com/api.php" \
+  -H "Content-Type: application/json" \
+  -d '{"func":"create_test_users"}'
+```
+
+**cURL (GET 요청):**
+```bash
+curl "https://sonub.com/api.php?func=create_test_users"
+```
+
+**특별 기능:**
+- **자동 생성**: 이미 존재하는 계정은 업데이트, 새 계정은 자동 생성
+- **배치 처리**: 12개 모든 계정을 한 번에 생성
+- **개발 환경 최적화**: 로컬 테스트에 필요한 모든 계정을 빠르게 준비
+- **테스트 스크립트 통합**: `create_posts.sh` 등 스크립트에서 이 계정들을 사용
+
+**사용 시나리오:**
+
+1. **로컬 개발 시작:**
+   ```bash
+   # 테스트 계정 자동 생성
+   curl "https://local.sonub.com/api.php?func=create_test_users"
+   ```
+
+2. **테스트 데이터 준비:**
+   ```bash
+   # 테스트 계정 생성 후, create_posts.sh로 테스트 게시글 생성
+   curl "https://local.sonub.com/api.php?func=create_test_users"
+   ./create_posts.sh --count 10 --user banana
+   ```
+
+3. **테스트 계정 재설정:**
+   ```javascript
+   // 웹 콘솔에서 테스트 계정 재생성
+   await func('create_test_users', {});
+   // 모든 테스트 계정이 최신 상태로 업데이트됨
+   ```
+
+**관련 함수:**
+- `login_with_firebase`: 테스트 계정으로 로그인
+- `create_post`: 테스트 계정으로 게시글 생성
+- `list_posts`: 생성된 게시글 확인
+
+**관련 스크립트:**
+- `create_posts.sh`: 테스트 계정으로 대량 게시글 생성
+
+---
+
 ## 추가 정보
 
 **API 호출 모범 사례:**
