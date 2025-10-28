@@ -113,30 +113,60 @@ const postComponent = {
 
                 <div class="d-flex gap-2 flex-column justify-content-end">
 
-                    <div class="post-select-wrapper justify-content-between">
-                        <div>
-                            <i class="fa-solid fa-earth-americas" v-if="edit.visibility === 'public'" style="font-size: 12px; margin-right: 4px;"></i>
-                            <i class="fa-solid fa-user-group" v-if="edit.visibility === 'friends'" style="font-size: 12px; margin-right: 4px;"></i>
-                            <i class="fa-solid fa-lock" v-if="edit.visibility === 'private'" style="font-size: 12px; margin-right: 4px;"></i>
-                            <select v-model="edit.visibility" class="">
-                                <option value="public">Public</option>
-                                <option value="friends">Friends</option>
-                                <option value="private">Only Me</option>
-                            </select>
-                        </div>
+                    <!-- Visibility Dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                type="button"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                            <i class="fa-solid fa-earth-americas" v-if="edit.visibility === 'public'" style="font-size: 12px;"></i>
+                            <i class="fa-solid fa-user-group" v-if="edit.visibility === 'friends'" style="font-size: 12px;"></i>
+                            <i class="fa-solid fa-lock" v-if="edit.visibility === 'private'" style="font-size: 12px;"></i>
+                            <span class="ms-1">{{ getVisibilityLabel(edit.visibility) }}</span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="#" @click.prevent="edit.visibility = 'public'">
+                                    <i class="fa-solid fa-earth-americas me-2"></i>
+                                    Public
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#" @click.prevent="edit.visibility = 'friends'">
+                                    <i class="fa-solid fa-user-group me-2"></i>
+                                    Friends
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#" @click.prevent="edit.visibility = 'private'">
+                                    <i class="fa-solid fa-lock me-2"></i>
+                                    Only Me
+                                </a>
+                            </li>
+                        </ul>
                     </div>
 
-                <!-- Edit Visibility -->
-                    <div v-if="edit.visibility === 'public'" class="post-select-wrapper">
-                        <i class="fa-solid fa-folder" style="font-size: 12px; margin-right: 4px;"></i>
-                        <select v-model="edit.category" class="">
-                            <optgroup v-for="root in categories" :key="root.display_name" :label="root.display_name">
-                                <option v-for="sub in root.categories" :key="sub.category" :value="sub.category">
-                                    {{ sub.name }}
-                                </option>
-                            </optgroup>
-                         </select>
-
+                    <!-- Category Dropdown (only show when visibility is public) -->
+                    <div v-if="edit.visibility === 'public'" class="dropdown dropup">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                type="button"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                                style="min-width: 150px;">
+                            <i class="fa-solid fa-folder me-1" style="font-size: 12px;"></i>
+                            {{ getCategoryLabel(edit.category) }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" style="max-width: 300px; max-height: 400px; overflow-y: auto;">
+                            <template v-for="root in categories" :key="root.display_name">
+                                <li><h6 class="dropdown-header">{{ root.display_name }}</h6></li>
+                                <li v-for="sub in root.categories" :key="sub.category">
+                                    <a class="dropdown-item" href="#" @click.prevent="edit.category = sub.category">
+                                        {{ sub.name }}
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                            </template>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -1313,6 +1343,40 @@ const postComponent = {
          */
         removeFile(index) {
             this.commentFiles.splice(index, 1);
+        },
+
+        /**
+         * Get visibility label for display
+         * @param {string} visibility - Visibility value (public, friends, private)
+         * @returns {string} Display label
+         */
+        getVisibilityLabel(visibility) {
+            const labels = {
+                'public': 'Public',
+                'friends': 'Friends',
+                'private': 'Only Me'
+            };
+            return labels[visibility] || 'Public';
+        },
+
+        /**
+         * Get category label for display
+         * @param {string} categoryValue - Category value
+         * @returns {string} Display label
+         */
+        getCategoryLabel(categoryValue) {
+            if (!categoryValue) return 'Select Category';
+
+            // Find category in categories array
+            for (const root of this.categories) {
+                if (root.categories) {
+                    const category = root.categories.find(c => c.category === categoryValue);
+                    if (category) {
+                        return category.name;
+                    }
+                }
+            }
+            return categoryValue;
         },
 
     },
