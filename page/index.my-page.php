@@ -73,7 +73,7 @@ $postList = [
 
 
 <script>
-    ready(() => {
+    firebase_ready(() => {
         // Vue 앱 초기화
         const app = Vue.createApp({
             components: {
@@ -87,7 +87,7 @@ $postList = [
 
                     <!-- 게시물 목록 -->
                     <div v-else>
-                        <article v-for="post in postList.posts" :key="post.post_id" class="post-card">
+                        <article v-for="post in postList.posts" :key="post.id" class="post-card">
                             <post-component
                                 :post="post"
                                 @post-deleted="handlePostDeleted"
@@ -143,7 +143,7 @@ $postList = [
                  */
                 handlePostDeleted(postId) {
                     console.log('Post deleted event received:', postId);
-                    const index = this.postList.posts.findIndex(p => p.post_id === postId);
+                    const index = this.postList.posts.findIndex(p => p.id === postId);
                     if (index !== -1) {
                         this.postList.posts.splice(index, 1);
                         console.log('Post removed from list. Remaining posts:', this.postList.posts.length);

@@ -400,7 +400,7 @@ const postComponent = {
                                 :show-progress-bar="false"
                                 upload-button-type="camera-icon"
                                 accept="image/*"
-                                @uploaded="handleFileUploaded"
+                                @uploaded="handleCommentFileUpload"
                                 @uploading-progress="handleUploadProgress">
                             </file-upload-component>
 
@@ -485,6 +485,7 @@ const postComponent = {
                 visibility: 'public',
                 category: 'story',
                 files: [],
+                newlyUploadedFiles: [], // Track newly uploaded files in this edit session
             },
             // 댓글/답글/수정 통합 모달 관련 데이터
             commentMode: 'comment', // 댓글 모드: 'comment' (최상위 댓글) | 'reply' (답글) | 'edit' (수정)
@@ -734,6 +735,8 @@ const postComponent = {
          * @param {number} index - Image index to remove
          */
         async removeImageFromEdit(index) {
+
+            console.log('Removing image at index:', index);
             // Confirm deletion
             const confirmed = confirm('Are you sure you want to remove this image?');
             if (!confirmed) {
@@ -743,15 +746,51 @@ const postComponent = {
             // Get the image URL to delete
             const imageUrl = this.edit.files[index];
 
-            // Call API to delete the image from the post
-            console.log('Deleting image from post:', imageUrl);
+            const isNewlyUploaded = this.edit.newlyUploadedFiles.includes(imageUrl);
+
+            console.log("Image URL:", imageUrl);
+            console.log("Is newly uploaded?", isNewlyUploaded);
+
+            // Case 1: 새로 업로드된 이미지 (아직 DB에 저장 안됨)
+            if (isNewlyUploaded) {
+                console.log('Deleting newly uploaded image from server:', imageUrl);
+
+                try {
+                    // 서버에서 파일 삭제
+                    const response = await axios.get(appConfig.api.file_delete, {
+                        params: { url: imageUrl }
+                    });
+
+                    console.log('Newly uploaded file deleted successfully:', response.data);
+
+                    // newlyUploadedFiles 배열에서 제거
+                    const newlyUploadedIndex = this.edit.newlyUploadedFiles.indexOf(imageUrl);
+                    if (newlyUploadedIndex !== -1) {
+                        this.edit.newlyUploadedFiles.splice(newlyUploadedIndex, 1);
+                    }
+
+                    // edit.files 배열에서 제거
+                    this.edit.files.splice(index, 1);
+
+                    console.log('Image removed, remaining files:', this.edit.files);
+                } catch (error) {
+                    console.error('Failed to delete newly uploaded file:', error);
+                    alert('Failed to delete image: ' + (error.message || 'Unknown error'));
+                }
+
+                return;
+            }
+
+            // Case 2: 기존 이미지 (DB에 저장되어 있음)
+            console.log('Deleting existing image from post:', imageUrl);
+
             const result = await func('delete_file_from_post', {
                 id: this.post.id,
                 url: imageUrl,
                 auth: true
             });
 
-            console.log('Image deleted successfully:', result);
+            console.log('Existing image deleted successfully:', result);
 
             // Remove the image from edit.files array (local state)
             this.edit.files.splice(index, 1);
@@ -779,6 +818,8 @@ const postComponent = {
             // 새로 업로드된 파일을 edit.files 배열에 추가
             if (data.url && !this.edit.files.includes(data.url)) {
                 this.edit.files.push(data.url);
+                // 새로 업로드된 파일로 추적 (취소 시 삭제용)
+                this.edit.newlyUploadedFiles.push(data.url);
             }
         },
 
@@ -815,6 +856,9 @@ const postComponent = {
                 // Clone the files array for editing
                 this.edit.files = this.post.files ? [...this.post.files] : [];
 
+                // Reset newly uploaded files tracking when entering edit mode
+                this.edit.newlyUploadedFiles = [];
+
                 // Scroll post into view with smooth animation and offset
                 this.$nextTick(() => {
                     if (this.$refs.postContainer) {
@@ -840,6 +884,7 @@ const postComponent = {
             this.edit.visibility = 'public';
             this.edit.category = 'story'; // 기본값: story
             this.edit.files = [];
+            this.edit.newlyUploadedFiles = []; // Reset newly uploaded files tracking
         },
 
         /**
@@ -867,12 +912,14 @@ const postComponent = {
             Object.assign(this.post, result);
             this.edit.enabled = false;
 
+            // Clear newly uploaded files tracking after successful save
+            this.edit.newlyUploadedFiles = [];
 
             alert('Post updated successfully!');
         },
 
         /**
-         * 사진 개수에 따른 Bootstrap column 클래스 반환
+         * 사진 개수에 따른 Bootstrap column 클래스 
          * @param {number} photoCount - 사진 개수
          * @returns {string} Bootstrap column 클래스
          */
@@ -1321,7 +1368,7 @@ const postComponent = {
          * 파일 업로드 이벤트 핸들러 (댓글/답글 공통)
          * @param {Object} data - { url: string, qr_code?: string }
          */
-        handleFileUploaded(data) {
+        handleCommentFileUpload(data) {
             console.log('File uploaded:', data.url);
             if (data.url && !this.commentFiles.includes(data.url)) {
                 this.commentFiles.push(data.url);

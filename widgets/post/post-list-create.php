@@ -389,7 +389,7 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
 
                     try {
                         // API 호출하여 서버에서 파일 삭제
-                        const response = await axios.get(appConfig.api.file_delete_url, {
+                        const response = await axios.get(appConfig.api.file_delete, {
                             params: {
                                 url: url
                             }
