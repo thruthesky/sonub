@@ -540,7 +540,7 @@ load_deferred_js('vue-components/user-search.component');
                         user.is_friend = true;
                         user.requesting = false;
 
-                        const userName = this.getUserFullName(user);
+
                         console.log(`친구 요청 성공: ${userName}`);
                         alert(`${userName}<?= t()->님에게_친구_요청을_보냈습니다 ?>`);
                     } catch (error) {
