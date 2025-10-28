@@ -12,12 +12,17 @@ class AppConfigApi
 
     /**
      * @var array<string, string> $endpoints
+     * 
+     * - Purpose: API 엔드포인트 URL 목록
+     *   - This list is used to store API endpoint URLs in the layout.php that provides the available endpoints. So the Vue.js can call the endpoints as
+     *      - `func(appConfig.api.list_users, {...})`.
      */
     public array $endpoints = [];
     public function __construct()
     {
 
         $this->thumbnail_url = '/thumbnail.php';
+
 
         $this->endpoints = [
             'create_comment' => 'Create a new comment under a post.',
