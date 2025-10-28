@@ -16,6 +16,9 @@ POST_COUNT=3
 TEST_USER="banana"
 TEST_PHONE="+11234567891"
 POST_CATEGORY=""
+CUSTOM_TITLE=""
+CUSTOM_CONTENT=""
+CUSTOM_IMAGE_COUNT=0
 
 # 실제 이미지 서비스 (고품질 무료 이미지)
 # - LoremFlickr: 카테고리별 실제 Flickr 이미지 (최적)
@@ -72,6 +75,9 @@ show_help() {
   --count N          생성할 게시글 수 (기본값: 3, 범위: 1-50)
   --user NAME        테스트 계정명 (기본값: banana)
   --category CAT     카테고리 지정 (기본값: 랜덤)
+  --title TITLE      사용자 정의 글 제목 (기본값: 자동 생성)
+  --content CONTENT  사용자 정의 글 내용 (기본값: 자동 생성)
+  --image-count N    첨부할 이미지 개수 (기본값: 0, 범위: 0-10)
   --api-url URL      API URL (기본값: https://sonub.com/api.php)
   -h, --help         이 도움말 표시
 
@@ -119,10 +125,20 @@ show_help() {
     - freelance (프리랜서)
 
 사용 예제:
+  # 테스트 글 생성 (자동 생성된 제목/내용)
   $0 --count 5
   $0 --count 10 --category discussion
+
+  # 실제 글 생성 (사용자 정의 제목/내용)
+  $0 --title '안녕하세요' --content '첫 게시글입니다' --image-count 2
+  $0 --count 3 --title '추천 게시글' --content '멋진 내용입니다' --category discussion --user apple
+
+  # 이미지 없는 글 생성 (기본값: --image-count 0)
+  $0 --count 5 --title '텍스트만' --category qna --user cherry
+
+  # 로컬 서버 테스트
   $0 --count 3 --user apple --api-url 'https://local.sonub.com/api.php'
-  $0 --count 5 --category qna --user cherry --api-url 'https://local.sonub.com/api.php'
+  $0 --title '로컬 테스트' --content '로컬 서버에 글을 올립니다' --image-count 1 --api-url 'https://local.sonub.com/api.php'
 EOF
     exit 0
 }
@@ -147,6 +163,18 @@ while [[ $# -gt 0 ]]; do
             ;;
         --category)
             POST_CATEGORY="$2"
+            shift 2
+            ;;
+        --title)
+            CUSTOM_TITLE="$2"
+            shift 2
+            ;;
+        --content)
+            CUSTOM_CONTENT="$2"
+            shift 2
+            ;;
+        --image-count)
+            CUSTOM_IMAGE_COUNT="$2"
             shift 2
             ;;
         --api-url)
@@ -191,6 +219,12 @@ if ! [[ "$POST_COUNT" =~ ^[0-9]+$ ]] || [ "$POST_COUNT" -lt 1 ] || [ "$POST_COUN
     exit 1
 fi
 
+# 이미지 개수 검증
+if ! [[ "$CUSTOM_IMAGE_COUNT" =~ ^[0-9]+$ ]] || [ "$CUSTOM_IMAGE_COUNT" -lt 0 ] || [ "$CUSTOM_IMAGE_COUNT" -gt 10 ]; then
+    echo "오류: 이미지 개수는 0 이상 10 이하여야 합니다"
+    exit 1
+fi
+
 # 카테고리 검증
 if [ -n "$POST_CATEGORY" ]; then
     case "$POST_CATEGORY" in
@@ -228,6 +262,9 @@ echo "  생성할 게시글 수: $POST_COUNT"
 echo "  테스트 사용자: $TEST_USER"
 echo "  전화번호: $TEST_PHONE"
 [ -n "$POST_CATEGORY" ] && echo "  카테고리: $POST_CATEGORY"
+[ -n "$CUSTOM_TITLE" ] && echo "  글 제목: $CUSTOM_TITLE"
+[ -n "$CUSTOM_CONTENT" ] && echo "  글 내용: $CUSTOM_CONTENT"
+echo "  이미지 개수: $CUSTOM_IMAGE_COUNT개"
 echo ""
 
 # 1단계: 로그인 및 세션 쿠키 획득
@@ -282,8 +319,9 @@ for i in $(seq 1 "$POST_COUNT"); do
         CATEGORY="${CATEGORIES[$CATEGORY_INDEX]}"
     fi
 
-    # 이미지 개수 결정 (1-3개, 더 현실적)
-    IMAGE_COUNT=$((1 + (i % 3)))
+    # 이미지 개수 결정
+    # 사용자가 --image-count를 지정하면 그 값 사용, 아니면 기본값 0
+    IMAGE_COUNT="$CUSTOM_IMAGE_COUNT"
 
     # 카테고리에 맞는 이미지 키워드 획득
     IMAGE_KEYWORDS=$(get_category_image_keywords "$CATEGORY")
@@ -331,8 +369,18 @@ for i in $(seq 1 "$POST_COUNT"); do
     fi
 
     # 게시글 제목 및 내용 생성
-    TITLE="게시글 $i - $(date +'%Y-%m-%d %H:%M:%S')"
-    CONTENT="자동 생성된 테스트 게시글입니다.\n\n카테고리: $CATEGORY\n이미지: $IMAGE_COUNT개"
+    # 사용자 정의 제목/내용이 있으면 그걸 사용, 없으면 자동 생성
+    if [ -n "$CUSTOM_TITLE" ]; then
+        TITLE="$CUSTOM_TITLE"
+    else
+        TITLE="게시글 $i - $(date +'%Y-%m-%d %H:%M:%S')"
+    fi
+
+    if [ -n "$CUSTOM_CONTENT" ]; then
+        CONTENT="$CUSTOM_CONTENT"
+    else
+        CONTENT="자동 생성된 테스트 게시글입니다.\n\n카테고리: $CATEGORY\n이미지: $IMAGE_COUNT개"
+    fi
 
     # 특수문자 이스케이프
     TITLE_ESCAPED=$(escape_json "$TITLE")

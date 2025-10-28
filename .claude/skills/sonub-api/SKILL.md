@@ -34,6 +34,7 @@ Sonub는 **API First** 설계 철학을 따르는 웹 애플리케이션입니�
     - [인증 (Authentication) - 2개 함수](#인증-authentication---2개-함수)
   - [Scripts - 명령줄 API 호출 도구](#scripts---명령줄-api-호출-도구)
     - [빠른 시작](#빠른-시작)
+    - [실제 글 생성 (Real Post Creation)](#실제-글-생성-real-post-creation)
     - [상세 문서](#상세-문서)
   - [실전 예제 (Practical Examples)](#실전-예제-practical-examples)
     - [내가 쓴 글 삭제하기](#내가-쓴-글-삭제하기)
@@ -322,6 +323,50 @@ sudo apt-get install jq  # Ubuntu/Debian
 # 게시글 목록 조회
 ./list_posts.sh --category discussion --limit 30
 ```
+
+### 실제 글 생성 (Real Post Creation)
+
+`create_posts.sh` 스크립트는 단순한 테스트 글 생성뿐만 아니라, **사용자 정의 제목, 내용, 이미지**를 지정하여 **실제 게시글을 생성**할 수 있습니다.
+
+**사용자 정의 옵션:**
+
+- **`--title`**: 사용자 정의 글 제목 (기본값: 자동 생성)
+- **`--content`**: 사용자 정의 글 내용 (기본값: 자동 생성)
+- **`--image-count`**: 첨부할 이미지 개수 (기본값: 0, 범위: 0-10)
+
+**실제 글 생성 예제:**
+
+```bash
+# 1. 이미지 없는 간단한 글 생성
+./create_posts.sh --title "안녕하세요" --content "첫 번째 게시글입니다"
+
+# 2. 이미지 2개 포함 글 생성
+./create_posts.sh --title "멋진 경험" --content "오늘은 정말 좋은 하루였습니다" --image-count 2
+
+# 3. 특정 카테고리에 글 생성
+./create_posts.sh --title "요리 팁" --content "맛있는 요리 만드는 법" --category cooking --image-count 1
+
+# 4. 여러 글을 동일한 제목/내용으로 생성 (배치 처리)
+./create_posts.sh --count 5 --title "공지사항" --content "중요한 소식입니다" --image-count 1
+
+# 5. 특정 사용자 계정으로 글 생성
+./create_posts.sh --title "마이 페이지" --content "내 일상을 공유합니다" --user apple --image-count 3
+
+# 6. 로컬 서버에서 테스트
+./create_posts.sh --title "로컬 테스트" --content "로컬 서버에서 글을 올립니다" --image-count 1 --api-url 'https://local.sonub.com/api.php'
+```
+
+**이미지 처리:**
+
+- `--image-count 0` (기본값): 이미지 없음
+- `--image-count 1`: 1개 이미지 첨부
+- `--image-count 2-10`: 2-10개 이미지 첨부
+
+이미지는 카테고리에 맞는 LoremFlickr 서비스에서 무료로 제공되므로, 별도의 이미지 업로드 없이 자동으로 고품질 이미지가 첨부됩니다.
+
+**테스트 계정 목록:**
+
+script에서 사용 가능한 테스트 계정: `apple`, `banana`, `cherry`, `durian`, `elderberry`, `fig`, `grape`, `honeydew`, `jackfruit`, `kiwi`, `lemon`, `mango`
 
 ### 상세 문서
 
