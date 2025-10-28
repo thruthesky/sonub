@@ -11,7 +11,7 @@ if (!$post_id) {
     ]));
 }
 
-$post = get_post(post_id: $post_id, with_user: true, with_comments: false);
+$post = get_post(["post_id" => $post_id, "with_user" => true, "with_comment" => true]);
 
 if (!$post) {
     error('post-not-found', tr([

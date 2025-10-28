@@ -41,7 +41,12 @@ const postComponent = {
                 <div class="small" style="font-size: 13px; color: #65676b; line-height: 1.3;">
                     {{ formatDate(post.created_at) }} ·
                     <span class="badge bg-secondary me-1">{{ post.visibility || 'public' }}</span>
-                    <span class="badge bg-secondary me-1">{{ post.category }}</span>
+                    <span
+                      v-if="post.visibility !== 'private' && post.visibility !== 'friends'"
+                      class="badge bg-secondary me-1"
+                >
+                      {{ post.category }}
+                    </span>                
                     <span v-if="edit.enabled" class="badge bg-warning bg-opacity-75 text-dark">
                         <i class="fa-solid fa-pen-to-square me-1"></i>Editing
                     </span>
@@ -846,7 +851,6 @@ const postComponent = {
                 this.edit.visibility = this.post.visibility || 'public';
 
                 // 카테고리 설정: post의 카테고리가 있으면 사용, 없으면 'story' 기본값
-                let category = this.post.category || 'story';
                 // 카테고리가 유효한지 확인 (옵션 목록에 존재하는지)
                 // const categoryExists = Array.isArray(this.categories) && this.categories.some(root =>
                 //     Array.isArray(root.categories) && root.categories.some(sub => sub.category === category)

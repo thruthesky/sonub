@@ -26,7 +26,6 @@ class AppConfigApi
 
         $this->endpoints = [
             'delete_file_from_post' => 'Delete a uploaded file from the post',
-            'request_friend' => 'Requesting a friend to the another user',
             'get_posts_from_feed_entries' => 'Getting a post from the feed',
             'delete_comment' => 'Delete a comment',
             'get_comments' => "Get more comments",
@@ -43,6 +42,10 @@ class AppConfigApi
             'update_my_profile' => 'Update the profile of the currently logged-in user.',
             'update_comment' => 'Update an existing comment.',
             'update_post' => 'Update an existing post.',
+            'request_friend' => 'Requesting a friend to the another user',
+            'reject_friend' => 'Rejecting a friend request',
+            'accept_friend' => 'Accepting the friend request',
+            'remove_friend' => "Removing the friendship"
         ];
     }
 
