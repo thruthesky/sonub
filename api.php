@@ -13,12 +13,16 @@
  * 
  * 
  */
+
 const API_CALL = true;
 const ROOT_DIR = __DIR__;
+
 include_once ROOT_DIR . '/etc/includes.php';
-header('Content-Type: application/json; charset=utf-8');
+
 
 debug_log('API 호출 시작', http_params());
+
+header('Content-Type: application/json; charset=utf-8');
 
 $func_name = http_params('func');
 if ($func_name === null) {

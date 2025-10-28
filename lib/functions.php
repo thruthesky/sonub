@@ -117,14 +117,21 @@ function is_cli(): bool
  */
 function error(string $code = 'unknown', string $message = '', array $data = [], int $response_code = 400): void
 {
+    $ret = [
+        'error_code' => $code,
+        'error_message' => $message,
+        'error_data' => $data,
+        'error_response_code' => $response_code,
+    ];
+
     debug_log(
         '🚨 API 에러 발생',
-        ['code' => $code],
-        ['message' => $message],
-        ['data' => $data],
-        ['response_code' => $response_code]
+        ...$ret
     );
-    throw new ApiException($code, $message, $data, $response_code);
+    // API 에러 응답 전송
+    http_response_code($response_code);
+    echo json_encode($ret);
+    exit;
 }
 
 
