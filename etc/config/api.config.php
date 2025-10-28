@@ -20,10 +20,14 @@ class AppConfigApi
         $this->thumbnail_url = '/thumbnail.php';
 
         $this->endpoints = [
-            'file_upload' => '파일 업로드',
-            'file_delete' => '파일 삭제',
-            'get_post' => '게시물 가져오기. 게시글 하나를 가져올 때 사용합니다. 추가적으로 with_users: boolean, with_comments: boolean 옵션으로 사용자 정보와 코멘트 정보를 같이 올 수 있습니다.',
+            'create_comment' => 'Create a new comment under a post.',
+            'create_post' => 'Create a new post.',
+            'file_upload' => 'File upload',
+            'file_delete' => 'File delete',
+            'get_post' => 'Get a post. This is used to retrieve a single post. Additionally, the with_users: boolean and with_comments: boolean options can be used to include user information and comment information.',
             'update_my_profile' => 'Update the profile of the currently logged-in user.',
+            'update_comment' => 'Update an existing comment.',
+            'update_post' => 'Update an existing post.',
         ];
     }
 
@@ -33,8 +37,8 @@ class AppConfigApi
             'thumbnail_url' => $this->thumbnail_url,
         ];
 
-        foreach ($this->endpoints as $v) {
-            $endpoints[$v] = '/api.php?func=' . $v;
+        foreach ($this->endpoints as $k => $v) {
+            $endpoints[$k] = '/api.php?func=' . $k;
         }
 
         return $endpoints;
