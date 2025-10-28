@@ -133,3 +133,25 @@ function http_param(string $name = '', mixed $default_value = null): mixed
 {
     return http_params($name) ?? $default_value;
 }
+
+
+/**
+ * API 내부 함수 호출 시 사용할 HTTP 파라미터 배열을 반환합니다.
+ *
+ * inter_params()는 http_params()와 동일한 기능을 수행하며,
+ * API 내부 함수 호출 시 모든 HTTP 파라미터를 배열 형태로 반환합니다.
+ *
+ * **예제:**
+ * ```php
+ * $params = inter_params();
+ * $category = $params['category'] ?? 'default-category';
+ * ```
+ *
+ * @return array 모든 HTTP 파라미터를 포함하는 연관 배열
+ *
+ * @see http_params() HTTP 입력에서 값을 조회
+ */
+function inter_params(): array
+{
+    return http_params();
+}

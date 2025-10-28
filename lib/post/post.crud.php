@@ -28,12 +28,9 @@ declare(strict_types=1);
  *     echo $row['title'];
  * }
  */
-function get_post(array $input): ?PostModel
+function get_post(int $post_id, bool $with_user = false, bool $with_comments = false): ?PostModel
 {
     $pdo = pdo();
-    $post_id = (int)($input['post_id'] ?? 0);
-    $with_user = (bool)($input['with_user'] ?? false);
-    $with_comments = (bool)($input['with_comments'] ?? false);
 
     if ($with_user) {
         $sql = "SELECT p.*, u.first_name, u.photo_url, u.firebase_uid
@@ -58,6 +55,30 @@ function get_post(array $input): ?PostModel
 
     return new PostModel($row);
 }
+
+
+
+/**
+ * ID로 게시글 조회
+ *
+ * 게시글 ID를 받아 해당 게시글을 데이터베이스에서 조회합니다.
+ * Prepared statement를 사용하여 SQL 인젝션을 방지합니다.
+ *
+ * @param int $id 조회할 게시글 ID
+ * @return PostModel|null 게시글이 존재하면 PostModel 객체 반환, 없으면 null 반환
+ *
+ * @example
+ * $post = get_post_by_id(123);
+ * if ($post) {
+ *     echo $post->title;
+ * }
+ */
+function get_post_by_id(int $id): ?PostModel
+{
+    return get_post(post_id: $id);
+}
+
+
 
 /**
  * 게시글 생성 함수 (Fan-out on Write 자동 적용)
@@ -296,7 +317,7 @@ function create_post(array $input)
                 // 이렇게 하면 데이터베이스에 저장된 실제 값(기본값 등)과
                 // 작성자 정보(first_name, photo_url, firebase_uid)를 포함한
                 // 완전한 PostModel 객체를 얻을 수 있습니다.
-                return get_post(['post_id' => $id, 'with_user' => true]);
+                return get_post(post_id: $id, with_user: true);
             }
         }
 
@@ -478,7 +499,7 @@ function update_post(array $input)
         delete_post_from_feed_entries($post_id);
     }
 
-    return get_post(['post_id' => $post_id, 'with_user' => true]);
+    return get_post(post_id: $post_id, with_user: true);
 }
 
 
@@ -505,79 +526,6 @@ function update_post_comment_count(int $post_id): void
 
     $stmt = $db->prepare($sql);
     $stmt->execute([$post_id, $post_id]);
-}
-
-
-
-/**
- * ID로 게시글 조회
- *
- * 게시글 ID를 받아 해당 게시글을 데이터베이스에서 조회합니다.
- * Prepared statement를 사용하여 SQL 인젝션을 방지합니다.
- *
- * @param int $id 조회할 게시글 ID
- * @return PostModel|null 게시글이 존재하면 PostModel 객체 반환, 없으면 null 반환
- *
- * @example
- * $post = get_post_by_id(123);
- * if ($post) {
- *     echo $post->title;
- * }
- */
-function get_post_by_id(int $id): ?PostModel
-{
-    // ========================================================================
-    // 1단계: 데이터베이스 연결
-    // ========================================================================
-    // pdo()로 PDO 인스턴스를 가져옵니다.
-    $db = pdo();
-
-    // ========================================================================
-    // 2단계: Prepared Statement 준비
-    // ========================================================================
-    // SELECT 쿼리도 Prepared Statement를 사용합니다.
-    // 이유:
-    // 1. SQL 인젝션 방지 (입력값이 쿼리 구조를 변경할 수 없음)
-    // 2. 타입 안정성 (PDO::PARAM_INT로 정수임을 보장)
-    // 3. 코드 가독성 향상
-    $stmt = $db->prepare('SELECT * FROM posts WHERE id = :id');
-
-    // ========================================================================
-    // 3단계: 값 바인딩
-    // ========================================================================
-    // :id 플레이스홀더에 실제 ID 값을 바인딩합니다.
-    // PDO::PARAM_INT로 정수 타입임을 명시합니다.
-    //
-    // 보안 효과:
-    // - 만약 $id가 "1 OR 1=1" 같은 문자열이어도 정수로 변환되어
-    //   SQL 인젝션 공격이 불가능합니다.
-    $stmt->bindValue(':id', $id, PDO::PARAM_INT);
-
-    // ========================================================================
-    // 4단계: 쿼리 실행 및 결과 처리
-    // ========================================================================
-    if ($stmt->execute()) {
-        // fetch() 메서드:
-        // - 쿼리 결과에서 한 행을 가져옵니다.
-        // - PDO::FETCH_ASSOC: 연관 배열로 반환 (컬럼명이 키)
-        //   예: ['id' => 1, 'title' => '제목', 'content' => '내용', ...]
-        //
-        // 다른 fetch 모드:
-        // - PDO::FETCH_NUM: 숫자 인덱스 배열
-        // - PDO::FETCH_OBJ: 객체로 반환
-        // - PDO::FETCH_CLASS: 특정 클래스의 인스턴스로 반환
-        $data = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        // 데이터가 존재하면 PostModel 객체 생성 후 반환
-        if ($data) {
-            // PostModel 생성자에 데이터베이스 행 데이터를 전달합니다.
-            // PostModel은 배열 데이터를 받아 프로퍼티로 변환합니다.
-            return new PostModel($data);
-        }
-    }
-
-    // 실행 실패 또는 데이터가 없으면 null 반환
-    return null;
 }
 
 

@@ -28,14 +28,17 @@
 </div>
 
 <script>
-    async function login_as(user_id) {
-        const user = await login_email_password(user_id + '@test.com', '12345a,*');
-        await func('login_with_firebase', {
-            firebase_uid: user.uid,
-            phone_number: user.phoneNumber || '12345a,*',
-            alertOnError: true,
-        });
-        // 로그인 성공 후 리다이렉션
-        window.location.href = '<?= href()->home ?>';
+    function login_as(user_id) {
+        firebase_ready(async () => {
+
+            const user = await login_email_password(user_id + '@test.com', '12345a,*');
+            await func('login_with_firebase', {
+                firebase_uid: user.uid,
+                phone_number: user.phoneNumber || '12345a,*',
+                alertOnError: true,
+            });
+            // 로그인 성공 후 리다이렉션
+            window.location.href = '<?= href()->home ?>';
+        })
     }
 </script>

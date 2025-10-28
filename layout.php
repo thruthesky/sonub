@@ -86,7 +86,7 @@ if (file_exists($module_path)) {
                     appId: "1:406320255657:web:79b39117a353878b8e8fb8",
                     measurementId: "G-3XX2YB4JV0"
                 });
-                // console.log("---> Firebase 초기화 됨");
+                console.log("---> Firebase is initialized now.");
                 callback();
             })
         }

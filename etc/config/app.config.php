@@ -1,23 +1,11 @@
 <?php
 
-// etc/config/app.config.php
-class AppConfigApi
-{
-    public function __construct(
-        public string $file_upload_url,
-        public string $file_delete_url,
-        public string $thumbnail_url = '/thumbnail.php'
-    ) {}
+/**
+ * etc/config/app.config.php
+ */
 
-    public function toArray(): array
-    {
-        return [
-            'file_upload_url' => $this->file_upload_url,
-            'file_delete_url' => $this->file_delete_url,
-            'thumbnail_url' => $this->thumbnail_url,
-        ];
-    }
-}
+
+include_once __DIR__ . '/api.config.php';
 
 class CategoryConfig
 {
@@ -181,10 +169,7 @@ function config(): AppConfig
     if ($config === null) {
         $config = new AppConfig();
         $config->login = login();
-        $config->api = new AppConfigApi(
-            file_upload_url: '/api.php?func=file_upload',
-            file_delete_url: '/api.php?func=file_delete'
-        );
+        $config->api = new AppConfigApi();
         $config->upload_path = get_file_upload_path();
         $config->test = new AppConfigTest(
             url: 'https://local.sonub.com'
