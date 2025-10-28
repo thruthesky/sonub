@@ -115,8 +115,15 @@ function is_cli(): bool
  * );
  * ```
  */
-function error(string $code = 'unknown', string $message = '', array $data = [], int $response_code = 400): never
+function error(string $code = 'unknown', string $message = '', array $data = [], int $response_code = 400): void
 {
+    debug_log(
+        '🚨 API 에러 발생',
+        ['code' => $code],
+        ['message' => $message],
+        ['data' => $data],
+        ['response_code' => $response_code]
+    );
     throw new ApiException($code, $message, $data, $response_code);
 }
 
@@ -216,5 +223,94 @@ function error_if_empty(mixed $value, string $code,  string $message = 'Value is
 {
     if (empty($value)) {
         error($code, $message, $data, response_code: 401);
+    }
+}
+
+
+/**
+ * 디버그 정보를 파일에 기록하는 함수
+ *
+ * 문자열, 배열, 객체 등 다양한 데이터 타입을 지원하며, 여러 파라미터를 동시에 기록할 수 있습니다.
+ * 모든 파라미터는 JSON 포맷으로 **한 라인씩** ./var/debug.log 파일에 기록됩니다.
+ *
+ * 중요: 타임스탐프는 **현재 세션(스크립트 실행)에서 단 한 번만** 파일의 맨 앞에 기록됩니다.
+ * 이후 모든 debug_log() 호출의 각 파라미터는 JSON 포맷으로 한 라인씩 기록됩니다.
+ * 이를 통해 로그 파일이 깔끔하고 읽기 편하고 파싱 가능하게 유지됩니다.
+ *
+ * Rest operator(...)를 사용하여 가변 개수의 파라미터를 받으며,
+ * 각 파라미터는 JSON 포맷의 한 라인으로 기록됩니다.
+ *
+ * @param mixed ...$args 기록할 데이터들. 문자열, 배열, 객체 등 어떤 타입이든 가능하며, 여러 개를 한 번에 전달 가능합니다.
+ *
+ * @return void
+ *
+ * @example 단일 문자열 로깅
+ * ```php
+ * debug_log('API 호출 시작');
+ * // 파일 내용:
+ * // [2025-10-28 04:20:01]
+ * // "API 호출 시작"
+ * ```
+ *
+ * @example 여러 파라미터 로깅 (각 파라미터는 한 라인씩 JSON 포맷)
+ * ```php
+ * debug_log('API 호출 시작', true, ['user_id' => 123]);
+ * // 파일 내용:
+ * // [2025-10-28 04:20:01]
+ * // "API 호출 시작"
+ * // true
+ * // {"user_id":123}
+ * ```
+ *
+ * @example 배열 로깅
+ * ```php
+ * $params = ['user_id' => 123, 'action' => 'login'];
+ * debug_log('파라미터:', $params);
+ * // 배열이 JSON 한 라인으로 출력됨
+ * // "파라미터:"
+ * // {"user_id":123,"action":"login"}
+ * ```
+ *
+ * @example 객체 로깅
+ * ```php
+ * $data = (object) ['name' => '테스트', 'value' => 42];
+ * debug_log('사용자 데이터:', $data);
+ * // 객체가 JSON 한 라인으로 출력됨
+ * // "사용자 데이터:"
+ * // {"name":"테스트","value":42}
+ * ```
+ */
+function debug_log(mixed ...$args): void
+{
+    // 루트 폴더의 ./var/debug.log 파일에 기록
+    $log_file = ROOT_DIR . '/var/debug.log';
+
+    // 정적 변수: 세션 타임스탐프와 기록 여부 추적
+    // - $session_timestamp: 세션 시작 시의 타임스탐프 저장
+    // - $timestamp_written: 타임스탐프가 파일에 기록되었는지 추적
+    static $session_timestamp = null;
+    static $timestamp_written = false;
+
+    // 세션 첫 호출 시 타임스탐프 생성
+    if ($session_timestamp === null) {
+        $session_timestamp = date('Y-m-d H:i:s');
+    }
+
+    // 세션 처음 한 번만 타임스탐프를 파일에 기록
+    if (!$timestamp_written) {
+        file_put_contents($log_file, "[$session_timestamp]\n", FILE_APPEND);
+        $timestamp_written = true;
+    }
+
+    // rest operator로 받은 모든 파라미터를 순회하며 한 라인씩 기록
+    foreach ($args as $data) {
+        // JSON 포맷으로 변환하여 한 라인으로 기록
+        // JSON_UNESCAPED_UNICODE: 한글 등 유니코드 문자를 그대로 표시
+        // JSON_UNESCAPED_SLASHES: 슬래시를 이스케이프하지 않음
+        $json_data = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        // 타임스탐프 없이 JSON 데이터만 기록 (한 라인)
+        $log_entry = "$json_data\n";
+        file_put_contents($log_file, $log_entry, FILE_APPEND);
     }
 }

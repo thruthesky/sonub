@@ -376,7 +376,8 @@ if (!$user) {
                             last_name: this.form.lastName.trim(),
                             middle_name: this.form.middleName.trim(),
                             gender: this.form.gender,
-                            birthday: birthday
+                            birthday: birthday,
+                            alertOnError: true
                         });
 
                         // Bootstrap Toast 표시
@@ -384,9 +385,7 @@ if (!$user) {
                         const toast = new bootstrap.Toast(toastElement);
                         toast.show();
 
-                    } catch (error) {
-                        console.error('프로필 업데이트 오류:', error);
-                        this.errorMessage = error.message || '프로필 업데이트 중 오류가 발생했습니다.';
+
                     } finally {
                         this.loading = false;
                     }

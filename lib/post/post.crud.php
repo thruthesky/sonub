@@ -28,9 +28,12 @@ declare(strict_types=1);
  *     echo $row['title'];
  * }
  */
-function get_post(int $post_id, bool $with_user = false, bool $with_comments = false): ?PostModel
+function get_post(array $input): ?PostModel
 {
     $pdo = pdo();
+    $post_id = (int)($input['post_id'] ?? 0);
+    $with_user = (bool)($input['with_user'] ?? false);
+    $with_comments = (bool)($input['with_comments'] ?? false);
 
     if ($with_user) {
         $sql = "SELECT p.*, u.first_name, u.photo_url, u.firebase_uid
@@ -57,7 +60,6 @@ function get_post(int $post_id, bool $with_user = false, bool $with_comments = f
 }
 
 
-
 /**
  * ID로 게시글 조회
  *
@@ -75,10 +77,8 @@ function get_post(int $post_id, bool $with_user = false, bool $with_comments = f
  */
 function get_post_by_id(int $id): ?PostModel
 {
-    return get_post(post_id: $id);
+    return get_post(['post_id' => $id]);
 }
-
-
 
 /**
  * 게시글 생성 함수 (Fan-out on Write 자동 적용)
@@ -317,7 +317,7 @@ function create_post(array $input)
                 // 이렇게 하면 데이터베이스에 저장된 실제 값(기본값 등)과
                 // 작성자 정보(first_name, photo_url, firebase_uid)를 포함한
                 // 완전한 PostModel 객체를 얻을 수 있습니다.
-                return get_post(post_id: $id, with_user: true);
+                return get_post(['post_id' => $id, 'with_user' => true]);
             }
         }
 
@@ -499,7 +499,7 @@ function update_post(array $input)
         delete_post_from_feed_entries($post_id);
     }
 
-    return get_post(post_id: $post_id, with_user: true);
+    return get_post(['post_id' => $post_id, 'with_user' => true]);
 }
 
 
@@ -527,6 +527,9 @@ function update_post_comment_count(int $post_id): void
     $stmt = $db->prepare($sql);
     $stmt->execute([$post_id, $post_id]);
 }
+
+
+
 
 
 /**

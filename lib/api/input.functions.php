@@ -136,22 +136,47 @@ function http_param(string $name = '', mixed $default_value = null): mixed
 
 
 /**
- * API 내부 함수 호출 시 사용할 HTTP 파라미터 배열을 반환합니다.
+ * ApiConfig 에서 허용된 함수 목록을 조회하여 요청된 함수가 허용되는지 확인합니다.
  *
- * inter_params()는 http_params()와 동일한 기능을 수행하며,
- * API 내부 함수 호출 시 모든 HTTP 파라미터를 배열 형태로 반환합니다.
+ * HTTP 파라미터 'func'에서 요청된 함수명을 가져와서,
+ * 설정 파일에서 허용된 함수 목록에 있는지 확인합니다.
+ *
+ * 함수 검증 결과는 debug_log()에 기록됩니다.
  *
  * **예제:**
  * ```php
- * $params = inter_params();
- * $category = $params['category'] ?? 'default-category';
+ * // 허용된 함수 요청 (통과)
+ * inject_http_input('func', 'get_post');
+ * check_if_allowed_functions();  // 통과
+ *
+ * // 허용되지 않은 함수 요청 (403 에러)
+ * inject_http_input('func', 'undefined-function');
+ * check_if_allowed_functions();  // ApiException throw
  * ```
  *
- * @return array 모든 HTTP 파라미터를 포함하는 연관 배열
+ * @throws ApiException 요청된 함수가 허용되지 않은 경우 (403)
  *
- * @see http_params() HTTP 입력에서 값을 조회
+ * @return void
  */
-function inter_params(): array
+function check_if_allowed_functions(): void
 {
-    return http_params();
+    $func_name = http_param('func');
+    $user_funcs = config()->api->allowed_functions();
+
+    // 함수 검증 결과를 debug_log()에 기록
+    debug_log(
+        '🔐 API 함수 검증',
+        ['requested_func' => $func_name],
+        ['allowed_funcs' => $user_funcs],
+        ['is_allowed' => in_array($func_name, $user_funcs)]
+    );
+
+    // 허용되지 않은 함수이면 403 에러 반환
+    if (!in_array($func_name, $user_funcs)) {
+        error(
+            code: "function-not-allowed",
+            message: "허용되지 않은 함수입니다: $func_name",
+            response_code: 403
+        );
+    }
 }

@@ -1,5 +1,8 @@
 <?php
 
+
+include_once ROOT_DIR . '/etc/error.handler.php';  // 에러 핸들러 등록
+
 include_once ROOT_DIR . '/lib/defines.php';
 include_once ROOT_DIR . '/etc/app.version.php';
 include_once ROOT_DIR . '/lib/ApiException.php';
@@ -11,6 +14,8 @@ include_once ROOT_DIR . '/lib/l10n/t.php';
 include_once ROOT_DIR . '/lib/l10n/texts.php';
 include_once ROOT_DIR . '/lib/l10n/language.functions.php';
 include_once ROOT_DIR . '/lib/api/input.functions.php';
+
+
 
 // 데이터베이스 설정 로드
 if (is_dev_computer()) {
@@ -49,4 +54,3 @@ include_once ROOT_DIR . '/lib/error/error.functions.php';
 include_once ROOT_DIR . '/lib/test/test.functions.php';
 include_once ROOT_DIR . '/lib/test/test-api-scalar-return.functions.php';
 include_once ROOT_DIR . '/lib/html/html-snippets.functions.php';
-include_once ROOT_DIR . '/etc/error.handler.php';  // 에러 핸들러 등록

@@ -372,7 +372,7 @@ window.FileUploadComponent = {
                 this.uploadProgress = 0;
 
                 // Axios로 파일 업로드
-                const response = await axios.post(appConfig.api.file_upload_url, formData, {
+                const response = await axios.post(appConfig.api.file_upload, formData, {
                     onUploadProgress: (progressEvent) => {
                         if (progressEvent.lengthComputable) {
                             this.uploadProgress = Math.round((progressEvent.loaded / progressEvent.total) * 100);

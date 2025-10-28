@@ -32,6 +32,16 @@ async function func(name, params = {}) {
         params.idToken = await firebase.auth().currentUser.getIdToken(true);
         delete params.auth;
     }
+
+    console.log('API 호출:', params);
+    // Get URL 표시
+    const url = new URL('/api.php', window.location.origin);
+    url.searchParams.append('func', name);
+    for (const [key, value] of Object.entries(params)) {
+        url.searchParams.append(key, value);
+    }
+    console.log('API 호출 URL:', url.toString());
+
     try {
         const res = await axios.post('/api.php', params);
         if (res.data.error_code) {

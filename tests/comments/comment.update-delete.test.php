@@ -211,7 +211,7 @@ try {
     echo "🧪 테스트 9: 정상적인 댓글 삭제\n";
 
     // 삭제 전 댓글 수 확인
-    $post_before_delete = get_post(['post_id' => $post->id]);
+    $post_before_delete = get_post(post_id: $post->id);
     $comment_count_before = $post_before_delete->comment_count;
     echo "   삭제 전 게시글의 댓글 수: {$comment_count_before}\n";
 
@@ -242,7 +242,7 @@ try {
     echo "🧪 테스트 10: 댓글 삭제 후 comment_count 자동 업데이트 확인\n";
 
     // 삭제 후 댓글 수 확인
-    $post_after_delete = get_post(['post_id' => $post->id]);
+    $post_after_delete = get_post(post_id: $post->id);
     $comment_count_after = $post_after_delete->comment_count;
     echo "   삭제 후 게시글의 댓글 수: {$comment_count_after}\n";
 

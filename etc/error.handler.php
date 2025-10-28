@@ -2,6 +2,7 @@
 // /www/etc/php-error-to-alert.php
 
 
+
 // 개발용: 브라우저에 PHP 기본 에러화면이 나오지 않게
 ini_set('display_errors', '0');     // ★ 중요: 이게 켜져 있으면 PHP의 기본 Fatal 메시지가 먼저 출력됨
 ini_set('log_errors', '1');         // 에러는 로그로 남기기
@@ -17,7 +18,28 @@ set_error_handler(function ($errno, $errstr, $errfile, $errline) {
     // 에러가 @로 억제된 경우 무시
     if (!(error_reporting() & $errno)) return false;
 
+
+
     $msg = "[PHP Error:$errno] $errstr in $errfile:$errline";
+
+    // 디버그 로그에 에러 정보 기록
+    // 에러 타입, 메시지, 파일, 라인을 각각 별도의 로그 라인으로 기록
+    $error_type = match ($errno) {
+        E_WARNING => 'E_WARNING',
+        E_NOTICE => 'E_NOTICE',
+        E_DEPRECATED => 'E_DEPRECATED',
+        E_USER_ERROR => 'E_USER_ERROR',
+        E_USER_WARNING => 'E_USER_WARNING',
+        E_USER_NOTICE => 'E_USER_NOTICE',
+        default => "Error($errno)",
+    };
+
+    debug_log(
+        '⚠️ PHP 에러 발생',
+        ['type' => $error_type, 'code' => $errno],
+        ['message' => $errstr],
+        ['file' => $errfile, 'line' => $errline]
+    );
 
     // HTML 에러 메시지 표시
     echo "<div class='alert alert-danger m-3 font-monospace shadow-sm'>";
@@ -38,10 +60,6 @@ register_shutdown_function(function () {
     $e = error_get_last();
     if (!$e) return;
 
-    if (defined('API_CALL') && API_CALL === true) {
-        // API 호출인 경우 JSON 형식으로 에러 반환
-        error('e_fatal', 'Fatal Error: ' . $e['message'], response_code: 500);
-    }
 
     // 치명적 에러 유형만 선별
     $fatalTypes = [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR];
@@ -49,10 +67,39 @@ register_shutdown_function(function () {
 
     $msg = "[Fatal] {$e['message']} in {$e['file']}:{$e['line']}";
 
+    // 디버그 로그에 Fatal 에러 정보 기록
+    $fatal_type = match ($e['type']) {
+        E_ERROR => 'E_ERROR',
+        E_PARSE => 'E_PARSE',
+        E_CORE_ERROR => 'E_CORE_ERROR',
+        E_COMPILE_ERROR => 'E_COMPILE_ERROR',
+        E_USER_ERROR => 'E_USER_ERROR',
+        default => "Error({$e['type']})",
+    };
+    debug_log(
+        '🚨 PHP Fatal 에러 발생',
+        ['type' => $fatal_type, 'code' => $e['type']],
+        ['message' => $e['message']],
+        ['file' => $e['file'], 'line' => $e['line']]
+    );
+
     // 가능하면 이전에 출력된 내용을 지워서 PHP 기본 메시지/반쯤 그려진 페이지를 제거
     while (ob_get_level() > 0) {
         ob_end_clean();
     }
+
+
+    if (defined('API_CALL') && API_CALL || http_param('func') !== null) {
+        // API 호출 중인 경우, 에러를 throw하여 JSON 에러 응답으로 변환
+
+        error(
+            'fatal-error',
+            $e['message'],
+            ['file' => $e['file'], 'line' => $e['line']],
+            500
+        );
+    }
+
 
     // 최소한의 HTML 보장 (문서가 전혀 없더라도 alert가 뜨게)
     header('Content-Type: text/html; charset=UTF-8', true);
