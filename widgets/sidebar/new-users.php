@@ -22,94 +22,76 @@ load_deferred_js('vue-components/user-search.component');
 <!-- 사용자 검색 컴포넌트 (자동 마운트) -->
 <div class="user-search-component"></div>
 
-<!-- 신규 회원 카드 위젯 -->
-<div class="mb-4">
-    <!-- 헤더 -->
-    <div class="mb-3">
-        <h5 class="mb-1 fw-bold text-dark"><?= t()->신규_회원 ?></h5>
-        <p class="mb-0 text-muted" style="font-size: 0.875rem;"><?= t()->최근_가입자 ?></p>
-    </div>
-
-    <?php if ($userCount === 0): ?>
-        <!-- 빈 상태 -->
-        <div class="alert alert-info d-flex align-items-center gap-2 py-3">
-            <i class="fa-regular fa-circle-user fs-5"></i>
-            <div>
-                <div><?= t()->아직_회원이_없습니다 ?></div>
-                <small class="text-muted"><?= t()->곧_다시_확인해주세요 ?></small>
+<!-- 신규 회원 위젯 - Bootstrap Card -->
+<div class="card shadow-sm">
+    <!-- 카드 바디 -->
+    <div class="card-body">
+        <!-- 헤더 영역 -->
+        <div class="d-flex align-items-center gap-2 mb-3 pb-3 border-bottom">
+            <div class="flex-grow-1">
+                <h6 class="card-title mb-1 fw-bold"><?= t()->신규_회원 ?></h6>
+                <p class="card-text text-muted mb-0 small"><?= t()->최근_가입자 ?></p>
             </div>
+            <i class="fa-solid fa-users text-primary fs-5"></i>
         </div>
-    <?php else: ?>
-        <!-- 사용자 카드 그리드 -->
-        <div class="row g-2">
-            <?php foreach ($displayUsers as $user): ?>
-                <?php
-                // 전체 이름 생성
-                $name_parts = [];
-                if (!empty($user['first_name'])) $name_parts[] = $user['first_name'];
-                if (!empty($user['middle_name'])) $name_parts[] = $user['middle_name'];
-                if (!empty($user['last_name'])) $name_parts[] = $user['last_name'];
-                $full_name = !empty($name_parts) ? implode(' ', $name_parts) : t()->익명;
-                $photo_url = !empty($user['photo_url']) ? htmlspecialchars($user['photo_url']) : null;
-                ?>
-                <div class="col-6 col-md-4">
-                    <a href="<?= href()->user->profile ?>?id=<?= $user['id'] ?>" class="text-decoration-none new-user-card">
-                        <div class="card border-0 shadow-sm h-100 new-user-card-inner">
-                            <!-- 사용자 아바타 이미지 또는 플레이스홀더 -->
-                            <?php if ($photo_url): ?>
-                                <img src="<?= $photo_url ?>"
-                                     alt="<?= htmlspecialchars($full_name) ?>"
-                                     class="card-img-top new-user-avatar"
-                                     style="height: 140px; object-fit: cover;">
-                            <?php else: ?>
-                                <div class="card-img-top new-user-avatar bg-light d-flex align-items-center justify-content-center"
-                                     style="height: 140px; background: linear-gradient(135deg, #f5f5f5 0%, #e9ecef 100%);">
-                                    <i class="fa-solid fa-user text-muted" style="font-size: 2.5rem;"></i>
-                                </div>
-                            <?php endif; ?>
 
-                            <!-- 사용자 이름 -->
-                            <div class="card-body p-2 d-flex align-items-center justify-content-center">
-                                <h6 class="card-title mb-0 text-center text-truncate text-dark"
-                                    title="<?= htmlspecialchars($full_name) ?>"
-                                    style="font-size: 0.875rem; font-weight: 500;">
-                                    <?= htmlspecialchars($full_name) ?>
-                                </h6>
+        <?php if ($userCount === 0): ?>
+            <!-- 빈 상태 -->
+            <div class="alert alert-info d-flex align-items-center gap-2 mb-0">
+                <i class="fa-regular fa-circle-user fs-5"></i>
+                <div>
+                    <div><?= t()->아직_회원이_없습니다 ?></div>
+                    <small class="text-muted"><?= t()->곧_다시_확인해주세요 ?></small>
+                </div>
+            </div>
+        <?php else: ?>
+            <!-- 사용자 리스트 (최대 9명) -->
+            <div class="d-flex flex-column gap-3">
+                <?php foreach ($displayUsers as $user): ?>
+                    <?php
+                    // 전체 이름 생성
+                    $name_parts = [];
+                    if (!empty($user['first_name'])) $name_parts[] = $user['first_name'];
+                    if (!empty($user['middle_name'])) $name_parts[] = $user['middle_name'];
+                    if (!empty($user['last_name'])) $name_parts[] = $user['last_name'];
+                    $full_name = !empty($name_parts) ? implode(' ', $name_parts) : t()->익명;
+                    $photo_url = !empty($user['photo_url']) ? htmlspecialchars($user['photo_url']) : null;
+                    ?>
+                    <a href="<?= href()->user->profile ?>?id=<?= $user['id'] ?>"
+                        class="d-flex align-items-center gap-2 rounded text-decoration-none user-item-link">
+                        <!-- 프로필 이미지 (원형) -->
+                        <?php if ($photo_url): ?>
+                            <img src="<?= $photo_url ?>"
+                                alt="<?= htmlspecialchars($full_name) ?>"
+                                class="rounded-circle"
+                                style="width: 48px; height: 48px; object-fit: cover; flex-shrink: 0;">
+                        <?php else: ?>
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center"
+                                style="width: 48px; height: 48px; flex-shrink: 0;">
+                                <i class="fa-solid fa-user text-muted"></i>
                             </div>
+                        <?php endif; ?>
+
+                        <!-- 사용자 이름 -->
+                        <div class="flex-grow-1">
+                            <div class="fw-medium text-dark small"><?= htmlspecialchars($full_name) ?></div>
                         </div>
                     </a>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
 </div>
 
-<!-- 사용자 카드 스타일 -->
 <style>
-.new-user-card {
-    color: inherit;
-    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-}
-
-.new-user-card:hover {
-    text-decoration: none;
-}
-
-.new-user-card:hover .new-user-card-inner {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-    transform: translateY(-4px);
-}
-
-.new-user-avatar {
-    border-radius: 0.375rem 0.375rem 0 0;
-}
-
-/* 반응형 조정 */
-@media (max-width: 576px) {
-    .new-user-avatar {
-        height: 100px !important;
+    .user-item-link {
+        transition: all 0.2s ease;
     }
-}
+
+    .user-item-link:hover {
+        background-color: #f8f9fa;
+        transform: translateX(4px);
+    }
 </style>
 
 <?php

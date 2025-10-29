@@ -642,7 +642,7 @@ background: linear-gradient(rgba(13, 110, 253, 0.5), rgba(13, 110, 253, 0.5));
 
 ```html
 <!-- ✅ Correct: Using Bootstrap Utility classes -->
-<div class="card shadow-sm mb-3">
+<div class="card shadow-sm">
   <div class="card-body p-4">
     <h5 class="card-title mb-3 text-primary">Title</h5>
     <p class="card-text text-muted mb-0">Content</p>
