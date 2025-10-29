@@ -52,6 +52,12 @@
   display: none;
 }
 
+.flex-center { 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .btn-pill-gray {
   background-color: #e4e6eb;
   border: none;

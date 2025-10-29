@@ -137,13 +137,21 @@ Text overlay on top of a background image:
 ```html
 <div class="card text-bg-dark">
   <img src="..." class="card-img" alt="...">
-  <div class="card-img-overlay">
-    <h5 class="card-title">Card title</h5>
-    <p class="card-text">This is a text overlay on the image.</p>
+  <div class="card-img-overlay d-flex flex-column justify-content-end p-3 p-md-4" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);">
+    <h5 class="card-title fs-5 fs-md-4">Card title</h5>
+    <p class="card-text small small-md-base">This is a text overlay on the image with gradient background for better readability.</p>
     <p class="card-text"><small>Last updated 3 mins ago</small></p>
   </div>
 </div>
 ```
+
+**Mobile Optimization for Image Overlay:**
+- Use `p-3 p-md-4` for responsive padding (smaller on mobile, larger on desktop)
+- Use `d-flex flex-column justify-content-end` to position text at bottom
+- Use `fs-5 fs-md-4` or similar for responsive font sizes
+- Use `small` class with responsive variants for body text
+- Always include gradient background for readability: `background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);`
+- Keep text concise on mobile - consider hiding less critical content with `d-none d-md-block`
 
 #### 9️⃣ Card with Subtitle and Links
 
@@ -721,8 +729,285 @@ Layout multiple cards responsively:
 
 ---
 
+## Button Component
+
+**🔥 IMPORTANT: Buttons are essential UI elements for user interactions. Always use Bootstrap's button classes for consistency.**
+
+Bootstrap provides eight semantic button variants plus outline versions, multiple sizes, and states. All buttons require the base `.btn` class.
+
+### Official Bootstrap Button Examples
+
+All examples below are from the official [Bootstrap 5.3 Button Component Documentation](https://getbootstrap.com/docs/5.3/components/buttons/).
+
+#### 1️⃣ Base Button Variants
+
+The eight semantic button variants:
+
+```html
+<!-- Primary button (main actions) -->
+<button type="button" class="btn btn-primary">Primary</button>
+
+<!-- Secondary button (secondary actions) -->
+<button type="button" class="btn btn-secondary">Secondary</button>
+
+<!-- Success button (positive actions) -->
+<button type="button" class="btn btn-success">Success</button>
+
+<!-- Danger button (destructive actions) -->
+<button type="button" class="btn btn-danger">Danger</button>
+
+<!-- Warning button (caution actions) -->
+<button type="button" class="btn btn-warning">Warning</button>
+
+<!-- Info button (informational actions) -->
+<button type="button" class="btn btn-info">Info</button>
+
+<!-- Light button (subtle actions) -->
+<button type="button" class="btn btn-light">Light</button>
+
+<!-- Dark button (contrast actions) -->
+<button type="button" class="btn btn-dark">Dark</button>
+
+<!-- Link button (text-styled button) -->
+<button type="button" class="btn btn-link">Link</button>
+```
+
+#### 2️⃣ Outline Buttons
+
+Outline buttons remove background colors while maintaining borders:
+
+```html
+<button type="button" class="btn btn-outline-primary">Primary</button>
+<button type="button" class="btn btn-outline-secondary">Secondary</button>
+<button type="button" class="btn btn-outline-success">Success</button>
+<button type="button" class="btn btn-outline-danger">Danger</button>
+<button type="button" class="btn btn-outline-warning">Warning</button>
+<button type="button" class="btn btn-outline-info">Info</button>
+<button type="button" class="btn btn-outline-light">Light</button>
+<button type="button" class="btn btn-outline-dark">Dark</button>
+```
+
+#### 3️⃣ Button Sizes
+
+Three size variants for buttons:
+
+```html
+<!-- Large button -->
+<button type="button" class="btn btn-primary btn-lg">Large button</button>
+
+<!-- Default size button (no extra class needed) -->
+<button type="button" class="btn btn-primary">Default button</button>
+
+<!-- Small button -->
+<button type="button" class="btn btn-primary btn-sm">Small button</button>
+```
+
+#### 4️⃣ Buttons with Icons
+
+Combine Font Awesome icons with text:
+
+```html
+<!-- Icon + Text -->
+<button type="button" class="btn btn-primary">
+    <i class="fa-solid fa-download"></i> Download
+</button>
+
+<!-- Icon only (add aria-label for accessibility) -->
+<button type="button" class="btn btn-primary" aria-label="Delete">
+    <i class="fa-solid fa-trash"></i>
+</button>
+
+<!-- Text + Icon (icon on right) -->
+<button type="button" class="btn btn-success">
+    Save <i class="fa-solid fa-check"></i>
+</button>
+
+<!-- Icon buttons with gap spacing -->
+<button type="button" class="btn btn-primary d-flex align-items-center gap-2">
+    <i class="fa-solid fa-plus"></i>
+    <span>Add New</span>
+</button>
+```
+
+#### 5️⃣ Icon-Only Buttons
+
+Icon buttons without text (remember accessibility):
+
+```html
+<!-- Square icon button -->
+<button type="button" class="btn btn-primary" aria-label="Edit">
+    <i class="fa-solid fa-pen"></i>
+</button>
+
+<!-- Circular icon button -->
+<button type="button" class="btn btn-primary rounded-circle" style="width: 40px; height: 40px;" aria-label="Settings">
+    <i class="fa-solid fa-gear"></i>
+</button>
+
+<!-- Outline icon button -->
+<button type="button" class="btn btn-outline-secondary" aria-label="Close">
+    <i class="fa-solid fa-xmark"></i>
+</button>
+```
+
+#### 6️⃣ Disabled State
+
+Disable buttons to prevent interaction:
+
+```html
+<!-- Disabled button element -->
+<button type="button" class="btn btn-primary" disabled>Disabled button</button>
+
+<!-- Disabled link button -->
+<a class="btn btn-primary disabled" role="button" aria-disabled="true">Disabled link</a>
+
+<!-- Outline disabled button -->
+<button type="button" class="btn btn-outline-secondary" disabled>Disabled outline</button>
+```
+
+#### 7️⃣ Block Buttons (Full Width)
+
+Create full-width buttons using grid utilities:
+
+```html
+<!-- Single full-width button -->
+<div class="d-grid">
+    <button class="btn btn-primary" type="button">Full width button</button>
+</div>
+
+<!-- Stacked full-width buttons with gap -->
+<div class="d-grid gap-2">
+    <button class="btn btn-primary" type="button">Button 1</button>
+    <button class="btn btn-secondary" type="button">Button 2</button>
+</div>
+
+<!-- Responsive: full-width on mobile, inline on desktop -->
+<div class="d-grid gap-2 d-md-block">
+    <button class="btn btn-primary" type="button">Button 1</button>
+    <button class="btn btn-secondary" type="button">Button 2</button>
+</div>
+```
+
+#### 8️⃣ Button Groups
+
+Group buttons together:
+
+```html
+<!-- Basic button group -->
+<div class="btn-group" role="group" aria-label="Basic example">
+    <button type="button" class="btn btn-primary">Left</button>
+    <button type="button" class="btn btn-primary">Middle</button>
+    <button type="button" class="btn btn-primary">Right</button>
+</div>
+
+<!-- Outline button group -->
+<div class="btn-group" role="group" aria-label="Outline example">
+    <button type="button" class="btn btn-outline-primary">Left</button>
+    <button type="button" class="btn btn-outline-primary">Middle</button>
+    <button type="button" class="btn btn-outline-primary">Right</button>
+</div>
+```
+
+#### 9️⃣ Toggle Buttons
+
+Buttons that toggle active state:
+
+```html
+<!-- Toggle button -->
+<button type="button" class="btn btn-primary" data-bs-toggle="button">
+    Toggle button
+</button>
+
+<!-- Pre-toggled button -->
+<button type="button" class="btn btn-primary active" data-bs-toggle="button" aria-pressed="true">
+    Active toggle button
+</button>
+
+<!-- Disabled toggle button -->
+<button type="button" class="btn btn-primary" data-bs-toggle="button" disabled>
+    Disabled toggle button
+</button>
+```
+
+#### 🔟 Text Buttons (Link Style)
+
+Buttons styled as text links:
+
+```html
+<!-- Link button (looks like text) -->
+<button type="button" class="btn btn-link">Link button</button>
+
+<!-- Link button without underline -->
+<button type="button" class="btn btn-link text-decoration-none">No underline</button>
+
+<!-- Colored text button -->
+<button type="button" class="btn btn-link text-danger text-decoration-none">Delete</button>
+
+<!-- Text button with icon -->
+<button type="button" class="btn btn-link text-decoration-none">
+    <i class="fa-solid fa-arrow-left"></i> Back
+</button>
+```
+
+---
+
+### Button Usage Guidelines
+
+**When to use each button variant:**
+
+1. **Primary (`btn-primary`)**: Main call-to-action (e.g., "Save", "Submit", "Sign Up")
+2. **Secondary (`btn-secondary`)**: Secondary actions (e.g., "Cancel", "Back")
+3. **Success (`btn-success`)**: Positive actions (e.g., "Approve", "Confirm")
+4. **Danger (`btn-danger`)**: Destructive actions (e.g., "Delete", "Remove")
+5. **Warning (`btn-warning`)**: Caution actions (e.g., "Archive", "Suspend")
+6. **Info (`btn-info`)**: Informational actions (e.g., "Learn More", "Details")
+7. **Light (`btn-light`)**: Subtle actions on dark backgrounds
+8. **Dark (`btn-dark`)**: Contrast actions on light backgrounds
+9. **Link (`btn-link`)**: Text-styled actions (e.g., "View More", "Edit")
+10. **Outline (`btn-outline-*`)**: Less prominent alternative to filled buttons
+
+**Best Practices:**
+
+- ✅ Always use `type="button"` for `<button>` elements (unless it's a form submit)
+- ✅ Use `aria-label` for icon-only buttons to improve accessibility
+- ✅ Combine buttons with icons using `gap-2` utility for consistent spacing
+- ✅ Use `d-flex align-items-center` to vertically center icons with text
+- ✅ Prefer outline buttons for less prominent actions
+- ✅ Use disabled state instead of hiding buttons when actions are temporarily unavailable
+- ✅ Keep button text concise (1-3 words maximum)
+- ✅ Use consistent button sizes throughout your interface
+
+**Common Button Patterns:**
+
+```html
+<!-- Primary action with secondary cancel -->
+<div class="d-flex gap-2">
+    <button type="button" class="btn btn-primary">Save Changes</button>
+    <button type="button" class="btn btn-secondary">Cancel</button>
+</div>
+
+<!-- Icon button group for actions -->
+<div class="btn-group" role="group">
+    <button type="button" class="btn btn-sm btn-outline-secondary" aria-label="Edit">
+        <i class="fa-solid fa-pen"></i>
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" aria-label="Delete">
+        <i class="fa-solid fa-trash"></i>
+    </button>
+</div>
+
+<!-- Responsive button layout -->
+<div class="d-flex flex-column flex-md-row gap-2">
+    <button type="button" class="btn btn-primary">Primary Action</button>
+    <button type="button" class="btn btn-outline-secondary">Secondary Action</button>
+</div>
+```
+
+---
+
 ## Reference Materials
 
 - [Bootstrap Official Card Documentation](https://getbootstrap.com/docs/5.3/components/card/)
+- [Bootstrap Official Button Documentation](https://getbootstrap.com/docs/5.3/components/buttons/)
 - [Bootstrap Utility CSS Guide](https://getbootstrap.com/docs/5.3/utilities/)
 - [Project Bootstrap Design Guide](docs/design/bootstrap.md)

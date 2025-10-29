@@ -12,7 +12,7 @@ inject_new_users_widget_language();
 // 최근 가입한 사용자 16명 가져오기
 $result = list_users(['page' => 1, 'per_page' => 16]);
 $users = $result['users'] ?? [];
-$displayUsers = array_slice($users, 0, 9);
+$displayUsers = array_slice($users, 0, 6);
 $userCount = count($displayUsers);
 
 // 사용자 검색 컴포넌트 자동 로드
