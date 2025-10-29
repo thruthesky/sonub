@@ -100,7 +100,7 @@ $postList = [
 
                 <!-- 게시물 목록 -->
                 <div v-else>
-                    <article v-for="post in postList.posts" :key="post.id" class="post-card">
+                    <article v-for="post in postList.posts" :key="post.id">
                         <post-component
                             :post="post"
                             @post-deleted="handlePostDeleted"

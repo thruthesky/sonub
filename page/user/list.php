@@ -5,8 +5,7 @@ require_once __DIR__ . '/../../widgets/page-header.php';
  * 사용자 목록 페이지
  *
  * Vue.js를 사용하여 사용자 목록을 표시하고, infinite scroll로 추가 로드합니다.
- * 각 사용자 카드에 친구 맺기 요청 버튼이 포함되어 있습니다.
- * 친구 검색 기능은 독립적인 user-search 모듈로 분리되어 있습니다.
+ * Bootstrap 카드 컴포넌트를 사용하여 사용자 정보를 표시합니다.
  */
 
 /**
@@ -55,11 +54,6 @@ load_deferred_js('vue-components/user-search.component');
 ?>
 
 <div class="container">
-    <!-- TODO: Friend request is broken 
-        - When sending a friend request to the user and refreshing the page.
-        - The display is 'add friend' instead show 'send friend request'
-    -->
-
     <?php
     // 헤더 위젯 표시
     page_header([
@@ -126,89 +120,55 @@ load_deferred_js('vue-components/user-search.component');
 <div id="user-list-app" class="container">
     <div class="row">
         <div class="col-12">
-            <!-- 사용자 목록 그리드 -->
-            <div class="row g-3">
-                <!-- 스켈레톤 로딩 (초기 로딩 시) -->
-                <div v-if="isInitialLoading" class="col-6" v-for="n in 6" :key="'skeleton-' + n">
-                    <div class="card h-100">
-                        <div class="card-body p-2 d-flex align-items-center">
-                            <!-- 프로필 사진 스켈레톤 -->
-                            <div class="skeleton skeleton-avatar" style="width: 50px; height: 50px;"></div>
-
-                            <!-- 사용자 정보 스켈레톤 -->
-                            <div class="flex-grow-1 min-w-0">
-                                <div class="skeleton skeleton-text mb-2" style="width: 70%; height: 16px;"></div>
-                                <div class="skeleton skeleton-text" style="width: 50%; height: 12px;"></div>
-                            </div>
-
-                            <!-- 버튼 스켈레톤 -->
-                            <div class="flex-shrink-0 ms-2">
-                                <div class="skeleton skeleton-text" style="width: 60px; height: 32px; border-radius: 4px;"></div>
-                            </div>
-                        </div>
-                    </div>
+            <!-- 사용자 없음 메시지 -->
+            <div v-if="!isInitialLoading && users.length === 0" class="col-12" v-cloak>
+                <div class="alert alert-info">
+                    <?= t()->등록된_사용자가_없습니다 ?>
                 </div>
+            </div>
 
-                <!-- 사용자 없음 메시지 -->
-                <div v-if="!isInitialLoading && filteredUsers.length === 0" class="col-12" v-cloak>
-                    <div class="alert alert-info">
-                        <?= t()->등록된_사용자가_없습니다 ?>
-                    </div>
-                </div>
-
-                <!-- 사용자 카드 -->
-                <div v-for="user in filteredUsers" :key="user.id" class="col-12 col-md-6">
-                    <a :href="`<?= href()->user->profile ?>?id=${user.id}`" class="text-decoration-none">
-                        <div class="card h-100" v-cloak>
-                            <div class="card-body p-2 d-flex align-items-center">
-                                <!-- 프로필 사진 (클릭하면 프로필 페이지로 이동) -->
-                                <div class="flex-shrink-0 me-2" v-cloak>
+            <!-- 사용자 목록 (Responsive Grid: 1 col mobile, 2 col tablet and desktop) -->
+            <div class="row row-cols-1 row-cols-md-2 g-3">
+                <!-- 사용자 카드 (Horizontal Card with Image) -->
+                <div v-for="user in users" :key="user.id" class="col" v-cloak>
+                    <a :href="`<?= href()->user->profile ?>?id=${user.id}`"
+                        class="text-decoration-none h-100 d-block">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body d-flex align-items-center gap-3 p-3">
+                                <!-- 프로필 이미지 -->
+                                <div class="flex-shrink-0">
                                     <img v-if="user.photo_url"
                                         :src="user.photo_url"
                                         class="rounded-circle"
-                                        style="width: 50px; height: 50px; object-fit: cover;"
+                                        style="width: 64px; height: 64px; object-fit: cover;"
                                         :alt="getUserFullName(user)">
                                     <div v-else
-                                        class="rounded-circle bg-secondary bg-opacity-25 d-inline-flex align-items-center justify-content-center"
-                                        style="width: 50px; height: 50px;">
-                                        <i class="bi bi-person fs-5 text-secondary"></i>
+                                        class="rounded-circle bg-secondary bg-opacity-25 d-flex align-items-center justify-content-center"
+                                        style="width: 64px; height: 64px;">
+                                        <i class="bi bi-person fs-4 text-secondary"></i>
                                     </div>
                                 </div>
 
-                                <div class="flex-grow-1 d-flex flex-column gap-1">
-                                    <h6 class="card-title mb-0 text-truncate text-dark">{{ getUserFullName(user) }}</h6>
-                                    <p class="card-text text-muted mb-0" style="font-size: 0.75rem;">
+                                <!-- 사용자 정보 -->
+                                <div class="flex-grow-1 min-w-0">
+                                    <h6 class="card-title mb-1 text-dark text-truncate">{{ getUserFullName(user) }}</h6>
+                                    <p class="card-text text-muted mb-0 small">
+                                        <i class="bi bi-calendar3 me-1"></i>
                                         {{ formatDate(user.created_at) }}
                                     </p>
-
-                                    <!-- 친구 추가 버튼 (로그인한 경우에만 표시) -->
-                                    <div v-if="myUserId">
-                                        <button @click.prevent="requestFriend(user)"
-                                            class="btn btn-sm w-100"
-                                            :class="user.is_friend ? 'btn-success' : 'btn-primary'"
-                                            :disabled="user.requesting || user.is_friend">
-                                            <span v-if="user.requesting">
-                                                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                                                <?= t()->요청_중 ?>
-                                            </span>
-                                            <span v-else-if="user.is_friend">
-                                                <i class="bi bi-check-circle me-1"></i>
-                                                <?= t()->친구 ?>
-                                            </span>
-                                            <span v-else>
-                                                <i class="bi bi-person-plus me-1"></i>
-                                                <?= t()->친구_추가 ?>
-                                            </span>
-                                        </button>
-                                    </div>
+                                    <p v-if="user.email" class="card-text text-muted mb-0 small text-truncate">
+                                        <i class="bi bi-envelope me-1"></i>
+                                        {{ user.email }}
+                                    </p>
                                 </div>
 
-
+                                <!-- 화살표 아이콘 -->
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-chevron-right text-muted"></i>
+                                </div>
                             </div>
                         </div>
-
                     </a>
-
                 </div>
             </div>
 
@@ -241,22 +201,13 @@ load_deferred_js('vue-components/user-search.component');
                     perPage: <?= json_encode($hydrationData['perPage']) ?>,
                     loading: false,
                     isInitialLoading: false, // 스켈레톤 로딩 상태 (SSR 데이터가 있으므로 false)
-                    hasMore: true,
-                    myUserId: <?= login() ? login()->id : 'null' ?> // 로그인한 사용자 ID
+                    hasMore: true
                 };
             },
             computed: {
                 // 더 불러올 데이터가 있는지 계산
                 canLoadMore() {
                     return this.users.length < this.total && !this.loading;
-                },
-
-                // 현재 로그인한 사용자를 제외한 사용자 목록
-                filteredUsers() {
-                    if (!this.myUserId) {
-                        return this.users; // 로그인하지 않은 경우 모든 사용자 표시
-                    }
-                    return this.users.filter(user => user.id !== this.myUserId);
                 }
             },
             methods: {
@@ -327,61 +278,6 @@ load_deferred_js('vue-components/user-search.component');
                 },
 
                 /**
-                 * 친구 맺기 요청
-                 * @param {Object} user - 친구 요청을 보낼 사용자 객체
-                 */
-                async requestFriend(user) {
-                    // 로그인 확인
-                    if (!this.myUserId) {
-                        alert('<?= t()->로그인이_필요합니다 ?>');
-                        window.location.href = '<?= href()->user->login ?>';
-                        return;
-                    }
-
-                    // 이미 친구인 경우
-                    if (user.is_friend) {
-                        alert('<?= t()->이미_친구입니다 ?>');
-                        return;
-                    }
-
-                    // 확인 창 표시
-                    const userName = this.getUserFullName(user);
-                    const confirmed = confirm(`${userName}<?= t()->님에게_친구_맺기_신청을_하시겠습니까 ?>`);
-                    if (!confirmed) {
-                        return;
-                    }
-
-                    try {
-                        // 요청 중 상태 설정
-                        user.requesting = true;
-
-                        console.log(`친구 요청 전송: ${userName} (ID: ${user.id})`);
-
-                        // API 호출: request_friend 함수 사용
-                        await func('request_friend', {
-                            me: this.myUserId,
-                            other: user.id,
-                            auth: true // Firebase 인증 포함
-                        });
-
-                        // 성공: 친구 상태 업데이트
-                        user.is_friend = true;
-                        user.requesting = false;
-
-
-                        console.log(`친구 요청 성공: ${userName}`);
-                        alert(`${userName}<?= t()->님에게_친구_요청을_보냈습니다 ?>`);
-                    } catch (error) {
-                        console.error('친구 요청 실패:', error);
-                        user.requesting = false;
-
-                        // 에러 메시지 표시
-                        const errorMessage = error.message || error.error_message || '<?= t()->친구_요청에_실패했습니다 ?>';
-                        alert(`<?= t()->친구_요청_실패 ?>: ${errorMessage}`);
-                    }
-                },
-
-                /**
                  * 사용자 전체 이름 반환
                  * @param {Object} user - 사용자 객체
                  * @returns {string} 전체 이름
@@ -412,8 +308,7 @@ load_deferred_js('vue-components/user-search.component');
                 // console.log('[user-list] 사용자 목록 페이지 초기화 완료:', {
                 //     totalUsers: this.users.length,
                 //     total: this.total,
-                //     currentPage: this.currentPage,
-                //     myUserId: this.myUserId
+                //     currentPage: this.currentPage
                 // });
             }
         }).mount('#user-list-app');

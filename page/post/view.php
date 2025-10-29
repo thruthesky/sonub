@@ -31,55 +31,25 @@ inject_post_view_language();
 
 ?>
 
-<style>
-    /* 게시물 상세 보기 페이지 전용 스타일 */
-    #post-view-container {
-        max-width: 680px;
-        margin: 0 auto;
-    }
-
-    /* 뒤로 가기 버튼 스타일 */
-    .back-button {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 16px;
-        background-color: #f0f2f5;
-        border: none;
-        border-radius: 6px;
-        color: #050505;
-        font-size: 15px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-        text-decoration: none;
-    }
-
-    .back-button:hover {
-        background-color: #e4e6eb;
-    }
-
-    .back-button i {
-        font-size: 16px;
-    }
-</style>
-
-<div id="post-view-container" class="py-3" v-cloak>
+<!-- Bootstrap 레이아웃 유틸리티 클래스 사용 -->
+<div id="post-view-container" class="container py-3" style="max-width: 680px;" v-cloak>
     <!-- 뒤로 가기 버튼 -->
     <div class="mb-3">
-        <a href="javascript:history.back()" class="back-button">
+        <a href="javascript:history.back()"
+           class="btn btn-light d-inline-flex align-items-center gap-2 fw-semibold"
+           style="transition: background-color 0.2s ease;"
+           onmouseover="this.style.backgroundColor='#e4e6eb'"
+           onmouseout="this.style.backgroundColor='#f0f2f5'">
             <i class="fa-solid fa-arrow-left"></i>
             <span><?= t()->뒤로_가기 ?></span>
         </a>
     </div>
 
     <!-- 게시물 컴포넌트 -->
-    <article class="post-card">
-        <post-component
-            :post="post"
-            @post-deleted="handlePostDeleted">
-        </post-component>
-    </article>
+    <post-component
+        :post="post"
+        @post-deleted="handlePostDeleted">
+    </post-component>
 </div>
 
 <script>

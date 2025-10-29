@@ -215,8 +215,7 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
                         v-model="content"
                         class="post-content-input mb-3"
                         name="content"
-                        :placeholder="placeholder"
-                        @input="autoResize"></textarea>
+                        :placeholder="placeholder"></textarea>
 
                     <!-- 업로드된 이미지 미리보기 -->
                     <div v-if="uploadedFiles.length > 0" class="mb-3">
@@ -258,7 +257,7 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
                 <div class="card-footer bg-white border-top">
                     <div class="d-flex justify-content-between align-items-center gap-2">
                         <!-- 사진/비디오 업로드 버튼 -->
-                        <label class="btn btn-link text-decoration-none px-4 py-2 fw-semibold d-inline-flex align-items-center gap-1 flex-shrink-0">
+                        <label class="btn btn-link text-decoration-none text-secondary px-4 py-2 fw-semibold d-inline-flex align-items-center gap-1 flex-shrink-0">
                             <i class="fa-solid fa-image" style="color: #45bd62;"></i>
                             <span><?= t()->사진_동영상 ?></span>
                             <input type="file"
@@ -405,18 +404,6 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
                     this.uploadedFiles = [];
                     this.visibility = 'public';
                 },
-
-                /**
-                 * textarea 자동 높이 조정
-                 */
-                autoResize() {
-                    const textarea = this.$refs.textarea;
-                    if (!textarea) return;
-
-                    textarea.style.height = 'auto';
-                    textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
-                },
-
                 /**
                  * 게시물 작성 제출
                  */
