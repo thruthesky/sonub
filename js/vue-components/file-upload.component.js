@@ -433,7 +433,7 @@ window.FileUploadComponent = {
 
             try {
                 // Axios로 파일 삭제 API 호출
-                const response = await axios.get(appConfig.api.file_delete_url, {
+                const response = await axios.get(appConfig.api.file_delete, {
                     params: { url: url }
                 });
 

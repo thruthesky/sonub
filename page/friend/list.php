@@ -20,98 +20,7 @@ if ($user) {
     ]);
 }
 
-/**
- * 친구 목록 페이지 다국어 번역 주입
- */
-function inject_friend_list_language(): void
-{
-    t()->inject([
-        '내_친구_목록' => [
-            'ko' => '내 친구 목록',
-            'en' => 'My Friends',
-            'ja' => '友達リスト',
-            'zh' => '我的好友',
-        ],
-        '로그인이_필요합니다' => [
-            'ko' => '로그인이 필요합니다',
-            'en' => 'Login is required',
-            'ja' => 'ログインが必要です',
-            'zh' => '需要登录',
-        ],
-        '로그인_페이지로_이동' => [
-            'ko' => '로그인 페이지로 이동',
-            'en' => 'Go to login page',
-            'ja' => 'ログインページへ移動',
-            'zh' => '前往登录页面',
-        ],
-        '친구가_없습니다' => [
-            'ko' => '아직 친구가 없습니다',
-            'en' => 'You have no friends yet',
-            'ja' => 'まだ友達がいません',
-            'zh' => '还没有好友',
-        ],
-        '친구를_찾아보세요' => [
-            'ko' => '새로운 친구를 찾아보세요',
-            'en' => 'Find new friends',
-            'ja' => '新しい友達を見つけましょう',
-            'zh' => '寻找新朋友',
-        ],
-        '친구_찾기' => [
-            'ko' => '친구 찾기',
-            'en' => 'Find Friends',
-            'ja' => '友達を探す',
-            'zh' => '查找好友',
-        ],
-        '로그인_후_이용_가능' => [
-            'ko' => '로그인 후 친구 목록을 확인할 수 있습니다',
-            'en' => 'You can check your friends after logging in',
-            'ja' => 'ログイン後に友達リストを確認できます',
-            'zh' => '登录后可以查看好友列表',
-        ],
-        '이름_정보_없음' => [
-            'ko' => '이름 정보 없음',
-            'en' => 'No name provided',
-            'ja' => '名前情報なし',
-            'zh' => '无姓名信息',
-        ],
-        '총_친구_수' => [
-            'ko' => '총 친구',
-            'en' => 'Total friends',
-            'ja' => '友達の合計',
-            'zh' => '好友总数',
-        ],
-        '명' => [
-            'ko' => '명',
-            'en' => '',
-            'ja' => '人',
-            'zh' => '个',
-        ],
-        '친구_이후' => [
-            'ko' => '친구 이후',
-            'en' => 'Friends since',
-            'ja' => '友達になってから',
-            'zh' => '成为好友后',
-        ],
-        '메시지_보내기' => [
-            'ko' => '메시지 보내기',
-            'en' => 'Send Message',
-            'ja' => 'メッセージを送る',
-            'zh' => '发送消息',
-        ],
-        '프로필_보기' => [
-            'ko' => '프로필 보기',
-            'en' => 'View Profile',
-            'ja' => 'プロフィールを見る',
-            'zh' => '查看资料',
-        ],
-        '친구_삭제' => [
-            'ko' => '친구 삭제',
-            'en' => 'Unfriend',
-            'ja' => '友達を削除',
-            'zh' => '删除好友',
-        ],
-    ]);
-}
+
 
 inject_friend_list_language();
 ?>
@@ -217,12 +126,35 @@ page_header([
                                             title="<?= t()->메시지_보내기 ?>">
                                             <i class="fa-solid fa-envelope"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-outline-danger unfriend-btn"
-                                            data-user-id="<?= $friend['id'] ?>"
-                                            data-user-name="<?= htmlspecialchars($full_name) ?>"
-                                            title="<?= t()->친구_삭제 ?>">
-                                            <i class="fa-solid fa-user-xmark"></i>
-                                        </button>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-danger dropdown-toggle"
+                                                type="button"
+                                                data-bs-toggle="dropdown"
+                                                aria-expanded="false"
+                                                title="<?= t()->더보기 ?>">
+                                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li>
+                                                    <a class="dropdown-item text-danger unfriend-btn"
+                                                        href="#"
+                                                        data-user-id="<?= $friend['id'] ?>"
+                                                        data-user-name="<?= htmlspecialchars($full_name) ?>">
+                                                        <i class="fa-solid fa-user-xmark me-2"></i>
+                                                        <?= t()->친구_삭제 ?>
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item text-warning block-btn"
+                                                        href="#"
+                                                        data-user-id="<?= $friend['id'] ?>"
+                                                        data-user-name="<?= htmlspecialchars($full_name) ?>">
+                                                        <i class="fa-solid fa-ban me-2"></i>
+                                                        <?= t()->사용자_차단 ?>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -235,7 +167,7 @@ page_header([
 </div>
 
 <script>
-    ready(() => {
+    firebase_ready(() => {
         // 메시지 보내기 버튼 (추후 구현)
         document.querySelectorAll('.message-btn').forEach(btn => {
             btn.addEventListener('click', function() {
@@ -244,16 +176,205 @@ page_header([
             });
         });
 
-        // 친구 삭제 버튼 (추후 구현)
+        // 친구 삭제 버튼
         document.querySelectorAll('.unfriend-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', async function(e) {
+                e.preventDefault();
                 const userId = this.dataset.userId;
                 const userName = this.dataset.userName;
 
-                if (confirm(userName + '님을 친구 목록에서 삭제하시겠습니까?')) {
-                    alert('친구 삭제 기능은 추후 구현 예정입니다. (User ID: ' + userId + ')');
+                if (!confirm(`${userName}님을 친구 목록에서 삭제하시겠습니까?`)) {
+                    return;
+                }
+
+                try {
+                    const originalHtml = this.innerHTML;
+                    this.classList.add('disabled');
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> <?= t()->처리중 ?>';
+
+                    // 친구 삭제
+                    await func('remove_friend', {
+                        me: <?= $user ? $user->id : 0 ?>,
+                        other: userId,
+                        auth: true
+                    });
+
+
+                    alert('친구가 삭제되었습니다.');
+                } catch (error) {
+                    console.error('친구 삭제 오류:', error);
+                    this.classList.remove('disabled');
+                    this.innerHTML = originalHtml;
+                    alert('친구 삭제 중 오류가 발생했습니다.');
                 }
             });
         });
+
+        // 사용자 차단 버튼
+        document.querySelectorAll('.block-btn').forEach(btn => {
+            btn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                const userId = this.dataset.userId;
+                const userName = this.dataset.userName;
+
+                if (!confirm(`${userName}님을 차단하시겠습니까?\n차단하면 더 이상 서로의 게시물과 댓글을 볼 수 없습니다.`)) {
+                    return;
+                }
+
+                try {
+                    const originalHtml = this.innerHTML;
+                    this.classList.add('disabled');
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> <?= t()->처리중 ?>';
+
+                    // 사용자 차단
+                    await func('block_user', {
+                        me: <?= $user ? $user->id : 0 ?>,
+                        other: userId,
+                        auth: true
+                    });
+
+                    // 카드 요소 찾아서 제거
+                    const card = this.closest('.col-12');
+                    if (card) {
+                        card.style.transition = 'opacity 0.3s';
+                        card.style.opacity = '0';
+                        setTimeout(() => {
+                            card.remove();
+                            // 친구 목록이 비어있는지 확인
+                            checkEmptyFriendList();
+                        }, 300);
+                    }
+
+                    alert('사용자가 차단되었습니다.');
+                } catch (error) {
+                    console.error('사용자 차단 오류:', error);
+                    this.classList.remove('disabled');
+                    this.innerHTML = originalHtml;
+                    alert('사용자 차단 중 오류가 발생했습니다.');
+                }
+            });
+        });
+
+        // 친구 목록이 비어있는지 확인하는 함수
+        function checkEmptyFriendList() {
+            const friendCards = document.querySelectorAll('.row.g-3 .col-12');
+            if (friendCards.length === 0) {
+                // 페이지 새로고침하여 빈 상태 메시지 표시
+                location.reload();
+            }
+        }
     });
 </script>
+
+<?php
+/**
+ * 친구 목록 페이지 다국어 번역 주입
+ */
+function inject_friend_list_language(): void
+{
+    t()->inject([
+        '내_친구_목록' => [
+            'ko' => '내 친구 목록',
+            'en' => 'My Friends',
+            'ja' => '友達リスト',
+            'zh' => '我的好友',
+        ],
+        '로그인이_필요합니다' => [
+            'ko' => '로그인이 필요합니다',
+            'en' => 'Login is required',
+            'ja' => 'ログインが必要です',
+            'zh' => '需要登录',
+        ],
+        '로그인_페이지로_이동' => [
+            'ko' => '로그인 페이지로 이동',
+            'en' => 'Go to login page',
+            'ja' => 'ログインページへ移動',
+            'zh' => '前往登录页面',
+        ],
+        '친구가_없습니다' => [
+            'ko' => '아직 친구가 없습니다',
+            'en' => 'You have no friends yet',
+            'ja' => 'まだ友達がいません',
+            'zh' => '还没有好友',
+        ],
+        '친구를_찾아보세요' => [
+            'ko' => '새로운 친구를 찾아보세요',
+            'en' => 'Find new friends',
+            'ja' => '新しい友達を見つけましょう',
+            'zh' => '寻找新朋友',
+        ],
+        '친구_찾기' => [
+            'ko' => '친구 찾기',
+            'en' => 'Find Friends',
+            'ja' => '友達を探す',
+            'zh' => '查找好友',
+        ],
+        '로그인_후_이용_가능' => [
+            'ko' => '로그인 후 친구 목록을 확인할 수 있습니다',
+            'en' => 'You can check your friends after logging in',
+            'ja' => 'ログイン後に友達リストを確認できます',
+            'zh' => '登录后可以查看好友列表',
+        ],
+        '이름_정보_없음' => [
+            'ko' => '이름 정보 없음',
+            'en' => 'No name provided',
+            'ja' => '名前情報なし',
+            'zh' => '无姓名信息',
+        ],
+        '총_친구_수' => [
+            'ko' => '총 친구',
+            'en' => 'Total friends',
+            'ja' => '友達の合計',
+            'zh' => '好友总数',
+        ],
+        '명' => [
+            'ko' => '명',
+            'en' => '',
+            'ja' => '人',
+            'zh' => '个',
+        ],
+        '친구_이후' => [
+            'ko' => '친구 이후',
+            'en' => 'Friends since',
+            'ja' => '友達になってから',
+            'zh' => '成为好友后',
+        ],
+        '메시지_보내기' => [
+            'ko' => '메시지 보내기',
+            'en' => 'Send Message',
+            'ja' => 'メッセージを送る',
+            'zh' => '发送消息',
+        ],
+        '프로필_보기' => [
+            'ko' => '프로필 보기',
+            'en' => 'View Profile',
+            'ja' => 'プロフィールを見る',
+            'zh' => '查看资料',
+        ],
+        '친구_삭제' => [
+            'ko' => '친구 삭제',
+            'en' => 'Unfriend',
+            'ja' => '友達を削除',
+            'zh' => '删除好友',
+        ],
+        '더보기' => [
+            'ko' => '더보기',
+            'en' => 'More',
+            'ja' => 'もっと見る',
+            'zh' => '更多',
+        ],
+        '사용자_차단' => [
+            'ko' => '사용자 차단',
+            'en' => 'Block User',
+            'ja' => 'ユーザーをブロック',
+            'zh' => '屏蔽用户',
+        ],
+        '처리중' => [
+            'ko' => '처리중...',
+            'en' => 'Processing...',
+            'ja' => '処理中...',
+            'zh' => '处理中...',
+        ],
+    ]);
+}
+?>

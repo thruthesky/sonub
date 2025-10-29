@@ -403,6 +403,16 @@ if (file_exists($module_path)) {
     ?>
 
     <script>
+        firebase_ready(() => {
+            firebase.auth().onAuthStateChanged((user) => {
+                user.getIdToken().then((idToken) => {
+                    console.log('ID Token:', idToken);
+                })
+            });
+        })
+    </script>
+
+    <script>
         __HYDRATE__ = {};
         __HYDRATE__.user = <?php echo login() ? json_encode(login()->data(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : 'null'; ?>;
         __HYDRATE__.lang = "<?php echo get_user_lang(); ?>";

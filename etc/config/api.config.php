@@ -25,7 +25,12 @@ class AppConfigApi
 
 
         $this->endpoints = [
+            'delete_file_from_post' => 'Delete a uploaded file from the post',
+            'get_posts_from_feed_entries' => 'Getting a post from the feed',
+            'delete_comment' => 'Delete a comment',
+            'get_comments' => "Get more comments",
             'create_comment' => 'Create a new comment under a post.',
+            'delete_post' => 'Delete a post',
             'create_post' => 'Create a new post.',
             'file_upload' => 'File upload',
             'file_delete' => 'File delete',
@@ -33,9 +38,14 @@ class AppConfigApi
             'list_posts' => 'List posts with pagination support.',
             'list_users' => 'List users with pagination support.',
             'login_with_firebase' => 'Login using Firebase UID.',
+            'update_user_profile' => 'Alias of update_my_profile',
             'update_my_profile' => 'Update the profile of the currently logged-in user.',
             'update_comment' => 'Update an existing comment.',
             'update_post' => 'Update an existing post.',
+            'request_friend' => 'Requesting a friend to the another user',
+            'reject_friend' => 'Rejecting a friend request',
+            'accept_friend' => 'Accepting the friend request',
+            'remove_friend' => "Removing the friendship"
         ];
     }
 
