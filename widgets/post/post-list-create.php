@@ -31,7 +31,7 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
 
 <style>
     /* 게시물 작성 위젯 전용 스타일 */
-    #post-list-create .post-create-trigger {
+    .post-create-trigger {
         flex: 1;
         background-color: #f0f2f5;
         border: none;
@@ -44,11 +44,11 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
         transition: background-color 0.15s ease;
     }
 
-    #post-list-create .post-create-trigger:hover {
+    .post-create-trigger:hover {
         background-color: #e4e6eb;
     }
 
-    #post-list-create .post-content-input {
+    .post-content-input {
         width: 100%;
         border: none;
         outline: none;
@@ -63,12 +63,12 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
         background: transparent;
     }
 
-    #post-list-create .post-content-input::placeholder {
+    .post-content-input::placeholder {
         color: #65676b;
     }
 
     /* 커스텀 드롭다운 래퍼 */
-    #post-list-create .post-select-wrapper {
+    .post-select-wrapper {
         display: inline-flex;
         align-items: center;
         background-color: #e4e6eb;
@@ -79,12 +79,12 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
         position: relative;
     }
 
-    #post-list-create .post-select-wrapper:hover {
+    .post-select-wrapper:hover {
         background-color: #d8dadf;
     }
 
     /* 커스텀 select 스타일 */
-    #post-list-create .post-select {
+    .post-select {
         background: transparent;
         border: none;
         outline: none;
@@ -99,24 +99,24 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
         padding-right: 4px;
     }
 
-    #post-list-create .post-select:focus {
+    .post-select:focus {
         outline: none;
     }
 
     /* 아이콘 색상 */
-    #post-list-create .post-select-wrapper i {
+    .post-select-wrapper i {
         color: #65676b;
     }
 
     /* 하단 액션 영역 */
-    #post-list-create .post-create-actions {
+    .post-create-actions {
         display: flex;
         align-items: center;
         gap: 12px;
         padding: 12px 16px;
     }
 
-    #post-list-create .post-action-btn {
+    .post-action-btn {
         background: none;
         border: none;
         padding: 8px;
@@ -132,16 +132,16 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
         transition: background-color 0.15s ease;
     }
 
-    #post-list-create .post-action-btn:hover {
+    .post-action-btn:hover {
         background-color: #f0f2f5;
     }
 
-    #post-list-create .post-action-btn i {
+    .post-action-btn i {
         font-size: 18px;
     }
 
     /* 게시 버튼 */
-    #post-list-create .btn-post {
+    .btn-post {
         background-color: #0866ff;
         border: none;
         padding: 8px 24px;
@@ -153,171 +153,166 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
         transition: background-color 0.15s ease;
     }
 
-    #post-list-create .btn-post:hover {
+    .btn-post:hover {
         background-color: #0757d6;
     }
 
-    #post-list-create .btn-post:disabled {
+    .btn-post:disabled {
         background-color: #e4e6eb;
         color: #bcc0c4;
         cursor: not-allowed;
     }
 </style>
-<section id="post-list-create" class="mb-3" v-cloak>
-    <!-- 게시물 작성 카드 (post-card 스타일 적용) -->
-    <article class="post-card" style="margin-top: 12px !important;">
-        <div class="post-body">
-            <form @submit.prevent="submit_post">
-                <!-- 축소된 상태: 프로필 + 클릭 가능한 버튼 -->
-                <div v-if="!expanded" class="d-flex align-items-center p-3 gap-2">
-                    <!-- 프로필 사진 (Bootstrap 유틸리티 클래스 사용) -->
-                    <div class="d-flex align-items-center justify-content-center bg-light rounded-circle flex-shrink-0"
-                        style="width: 40px; height: 40px;">
-                        <img v-if="userPhoto"
-                            :src="userPhoto"
-                            :alt="userName"
-                            class="rounded-circle"
-                            style="width: 100%; height: 100%; object-fit: cover;">
-                        <i v-else class="fa-solid fa-user text-secondary" style="font-size: 20px;"></i>
-                    </div>
-
-                    <!-- 클릭 가능한 버튼 -->
-                    <button type="button"
-                        @click="expand"
-                        class="post-create-trigger flex-grow-1">
-                        {{ placeholder }}
-                    </button>
+<section id="post-list-create" class="mb-3 card shadow-sm" v-cloak>
+    <div class="">
+        <form @submit.prevent="submit_post">
+            <div v-if="!expanded" class="d-flex align-items-center p-3 gap-2">
+                <div class="d-flex align-items-center justify-content-center bg-light rounded-circle flex-shrink-0"
+                    style="width: 40px; height: 40px;">
+                    <img v-if="userPhoto"
+                        :src="userPhoto"
+                        :alt="userName"
+                        class="rounded-circle"
+                        style="width: 100%; height: 100%; object-fit: cover;">
+                    <i v-else class="fa-solid fa-user text-secondary" style="font-size: 20px;"></i>
                 </div>
 
-                <!-- 확장된 상태: 전체 폼 -->
-                <div v-if="expanded">
-                    <!-- 헤더 섹션 (사용자 프로필) -->
-                    <header class="d-flex align-items-center justify-content-between p-3 border-bottom" style="border-color: #e4e6eb;">
-                        <div class="d-flex align-items-center gap-2" style="flex: 1;">
-                            <!-- 프로필 사진 -->
-                            <div class="d-flex align-items-center justify-content-center bg-light rounded-circle flex-shrink-0"
-                                style="width: 40px; height: 40px;">
-                                <img v-if="userPhoto"
-                                    :src="userPhoto"
-                                    :alt="userName"
-                                    class="rounded-circle"
-                                    style="width: 100%; height: 100%; object-fit: cover;">
-                                <i v-else class="fa-solid fa-user text-secondary" style="font-size: 20px;"></i>
+                <!-- 클릭 가능한 버튼 -->
+                <button type="button"
+                    @click="expand"
+                    class="post-create-trigger flex-grow-1">
+                    {{ placeholder }}
+                </button>
+            </div>
+
+            <!-- 확장된 상태: 전체 폼 -->
+            <div v-if="expanded">
+                <!-- 헤더 섹션 (사용자 프로필) -->
+                <header class="card-header bg-white d-flex align-items-center justify-content-between p-3 border-bottom" style="border-color: #e4e6eb;">
+                    <div class="d-flex align-items-center gap-2" style="flex: 1;">
+                        <!-- 프로필 사진 -->
+                        <div class="d-flex align-items-center justify-content-center bg-light rounded-circle flex-shrink-0"
+                            style="width: 40px; height: 40px;">
+                            <img v-if="userPhoto"
+                                :src="userPhoto"
+                                :alt="userName"
+                                class="rounded-circle"
+                                style="width: 100%; height: 100%; object-fit: cover;">
+                            <i v-else class="fa-solid fa-user text-secondary" style="font-size: 20px;"></i>
+                        </div>
+
+                        <!-- 사용자 정보 -->
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold" style="font-size: 15px; color: #050505; line-height: 1.3;">
+                                {{ userName }}
                             </div>
-
-                            <!-- 사용자 정보 -->
-                            <div class="flex-grow-1">
-                                <div class="fw-semibold" style="font-size: 15px; color: #050505; line-height: 1.3;">
-                                    {{ userName }}
+                            <div class="d-flex gap-2 align-items-center" style="font-size: 13px; color: #65676b; line-height: 1.3;">
+                                <!-- 공개범위 선택 -->
+                                <div class="post-select-wrapper">
+                                    <i class="fa-solid fa-earth-americas" v-if="visibility === 'public'" style="font-size: 12px; margin-right: 4px;"></i>
+                                    <i class="fa-solid fa-user-group" v-if="visibility === 'friends'" style="font-size: 12px; margin-right: 4px;"></i>
+                                    <i class="fa-solid fa-lock" v-if="visibility === 'private'" style="font-size: 12px; margin-right: 4px;"></i>
+                                    <select v-model="visibility" class="post-select">
+                                        <option value="public"><?= t()->공개 ?></option>
+                                        <option value="friends"><?= t()->친구만 ?></option>
+                                        <option value="private"><?= t()->나만_보기 ?></option>
+                                    </select>
+                                    <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px; pointer-events: none;"></i>
                                 </div>
-                                <div class="d-flex gap-2 align-items-center" style="font-size: 13px; color: #65676b; line-height: 1.3;">
-                                    <!-- 공개범위 선택 -->
-                                    <div class="post-select-wrapper">
-                                        <i class="fa-solid fa-earth-americas" v-if="visibility === 'public'" style="font-size: 12px; margin-right: 4px;"></i>
-                                        <i class="fa-solid fa-user-group" v-if="visibility === 'friends'" style="font-size: 12px; margin-right: 4px;"></i>
-                                        <i class="fa-solid fa-lock" v-if="visibility === 'private'" style="font-size: 12px; margin-right: 4px;"></i>
-                                        <select v-model="visibility" class="post-select">
-                                            <option value="public"><?= t()->공개 ?></option>
-                                            <option value="friends"><?= t()->친구만 ?></option>
-                                            <option value="private"><?= t()->나만_보기 ?></option>
-                                        </select>
-                                        <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px; pointer-events: none;"></i>
-                                    </div>
 
-                                    <!-- 카테고리 선택 (공개일 때만) -->
-                                    <div v-if="visibility === 'public'" class="post-select-wrapper">
-                                        <i class="fa-solid fa-folder" style="font-size: 12px; margin-right: 4px;"></i>
-                                        <select v-model="category" class="post-select">
-                                            <?php foreach (config()->categories->getRootCategories() as $root) : ?>
-                                                <optgroup label="<?= htmlspecialchars($root->display_name) ?>">
-                                                    <?php foreach ($root->getCategories() as $sub) : ?>
-                                                        <option value="<?= htmlspecialchars($sub->category) ?>"><?= htmlspecialchars($sub->name) ?></option>
-                                                    <?php endforeach; ?>
-                                                </optgroup>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px; pointer-events: none;"></i>
-                                    </div>
+                                <!-- 카테고리 선택 (공개일 때만) -->
+                                <div v-if="visibility === 'public'" class="post-select-wrapper">
+                                    <i class="fa-solid fa-folder" style="font-size: 12px; margin-right: 4px;"></i>
+                                    <select v-model="category" class="post-select">
+                                        <?php foreach (config()->categories->getRootCategories() as $root) : ?>
+                                            <optgroup label="<?= htmlspecialchars($root->display_name) ?>">
+                                                <?php foreach ($root->getCategories() as $sub) : ?>
+                                                    <option value="<?= htmlspecialchars($sub->category) ?>"><?= htmlspecialchars($sub->name) ?></option>
+                                                <?php endforeach; ?>
+                                            </optgroup>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <i class="fa-solid fa-caret-down" style="font-size: 12px; margin-left: 4px; pointer-events: none;"></i>
                                 </div>
                             </div>
                         </div>
-                    </header>
+                    </div>
+                </header>
 
-                    <!-- 본문 섹션 -->
-                    <div class="p-3">
-                        <!-- 게시물 내용 입력 -->
-                        <textarea
-                            ref="textarea"
-                            v-model="content"
-                            class="post-content-input mb-3"
-                            name="content"
-                            :placeholder="placeholder"
-                            @input="autoResize"></textarea>
+                <!-- 본문 섹션 -->
+                <div class="card-body">
+                    <!-- 게시물 내용 입력 -->
+                    <textarea
+                        ref="textarea"
+                        v-model="content"
+                        class="post-content-input mb-3"
+                        name="content"
+                        :placeholder="placeholder"
+                        @input="autoResize"></textarea>
 
-                        <!-- 업로드된 이미지 미리보기 -->
-                        <div v-if="uploadedFiles.length > 0" class="mb-3">
-                            <div class="row g-2">
-                                <div v-for="(fileUrl, index) in uploadedFiles" :key="index"
-                                    :class="getPhotoColumnClass(uploadedFiles.length)">
-                                    <div class="position-relative">
-                                        <img :src="thumbnail(fileUrl, 400, 400, 'cover', 85, 'ffffff')"
-                                            :alt="'Photo ' + (index + 1)"
-                                            style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
+                    <!-- 업로드된 이미지 미리보기 -->
+                    <div v-if="uploadedFiles.length > 0" class="mb-3">
+                        <div class="row g-2">
+                            <div v-for="(fileUrl, index) in uploadedFiles" :key="index"
+                                :class="getPhotoColumnClass(uploadedFiles.length)">
+                                <div class="position-relative">
+                                    <img :src="thumbnail(fileUrl, 400, 400, 'cover', 85, 'ffffff')"
+                                        :alt="'Photo ' + (index + 1)"
+                                        style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px;">
 
-                                        <!-- Delete button (X) on top right -->
-                                        <button
-                                            @click="removeFile(index)"
-                                            type="button"
-                                            class="btn btn-sm btn-danger position-absolute"
-                                            style="top: 8px; right: 8px; width: 28px; height: 28px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0.9; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"
-                                            title="Remove image">
-                                            <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
-                                        </button>
-                                    </div>
+                                    <!-- Delete button (X) on top right -->
+                                    <button
+                                        @click="removeFile(index)"
+                                        type="button"
+                                        class="btn btn-sm btn-danger position-absolute"
+                                        style="top: 8px; right: 8px; width: 28px; height: 28px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0.9; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"
+                                        title="Remove image">
+                                        <i class="fa-solid fa-xmark" style="font-size: 16px;"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Hidden file upload component -->
-                        <file-upload-component
-                            ref="upload"
-                            :multiple="true"
-                            :accept="'image/*,video/*'"
-                            :show-upload-button="false"
-                            :show-uploaded-files="false"
-                            :input-name="'files'"
-                            @uploaded="handleFileUploaded">
-                        </file-upload-component>
                     </div>
 
-                    <!-- 하단 액션 영역 -->
-                    <div class="border-top" style="border-color: #e4e6eb;">
-                        <div class="post-create-actions">
-                            <!-- 사진/비디오 업로드 버튼 -->
-                            <label class="post-action-btn">
-                                <i class="fa-solid fa-image" style="color: #45bd62;"></i>
-                                <span><?= t()->사진_동영상 ?></span>
-                                <input type="file"
-                                    multiple
-                                    accept="image/*,video/*"
-                                    style="display: none;"
-                                    @change="$refs.upload.handleFileChange($event)">
-                            </label>
+                    <!-- Hidden file upload component -->
+                    <file-upload-component
+                        ref="upload"
+                        :multiple="true"
+                        :accept="'image/*,video/*'"
+                        :show-upload-button="false"
+                        :show-uploaded-files="false"
+                        :input-name="'files'"
+                        @uploaded="handleFileUploaded">
+                    </file-upload-component>
+                </div>
 
-                            <!-- 오른쪽: 게시 버튼 -->
-                            <div style="display: flex; gap: 8px; margin-left: auto;">
-                                <button type="submit"
-                                    class="btn-post"
-                                    :disabled="!canSubmit">
-                                    <?= t()->게시 ?>
-                                </button>
-                            </div>
+                <!-- 하단 액션 영역 -->
+                <div class="card-footer bg-white border-top">
+                    <div class="post-create-actions">
+                        <!-- 사진/비디오 업로드 버튼 -->
+                        <label class="post-action-btn">
+                            <i class="fa-solid fa-image" style="color: #45bd62;"></i>
+                            <span><?= t()->사진_동영상 ?></span>
+                            <input type="file"
+                                multiple
+                                accept="image/*,video/*"
+                                style="display: none;"
+                                @change="$refs.upload.handleFileChange($event)">
+                        </label>
+
+                        <!-- 오른쪽: 게시 버튼 -->
+                        <div style="display: flex; gap: 8px; margin-left: auto;">
+                            <button type="submit"
+                                class="btn-post"
+                                :disabled="!canSubmit">
+                                <?= t()->게시 ?>
+                            </button>
                         </div>
                     </div>
                 </div>
-            </form>
-        </div>
-    </article>
+            </div>
+        </form>
+    </div>
 </section>
 
 <script>

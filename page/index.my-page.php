@@ -10,12 +10,12 @@ load_deferred_js('vue-components/post.component');
 load_page_css();
 ?>
 
-<div>
+<section>
     <!-- 게시글 작성 위젯 -->
     <?php
     include WIDGET_DIR . '/post/post-list-create.php';
     ?>
-</div>
+</section>
 
 
 
@@ -47,12 +47,12 @@ $postList = [
     }
 </style>
 
-<div id="my-page" class="mt-4">
+<main id="my-page" class="mt-4">
 
     <?php include WIDGET_DIR . '/loading/skeleton.php' ?>
 
     <!-- Vue 앱이 여기에 렌더링됩니다 -->
-</div>
+</main>
 
 <script>
     ready(() => {
@@ -87,12 +87,12 @@ $postList = [
 
                     <!-- 게시물 목록 -->
                     <div v-else>
-                        <article v-for="post in postList.posts" :key="post.id" class="post-card">
-                            <post-component
-                                :post="post"
-                                @post-deleted="handlePostDeleted"
-                            ></post-component>
-                        </article>
+                        <post-component
+                            v-for="post in postList.posts"
+                            :key="post.id"
+                            :post="post"
+                            @post-deleted="handlePostDeleted"
+                        ></post-component>
                     </div>
             `,
             data() {

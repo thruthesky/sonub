@@ -376,7 +376,7 @@ if (file_exists($module_path)) {
         /* Sticky sidebars */
         .sticky-sidebar {
             position: sticky;
-            top: 100px;
+            top: 80px;
             /* Offset for fixed header (80-88px) + spacing */
             align-self: flex-start;
             /* Prevent stretching */

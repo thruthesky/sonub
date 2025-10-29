@@ -16,9 +16,9 @@ const postComponent = {
         },
     },
     template: /*html*/ `
-    <div ref="postContainer" >
+    <article ref="postContainer" class="card shadow-sm mb-4">
     <!-- 게시물 헤더 (사용자 정보) -->
-    <header class="d-flex align-items-center justify-content-between p-3 border-bottom" style="border-color: #e4e6eb;">
+    <header class="card-header bg-white d-flex align-items-center justify-content-between p-3 border-bottom" style="border-color: #e4e6eb;">
         <div class="d-flex align-items-center gap-2">
             <!-- 프로필 사진 (Bootstrap 유틸리티 클래스 사용) -->
             <div class="d-flex align-items-center justify-content-center bg-light rounded-circle flex-shrink-0"
@@ -66,7 +66,7 @@ const postComponent = {
     </header>
 
     <!-- 게시물 본문 (Bootstrap 패딩 사용) -->
-    <div class="p-3" :class="{ 'border border-warning border-1 rounded-3': edit.enabled }" style="transition: all 0.1s ease;">
+    <div class="card-body" :class="{ 'border border-warning border-1 rounded-3': edit.enabled }" style="transition: all 0.1s ease;">
         <!-- Edit Mode -->
         <div v-if="edit.enabled" >
             <!-- Edit Content Textarea -->
@@ -192,12 +192,12 @@ const postComponent = {
         <!-- View Mode -->
         <div v-else>
             <!-- 제목 (Bootstrap 타이포그래피) -->
-            <div v-if="post.title" class="fw-semibold mb-2" style="font-size: 18px; color: #050505; line-height: 1.4;">
+            <h2 v-if="post.title" class="fw-semibold mb-2" style="font-size: 18px; color: #050505; line-height: 1.4;">
                 {{ post.title }}
-            </div>
+            </h2>
 
             <!-- 내용 (Bootstrap 타이포그래피) -->
-            <div v-if="post.content" class="mb-2" style="font-size: 15px; color: #050505; line-height: 1.5; white-space: pre-wrap; word-break: break-word;" v-html="formatContent(displayedContent)"></div>
+            <p v-if="post.content" class="mb-2" style="font-size: 15px; color: #050505; line-height: 1.5; white-space: pre-wrap; word-break: break-word;" v-html="formatContent(displayedContent)"></p>
 
             <!-- See more / See less 버튼 -->
             <div v-if="isContentTooLong" class="mb-3">
@@ -214,8 +214,8 @@ const postComponent = {
             </div>
 
             <!-- 이미지 -->
-            <div>
-                <div v-if="hasPhotos(post.files)" class="row g-2">
+            <figure v-if="hasPhotos(post.files)">
+                <div class="row g-2">
                     <div v-for="(fileUrl, index) in getValidPhotos(post.files)" :key="index"
                             :class="getPhotoColumnClass(getValidPhotos(post.files).length)">
                         <img :src="thumbnail(fileUrl, 400, 400, 'cover', 85, 'ffffff')"
@@ -225,7 +225,7 @@ const postComponent = {
                                 @click="openPhotoModal(fileUrl)">
                     </div>
                 </div>
-            </div>
+            </figure>
         </div>
     </div>
 
@@ -233,21 +233,18 @@ const postComponent = {
 
 
     <!-- 게시물 액션 버튼 (Bootstrap 버튼 그룹) -->
-    <div v-if="!edit.enabled" class="d-flex border-top" style="border-color: #e4e6eb;">
-        <button class="btn btn-link text-decoration-none text-secondary flex-fill py-2 border-0"
-                style="font-size: 15px; font-weight: 600;"
+    <div v-if="!edit.enabled" class="card-footer bg-white d-flex gap-2 justify-content-around border-top py-2">
+        <button class="card-link text-decoration-none text-secondary fw-bold small border-0 bg-transparent"
                 @click="handleLike(post)">
             <i class="fa-regular fa-thumbs-up me-2"></i>
             <span>Like</span>
         </button>
-        <button class="btn btn-link text-decoration-none text-secondary flex-fill py-2 border-0"
-                style="font-size: 15px; font-weight: 600;"
+        <button class="card-link text-decoration-none text-secondary fw-bold small border-0 bg-transparent"
                 @click="showMoreComments">
             <i class="fa-regular fa-comment me-2"></i>
             <span>Comment{{ post.comment_count > 0 ? ' (' + post.comment_count + ')' : '' }}</span>
         </button>
-        <button class="btn btn-link text-decoration-none text-secondary flex-fill py-2 border-0"
-                style="font-size: 15px; font-weight: 600;"
+        <button class="card-link text-decoration-none text-secondary fw-bold small border-0 bg-transparent"
                 @click="handleShare(post)">
             <i class="fa-regular fa-share-from-square me-2"></i>
             <span>Share</span>
@@ -255,7 +252,7 @@ const postComponent = {
     </div>
 
     <!-- 댓글 섹션 (Bootstrap 패딩) -->
-    <div v-if="!edit.enabled" class="border-top p-3" style="border-color: #e4e6eb; background-color: #f0f2f5;">
+    <div v-if="!edit.enabled" class="card-footer border-top" style="border-color: #e4e6eb; background-color: #f0f2f5;">
         <!-- 가짜 댓글 입력 박스 (클릭 시 Modal 열림) -->
         <div class="d-flex align-items-center gap-2 mb-3" @click="openCommentModal()" style="cursor: pointer;">
             <!-- 댓글 작성자 아바타 (Bootstrap 유틸리티) -->
@@ -305,18 +302,18 @@ const postComponent = {
                     <div class="flex-grow-1">
                         <!-- 첫 번째 줄: 이름 + 날짜 -->
                         <div class="d-flex align-items-center gap-2 mb-1">
-                            <span class="fw-semibold" style="font-size: 13px; color: #050505;">
+                            <strong class="fw-semibold" style="font-size: 13px; color: #050505;">
                                 {{ (comment.author && comment.author.first_name) || 'Anonymous' }}
-                            </span>
-                            <span class="text-muted" style="font-size: 12px;">
+                            </strong>
+                            <time class="text-muted" style="font-size: 12px;">
                                 {{ formatDate(comment.created_at) }}
-                            </span>
+                            </time>
                         </div>
 
                         <!-- 두 번째 줄: 댓글 내용 (연한 회색 배경 박스) -->
-                        <div class="rounded-3 px-2 py-1 mb-1" style="background-color: #f8f9fa; border: 1px solid #e4e6eb; font-size: 14px; color: #050505; line-height: 1.3; word-break: break-word; white-space: pre-wrap;">
+                        <p class="rounded-3 px-2 py-1 mb-1" style="background-color: #f8f9fa; border: 1px solid #e4e6eb; font-size: 14px; color: #050505; line-height: 1.3; word-break: break-word; white-space: pre-wrap;">
                             {{ comment.content }}
-                        </div>
+                        </p>
 
                         <!-- 댓글 첨부 이미지 -->
                         <div v-if="hasPhotos(comment.files)" class="mb-2">
@@ -463,7 +460,7 @@ const postComponent = {
             </div>
         </div>
     </div>
-    </div>
+    </article>
 `,
     data() {
         // Safely get categories data
