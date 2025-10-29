@@ -255,31 +255,38 @@ Attached, equal-width cards using `.card-group`:
    - Color should be dark grey (#6c757d or similar)
    - Font weight should always be bold
 
-5. **Update existing HTML pages**
+5. **Apply smaller font size** to `card-link` elements
+   - Font size should be one step smaller than normal text
+   - Use `style="font-size: 0.875em;"` for inline styling
+   - Or use Bootstrap utility class: `small` or custom class
+   - 0.875em is equivalent to 14px when base is 16px
+   - Smaller font size makes links less prominent while remaining readable
+
+6. **Update existing HTML pages**
    - Replace all existing buttons/links in cards with `card-link`
-   - Apply dark grey color and bold font weight
+   - Apply dark grey color, bold font weight, and smaller font size
    - Ensure consistency across all pages
 
 **Example - Correct Usage:**
 
 ```html
-<!-- ✅ CORRECT: Using card-link with dark grey color and bold font -->
+<!-- ✅ CORRECT: Using card-link with dark grey color, bold font, and smaller size -->
 <div class="card" style="width: 18rem;">
   <img src="..." class="card-img-top" alt="...">
   <div class="card-body">
     <h5 class="card-title">Card title</h5>
     <p class="card-text">Some quick example text to build on the card title.</p>
-    <a href="#" class="card-link text-decoration-none text-secondary fw-bold">Go somewhere</a>
-    <a href="#" class="card-link text-decoration-none text-secondary fw-bold">Another link</a>
+    <a href="#" class="card-link text-decoration-none text-secondary fw-bold small">Go somewhere</a>
+    <a href="#" class="card-link text-decoration-none text-secondary fw-bold small">Another link</a>
   </div>
 </div>
 
-<!-- ✅ CORRECT: Using inline styles for color and font-weight -->
+<!-- ✅ CORRECT: Using inline styles for color, font-weight, and font-size -->
 <div class="card" style="width: 18rem;">
   <div class="card-body">
     <h5 class="card-title">Card title</h5>
     <p class="card-text">Some quick example text.</p>
-    <a href="#" class="card-link text-decoration-none" style="color: #6c757d; font-weight: bold;">Go somewhere</a>
+    <a href="#" class="card-link text-decoration-none" style="color: #6c757d; font-weight: bold; font-size: 0.875em;">Go somewhere</a>
   </div>
 </div>
 
@@ -288,7 +295,7 @@ Attached, equal-width cards using `.card-group`:
   <div class="card-body">
     <h5 class="card-title">Card title</h5>
     <p class="card-text">Some quick example text.</p>
-    <button class="card-link text-decoration-none text-secondary fw-bold" onclick="doSomething()">Click me</button>
+    <button class="card-link text-decoration-none text-secondary fw-bold small" onclick="doSomething()">Click me</button>
   </div>
 </div>
 ```
@@ -324,9 +331,18 @@ Attached, equal-width cards using `.card-group`:
     <a href="#" class="card-link text-decoration-none text-secondary">Go somewhere</a>  <!-- ❌ Missing fw-bold -->
   </div>
 </div>
+
+<!-- ❌ WRONG: Missing smaller font-size -->
+<div class="card" style="width: 18rem;">
+  <div class="card-body">
+    <h5 class="card-title">Card title</h5>
+    <p class="card-text">Some quick example text.</p>
+    <a href="#" class="card-link text-decoration-none text-secondary fw-bold">Go somewhere</a>  <!-- ❌ Missing small class or font-size -->
+  </div>
+</div>
 ```
 
-**Why use `card-link` with dark grey and bold styling?**
+**Why use `card-link` with dark grey, bold, and smaller font?**
 - ✅ Maintains visual consistency across all card components
 - ✅ Follows Bootstrap's card design system
 - ✅ Provides proper spacing and styling within cards
@@ -334,6 +350,8 @@ Attached, equal-width cards using `.card-group`:
 - ✅ Dark grey color is more subtle and professional than blue
 - ✅ Bold font weight improves clickability perception without using buttons
 - ✅ Grey color blends better with card design while remaining visible
+- ✅ Smaller font size makes links less visually dominant
+- ✅ Creates better hierarchy between main content and action links
 
 ---
 

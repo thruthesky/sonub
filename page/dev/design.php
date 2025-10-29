@@ -12,7 +12,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Card Title</h5>
                     <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
-                    <a href="#" class="card-link text-decoration-none text-secondary fw-bold">Go somewhere</a>
+                    <a href="#" class="card-link text-decoration-none text-secondary fw-bold small">Go somewhere</a>
                 </div>
             </div>
         </div>
@@ -25,7 +25,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Card Title</h5>
                     <p class="card-text">Some quick example text to build on the card title. The image appears at the bottom.</p>
-                    <a href="#" class="card-link text-decoration-none text-secondary fw-bold">Learn More</a>
+                    <a href="#" class="card-link text-decoration-none text-secondary fw-bold small">Learn More</a>
                 </div>
                 <img src="https://picsum.photos/286/180?random=2" class="card-img-bottom" alt="Bottom Image">
             </div>
@@ -78,7 +78,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Special Title Treatment</h5>
                     <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
-                    <a href="#" class="card-link text-decoration-none text-secondary fw-bold">Go somewhere</a>
+                    <a href="#" class="card-link text-decoration-none text-secondary fw-bold small">Go somewhere</a>
                 </div>
                 <div class="card-footer text-body-secondary">
                     <i class="fa-regular fa-clock"></i> 2 days ago
@@ -112,9 +112,10 @@
             <p class="text-muted mb-3">Cards with background colors, gradients for text readability, and automatic text color adjustment.</p>
             <div class="row g-3">
                 <div class="col-12 col-md-6 col-lg-3">
-                    <div class="card text-bg-primary shadow-sm">
+                    <div class="card text-bg-primary shadow-sm position-relative">
                         <img src="https://picsum.photos/300/150?random=8" class="card-img-top" alt="Primary Card">
-                        <div class="card-body" style="background: linear-gradient(rgba(13, 110, 253, 0.5), rgba(13, 110, 253, 0.5));">
+                        <div style="position: absolute; top: 0; left: 0; right: 0; height: 150px; background: linear-gradient(rgba(13, 110, 253, 0.5), rgba(13, 110, 253, 0.5)); border-radius: 0.25rem 0.25rem 0 0;"></div>
+                        <div class="card-body position-relative" style="z-index: 1;">
                             <h5 class="card-title">Primary Card</h5>
                             <p class="card-text">Gradient maintains blue theme while showing image underneath.</p>
                         </div>
@@ -174,8 +175,8 @@
                     <h5 class="card-title">Card Title</h5>
                     <h6 class="card-subtitle mb-2 text-body-secondary">Card Subtitle</h6>
                     <p class="card-text">Some quick example text to build on the card title and subtitle.</p>
-                    <a href="#" class="card-link text-decoration-none text-secondary fw-bold">Card link</a>
-                    <a href="#" class="card-link text-decoration-none text-secondary fw-bold">Another link</a>
+                    <a href="#" class="card-link text-decoration-none text-secondary fw-bold small">Card link</a>
+                    <a href="#" class="card-link text-decoration-none text-secondary fw-bold small">Another link</a>
                 </div>
             </div>
         </div>
@@ -218,7 +219,7 @@
                         <div class="card-body">
                             <h5 class="card-title">Bottom Image Card 1</h5>
                             <p class="card-text">Content comes first, then the image appears at the bottom of the card.</p>
-                            <a href="#" class="card-link text-decoration-none text-secondary fw-bold">View Details</a>
+                            <a href="#" class="card-link text-decoration-none text-secondary fw-bold small">View Details</a>
                         </div>
                         <img src="https://picsum.photos/400/200?random=15" class="card-img-bottom" alt="Bottom 1">
                     </div>
@@ -228,7 +229,7 @@
                         <div class="card-body">
                             <h5 class="card-title">Bottom Image Card 2</h5>
                             <p class="card-text">This layout prioritizes text content and ends with a visual element.</p>
-                            <a href="#" class="card-link text-decoration-none text-secondary fw-bold">View Details</a>
+                            <a href="#" class="card-link text-decoration-none text-secondary fw-bold small">View Details</a>
                         </div>
                         <img src="https://picsum.photos/400/200?random=16" class="card-img-bottom" alt="Bottom 2">
                     </div>
@@ -238,7 +239,7 @@
                         <div class="card-body">
                             <h5 class="card-title">Bottom Image Card 3</h5>
                             <p class="card-text">Great for emphasizing content over imagery in your design.</p>
-                            <a href="#" class="card-link text-decoration-none text-secondary fw-bold">View Details</a>
+                            <a href="#" class="card-link text-decoration-none text-secondary fw-bold small">View Details</a>
                         </div>
                         <img src="https://picsum.photos/400/200?random=17" class="card-img-bottom" alt="Bottom 3">
                     </div>
