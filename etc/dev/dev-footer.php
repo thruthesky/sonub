@@ -23,6 +23,10 @@
             <li><a class="dropdown-item" href="#" onclick="login_as('kiwi'); return false;"><i class="fa-solid fa-k text-warning"></i> Kiwi</a></li>
             <li><a class="dropdown-item" href="#" onclick="login_as('lemon'); return false;"><i class="fa-solid fa-l text-info"></i> Lemon</a></li>
             <li><a class="dropdown-item" href="#" onclick="login_as('mango'); return false;"><i class="fa-solid fa-m text-secondary"></i> Mango</a></li>
+            <li>
+                <hr class="dropdown-divider">
+            </li>
+            <li><a class="dropdown-item" href="/dev/design"><i class="fa-solid fa-palette text-primary"></i> Design Components</a></li>
         </ul>
     </div>
 </div>
