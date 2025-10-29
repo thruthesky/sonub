@@ -112,10 +112,9 @@
             <p class="text-muted mb-3">Cards with background colors, gradients for text readability, and automatic text color adjustment.</p>
             <div class="row g-3">
                 <div class="col-12 col-md-6 col-lg-3">
-                    <div class="card text-bg-primary shadow-sm position-relative">
+                    <div class="card text-bg-primary shadow-sm">
                         <img src="https://picsum.photos/300/150?random=8" class="card-img-top" alt="Primary Card">
-                        <div style="position: absolute; top: 0; left: 0; right: 0; height: 150px; background: linear-gradient(rgba(13, 110, 253, 0.5), rgba(13, 110, 253, 0.5)); border-radius: 0.25rem 0.25rem 0 0;"></div>
-                        <div class="card-body position-relative" style="z-index: 1;">
+                        <div class="card-body" style="background: linear-gradient(to bottom, rgba(13, 110, 253, 0.8), rgba(13, 110, 253, 0.3));">
                             <h5 class="card-title">Primary Card</h5>
                             <p class="card-text">Gradient maintains blue theme while showing image underneath.</p>
                         </div>
@@ -124,7 +123,7 @@
                 <div class="col-12 col-md-6 col-lg-3">
                     <div class="card text-bg-success shadow-sm">
                         <img src="https://picsum.photos/300/150?random=9" class="card-img-top" alt="Success Card">
-                        <div class="card-body" style="background: linear-gradient(rgba(25, 135, 84, 0.5), rgba(25, 135, 84, 0.5));">
+                        <div class="card-body" style="background: linear-gradient(to bottom, rgba(25, 135, 84, 0.8), rgba(25, 135, 84, 0.3));">
                             <h5 class="card-title">Success Card</h5>
                             <p class="card-text">Gradient maintains green theme while showing image underneath.</p>
                         </div>
@@ -133,7 +132,7 @@
                 <div class="col-12 col-md-6 col-lg-3">
                     <div class="card text-bg-danger shadow-sm">
                         <img src="https://picsum.photos/300/150?random=10" class="card-img-top" alt="Danger Card">
-                        <div class="card-body" style="background: linear-gradient(rgba(220, 53, 69, 0.5), rgba(220, 53, 69, 0.5));">
+                        <div class="card-body" style="background: linear-gradient(to bottom, rgba(220, 53, 69, 0.8), rgba(220, 53, 69, 0.3));">
                             <h5 class="card-title">Danger Card</h5>
                             <p class="card-text">Gradient maintains red theme while showing image underneath.</p>
                         </div>
@@ -142,7 +141,7 @@
                 <div class="col-12 col-md-6 col-lg-3">
                     <div class="card text-bg-warning shadow-sm">
                         <img src="https://picsum.photos/300/150?random=11" class="card-img-top" alt="Warning Card">
-                        <div class="card-body" style="background: linear-gradient(rgba(255, 193, 7, 0.6), rgba(255, 193, 7, 0.6));">
+                        <div class="card-body" style="background: linear-gradient(to bottom, rgba(255, 193, 7, 0.8), rgba(255, 193, 7, 0.3));">
                             <h5 class="card-title">Warning Card</h5>
                             <p class="card-text">Gradient maintains warning color while showing image underneath.</p>
                         </div>

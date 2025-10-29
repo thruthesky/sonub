@@ -22,242 +22,94 @@ load_deferred_js('vue-components/user-search.component');
 <!-- 사용자 검색 컴포넌트 (자동 마운트) -->
 <div class="user-search-component"></div>
 
-<div class="new-users-widget mb-3">
-    <div class="widget-header">
-        <div class="widget-heading">
-            <h5 class="widget-title"><?= t()->신규_회원 ?></h5>
-            <p class="widget-subtitle"><?= t()->최근_가입자 ?></p>
-        </div>
+<!-- 신규 회원 카드 위젯 -->
+<div class="mb-4">
+    <!-- 헤더 -->
+    <div class="mb-3">
+        <h5 class="mb-1 fw-bold text-dark"><?= t()->신규_회원 ?></h5>
+        <p class="mb-0 text-muted" style="font-size: 0.875rem;"><?= t()->최근_가입자 ?></p>
     </div>
 
     <?php if ($userCount === 0): ?>
-        <div class="empty-state">
-            <i class="fa-regular fa-circle-user"></i>
-            <p><?= t()->아직_회원이_없습니다 ?><br><span><?= t()->곧_다시_확인해주세요 ?></span></p>
+        <!-- 빈 상태 -->
+        <div class="alert alert-info d-flex align-items-center gap-2 py-3">
+            <i class="fa-regular fa-circle-user fs-5"></i>
+            <div>
+                <div><?= t()->아직_회원이_없습니다 ?></div>
+                <small class="text-muted"><?= t()->곧_다시_확인해주세요 ?></small>
+            </div>
         </div>
     <?php else: ?>
-        <div class="users-grid">
+        <!-- 사용자 카드 그리드 -->
+        <div class="row g-2">
             <?php foreach ($displayUsers as $user): ?>
                 <?php
-                // first_name, middle_name, last_name을 조합하여 전체 이름 생성
+                // 전체 이름 생성
                 $name_parts = [];
                 if (!empty($user['first_name'])) $name_parts[] = $user['first_name'];
                 if (!empty($user['middle_name'])) $name_parts[] = $user['middle_name'];
                 if (!empty($user['last_name'])) $name_parts[] = $user['last_name'];
                 $full_name = !empty($name_parts) ? implode(' ', $name_parts) : t()->익명;
+                $photo_url = !empty($user['photo_url']) ? htmlspecialchars($user['photo_url']) : null;
                 ?>
-                <a href="<?= href()->user->profile ?>?id=<?= $user['id'] ?>" class="user-item">
-                    <div class="user-avatar">
-                        <?php if (!empty($user['photo_url'])): ?>
-                            <img src="<?= htmlspecialchars($user['photo_url'] ?? '') ?>"
-                                alt="<?= htmlspecialchars($full_name) ?>">
-                        <?php else: ?>
-                            <div class="avatar-placeholder">
-                                <i class="fa-solid fa-user"></i>
+                <div class="col-6 col-md-4">
+                    <a href="<?= href()->user->profile ?>?id=<?= $user['id'] ?>" class="text-decoration-none new-user-card">
+                        <div class="card border-0 shadow-sm h-100 new-user-card-inner">
+                            <!-- 사용자 아바타 이미지 또는 플레이스홀더 -->
+                            <?php if ($photo_url): ?>
+                                <img src="<?= $photo_url ?>"
+                                     alt="<?= htmlspecialchars($full_name) ?>"
+                                     class="card-img-top new-user-avatar"
+                                     style="height: 140px; object-fit: cover;">
+                            <?php else: ?>
+                                <div class="card-img-top new-user-avatar bg-light d-flex align-items-center justify-content-center"
+                                     style="height: 140px; background: linear-gradient(135deg, #f5f5f5 0%, #e9ecef 100%);">
+                                    <i class="fa-solid fa-user text-muted" style="font-size: 2.5rem;"></i>
+                                </div>
+                            <?php endif; ?>
+
+                            <!-- 사용자 이름 -->
+                            <div class="card-body p-2 d-flex align-items-center justify-content-center">
+                                <h6 class="card-title mb-0 text-center text-truncate text-dark"
+                                    title="<?= htmlspecialchars($full_name) ?>"
+                                    style="font-size: 0.875rem; font-weight: 500;">
+                                    <?= htmlspecialchars($full_name) ?>
+                                </h6>
                             </div>
-                        <?php endif; ?>
-                    </div>
-                    <div class="user-name"><?= htmlspecialchars($full_name) ?></div>
-                </a>
+                        </div>
+                    </a>
+                </div>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
 </div>
 
+<!-- 사용자 카드 스타일 -->
 <style>
-    /* New users widget styles - Clean and Modern Design */
-    .new-users-widget {
-        background: white;
-        border: 1px solid var(--bs-border-color);
-        border-radius: 8px;
-        padding: 0;
+.new-user-card {
+    color: inherit;
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.new-user-card:hover {
+    text-decoration: none;
+}
+
+.new-user-card:hover .new-user-card-inner {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    transform: translateY(-4px);
+}
+
+.new-user-avatar {
+    border-radius: 0.375rem 0.375rem 0 0;
+}
+
+/* 반응형 조정 */
+@media (max-width: 576px) {
+    .new-user-avatar {
+        height: 100px !important;
     }
-
-    .new-users-widget .widget-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 1.25rem 1.25rem 0.75rem 1.25rem;
-        background: var(--bs-light);
-        border-bottom: 1px solid var(--bs-border-color);
-    }
-
-    .new-users-widget .widget-heading {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-
-    .new-users-widget .widget-title {
-        margin: 0;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: var(--bs-emphasis-color);
-    }
-
-    .new-users-widget .widget-subtitle {
-        margin: 0;
-        text-transform: uppercase;
-        font-size: 0.65rem;
-        letter-spacing: 0.1em;
-        font-weight: 500;
-        color: var(--bs-secondary);
-    }
-
-    .new-users-widget .widget-count {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 2.25rem;
-        height: 2.25rem;
-        padding: 0 0.5rem;
-        border-radius: 50%;
-        background: var(--bs-primary);
-        font-size: 0.875rem;
-        font-weight: 600;
-        color: white;
-    }
-
-    .new-users-widget .empty-state {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 0.75rem;
-        padding: 1.5rem;
-        text-align: center;
-        color: rgba(15, 23, 42, 0.6);
-        background: rgba(148, 163, 184, 0.08);
-        border-radius: 10px;
-        border: 1px dashed rgba(15, 23, 42, 0.12);
-    }
-
-    .new-users-widget .empty-state i {
-        font-size: 1.8rem;
-        color: rgba(59, 130, 246, 0.65);
-    }
-
-    .new-users-widget .empty-state span {
-        font-size: 0.8rem;
-        color: rgba(15, 23, 42, 0.45);
-    }
-
-    /* Grid layout - No gaps, clean borders */
-    .new-users-widget .users-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 0;
-        padding: 0;
-        width: 100%;
-    }
-
-    /* User item - Clean design without borders */
-    .new-users-widget .user-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        padding: 1rem 0.375rem;
-        text-decoration: none;
-        color: var(--bs-body-color);
-        background: white;
-        transition: background-color 0.2s ease, color 0.2s ease;
-        min-width: 0;
-    }
-
-    .new-users-widget .user-item:hover {
-        background-color: var(--bs-light);
-        color: var(--bs-primary);
-    }
-
-    /* User avatar - Larger and cleaner */
-    .new-users-widget .user-avatar {
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        overflow: hidden;
-        border: 2px solid var(--bs-border-color);
-        background: var(--bs-light);
-    }
-
-    .new-users-widget .user-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    /* Avatar placeholder (no photo) */
-    .new-users-widget .avatar-placeholder {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--bs-light);
-        color: var(--bs-secondary);
-        font-size: 1.5rem;
-    }
-
-    /* User name - Single line with ellipsis */
-    .new-users-widget .user-name {
-        font-size: 0.8rem;
-        font-weight: 500;
-        text-align: center;
-        color: var(--bs-body-color);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        width: 100%;
-        transition: color 0.2s ease;
-    }
-
-    .new-users-widget .user-item:hover .user-name {
-        color: var(--bs-primary);
-        font-weight: 600;
-    }
-
-    /* Responsive design */
-    @media (max-width: 768px) {
-
-
-        .new-users-widget .widget-header {
-            padding: 1rem 1rem 0.625rem 1rem;
-        }
-
-        .new-users-widget .user-item {
-            padding: 0.875rem 0.4rem;
-        }
-
-        .new-users-widget .user-avatar {
-            width: 48px;
-            height: 48px;
-        }
-
-        .new-users-widget .user-name {
-            font-size: 0.75rem;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .new-users-widget .widget-header {
-            padding: 0.875rem 0.875rem 0.5rem 0.875rem;
-        }
-
-        .new-users-widget .user-item {
-            padding: 0.75rem 0.3rem;
-        }
-
-        .new-users-widget .user-avatar {
-            width: 44px;
-            height: 44px;
-        }
-
-        .new-users-widget .user-name {
-            font-size: 0.7rem;
-        }
-    }
+}
 </style>
 
 <?php
