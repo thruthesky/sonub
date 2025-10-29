@@ -8,170 +8,301 @@
 // 다국어 번역 함수 호출 (반드시 페이지 로직 전에 호출)
 inject_menu_intro_language();
 
-load_page_css();
 $user = login();
 ?>
 
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-12">
-            <h1 class="menu-intro__title"><?= t()->메뉴 ?></h1>
-            <section class="menu-section">
-                <h2 class="menu-section__heading"><?= t()->주요_메뉴 ?></h2>
-                <div class="menu-tiles">
-                    <a href="<?= href()->home ?>" class="menu-tile">
-                        <span class="menu-tile__icon bg-primary-subtle text-primary">
-                            <i class="bi bi-house-door"></i>
-                        </span>
-                        <span class="menu-tile__label"><?= t()->홈 ?></span>
-                        <span class="menu-tile__desc"><?= t()->메인_페이지로_이동 ?></span>
-                    </a>
-                    <a href="<?= href()->post->categories ?>" class="menu-tile">
-                        <span class="menu-tile__icon bg-primary-subtle text-primary">
-                            <i class="bi bi-grid"></i>
-                        </span>
-                        <span class="menu-tile__label"><?= t()->게시판 ?></span>
-                        <span class="menu-tile__desc"><?= t()->카테고리별_게시글_보기 ?></span>
-                    </a>
-                    <a href="<?= href()->user->list ?>" class="menu-tile">
-                        <span class="menu-tile__icon bg-primary-subtle text-primary">
-                            <i class="bi bi-people"></i>
-                        </span>
-                        <span class="menu-tile__label"><?= t()->사용자_목록 ?></span>
-                        <span class="menu-tile__desc"><?= t()->가입한_회원_보기 ?></span>
-                    </a>
-                    <a href="<?= href()->chat->rooms ?>" class="menu-tile">
-                        <span class="menu-tile__icon bg-primary-subtle text-primary">
-                            <i class="bi bi-chat-dots"></i>
-                        </span>
-                        <span class="menu-tile__label"><?= t()->채팅 ?></span>
-                        <span class="menu-tile__desc"><?= t()->채팅방_목록 ?></span>
-                    </a>
+            <h1 class="text-center fw-bold mb-4"><?= t()->메뉴 ?></h1>
+
+            <!-- 주요 메뉴 -->
+            <section class="mb-4">
+                <h2 class="h5 fw-semibold mb-3"><?= t()->주요_메뉴 ?></h2>
+                <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+                    <div class="col">
+                        <a href="<?= href()->home ?>" class="text-decoration-none">
+                            <div class="card shadow-sm h-100 text-center" style="transition: transform 0.2s ease;">
+                                <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center mb-2"
+                                         style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                        <i class="bi bi-house-door"></i>
+                                    </div>
+                                    <h6 class="card-title fw-semibold mb-1 small"><?= t()->홈 ?></h6>
+                                    <p class="card-text text-muted mb-0" style="font-size: 0.75rem;"><?= t()->메인_페이지로_이동 ?></p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href="<?= href()->post->categories ?>" class="text-decoration-none">
+                            <div class="card shadow-sm h-100 text-center" style="transition: transform 0.2s ease;">
+                                <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center mb-2"
+                                         style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                        <i class="bi bi-grid"></i>
+                                    </div>
+                                    <h6 class="card-title fw-semibold mb-1 small"><?= t()->게시판 ?></h6>
+                                    <p class="card-text text-muted mb-0" style="font-size: 0.75rem;"><?= t()->카테고리별_게시글_보기 ?></p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href="<?= href()->user->list ?>" class="text-decoration-none">
+                            <div class="card shadow-sm h-100 text-center" style="transition: transform 0.2s ease;">
+                                <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center mb-2"
+                                         style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                        <i class="bi bi-people"></i>
+                                    </div>
+                                    <h6 class="card-title fw-semibold mb-1 small"><?= t()->사용자_목록 ?></h6>
+                                    <p class="card-text text-muted mb-0" style="font-size: 0.75rem;"><?= t()->가입한_회원_보기 ?></p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href="<?= href()->chat->rooms ?>" class="text-decoration-none">
+                            <div class="card shadow-sm h-100 text-center" style="transition: transform 0.2s ease;">
+                                <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                    <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center mb-2"
+                                         style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                        <i class="bi bi-chat-dots"></i>
+                                    </div>
+                                    <h6 class="card-title fw-semibold mb-1 small"><?= t()->채팅 ?></h6>
+                                    <p class="card-text text-muted mb-0" style="font-size: 0.75rem;"><?= t()->채팅방_목록 ?></p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
                 </div>
             </section>
 
             <?php if ($user): ?>
-                <section class="menu-section">
-                    <h2 class="menu-section__heading"><?= t()->내_계정 ?></h2>
-                    <div class="menu-tiles">
-                        <a href="<?= href()->user->profile ?>" class="menu-tile">
-                            <span class="menu-tile__icon bg-success-subtle text-success">
-                                <i class="bi bi-person-circle"></i>
-                            </span>
-                            <span class="menu-tile__label"><?= t()->내_프로필 ?></span>
-                            <span class="menu-tile__desc"><?= t()->프로필_보기_및_수정 ?></span>
-                        </a>
-                        <a href="<?= href()->user->settings ?>" class="menu-tile">
-                            <span class="menu-tile__icon bg-success-subtle text-success">
-                                <i class="bi bi-gear"></i>
-                            </span>
-                            <span class="menu-tile__label"><?= t()->설정 ?></span>
-                            <span class="menu-tile__desc"><?= t()->계정_설정 ?></span>
-                        </a>
-                        <a href="<?= href()->post->list(1, 'my-wall') ?>" class="menu-tile">
-                            <span class="menu-tile__icon bg-success-subtle text-success">
-                                <i class="bi bi-journal-text"></i>
-                            </span>
-                            <span class="menu-tile__label"><?= t()->내_벽 ?></span>
-                            <span class="menu-tile__desc"><?= t()->내가_작성한_글_보기 ?></span>
-                        </a>
-                        <a href="<?= href()->comment->list($user->id) ?>" class="menu-tile">
-                            <span class="menu-tile__icon bg-success-subtle text-success">
-                                <i class="bi bi-chat-left-text"></i>
-                            </span>
-                            <span class="menu-tile__label"><?= t()->내_댓글 ?></span>
-                            <span class="menu-tile__desc"><?= t()->내가_작성한_댓글_보기 ?></span>
-                        </a>
-                        <a href="<?= href()->user->logout_submit ?>" class="menu-tile">
-                            <span class="menu-tile__icon bg-danger-subtle text-danger">
-                                <i class="bi bi-box-arrow-right"></i>
-                            </span>
-                            <span class="menu-tile__label"><?= t()->로그아웃 ?></span>
-                            <span class="menu-tile__desc"><?= t()->계정에서_로그아웃 ?></span>
-                        </a>
+                <!-- 내 계정 -->
+                <section class="mb-4">
+                    <h2 class="h5 fw-semibold mb-3"><?= t()->내_계정 ?></h2>
+                    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+                        <div class="col">
+                            <a href="<?= href()->user->profile ?>" class="text-decoration-none">
+                                <div class="card shadow-sm h-100 text-center" style="transition: transform 0.2s ease;">
+                                    <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                        <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center mb-2"
+                                             style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                            <i class="bi bi-person-circle"></i>
+                                        </div>
+                                        <h6 class="card-title fw-semibold mb-1 small"><?= t()->내_프로필 ?></h6>
+                                        <p class="card-text text-muted mb-0" style="font-size: 0.75rem;"><?= t()->프로필_보기_및_수정 ?></p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col">
+                            <a href="<?= href()->user->settings ?>" class="text-decoration-none">
+                                <div class="card shadow-sm h-100 text-center" style="transition: transform 0.2s ease;">
+                                    <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                        <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center mb-2"
+                                             style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                            <i class="bi bi-gear"></i>
+                                        </div>
+                                        <h6 class="card-title fw-semibold mb-1 small"><?= t()->설정 ?></h6>
+                                        <p class="card-text text-muted mb-0" style="font-size: 0.75rem;"><?= t()->계정_설정 ?></p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col">
+                            <a href="<?= href()->post->list(1, 'my-wall') ?>" class="text-decoration-none">
+                                <div class="card shadow-sm h-100 text-center" style="transition: transform 0.2s ease;">
+                                    <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                        <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center mb-2"
+                                             style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                            <i class="bi bi-journal-text"></i>
+                                        </div>
+                                        <h6 class="card-title fw-semibold mb-1 small"><?= t()->내_벽 ?></h6>
+                                        <p class="card-text text-muted mb-0" style="font-size: 0.75rem;"><?= t()->내가_작성한_글_보기 ?></p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col">
+                            <a href="<?= href()->comment->list($user->id) ?>" class="text-decoration-none">
+                                <div class="card shadow-sm h-100 text-center" style="transition: transform 0.2s ease;">
+                                    <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                        <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center mb-2"
+                                             style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                            <i class="bi bi-chat-left-text"></i>
+                                        </div>
+                                        <h6 class="card-title fw-semibold mb-1 small"><?= t()->내_댓글 ?></h6>
+                                        <p class="card-text text-muted mb-0" style="font-size: 0.75rem;"><?= t()->내가_작성한_댓글_보기 ?></p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col">
+                            <a href="<?= href()->user->logout_submit ?>" class="text-decoration-none">
+                                <div class="card shadow-sm h-100 text-center" style="transition: transform 0.2s ease;">
+                                    <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                        <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center mb-2"
+                                             style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                            <i class="bi bi-box-arrow-right"></i>
+                                        </div>
+                                        <h6 class="card-title fw-semibold mb-1 small"><?= t()->로그아웃 ?></h6>
+                                        <p class="card-text text-muted mb-0" style="font-size: 0.75rem;"><?= t()->계정에서_로그아웃 ?></p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
                     </div>
                 </section>
             <?php else: ?>
-                <section class="menu-section">
-                    <h2 class="menu-section__heading"><?= t()->계정 ?></h2>
-                    <div class="menu-tiles">
-                        <a href="<?= href()->user->login ?>" class="menu-tile">
-                            <span class="menu-tile__icon bg-info-subtle text-info">
-                                <i class="bi bi-box-arrow-in-right"></i>
-                            </span>
-                            <span class="menu-tile__label"><?= t()->로그인 ?></span>
-                            <span class="menu-tile__desc"><?= t()->계정에_로그인 ?></span>
-                        </a>
-                        <a href="<?= href()->user->register ?>" class="menu-tile">
-                            <span class="menu-tile__icon bg-info-subtle text-info">
-                                <i class="bi bi-person-plus"></i>
-                            </span>
-                            <span class="menu-tile__label"><?= t()->회원가입 ?></span>
-                            <span class="menu-tile__desc"><?= t()->새_계정_만들기 ?></span>
-                        </a>
+                <!-- 계정 (비로그인) -->
+                <section class="mb-4">
+                    <h2 class="h5 fw-semibold mb-3"><?= t()->계정 ?></h2>
+                    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+                        <div class="col">
+                            <a href="<?= href()->user->login ?>" class="text-decoration-none">
+                                <div class="card shadow-sm h-100 text-center" style="transition: transform 0.2s ease;">
+                                    <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                        <div class="rounded-circle bg-info-subtle text-info d-flex align-items-center justify-content-center mb-2"
+                                             style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                            <i class="bi bi-box-arrow-in-right"></i>
+                                        </div>
+                                        <h6 class="card-title fw-semibold mb-1 small"><?= t()->로그인 ?></h6>
+                                        <p class="card-text text-muted mb-0" style="font-size: 0.75rem;"><?= t()->계정에_로그인 ?></p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col">
+                            <a href="<?= href()->user->register ?>" class="text-decoration-none">
+                                <div class="card shadow-sm h-100 text-center" style="transition: transform 0.2s ease;">
+                                    <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                        <div class="rounded-circle bg-info-subtle text-info d-flex align-items-center justify-content-center mb-2"
+                                             style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                            <i class="bi bi-person-plus"></i>
+                                        </div>
+                                        <h6 class="card-title fw-semibold mb-1 small"><?= t()->회원가입 ?></h6>
+                                        <p class="card-text text-muted mb-0" style="font-size: 0.75rem;"><?= t()->새_계정_만들기 ?></p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
                     </div>
                 </section>
             <?php endif; ?>
 
-            <section class="menu-section">
-                <h2 class="menu-section__heading"><?= t()->도움말_및_정보 ?></h2>
-                <div class="menu-tiles">
-                    <a href="<?= href()->help->howto ?>" class="menu-tile">
-                        <span class="menu-tile__icon bg-secondary-subtle text-secondary">
-                            <i class="bi bi-question-circle"></i>
-                        </span>
-                        <span class="menu-tile__label"><?= t()->사용_방법 ?></span>
-                        <span class="menu-tile__desc"><?= t()->Sonub_사용_가이드 ?></span>
-                    </a>
-                    <a href="<?= href()->help->guideline ?>" class="menu-tile">
-                        <span class="menu-tile__icon bg-secondary-subtle text-secondary">
-                            <i class="bi bi-file-text"></i>
-                        </span>
-                        <span class="menu-tile__label"><?= t()->가이드라인 ?></span>
-                        <span class="menu-tile__desc"><?= t()->커뮤니티_규칙 ?></span>
-                    </a>
-                    <a href="/about" class="menu-tile">
-                        <span class="menu-tile__icon bg-secondary-subtle text-secondary">
-                            <i class="bi bi-info-circle"></i>
-                        </span>
-                        <span class="menu-tile__label"><?= t()->소개 ?></span>
-                        <span class="menu-tile__desc"><?= t()->Sonub에_대해 ?></span>
-                    </a>
-                    <a href="<?= href()->admin->contact ?>" class="menu-tile">
-                        <span class="menu-tile__icon bg-secondary-subtle text-secondary">
-                            <i class="bi bi-envelope"></i>
-                        </span>
-                        <span class="menu-tile__label"><?= t()->문의하기 ?></span>
-                        <span class="menu-tile__desc"><?= t()->관리자에게_문의 ?></span>
-                    </a>
-                    <a href="<?= href()->help->terms_and_conditions ?>" class="menu-tile">
-                        <span class="menu-tile__icon bg-secondary-subtle text-secondary">
-                            <i class="bi bi-file-earmark-text"></i>
-                        </span>
-                        <span class="menu-tile__label"><?= t()->이용약관 ?></span>
-                        <span class="menu-tile__desc"><?= t()->서비스_이용약관 ?></span>
-                    </a>
-                    <a href="<?= href()->help->privacy ?>" class="menu-tile">
-                        <span class="menu-tile__icon bg-secondary-subtle text-secondary">
-                            <i class="bi bi-shield-check"></i>
-                        </span>
-                        <span class="menu-tile__label"><?= t()->개인정보처리방침 ?></span>
-                        <span class="menu-tile__desc"><?= t()->개인정보_보호_정책 ?></span>
-                    </a>
+            <!-- 도움말 및 정보 -->
+            <section class="mb-4">
+                <h2 class="h5 fw-semibold mb-3"><?= t()->도움말_및_정보 ?></h2>
+                <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+                    <div class="col">
+                        <a href="<?= href()->help->howto ?>" class="text-decoration-none">
+                            <div class="card shadow-sm h-100 text-center" style="transition: transform 0.2s ease;">
+                                <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                    <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center mb-2"
+                                         style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                        <i class="bi bi-question-circle"></i>
+                                    </div>
+                                    <h6 class="card-title fw-semibold mb-1 small"><?= t()->사용_방법 ?></h6>
+                                    <p class="card-text text-muted mb-0" style="font-size: 0.75rem;"><?= t()->Sonub_사용_가이드 ?></p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href="<?= href()->help->guideline ?>" class="text-decoration-none">
+                            <div class="card shadow-sm h-100 text-center" style="transition: transform 0.2s ease;">
+                                <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                    <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center mb-2"
+                                         style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                        <i class="bi bi-file-text"></i>
+                                    </div>
+                                    <h6 class="card-title fw-semibold mb-1 small"><?= t()->가이드라인 ?></h6>
+                                    <p class="card-text text-muted mb-0" style="font-size: 0.75rem;"><?= t()->커뮤니티_규칙 ?></p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href="/about" class="text-decoration-none">
+                            <div class="card shadow-sm h-100 text-center" style="transition: transform 0.2s ease;">
+                                <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                    <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center mb-2"
+                                         style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                        <i class="bi bi-info-circle"></i>
+                                    </div>
+                                    <h6 class="card-title fw-semibold mb-1 small"><?= t()->소개 ?></h6>
+                                    <p class="card-text text-muted mb-0" style="font-size: 0.75rem;"><?= t()->Sonub에_대해 ?></p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href="<?= href()->admin->contact ?>" class="text-decoration-none">
+                            <div class="card shadow-sm h-100 text-center" style="transition: transform 0.2s ease;">
+                                <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                    <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center mb-2"
+                                         style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                        <i class="bi bi-envelope"></i>
+                                    </div>
+                                    <h6 class="card-title fw-semibold mb-1 small"><?= t()->문의하기 ?></h6>
+                                    <p class="card-text text-muted mb-0" style="font-size: 0.75rem;"><?= t()->관리자에게_문의 ?></p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href="<?= href()->help->terms_and_conditions ?>" class="text-decoration-none">
+                            <div class="card shadow-sm h-100 text-center" style="transition: transform 0.2s ease;">
+                                <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                    <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center mb-2"
+                                         style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                    </div>
+                                    <h6 class="card-title fw-semibold mb-1 small"><?= t()->이용약관 ?></h6>
+                                    <p class="card-text text-muted mb-0" style="font-size: 0.75rem;"><?= t()->서비스_이용약관 ?></p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href="<?= href()->help->privacy ?>" class="text-decoration-none">
+                            <div class="card shadow-sm h-100 text-center" style="transition: transform 0.2s ease;">
+                                <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                    <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center mb-2"
+                                         style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                        <i class="bi bi-shield-check"></i>
+                                    </div>
+                                    <h6 class="card-title fw-semibold mb-1 small"><?= t()->개인정보처리방침 ?></h6>
+                                    <p class="card-text text-muted mb-0" style="font-size: 0.75rem;"><?= t()->개인정보_보호_정책 ?></p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
                 </div>
             </section>
 
             <?php if ($user && $user->is_admin): ?>
-                <section class="menu-section">
-                    <h2 class="menu-section__heading"><?= t()->관리자 ?></h2>
-                    <div class="menu-tiles">
-                        <a href="<?= href()->admin->dashboard ?>" class="menu-tile">
-                            <span class="menu-tile__icon bg-danger-subtle text-danger">
-                                <i class="bi bi-speedometer2"></i>
-                            </span>
-                            <span class="menu-tile__label"><?= t()->대시보드 ?></span>
-                            <span class="menu-tile__desc"><?= t()->관리자_대시보드 ?></span>
-                        </a>
+                <!-- 관리자 -->
+                <section class="mb-4">
+                    <h2 class="h5 fw-semibold mb-3"><?= t()->관리자 ?></h2>
+                    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+                        <div class="col">
+                            <a href="<?= href()->admin->dashboard ?>" class="text-decoration-none">
+                                <div class="card shadow-sm h-100 text-center" style="transition: transform 0.2s ease;">
+                                    <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
+                                        <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center mb-2"
+                                             style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                            <i class="bi bi-speedometer2"></i>
+                                        </div>
+                                        <h6 class="card-title fw-semibold mb-1 small"><?= t()->대시보드 ?></h6>
+                                        <p class="card-text text-muted mb-0" style="font-size: 0.75rem;"><?= t()->관리자_대시보드 ?></p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
                     </div>
                 </section>
             <?php endif; ?>
