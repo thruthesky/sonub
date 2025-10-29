@@ -525,52 +525,166 @@
             </div>
         </div>
 
-        <!-- Text Buttons (Link Style) -->
+        <!-- Borderless Icon Buttons -->
         <div class="mb-5">
-            <h2 class="mb-3">🔟 Text Buttons (Link Style)</h2>
-            <p class="text-muted mb-3">Buttons styled as text links - perfect for subtle actions.</p>
-            <div class="d-flex flex-wrap gap-3">
-                <button type="button" class="btn btn-link">Link button</button>
-                <button type="button" class="btn btn-link text-decoration-none">No underline</button>
-                <button type="button" class="btn btn-link text-danger text-decoration-none">Delete</button>
-                <button type="button" class="btn btn-link text-decoration-none">
-                    <i class="fa-solid fa-arrow-left"></i> Back
+            <h2 class="mb-3">🔟 Borderless Icon Buttons (Subtle Actions)</h2>
+            <p class="text-muted mb-3">Icon buttons without borders - perfect for card actions with hover effects.</p>
+
+            <h5 class="mb-2">Basic Borderless Icon Buttons</h5>
+            <div class="d-flex flex-wrap gap-2 mb-4">
+                <button type="button" class="btn btn-link text-secondary p-2" aria-label="Edit">
+                    <i class="fa-solid fa-pen"></i>
                 </button>
-                <button type="button" class="btn btn-link text-decoration-none">
-                    Learn More <i class="fa-solid fa-arrow-right"></i>
+                <button type="button" class="btn btn-link text-secondary p-2" aria-label="Delete">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+                <button type="button" class="btn btn-link text-secondary p-2" aria-label="Settings">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+            </div>
+
+            <h5 class="mb-2">With Custom Hover Colors</h5>
+            <div class="d-flex flex-wrap gap-2 mb-4">
+                <button type="button" class="btn btn-link text-warning p-2 rounded"
+                        style="transition: background-color 0.2s ease;"
+                        onmouseover="this.style.backgroundColor='#fff3cd'"
+                        onmouseout="this.style.backgroundColor='transparent'"
+                        aria-label="Edit">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+                <button type="button" class="btn btn-link text-danger p-2 rounded"
+                        style="transition: background-color 0.2s ease;"
+                        onmouseover="this.style.backgroundColor='#ffe5e5'"
+                        onmouseout="this.style.backgroundColor='transparent'"
+                        aria-label="Delete">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+
+            <h5 class="mb-2">Card Example with Borderless Actions</h5>
+            <div class="card shadow-sm" style="max-width: 400px;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="card-title">Card Title</h5>
+                            <p class="card-text">Some quick example text for the card content.</p>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <button type="button" class="btn btn-link text-warning p-2 rounded"
+                                    style="transition: background-color 0.2s ease;"
+                                    onmouseover="this.style.backgroundColor='#fff3cd'"
+                                    onmouseout="this.style.backgroundColor='transparent'"
+                                    aria-label="Edit">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button type="button" class="btn btn-link text-danger p-2 rounded"
+                                    style="transition: background-color 0.2s ease;"
+                                    onmouseover="this.style.backgroundColor='#ffe5e5'"
+                                    onmouseout="this.style.backgroundColor='transparent'"
+                                    aria-label="Delete">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Icon + Text Buttons (No Background) -->
+        <div class="mb-5">
+            <h2 class="mb-3">1️⃣1️⃣ Icon + Text Buttons (No Background)</h2>
+            <p class="text-muted mb-3">Text with icon buttons without background - perfect for footer links and navigation. No underline on hover.</p>
+
+            <h5 class="mb-2">Basic Icon + Text Links</h5>
+            <div class="d-flex flex-wrap gap-3 mb-4">
+                <a href="#" class="text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2"
+                   style="transition: color 0.2s ease;"
+                   onmouseover="this.style.color='#0d6efd'"
+                   onmouseout="this.style.color='#6c757d'">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>Privacy</span>
+                </a>
+                <a href="#" class="text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2"
+                   style="transition: color 0.2s ease;"
+                   onmouseover="this.style.color='#0d6efd'"
+                   onmouseout="this.style.color='#6c757d'">
+                    <i class="fa-solid fa-file-contract"></i>
+                    <span>Terms</span>
+                </a>
+                <a href="#" class="text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2"
+                   style="transition: color 0.2s ease;"
+                   onmouseover="this.style.color='#0d6efd'"
+                   onmouseout="this.style.color='#6c757d'">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span>Advertising</span>
+                </a>
+                <a href="#" class="text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2"
+                   style="transition: color 0.2s ease;"
+                   onmouseover="this.style.color='#0d6efd'"
+                   onmouseout="this.style.color='#6c757d'">
+                    <i class="fa-solid fa-ellipsis"></i>
+                    <span>About</span>
+                </a>
+            </div>
+
+            <h5 class="mb-2">Button Version (for non-link actions)</h5>
+            <div class="d-flex flex-wrap gap-3">
+                <button type="button" class="btn p-0 border-0 text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2"
+                        style="background: none; transition: color 0.2s ease;"
+                        onmouseover="this.style.color='#0d6efd'"
+                        onmouseout="this.style.color='#6c757d'">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>Privacy</span>
+                </button>
+                <button type="button" class="btn p-0 border-0 text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2"
+                        style="background: none; transition: color 0.2s ease;"
+                        onmouseover="this.style.color='#0d6efd'"
+                        onmouseout="this.style.color='#6c757d'">
+                    <i class="fa-solid fa-file-contract"></i>
+                    <span>Terms</span>
                 </button>
             </div>
         </div>
 
-        <!-- Common Button Patterns -->
+        <!-- Expandable "See More" Button -->
         <div class="mb-5">
-            <h2 class="mb-3">1️⃣1️⃣ Common Button Patterns</h2>
-            <p class="text-muted mb-3">Real-world button combinations you'll use frequently.</p>
+            <h2 class="mb-3">1️⃣2️⃣ Expandable "See More" Button</h2>
+            <p class="text-muted mb-3">Dropdown-style button with chevron icon - commonly used for expanding content.</p>
 
-            <h5 class="mb-2">Primary + Secondary Action</h5>
-            <div class="d-flex gap-2 mb-4">
-                <button type="button" class="btn btn-primary">Save Changes</button>
-                <button type="button" class="btn btn-secondary">Cancel</button>
+            <h5 class="mb-2">Basic See More Button</h5>
+            <div class="mb-4">
+                <button type="button" class="btn btn-link text-decoration-none text-secondary fw-medium d-inline-flex align-items-center gap-2 p-2">
+                    <span>See more</span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
             </div>
 
-            <h5 class="mb-2">Confirm/Delete Pattern</h5>
-            <div class="d-flex gap-2 mb-4">
-                <button type="button" class="btn btn-danger">Delete Account</button>
-                <button type="button" class="btn btn-outline-secondary">Keep Account</button>
+            <h5 class="mb-2">Interactive Toggle (Chevron Rotates)</h5>
+            <div class="mb-4">
+                <button type="button"
+                        class="btn btn-link text-decoration-none text-secondary fw-medium d-inline-flex align-items-center gap-2 p-2"
+                        onclick="this.querySelector('i').classList.toggle('fa-chevron-down'); this.querySelector('i').classList.toggle('fa-chevron-up');">
+                    <span>See more</span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
             </div>
 
-            <h5 class="mb-2">Form Action Buttons</h5>
-            <div class="d-flex gap-2 mb-4">
-                <button type="submit" class="btn btn-success">Submit</button>
-                <button type="reset" class="btn btn-outline-secondary">Reset</button>
-                <button type="button" class="btn btn-link">Cancel</button>
-            </div>
-
-            <h5 class="mb-2">Responsive Button Layout (Column on Mobile, Row on Desktop)</h5>
-            <div class="d-flex flex-column flex-md-row gap-2" style="max-width: 500px;">
-                <button type="button" class="btn btn-primary">Primary Action</button>
-                <button type="button" class="btn btn-outline-secondary">Secondary Action</button>
-                <button type="button" class="btn btn-outline-secondary">Tertiary Action</button>
+            <h5 class="mb-2">With Bootstrap Collapse</h5>
+            <div>
+                <button type="button"
+                        class="btn btn-link text-decoration-none text-secondary fw-medium d-inline-flex align-items-center gap-2 p-2"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapseExample"
+                        aria-expanded="false"
+                        aria-controls="collapseExample">
+                    <span>See more</span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <div class="collapse mt-3" id="collapseExample">
+                    <div class="card card-body">
+                        This is the collapsed content that appears when you click "See more". You can put any content here including text, images, or other components.
+                    </div>
+                </div>
             </div>
         </div>
 

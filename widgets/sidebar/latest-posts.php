@@ -43,16 +43,14 @@ $result = list_posts(['limit' => 10]);
 
 <!-- 최신 게시글 위젯 - Bootstrap Card -->
 <div class="card shadow-sm">
+    <!-- 카드 헤더 -->
+    <div class="card-header d-flex align-items-center gap-2">
+        <i class="fa-solid fa-newspaper text-primary fs-5"></i>
+        <h6 class="mb-0 fw-bold flex-grow-1"><?= t()->최신_게시글 ?></h6>
+    </div>
+
     <!-- 카드 바디 -->
     <div class="card-body">
-        <!-- 헤더 영역 -->
-        <div class="d-flex align-items-center gap-2 mb-3 pb-3 border-bottom">
-            <i class="fa-solid fa-newspaper text-primary fs-5"></i>
-            <div class="flex-grow-1">
-                <h6 class="card-title mb-0 fw-bold"><?= t()->최신_게시글 ?></h6>
-            </div>
-        </div>
-
         <?php if (empty($result->posts)): ?>
             <!-- 게시글이 없을 때 -->
             <div class="text-center text-muted py-3">
@@ -68,10 +66,11 @@ $result = list_posts(['limit' => 10]);
                     $displayText = !empty($post->title) ? $post->title : strip_tags($post->content);
                     ?>
                     <a href="<?= href()->post->view($post->id) ?>"
-                        class="d-flex align-items-center gap-2 rounded text-decoration-none post-item-link">
-                        <i class="fa-solid fa-angle-right text-secondary small"></i>
+                        class="d-flex gap-2 rounded text-decoration-none hover-animate"
+                        style="align-items: flex-start;">
+                        <i class="fa-solid fa-angle-right text-secondary small" style="margin-top: 3px; flex-shrink: 0;"></i>
                         <div class="flex-grow-1">
-                            <div class="text-dark small" style="line-height: 1.5;">
+                            <div class="text-dark small" style="line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
                                 <?= htmlspecialchars($displayText ?: 'Image post') ?>
                             </div>
                         </div>
@@ -81,14 +80,3 @@ $result = list_posts(['limit' => 10]);
         <?php endif; ?>
     </div>
 </div>
-
-<style>
-    .post-item-link {
-        transition: all 0.2s ease;
-    }
-
-    .post-item-link:hover {
-        background-color: #f8f9fa;
-        transform: translateX(4px);
-    }
-</style>

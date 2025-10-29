@@ -55,11 +55,21 @@ const postComponent = {
         </div>
 
         <!-- 게시물 수정/삭제 버튼 (본인 게시물인 경우에만 표시) -->
-        <div v-if="isMyPost" class="d-flex align-items-center gap-2">
-            <button @click="handleEditPost()" class="btn btn-link text-decoration-none text-warning p-2 rounded" style="font-size: 16px; transition: background-color 0.2s ease;" title="Edit" onmouseover="this.style.backgroundColor='#fff3cd';" onmouseout="this.style.backgroundColor='transparent';">
+        <div v-if="isMyPost" class="d-flex align-items-center gap-1">
+            <button @click="handleEditPost()"
+                    class="btn btn-link text-secondary p-2 rounded"
+                    style="transition: background-color 0.2s ease;"
+                    @mouseover="$event.currentTarget.style.backgroundColor='#e9ecef'"
+                    @mouseout="$event.currentTarget.style.backgroundColor='transparent'"
+                    aria-label="Edit post">
                 <i class="fa-solid fa-pen-to-square"></i>
             </button>
-            <button @click="handleDeletePost()" class="btn btn-link text-decoration-none text-danger p-2 rounded" style="font-size: 16px; transition: background-color 0.2s ease;" title="Delete" onmouseover="this.style.backgroundColor='#f8d7da';" onmouseout="this.style.backgroundColor='transparent';">
+            <button @click="handleDeletePost()"
+                    class="btn btn-link text-secondary p-2 rounded"
+                    style="transition: background-color 0.2s ease;"
+                    @mouseover="$event.currentTarget.style.backgroundColor='#e9ecef'"
+                    @mouseout="$event.currentTarget.style.backgroundColor='transparent'"
+                    aria-label="Delete post">
                 <i class="fa-solid fa-trash"></i>
             </button>
         </div>
@@ -221,7 +231,7 @@ const postComponent = {
                         <img :src="thumbnail(fileUrl, 400, 400, 'cover', 85, 'ffffff')"
                                 :alt="'Photo ' + (index + 1)"
                                 class="rounded"
-                                style="width: 100%; height: 200px; object-fit: cover; cursor: pointer;"
+                                style="width: 100%; max-height: 512px; object-fit: cover; cursor: pointer;"
                                 @click="openPhotoModal(fileUrl)">
                     </div>
                 </div>
@@ -252,25 +262,9 @@ const postComponent = {
     </div>
 
     <!-- 댓글 섹션 (Bootstrap 패딩) -->
-    <div v-if="!edit.enabled" class="card-footer border-top" style="border-color: #e4e6eb; background-color: #f0f2f5;">
+    <div v-if="!edit.enabled" class="card-footer">
         <!-- 가짜 댓글 입력 박스 (클릭 시 Modal 열림) -->
-        <div class="d-flex align-items-center gap-2 mb-3" @click="openCommentModal()" style="cursor: pointer;">
-            <!-- 댓글 작성자 아바타 (Bootstrap 유틸리티) -->
-            <div class="d-flex align-items-center justify-content-center bg-light rounded-circle flex-shrink-0"
-                 style="width: 32px; height: 32px; background-color: #e4e6eb;">
-                <img v-if="currentUserPhoto"
-                        :src="currentUserPhoto"
-                        alt="My avatar"
-                        class="rounded-circle"
-                        style="width: 100%; height: 100%; object-fit: cover;">
-                <i v-else class="fa-solid fa-user text-secondary" style="font-size: 14px;"></i>
-            </div>
-            <!-- 가짜 댓글 입력 필드 (읽기 전용) -->
-            <div class="flex-grow-1 d-flex align-items-center gap-2 bg-white rounded-pill px-3 py-2" style="border: 1px solid #ced4da;">
-                <span class="text-muted" style="font-size: 14px;">Write a comment...</span>
-                <i class="fa-solid fa-paper-plane text-muted ms-auto" style="font-size: 16px;"></i>
-            </div>
-        </div>
+
 
 
         <!-- 댓글 더보기 버튼 (댓글 목록 위) -->
@@ -311,7 +305,7 @@ const postComponent = {
                         </div>
 
                         <!-- 두 번째 줄: 댓글 내용 (연한 회색 배경 박스) -->
-                        <p class="rounded-3 px-2 py-1 mb-1" style="background-color: #f8f9fa; border: 1px solid #e4e6eb; font-size: 14px; color: #050505; line-height: 1.3; word-break: break-word; white-space: pre-wrap;">
+                        <p class="mb-1" style="background-color: #f8f9fa; font-size: 14px; color: #050505; line-height: 1.3; word-break: break-word; white-space: pre-wrap;">
                             {{ comment.content }}
                         </p>
 
@@ -343,10 +337,10 @@ const postComponent = {
 
                             <!-- 우측: Edit, Delete (본인 댓글인 경우에만 표시) -->
                             <div v-if="isMyComment(comment)" class="d-flex align-items-center gap-2">
-                                <button @click="openEditCommentModal(comment)" class="btn btn-link text-decoration-none text-warning p-0" style="font-size: 13px;" title="Edit">
+                                <button @click="openEditCommentModal(comment)" class="btn btn-link text-decoration-none text-secondary p-0" style="font-size: 13px;" title="Edit">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
-                                <button @click="handleDeleteComment(comment)" class="btn btn-link text-decoration-none text-danger p-0" style="font-size: 13px;" title="Delete">
+                                <button @click="handleDeleteComment(comment)" class="btn btn-link text-decoration-none text-secondary p-0" style="font-size: 13px;" title="Delete">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
                             </div>
@@ -355,6 +349,24 @@ const postComponent = {
                 </div>
             </div>
         </section>
+
+        <div class="d-flex align-items-center gap-2" @click="openCommentModal()" style="cursor: pointer;">
+            <!-- 댓글 작성자 아바타 (Bootstrap 유틸리티) -->
+            <div class="d-flex align-items-center justify-content-center bg-light rounded-circle flex-shrink-0"
+                 style="width: 32px; height: 32px; background-color: #e4e6eb;">
+                <img v-if="currentUserPhoto"
+                        :src="currentUserPhoto"
+                        alt="My avatar"
+                        class="rounded-circle"
+                        style="width: 100%; height: 100%; object-fit: cover;">
+                <i v-else class="fa-solid fa-user text-secondary" style="font-size: 14px;"></i>
+            </div>
+            <!-- 가짜 댓글 입력 필드 (읽기 전용) -->
+            <div class="flex-grow-1 d-flex align-items-center gap-2 bg-white rounded-pill px-3 py-2" style="border: 1px solid #ced4da;">
+                <span class="text-muted" style="font-size: 14px;">Write a comment...</span>
+                <i class="fa-solid fa-paper-plane text-muted ms-auto" style="font-size: 16px;"></i>
+            </div>
+        </div>
 
     </div>
 

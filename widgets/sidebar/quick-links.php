@@ -8,15 +8,14 @@
 ?>
 
 <div class="card shadow-sm">
-    <div class="card-body">
-        <!-- 헤더 영역 -->
-        <div class="d-flex align-items-center gap-2 mb-3 pb-3 border-bottom">
-            <i class="fa-solid fa-link text-primary fs-5"></i>
-            <div class="flex-grow-1">
-                <h6 class="card-title mb-0 fw-bold">Quick Links</h6>
-            </div>
-        </div>
+    <!-- 카드 헤더 -->
+    <div class="card-header d-flex align-items-center gap-2">
+        <i class="fa-solid fa-link text-primary fs-5"></i>
+        <h6 class="mb-0 fw-bold flex-grow-1">Quick Links</h6>
+    </div>
 
+    <!-- 카드 바디 -->
+    <div class="card-body">
         <!-- Links Container -->
         <div class="d-flex flex-wrap" style="gap: 1rem;">
             <a href="<?= href()->help->privacy ?>" class="text-decoration-none text-secondary fw-bold small" style="display: inline-flex; align-items: center; gap: 0.25rem;">

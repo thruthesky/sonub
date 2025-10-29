@@ -24,16 +24,17 @@ load_deferred_js('vue-components/user-search.component');
 
 <!-- 신규 회원 위젯 - Bootstrap Card -->
 <div class="card shadow-sm">
+    <!-- 카드 헤더 -->
+    <div class="card-header d-flex align-items-center gap-2">
+        <div class="flex-grow-1">
+            <h6 class="mb-1 fw-bold"><?= t()->신규_회원 ?></h6>
+            <p class="text-muted mb-0 small"><?= t()->최근_가입자 ?></p>
+        </div>
+        <i class="fa-solid fa-users text-primary fs-5"></i>
+    </div>
+
     <!-- 카드 바디 -->
     <div class="card-body">
-        <!-- 헤더 영역 -->
-        <div class="d-flex align-items-center gap-2 mb-3 pb-3 border-bottom">
-            <div class="flex-grow-1">
-                <h6 class="card-title mb-1 fw-bold"><?= t()->신규_회원 ?></h6>
-                <p class="card-text text-muted mb-0 small"><?= t()->최근_가입자 ?></p>
-            </div>
-            <i class="fa-solid fa-users text-primary fs-5"></i>
-        </div>
 
         <?php if ($userCount === 0): ?>
             <!-- 빈 상태 -->
