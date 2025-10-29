@@ -108,38 +108,6 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
         color: #65676b;
     }
 
-    /* 하단 액션 영역 */
-    .post-create-actions {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 16px;
-    }
-
-    .post-action-btn {
-        background: none;
-        border: none;
-        padding: 8px;
-        color: #65676b;
-        font-size: 15px;
-        font-weight: 600;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        border-radius: 4px;
-        transition: background-color 0.15s ease;
-    }
-
-    .post-action-btn:hover {
-        background-color: #f0f2f5;
-    }
-
-    .post-action-btn i {
-        font-size: 18px;
-    }
-
     /* 게시 버튼 */
     .btn-post {
         background-color: #0866ff;
@@ -288,9 +256,9 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
 
                 <!-- 하단 액션 영역 -->
                 <div class="card-footer bg-white border-top">
-                    <div class="post-create-actions">
+                    <div class="d-flex justify-content-between align-items-center gap-2">
                         <!-- 사진/비디오 업로드 버튼 -->
-                        <label class="post-action-btn">
+                        <label class="btn btn-link text-decoration-none px-4 py-2 fw-semibold d-inline-flex align-items-center gap-1 flex-shrink-0">
                             <i class="fa-solid fa-image" style="color: #45bd62;"></i>
                             <span><?= t()->사진_동영상 ?></span>
                             <input type="file"
@@ -300,14 +268,11 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
                                 @change="$refs.upload.handleFileChange($event)">
                         </label>
 
-                        <!-- 오른쪽: 게시 버튼 -->
-                        <div style="display: flex; gap: 8px; margin-left: auto;">
-                            <button type="submit"
-                                class="btn-post"
-                                :disabled="!canSubmit">
-                                <?= t()->게시 ?>
-                            </button>
-                        </div>
+                        <button type="submit"
+                            class="btn btn-secondary px-4 py-2 fw-semibold"
+                            :disabled="!canSubmit">
+                            <?= t()->게시 ?>
+                        </button>
                     </div>
                 </div>
             </div>
