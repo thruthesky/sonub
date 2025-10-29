@@ -56,16 +56,14 @@ $total_comments = count_comments();
 
 <!-- 통계 위젯 - Bootstrap Card -->
 <div class="card mb-4">
+    <!-- 카드 헤더 -->
+    <div class="card-header d-flex align-items-center gap-2">
+        <i class="fa-solid fa-chart-simple text-primary fs-5"></i>
+        <h6 class="mb-0 fw-bold flex-grow-1"><?= t()->통계 ?></h6>
+    </div>
+
     <!-- 카드 바디 -->
     <div class="card-body">
-        <!-- 헤더 영역 -->
-        <div class="d-flex align-items-center gap-2 mb-3 pb-3 border-bottom">
-            <i class="fa-solid fa-chart-simple text-primary fs-5"></i>
-            <div class="flex-grow-1">
-                <h6 class="card-title mb-0 fw-bold"><?= t()->통계 ?></h6>
-            </div>
-        </div>
-
         <!-- 통계 리스트 -->
         <div class="d-flex flex-column gap-3">
             <!-- 사용자 -->

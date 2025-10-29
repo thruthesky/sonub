@@ -49,7 +49,7 @@ $user = login();
 ?>
 
 <!-- Bootstrap Card Component -->
-<div class="card border-0">
+<div class="card  shadow-sm">
     <div class="card-body">
         <?php if ($user): ?>
             <!-- 메뉴 항목 리스트 -->

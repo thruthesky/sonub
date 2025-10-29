@@ -929,25 +929,165 @@ Buttons that toggle active state:
 </button>
 ```
 
-#### 🔟 Text Buttons (Link Style)
+#### 🔟 Borderless Icon Buttons (Subtle Actions)
 
-Buttons styled as text links:
+Icon buttons without borders - perfect for subtle actions with hover effects:
 
 ```html
-<!-- Link button (looks like text) -->
-<button type="button" class="btn btn-link">Link button</button>
+<!-- Basic borderless icon buttons (grey with white hover background) -->
+<button type="button" class="btn btn-link text-secondary p-2" aria-label="Edit">
+    <i class="fa-solid fa-pen"></i>
+</button>
 
-<!-- Link button without underline -->
-<button type="button" class="btn btn-link text-decoration-none">No underline</button>
+<button type="button" class="btn btn-link text-secondary p-2" aria-label="Delete">
+    <i class="fa-solid fa-trash"></i>
+</button>
 
-<!-- Colored text button -->
-<button type="button" class="btn btn-link text-danger text-decoration-none">Delete</button>
+<!-- Borderless icon button with custom hover (pink/red background on hover) -->
+<button type="button" class="btn btn-link text-danger p-2 rounded"
+        style="transition: background-color 0.2s ease;"
+        onmouseover="this.style.backgroundColor='#ffe5e5'"
+        onmouseout="this.style.backgroundColor='transparent'"
+        aria-label="Delete">
+    <i class="fa-solid fa-trash"></i>
+</button>
 
-<!-- Text button with icon -->
-<button type="button" class="btn btn-link text-decoration-none">
-    <i class="fa-solid fa-arrow-left"></i> Back
+<!-- Borderless icon button with custom hover (yellow background on hover) -->
+<button type="button" class="btn btn-link text-warning p-2 rounded"
+        style="transition: background-color 0.2s ease;"
+        onmouseover="this.style.backgroundColor='#fff3cd'"
+        onmouseout="this.style.backgroundColor='transparent'"
+        aria-label="Edit">
+    <i class="fa-solid fa-pen"></i>
+</button>
+
+<!-- Group of borderless icon buttons -->
+<div class="d-flex gap-1">
+    <button type="button" class="btn btn-link text-warning p-2 rounded"
+            style="transition: background-color 0.2s ease;"
+            onmouseover="this.style.backgroundColor='#fff3cd'"
+            onmouseout="this.style.backgroundColor='transparent'"
+            aria-label="Edit">
+        <i class="fa-solid fa-pen"></i>
+    </button>
+    <button type="button" class="btn btn-link text-danger p-2 rounded"
+            style="transition: background-color 0.2s ease;"
+            onmouseover="this.style.backgroundColor='#ffe5e5'"
+            onmouseout="this.style.backgroundColor='transparent'"
+            aria-label="Delete">
+        <i class="fa-solid fa-trash"></i>
+    </button>
+</div>
+```
+
+**Why use borderless icon buttons?**
+- ✅ More subtle and less visually dominant than regular buttons
+- ✅ Perfect for card actions, list items, and inline actions
+- ✅ Hover effect provides clear visual feedback
+- ✅ Clean, modern appearance without borders
+- ✅ Great for secondary actions that don't need strong emphasis
+
+#### 1️⃣1️⃣ Icon + Text Buttons (No Background)
+
+Text with icon buttons without background - common pattern for links and subtle actions:
+
+```html
+<!-- Icon + Text (No background, grey color, no underline on hover) -->
+<a href="#" class="text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2"
+   style="transition: color 0.2s ease;"
+   onmouseover="this.style.color='#0d6efd'"
+   onmouseout="this.style.color='#6c757d'">
+    <i class="fa-solid fa-shield-halved"></i>
+    <span>Privacy</span>
+</a>
+
+<!-- Button version (if you need button behavior) -->
+<button type="button" class="btn p-0 border-0 text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2"
+        style="background: none; transition: color 0.2s ease;"
+        onmouseover="this.style.color='#0d6efd'"
+        onmouseout="this.style.color='#6c757d'">
+    <i class="fa-solid fa-file-contract"></i>
+    <span>Terms</span>
+</button>
+
+<!-- Horizontal list of icon + text links -->
+<div class="d-flex flex-wrap gap-3">
+    <a href="#" class="text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2"
+       style="transition: color 0.2s ease;"
+       onmouseover="this.style.color='#0d6efd'"
+       onmouseout="this.style.color='#6c757d'">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>Privacy</span>
+    </a>
+    <a href="#" class="text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2"
+       style="transition: color 0.2s ease;"
+       onmouseover="this.style.color='#0d6efd'"
+       onmouseout="this.style.color='#6c757d'">
+        <i class="fa-solid fa-file-contract"></i>
+        <span>Terms</span>
+    </a>
+    <a href="#" class="text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2"
+       style="transition: color 0.2s ease;"
+       onmouseover="this.style.color='#0d6efd'"
+       onmouseout="this.style.color='#6c757d'">
+        <i class="fa-solid fa-bullhorn"></i>
+        <span>Advertising</span>
+    </a>
+    <a href="#" class="text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2"
+       style="transition: color 0.2s ease;"
+       onmouseover="this.style.color='#0d6efd'"
+       onmouseout="this.style.color='#6c757d'">
+        <i class="fa-solid fa-ellipsis"></i>
+        <span>About</span>
+    </a>
+</div>
+```
+
+**Usage Notes:**
+- Use `<a>` tags for actual links, `<button>` for button behavior
+- Always include `text-decoration-none` to prevent underlines
+- Use inline style transitions for smooth color changes
+- Color changes from grey (`#6c757d`) to primary blue (`#0d6efd`) on hover
+- Use `gap-2` for spacing between icon and text
+- Use `d-inline-flex align-items-center` for proper alignment
+- Perfect for footer links, navigation links, or quick access menus
+
+#### 1️⃣2️⃣ Expandable "See More" Button
+
+Dropdown-style button with chevron icon - commonly used for expanding content:
+
+```html
+<!-- Basic See More button -->
+<button type="button" class="btn btn-link text-decoration-none text-secondary fw-medium d-inline-flex align-items-center gap-2 p-2">
+    <span>See more</span>
+    <i class="fa-solid fa-chevron-down"></i>
+</button>
+
+<!-- See More button with toggle functionality (chevron rotates) -->
+<button type="button"
+        class="btn btn-link text-decoration-none text-secondary fw-medium d-inline-flex align-items-center gap-2 p-2"
+        onclick="this.querySelector('i').classList.toggle('fa-chevron-down'); this.querySelector('i').classList.toggle('fa-chevron-up');">
+    <span>See more</span>
+    <i class="fa-solid fa-chevron-down"></i>
+</button>
+
+<!-- See More button with Bootstrap collapse -->
+<button type="button"
+        class="btn btn-link text-decoration-none text-secondary fw-medium d-inline-flex align-items-center gap-2 p-2"
+        data-bs-toggle="collapse"
+        data-bs-target="#collapseContent"
+        aria-expanded="false"
+        aria-controls="collapseContent">
+    <span>See more</span>
+    <i class="fa-solid fa-chevron-down"></i>
 </button>
 ```
+
+**Common Use Cases:**
+- Expanding/collapsing content sections
+- Showing more items in a list
+- Revealing additional details
+- Footer navigation menus
 
 ---
 
@@ -976,32 +1116,7 @@ Buttons styled as text links:
 - ✅ Use disabled state instead of hiding buttons when actions are temporarily unavailable
 - ✅ Keep button text concise (1-3 words maximum)
 - ✅ Use consistent button sizes throughout your interface
-
-**Common Button Patterns:**
-
-```html
-<!-- Primary action with secondary cancel -->
-<div class="d-flex gap-2">
-    <button type="button" class="btn btn-primary">Save Changes</button>
-    <button type="button" class="btn btn-secondary">Cancel</button>
-</div>
-
-<!-- Icon button group for actions -->
-<div class="btn-group" role="group">
-    <button type="button" class="btn btn-sm btn-outline-secondary" aria-label="Edit">
-        <i class="fa-solid fa-pen"></i>
-    </button>
-    <button type="button" class="btn btn-sm btn-outline-secondary" aria-label="Delete">
-        <i class="fa-solid fa-trash"></i>
-    </button>
-</div>
-
-<!-- Responsive button layout -->
-<div class="d-flex flex-column flex-md-row gap-2">
-    <button type="button" class="btn btn-primary">Primary Action</button>
-    <button type="button" class="btn btn-outline-secondary">Secondary Action</button>
-</div>
-```
+- ✅ For icon + text links, use `text-decoration-none` and inline color transitions to prevent underlines on hover
 
 ---
 
