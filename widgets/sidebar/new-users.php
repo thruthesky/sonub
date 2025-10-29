@@ -58,7 +58,7 @@ load_deferred_js('vue-components/user-search.component');
                     $photo_url = !empty($user['photo_url']) ? htmlspecialchars($user['photo_url']) : null;
                     ?>
                     <a href="<?= href()->user->profile ?>?id=<?= $user['id'] ?>"
-                        class="d-flex align-items-center gap-2 rounded text-decoration-none user-item-link">
+                        class="d-flex align-items-center gap-2 rounded text-decoration-none hover-animate">
                         <!-- 프로필 이미지 (원형) -->
                         <?php if ($photo_url): ?>
                             <img src="<?= $photo_url ?>"
@@ -82,17 +82,6 @@ load_deferred_js('vue-components/user-search.component');
         <?php endif; ?>
     </div>
 </div>
-
-<style>
-    .user-item-link {
-        transition: all 0.2s ease;
-    }
-
-    .user-item-link:hover {
-        background-color: #f8f9fa;
-        transform: translateX(4px);
-    }
-</style>
 
 <?php
 /**

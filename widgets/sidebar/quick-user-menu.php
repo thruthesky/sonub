@@ -55,7 +55,7 @@ $user = login();
             <!-- 메뉴 항목 리스트 -->
             <nav class="d-flex flex-column gap-2">
                 <!-- 사용자 프로필 -->
-                <a href="<?= href()->user->profile ?>?id=<?= $user->id ?>" class="menu-item d-flex align-items-center p-2 rounded text-decoration-none">
+                <a href="<?= href()->user->profile ?>?id=<?= $user->id ?>" class="hover-animate d-flex align-items-center p-2 rounded text-decoration-none">
                     <div class="menu-icon icon-user d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width: 36px; height: 36px; margin-right: 12px; overflow: hidden;">
                         <?php login_user_profile_photo() ?>
                     </div>
@@ -63,7 +63,7 @@ $user = login();
                 </a>
 
                 <!-- 내 친구 -->
-                <a href="<?= href()->friend->list ?>" class="menu-item d-flex align-items-center p-2 rounded text-decoration-none">
+                <a href="<?= href()->friend->list ?>" class="hover-animate d-flex align-items-center p-2 rounded text-decoration-none">
                     <div class="menu-icon icon-friends d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width: 36px; height: 36px; margin-right: 12px;">
                         <i class="fa-solid fa-user-group text-white" style="font-size: 18px;"></i>
                     </div>
@@ -71,7 +71,7 @@ $user = login();
                 </a>
 
                 <!-- 설정 -->
-                <a href="<?= href()->user->settings ?>" class="menu-item d-flex align-items-center p-2 rounded text-decoration-none">
+                <a href="<?= href()->user->settings ?>" class="hover-animate d-flex align-items-center p-2 rounded text-decoration-none">
                     <div class="menu-icon icon-settings d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width: 36px; height: 36px; margin-right: 12px;">
                         <i class="fa-solid fa-gear text-white" style="font-size: 18px;"></i>
                     </div>
@@ -92,16 +92,6 @@ $user = login();
 </div>
 
 <style>
-    /* 메뉴 항목 호버 효과 */
-    .menu-item {
-        transition: background-color 0.2s ease;
-    }
-
-    .menu-item:hover {
-        background-color: #f8f9fa;
-    }
-
-    /* 아이콘 배경 그라디언트 */
     .icon-friends {
         background: linear-gradient(135deg, #5b9dd9, #4a8dc9);
     }
