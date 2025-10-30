@@ -41,36 +41,29 @@ inject_latest_posts_language();
 $result = list_posts(['limit' => 10, 'visibility' => 'public']);
 ?>
 
-<!-- 최신 게시글 위젯 - Bootstrap Card -->
-<div class="card shadow-sm">
-    <!-- 카드 헤더 -->
-    <div class="card-header d-flex align-items-center gap-2 border-bottom-0 bg-white">
-        <i class="fa-solid fa-newspaper text-primary fs-5"></i>
-        <h6 class="mb-0 fw-bold flex-grow-1"><?= t()->최신_게시글 ?></h6>
-    </div>
+<!-- Facebook-style Latest Posts Card -->
+<div class="card border-0 border-0 bg-transparent">
+    <div class="card-body p-3">
+        <!-- Header -->
+        <h6 class="fw-bold text-secondary mb-3"><?= t()->최신_게시글 ?></h6>
 
-    <!-- 카드 바디 -->
-    <div class="card-body">
         <?php if (empty($result->posts)): ?>
-            <!-- 게시글이 없을 때 -->
+            <!-- Empty state -->
             <div class="text-center text-muted py-3">
                 <i class="fa-regular fa-folder-open fs-3 mb-2 d-block"></i>
                 <span class="small"><?= t()->게시글이_없습니다 ?></span>
             </div>
         <?php else: ?>
-            <!-- 게시글 리스트 -->
-            <div class="d-flex flex-column gap-3">
+            <!-- Posts list -->
+            <div class="d-flex flex-column gap-2">
                 <?php foreach ($result->posts as $post): ?>
                     <?php
-                    // 제목이 있으면 제목, 없으면 내용 사용
                     $displayText = !empty($post->title) ? $post->title : strip_tags($post->content);
                     ?>
                     <a href="<?= href()->post->view($post->id) ?>"
-                        class="d-flex gap-2 rounded text-decoration-none "
-                        style="align-items: flex-start;">
-                        <i class="fa-solid fa-angle-right text-secondary small" style="margin-top: 3px; flex-shrink: 0;"></i>
+                        class="d-flex align-items-start gap-2 p-2 rounded text-decoration-none text-dark">
                         <div class="flex-grow-1">
-                            <div class="text-dark small" style="line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">
+                            <div class="small lh-sm" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                                 <?= htmlspecialchars($displayText ?: 'Image post') ?>
                             </div>
                         </div>

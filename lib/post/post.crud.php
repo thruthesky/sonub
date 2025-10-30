@@ -80,73 +80,82 @@ function get_post_by_id(int $id): ?PostModel
     return get_post(['post_id' => $id]);
 }
 
+
 /**
- * Get posts by user
+ * Get post visibility filter based on viewer-author relationship
  *
- * Retrieves a list of posts created by a specific user.
- * Internally uses the list_posts() function for filtering.
+ * Returns which visibility levels the current viewer can see from a specific author.
  *
- * @param array $input Input parameters
- *                      - user_id: User ID (required)
- *                      - category: Category filter (optional)
- *                      - limit: Maximum number of results (optional, default: 20)
- *                      - page: Page number (optional, default: 1)
- *                      - offset: Offset (optional)
- *                      - created_after: Filter posts created after this timestamp (Unix timestamp, optional)
- *                      - created_before: Filter posts created before this timestamp (Unix timestamp, optional)
+ * @param int $author_id Post author's user ID
+ * @return array|null Allowed visibility array (null means no access)
+ *                    - Self: ['public', 'friends', 'private']
+ *                    - Friend: ['public', 'friends']
+ *                    - Guest/Other: 'public'
+ *                    - Blocked: 'blocked'
+ */
+function get_post_visibility_filter(int $author_id)
+{
+    $viewer_id = login() ? login()->id : null;
+
+    if ($viewer_id) {
+        // Viewing own posts
+        if ($viewer_id === $author_id) {
+            return ['public', 'friends', 'private'];
+        }
+
+        // Blocked: no access
+        if (is_blocked_either_way($viewer_id, $author_id)) {
+            return 'blocked';
+        }
+
+        // Check friendship status
+        $friendship_status = get_friendship_status($viewer_id, $author_id);
+
+        // Friends: can see public and friends posts
+        if ($friendship_status === 'accepted') {
+            return ['public', 'friends'];
+        }
+    }
+
+    // Everyone else: public posts only (guests, non-friends)
+    return 'public';
+}
+
+
+
+/**
+ * Get posts by specific user (with automatic permission filtering)
  *
- * @return PostListModel Post list (PostListModel object)
+ * Automatically applies visibility filtering based on viewer-author relationship.
  *
- * @example
- * // Get all posts by a specific user
- * $posts = get_user_posts(['user_id' => 42]);
- *
- * // Get posts in a specific category by a user
- * $posts = get_user_posts(['user_id' => 42, 'category' => 'discussion']);
- *
- * // Apply pagination
- * $posts = get_user_posts(['user_id' => 42, 'page' => 2, 'limit' => 10]);
- *
- * // Get posts from the last 7 dayspost-content-input
- * $one_week_ago = time() - 7 * 24 * 60 * 60;
- * $posts = get_user_posts(['user_id' => 42, 'created_after' => $one_week_ago]);
+ * @param array $input Search criteria
+ *                     - user_id: Post author ID (required)
+ *                     - visibility: Visibility scope (optional, auto-calculated if not set)
+ *                     - All other list_posts() parameters are supported
+ * @return PostListModel Post list
  */
 function get_user_posts(array $input): PostListModel
 {
-    $target_user_id = $input['user_id'] ?? null;
+    $author_id = $input['user_id'] ?? null;
 
-    error_if_empty($target_user_id, 'user-id-required', tr([
+    error_if_empty($author_id, 'user-id-required', tr([
         'en' => 'User ID is required.',
         'ko' => '사용자 ID는 필수 항목입니다.',
         'ja' => 'ユーザーIDは必須項目です。',
         'zh' => '用户ID是必填项。'
     ]));
 
-    $viewer_id = login() ? login()->id : null;
+    // Auto-apply permission filter if visibility not explicitly set
+    if (!isset($input['visibility'])) {
+        $input['visibility'] = get_post_visibility_filter($author_id);
 
-    if ($viewer_id === $target_user_id) {
-        return list_posts($input);
+        if ($input['visibility'] === 'blocked') {
+            // No access (blocked)
+            return new PostListModel([], 0);
+        }
     }
 
-
-    if ($viewer_id && is_blocked_either_way($viewer_id, $target_user_id)) {
-        return new PostListModel([], 0, 1, 20);
-    }
-
-
-    if (!$viewer_id) {
-        $input['visibility'] = 'public';
-        return list_posts($input);
-    }
-
-    $friendship_status = get_friendship_status($viewer_id, $target_user_id);
-
-    if ($friendship_status === 'accepted') {
-        $input['visibility'] = ['public', 'friends'];
-        return list_posts($input);
-    }
-
-    $input['visibility'] = 'public';
+    // Query posts with visibility filter applied
     return list_posts($input);
 }
 

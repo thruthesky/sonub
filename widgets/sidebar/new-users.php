@@ -20,37 +20,23 @@ load_deferred_js('vue-components/user-search.component');
 ?>
 
 <!-- 사용자 검색 컴포넌트 (자동 마운트) -->
-<div class="user-search-component"></div>
 
-<!-- 신규 회원 위젯 - Bootstrap Card -->
-<div class="card shadow-sm">
-    <!-- 카드 헤더 -->
-    <div class="card-header d-flex align-items-center gap-2 border-bottom-0 bg-white">
-        <div class="flex-grow-1">
-            <h6 class="mb-1 fw-bold"><?= t()->신규_회원 ?></h6>
-            <p class="text-muted mb-0 small"><?= t()->최근_가입자 ?></p>
-        </div>
-        <i class="fa-solid fa-users text-primary fs-5"></i>
-    </div>
-
-    <!-- 카드 바디 -->
-    <div class="card-body">
+<div class="card border-0 bg-transparent">
+    <div class="card-body p-3">
+        <!-- Header -->
+        <h6 class="fw-bold text-secondary mb-3"><?= t()->신규_회원 ?></h6>
 
         <?php if ($userCount === 0): ?>
-            <!-- 빈 상태 -->
-            <div class="alert alert-info d-flex align-items-center gap-2 mb-0">
-                <i class="fa-regular fa-circle-user fs-5"></i>
-                <div>
-                    <div><?= t()->아직_회원이_없습니다 ?></div>
-                    <small class="text-muted"><?= t()->곧_다시_확인해주세요 ?></small>
-                </div>
+            <!-- Empty state -->
+            <div class="text-center text-muted py-3">
+                <i class="fa-regular fa-circle-user fs-3 mb-2 d-block"></i>
+                <span class="small"><?= t()->아직_회원이_없습니다 ?></span>
             </div>
         <?php else: ?>
-            <!-- 사용자 리스트 (최대 9명) -->
-            <div class="d-flex flex-column gap-3">
+            <!-- Users list -->
+            <div class="d-flex flex-column gap-2">
                 <?php foreach ($displayUsers as $user): ?>
                     <?php
-                    // 전체 이름 생성
                     $name_parts = [];
                     if (!empty($user['first_name'])) $name_parts[] = $user['first_name'];
                     if (!empty($user['middle_name'])) $name_parts[] = $user['middle_name'];
@@ -59,23 +45,23 @@ load_deferred_js('vue-components/user-search.component');
                     $photo_url = !empty($user['photo_url']) ? htmlspecialchars($user['photo_url']) : null;
                     ?>
                     <a href="<?= href()->user->profile ?>?id=<?= $user['id'] ?>"
-                        class="d-flex align-items-center gap-2 rounded text-decoration-none">
-                        <!-- 프로필 이미지 (원형) -->
+                        class="d-flex align-items-center gap-3 p-2 rounded text-decoration-none text-dark">
+                        <!-- Profile photo -->
                         <?php if ($photo_url): ?>
                             <img src="<?= $photo_url ?>"
                                 alt="<?= htmlspecialchars($full_name) ?>"
-                                class="rounded-circle"
-                                style="width: 48px; height: 48px; object-fit: cover; flex-shrink: 0;">
+                                class="rounded-circle flex-shrink-0"
+                                style="width: 36px; height: 36px; object-fit: cover;">
                         <?php else: ?>
-                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center"
-                                style="width: 48px; height: 48px; flex-shrink: 0;">
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center flex-shrink-0"
+                                style="width: 36px; height: 36px;">
                                 <i class="fa-solid fa-user text-muted"></i>
                             </div>
                         <?php endif; ?>
 
-                        <!-- 사용자 이름 -->
+                        <!-- User name -->
                         <div class="flex-grow-1">
-                            <div class="fw-medium text-dark small"><?= htmlspecialchars($full_name) ?></div>
+                            <div class="fw-semibold small"><?= htmlspecialchars($full_name) ?></div>
                         </div>
                     </a>
                 <?php endforeach; ?>

@@ -23,9 +23,20 @@ if (typeof window.userSearchInstanceCounter === 'undefined') {
 
 window.UserSearchComponent = {
     template: `
-        <!-- Friend Search Button -->
-        <button @click="openSearchModal" class="btn-pill-gray w-100">
-            <i class="bi bi-search"></i>{{ t.친구_검색 }}
+        <!-- Friend Search Button - Facebook style (responsive) -->
+        <!-- Mobile: circular icon button -->
+        <button @click="openSearchModal"
+                class="btn btn-light rounded-circle p-0 d-flex d-md-none align-items-center justify-content-center"
+                style="width: 40px; height: 40px;">
+            <i class="bi bi-search fs-5"></i>
+        </button>
+
+        <!-- Desktop: full pill button -->
+        <button @click="openSearchModal"
+                class="btn btn-light w-100 d-none d-md-flex align-items-center gap-2 rounded-pill"
+                style="padding: 8px 16px;">
+            <i class="bi bi-search text-secondary"></i>
+            <span class="text-secondary small">{{ t.친구_검색 }}</span>
         </button>
 
         <!-- Friend Search Modal with higher z-index for proper layering -->

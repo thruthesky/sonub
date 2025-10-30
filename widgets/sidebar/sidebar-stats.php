@@ -55,43 +55,38 @@ $total_posts = count_posts();
 $total_comments = count_comments();
 ?>
 
-<!-- 통계 위젯 - Bootstrap Card -->
-<div class="card mb-4">
-    <!-- 카드 헤더 -->
-    <div class="card-header d-flex align-items-center gap-2 border-bottom-0 bg-white">
-        <i class="fa-solid fa-chart-simple text-primary fs-5"></i>
-        <h6 class="mb-0 fw-bold flex-grow-1"><?= t()->통계 ?></h6>
-    </div>
+<div class="card border-0 border-0 bg-transparent">
+    <div class="card-body p-3">
+        <!-- Header -->
+        <h6 class="fw-bold text-secondary mb-3"><?= t()->통계 ?></h6>
 
-    <!-- 카드 바디 -->
-    <div class="card-body">
-        <!-- 통계 리스트 -->
+        <!-- Stats list -->
         <div class="d-flex flex-column gap-3">
-            <!-- 사용자 -->
-            <div class="d-flex align-items-center justify-content-between rounded">
+            <!-- Users -->
+            <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2">
                     <i class="fa-solid fa-users text-secondary"></i>
-                    <span class="text-dark"><?= t()->사용자 ?></span>
+                    <span class="text-dark small"><?= t()->사용자 ?></span>
                 </div>
-                <span class="badge bg-primary rounded-pill"><?= number_format($total_users) ?></span>
+                <span class="badge bg-secondary rounded-pill"><?= number_format($total_users) ?></span>
             </div>
 
-            <!-- 게시글 -->
-            <div class="d-flex align-items-center justify-content-between rounded">
+            <!-- Posts -->
+            <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2">
                     <i class="fa-solid fa-file-lines text-secondary"></i>
-                    <span class="text-dark"><?= t()->게시글 ?></span>
+                    <span class="text-dark small"><?= t()->게시글 ?></span>
                 </div>
-                <span class="badge bg-primary rounded-pill"><?= number_format($total_posts) ?></span>
+                <span class="badge bg-secondary rounded-pill"><?= number_format($total_posts) ?></span>
             </div>
 
-            <!-- 댓글 -->
-            <div class="d-flex align-items-center justify-content-between rounded">
+            <!-- Comments -->
+            <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2">
                     <i class="fa-solid fa-comments text-secondary"></i>
-                    <span class="text-dark"><?= t()->댓글 ?></span>
+                    <span class="text-dark small"><?= t()->댓글 ?></span>
                 </div>
-                <span class="badge bg-primary rounded-pill"><?= number_format($total_comments) ?></span>
+                <span class="badge bg-secondary rounded-pill"><?= number_format($total_comments) ?></span>
             </div>
         </div>
     </div>

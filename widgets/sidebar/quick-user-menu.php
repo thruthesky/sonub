@@ -48,41 +48,46 @@ inject_quick_user_menu_language();
 $user = login();
 ?>
 
-<!-- Bootstrap Card Component -->
-<div class="card  shadow-sm">
-    <div class="card-body">
+<div class="card border-0 bg-transparent">
+    <div class="card-body p-2">
         <?php if ($user): ?>
-            <!-- 메뉴 항목 리스트 -->
-            <nav class="d-flex flex-column gap-2">
-                <!-- 사용자 프로필 -->
-                <a href="<?= href()->user->profile ?>?id=<?= $user->id ?>" class=" d-flex align-items-center p-2 rounded text-decoration-none">
-                    <div class="menu-icon icon-user d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width: 36px; height: 36px; margin-right: 12px; overflow: hidden;">
+            <!-- Menu items list -->
+            <nav class="d-flex flex-column gap-1">
+                <!-- User Profile -->
+                <a href="<?= href()->user->profile ?>?id=<?= $user->id ?>"
+                    class="d-flex align-items-center p-2 rounded text-decoration-none text-dark">
+                    <div class="rounded-circle overflow-hidden flex-shrink-0 me-3"
+                        style="width: 36px; height: 36px;">
                         <?php login_user_profile_photo() ?>
                     </div>
-                    <span class="menu-text fw-medium" style="font-size: 15px; color: #050505;"><?= htmlspecialchars($user->displayDisplayName()) ?></span>
+                    <span class="fw-semibold"><?= htmlspecialchars($user->displayDisplayName()) ?></span>
                 </a>
 
-                <!-- 내 친구 -->
-                <a href="<?= href()->friend->list ?>" class=" d-flex align-items-center p-2 rounded text-decoration-none">
-                    <div class="menu-icon icon-friends d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width: 36px; height: 36px; margin-right: 12px;">
-                        <i class="fa-solid fa-user-group text-white" style="font-size: 18px;"></i>
+                <!-- My Friends -->
+                <a href="<?= href()->friend->list ?>"
+                    class="d-flex align-items-center p-2 rounded text-decoration-none text-dark">
+                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3"
+                        style="width: 36px; height: 36px;">
+                        <i class="fa-solid fa-user-group text-primary fs-5"></i>
                     </div>
-                    <span class="menu-text fw-medium" style="font-size: 15px; color: #050505;"><?= t()->내_친구 ?></span>
+                    <span class="fw-semibold"><?= t()->내_친구 ?></span>
                 </a>
 
-                <!-- 설정 -->
-                <a href="<?= href()->user->settings ?>" class=" d-flex align-items-center p-2 rounded text-decoration-none">
-                    <div class="menu-icon icon-settings d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width: 36px; height: 36px; margin-right: 12px;">
-                        <i class="fa-solid fa-gear text-white" style="font-size: 18px;"></i>
+                <!-- Settings -->
+                <a href="<?= href()->user->settings ?>"
+                    class="d-flex align-items-center p-2 rounded text-decoration-none text-dark">
+                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 me-3"
+                        style="width: 36px; height: 36px;">
+                        <i class="fa-solid fa-gear text-secondary fs-5"></i>
                     </div>
-                    <span class="menu-text fw-medium" style="font-size: 15px; color: #050505;"><?= t()->설정 ?></span>
+                    <span class="fw-semibold"><?= t()->설정 ?></span>
                 </a>
             </nav>
         <?php else: ?>
-            <!-- 로그인 안 한 경우 -->
+            <!-- Not logged in -->
             <div class="text-center py-4">
-                <i class="fa-solid fa-user-lock text-muted mb-3" style="font-size: 48px;"></i>
-                <p class="text-muted mb-3" style="font-size: 14px;"><?= t()->로그인이_필요합니다 ?></p>
+                <i class="fa-solid fa-user-lock text-muted mb-3 fs-1"></i>
+                <p class="text-muted mb-3 small"><?= t()->로그인이_필요합니다 ?></p>
                 <a href="<?= href()->user->login ?>" class="btn btn-primary btn-sm">
                     <?= t()->로그인 ?>
                 </a>
@@ -90,17 +95,3 @@ $user = login();
         <?php endif; ?>
     </div>
 </div>
-
-<style>
-    .icon-friends {
-        background: linear-gradient(135deg, #5b9dd9, #4a8dc9);
-    }
-
-    .icon-settings {
-        background: linear-gradient(135deg, #8b9dc3, #6b7fa3);
-    }
-
-    .icon-user {
-        background: linear-gradient(135deg, #65676b, #6b7fa3);
-    }
-</style>

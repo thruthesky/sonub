@@ -75,16 +75,13 @@ load_deferred_js('infinite-scroll');
 ?>
 
 <style>
-    /* 프로필 커버 영역 */
+    /* Profile cover with positioned photo - minimal custom CSS */
     .profile-cover {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         height: 200px;
-        border-radius: 8px;
         position: relative;
         margin-bottom: 80px;
     }
 
-    /* 프로필 사진 래퍼 */
     .profile-photo-wrapper {
         position: absolute;
         bottom: -60px;
@@ -92,89 +89,6 @@ load_deferred_js('infinite-scroll');
         transform: translateX(-50%);
     }
 
-    /* 프로필 사진 */
-    .profile-photo {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 4px solid white;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    /* 프로필 사진 플레이스홀더 */
-    .profile-photo-placeholder {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        background-color: white;
-        border: 4px solid white;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .profile-photo-placeholder i {
-        font-size: 60px;
-        color: #e4e6eb;
-    }
-
-    /* 프로필 정보 섹션 */
-    .profile-info-section {
-        background-color: white;
-        border-radius: 8px;
-        margin-top: 1rem;
-    }
-
-    /* 프로필 이름 */
-    .profile-name {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #050505;
-        margin: 0;
-    }
-
-    /* 프로필 메타 정보 */
-    .profile-meta {
-        font-size: 0.95rem;
-    }
-
-    /* 상세 정보 항목 */
-    .detail-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    /* 상세 정보 아이콘 */
-    .detail-icon {
-        font-size: 20px;
-        color: var(--bs-primary);
-        flex-shrink: 0;
-        margin-top: 2px;
-    }
-
-    /* 상세 정보 내용 */
-    .detail-content {
-        flex: 1;
-    }
-
-    /* 상세 정보 라벨 */
-    .detail-label {
-        font-size: 0.875rem;
-        color: #65676b;
-        margin-bottom: 4px;
-    }
-
-    /* 상세 정보 값 */
-    .detail-value {
-        font-size: 1rem;
-        color: #050505;
-        font-weight: 500;
-    }
-
-    /* 반응형 디자인 */
     @media (max-width: 768px) {
         .profile-cover {
             height: 150px;
@@ -185,144 +99,159 @@ load_deferred_js('infinite-scroll');
             bottom: -50px;
         }
 
-        .profile-photo,
-        .profile-photo-placeholder {
-            width: 100px;
-            height: 100px;
+        .profile-photo-wrapper img,
+        .profile-photo-wrapper > div {
+            width: 100px !important;
+            height: 100px !important;
         }
 
-        .profile-photo-placeholder i {
-            font-size: 50px;
-        }
-
-        .profile-info-section {
-            padding: 1.5rem 1rem;
-        }
-
-        .profile-name {
-            font-size: 1.5rem;
+        .profile-photo-wrapper i {
+            font-size: 3rem !important;
         }
     }
 </style>
 
-<div id="profile-component" class="container py-4">
-    <!-- 커버 영역 -->
-    <div class="profile-cover">
-        <!-- 프로필 사진 -->
+<div id="profile-component" class="py-4">
+    <!-- Cover area -->
+    <div class="profile-cover bg-primary rounded-3">
+        <!-- Profile photo -->
         <div class="profile-photo-wrapper">
             <?php if (!empty($user->photo_url)): ?>
-                <img src="<?= $user->photo_url ?>" alt="<?= $user->displayFullName() ?>" class="profile-photo">
+                <img src="<?= $user->photo_url ?>"
+                     alt="<?= $user->displayFullName() ?>"
+                     class="rounded-circle border border-4 border-white shadow-sm"
+                     style="width: 120px; height: 120px; object-fit: cover;">
             <?php else: ?>
-                <div class="profile-photo-placeholder">
-                    <i class="fa-solid fa-user"></i>
+                <div class="rounded-circle bg-white border border-4 border-white shadow-sm d-flex align-items-center justify-content-center"
+                     style="width: 120px; height: 120px;">
+                    <i class="fa-solid fa-user fs-1 text-secondary"></i>
                 </div>
             <?php endif; ?>
         </div>
     </div>
 
-    <!-- 프로필 정보 영역 -->
-    <div class="profile-info-section">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <!-- 이름 및 기본 정보 -->
-            <div>
-                <h1 class="profile-name mb-1"><?= $user->displayFullName() ?></h1>
-                <p class="profile-meta text-muted mb-0">ID: <?= $user->id ?></p>
+    <!-- Profile info section -->
+    <div class="card border-0 shadow-sm mt-3">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <!-- Name and basic info -->
+                <div>
+                    <h1 class="h2 fw-bold mb-1"><?= $user->displayFullName() ?></h1>
+                    <p class="text-muted small mb-0">ID: <?= $user->id ?></p>
+                </div>
+
+                <!-- Action buttons -->
+                <div>
+                    <?php if ($is_me): ?>
+                        <!-- Edit profile button -->
+                        <a href="<?= href()->user->profile_edit ?>" class="btn btn-primary">
+                            <i class="fa-solid fa-pen-to-square me-2"></i><?= t()->프로필_수정 ?>
+                        </a>
+                    <?php else: ?>
+                        <!-- Add friend button (Vue.js) -->
+                        <button @click="requestFriend(<?= $user->id ?>)"
+                            class="btn btn-primary"
+                            :disabled="requesting || isFriend"
+                            v-cloak>
+                            <span v-if="requesting">
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                <?= t()->요청_중 ?>
+                            </span>
+                            <span v-else-if="isFriend">
+                                <i class="fa-solid fa-check me-2"></i><?= t()->친구_요청_전송_완료 ?>
+                            </span>
+                            <span v-else>
+                                <i class="fa-solid fa-user-plus me-2"></i><?= t()->친구_추가 ?>
+                            </span>
+                        </button>
+                    <?php endif; ?>
+                </div>
             </div>
 
-            <!-- 액션 버튼 -->
-            <div>
-                <?php if ($is_me): ?>
-                    <!-- 본인인 경우: 프로필 수정 버튼 -->
-                    <a href="<?= href()->user->profile_edit ?>" class="btn btn-primary">
-                        <i class="fa-solid fa-pen-to-square me-2"></i><?= t()->프로필_수정 ?>
-                    </a>
-                <?php else: ?>
-                    <!-- 다른 사용자인 경우: 친구 추가 버튼 (Vue.js) -->
-                    <button @click="requestFriend(<?= $user->id ?>)"
-                        class="btn btn-primary"
-                        :disabled="requesting || isFriend"
-                        v-cloak>
-                        <span v-if="requesting">
-                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                            <?= t()->요청_중 ?>
-                        </span>
-                        <span v-else-if="isFriend">
-                            <i class="fa-solid fa-check me-2"></i><?= t()->친구_요청_전송_완료 ?>
-                        </span>
-                        <span v-else>
-                            <i class="fa-solid fa-user-plus me-2"></i><?= t()->친구_추가 ?>
-                        </span>
+            <!-- Tabs -->
+            <ul class="nav nav-tabs border-bottom mt-4" id="profileTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active"
+                        id="posts-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#posts-tab-pane"
+                        type="button"
+                        role="tab"
+                        aria-controls="posts-tab-pane"
+                        aria-selected="true">
+                        <i class="fa-solid fa-file-lines me-2"></i><?= t()->게시물 ?>
                     </button>
-                <?php endif; ?>
-            </div>
-        </div>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link"
+                        id="about-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#about-tab-pane"
+                        type="button"
+                        role="tab"
+                        aria-controls="about-tab-pane"
+                        aria-selected="false">
+                        <i class="fa-solid fa-circle-info me-2"></i><?= t()->소개 ?>
+                    </button>
+                </li>
+            </ul>
 
-        <ul class="nav nav-tabs mt-4" id="profileTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active"
-                    id="posts-tab"
-                    data-bs-toggle="tab"
-                    data-bs-target="#posts-tab-pane"
-                    type="button"
-                    role="tab"
-                    aria-controls="posts-tab-pane"
-                    aria-selected="true">
-                    <i class="fa-solid fa-file-lines me-2"></i><?= t()->게시물 ?>
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link"
-                    id="about-tab"
-                    data-bs-toggle="tab"
-                    data-bs-target="#about-tab-pane"
-                    type="button"
-                    role="tab"
-                    aria-controls="about-tab-pane"
-                    aria-selected="false">
-                    <i class="fa-solid fa-circle-info me-2"></i><?= t()->소개 ?>
-                </button>
-            </li>
-        </ul>
+            <!-- Tab content -->
+            <div class="tab-content mt-3" id="profileTabsContent">
+                <!-- Posts tab -->
+                <div class="tab-pane fade show active"
+                    id="posts-tab-pane"
+                    role="tabpanel"
+                    aria-labelledby="posts-tab"
+                    tabindex="0">
+                    <!-- Posts list (Vue.js) -->
+                    <div v-if="postList.isEmpty" class="alert alert-info text-center">
+                        <i class="fa-solid fa-inbox me-2"></i><?= t()->게시물_없음 ?>
+                    </div>
 
-        <!-- 탭 콘텐츠 -->
-        <div class="tab-content mt-3" id="profileTabsContent">
-            <!-- 게시물 탭 -->
-            <div class="tab-pane fade show active"
-                id="posts-tab-pane"
-                role="tabpanel"
-                aria-labelledby="posts-tab"
-                tabindex="0">
-                <!-- 게시물 목록 (Vue.js) -->
-                <div v-if="postList.isEmpty" class="alert alert-info text-center">
-                    <i class="fa-solid fa-inbox me-2"></i><?= t()->게시물_없음 ?>
+                    <div v-else class="d-flex flex-column gap-3">
+                        <article v-for="post in postList.posts" :key="post.id">
+                            <post-component
+                                :post="post"
+                                @post-deleted="handlePostDeleted">
+                            </post-component>
+                        </article>
+                    </div>
                 </div>
 
-                <div v-else class="row g-3">
-                    <article v-for="post in postList.posts" :key="post.id" class="col-12">
-                        <post-component
-                            :post="post"
-                            @post-deleted="handlePostDeleted">
-                        </post-component>
-                    </article>
-                </div>
-            </div>
-
-            <!-- 소개 탭 -->
-            <div class="tab-pane fade"
-                id="about-tab-pane"
-                role="tabpanel"
-                aria-labelledby="about-tab"
-                tabindex="0">
-                <div class="">
-                    <div class="row g-3">
+                <!-- About tab -->
+                <div class="tab-pane fade"
+                    id="about-tab-pane"
+                    role="tabpanel"
+                    aria-labelledby="about-tab"
+                    tabindex="0">
+                    <div class="row g-4">
                         <div class="col-md-6">
-                            <strong><?= t()->성별 ?>:</strong> <?= htmlspecialchars($gender_text ?: t()->정보_없음) ?>
+                            <div class="d-flex align-items-start gap-3">
+                                <i class="fa-solid fa-venus-mars text-primary fs-5"></i>
+                                <div>
+                                    <div class="text-muted small"><?= t()->성별 ?></div>
+                                    <div class="fw-semibold"><?= htmlspecialchars($gender_text ?: t()->정보_없음) ?></div>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-6">
-                            <strong><?= t()->생년월일 ?>:</strong> <?= htmlspecialchars($birthday_formatted ?: t()->정보_없음) ?>
+                            <div class="d-flex align-items-start gap-3">
+                                <i class="fa-solid fa-cake-candles text-primary fs-5"></i>
+                                <div>
+                                    <div class="text-muted small"><?= t()->생년월일 ?></div>
+                                    <div class="fw-semibold"><?= htmlspecialchars($birthday_formatted ?: t()->정보_없음) ?></div>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-6">
-                            <strong><?= t()->가입일 ?>:</strong> <?= htmlspecialchars($created_at_formatted) ?>
+                            <div class="d-flex align-items-start gap-3">
+                                <i class="fa-solid fa-calendar-check text-primary fs-5"></i>
+                                <div>
+                                    <div class="text-muted small"><?= t()->가입일 ?></div>
+                                    <div class="fw-semibold"><?= htmlspecialchars($created_at_formatted) ?></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

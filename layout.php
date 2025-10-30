@@ -150,81 +150,44 @@ if (file_exists($module_path)) {
 
 
     <style>
-
-
-
-
-        /* Sonub 컨테이너 - 콘텐츠 최대 너비 제한 */
         .sonub-container {
             max-width: 1200px;
-            /* 최대 너비를 1200px로 제한 */
             margin: 0 auto;
-            /* 가운데 정렬 */
             padding: 0 15px;
-            /* 좌우 여백 15px */
         }
 
-        /* Header Top Bar 스타일 - Fixed 고정 */
+        /* Fixed header */
         .top-bar {
             position: fixed;
-            /* 항상 상단에 고정 (스크롤과 무관) */
             top: 0;
-            /* 페이지 상단에 고정 */
             left: 0;
-            /* 왼쪽 정렬 */
             right: 0;
-            /* 오른쪽 정렬 (전체 너비) */
             z-index: 1020;
-            /* Bootstrap의 다른 요소들보다 위에 표시 */
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            /* 하단 그림자 효과 */
         }
 
-        /* Top Bar 내부 navbar의 padding 최소화 */
         .top-bar .navbar {
-            padding-top: 4px;
-            /* 상단 패딩 4px */
-            padding-bottom: 4px;
-            /* 하단 패딩 4px */
+            padding-top: 8px;
+            padding-bottom: 8px;
         }
 
-        /* Body에 헤더 높이만큼 padding-top 추가 (콘텐츠가 헤더에 가려지지 않도록) */
+        /* Body with light gray background */
         body {
             padding-top: 80px;
-            /* 헤더 높이만큼 여백 추가 */
+            background-color: #f0f2f5;
         }
 
-        @media (min-width: 768px) {
-            body {
-                padding-top: 88px;
-                /* 모바일에서는 헤더 높이 증가에 따라 여백 증가 */
-            }
-        }
-
-        /* 네비게이션 로고 이미지 스타일 */
+        /* Logo */
         .navbar-logo {
             width: 40px;
-            /* 로고 너비 */
             height: 40px;
-            /* 로고 높이 */
             object-fit: cover;
-            /* 이미지 비율 유지하면서 영역 채우기 */
         }
 
-        /* 네비게이션 링크 호버 효과 */
-        .navbar-light .navbar-nav .nav-link:hover {
-            color: var(--bs-primary) !important;
-            /* 호버 시 primary 색상 */
-            transition: color 0.2s ease;
-            /* 부드러운 색상 전환 */
-        }
-
-        /* 아이콘 링크 호버 효과 */
-        .top-bar a:hover i {
-            color: var(--bs-primary) !important;
-            /* 호버 시 primary 색상 */
-            transition: color 0.2s ease;
-            /* 부드러운 색상 전환 */
+        /* Search component responsive width */
+        @media (min-width: 768px) {
+            .user-search-component {
+                width: 240px !important;
+            }
         }
     </style>
 
@@ -234,50 +197,69 @@ if (file_exists($module_path)) {
 
 
 
-    <!-- 헤더 : 탑바 -->
-    <header id="page-header" class="top-bar bg-white border-bottom">
-        <nav class="navbar navbar-expand-lg navbar-light">
-            <div class="container-fluid">
-                <!-- 로고: Sonub Logo Image -->
-                <a class="navbar-brand d-flex align-items-center" href="/">
-                    <img src="/res/img/logo/medium.png" class="navbar-logo rounded-circle me-2" alt="Sonub Logo">
-                </a>
+    <header id="page-header" class="top-bar bg-white border-bottom shadow-sm">
+        <nav class="navbar navbar-light">
+            <div class="container-fluid px-3">
+                <div class="d-flex align-items-center justify-content-between w-100">
 
-                <!-- 우측 아이콘 메뉴 (모바일 & 데스크톱 공통) -->
-                <div class="d-flex align-items-center ms-auto">
-                    <!-- 아이콘 메뉴 (모든 화면 크기에서 표시) -->
-                    <div class="d-flex align-items-center gap-3">
+                    <!-- Left: Logo and Search -->
+                    <div class="d-flex align-items-center ">
+                        <a class="navbar-brand mb-0 p-0" href="/">
+                            <img src="/res/img/logo/medium.png" class="navbar-logo rounded-circle" alt="Sonub Logo">
+                        </a>
+                        <!-- Search: auto width on mobile, 240px on desktop -->
+                        <div class="user-search-component"></div>
+                    </div>
 
-                        <!-- 게시판 카테고리 아이콘 -->
-                        <a href="<?= href()->post->categories ?>" class="text-dark" title="Posts">
-                            <i class="bi bi-grid fs-3"></i>
+                    <!-- Right: Icon Menu (Facebook-style circular buttons) -->
+                    <div class="d-flex align-items-center gap-2">
+                        <!-- Posts -->
+                        <a href="<?= href()->post->categories ?>"
+                            class="btn btn-light rounded-circle p-0 d-flex align-items-center justify-content-center"
+                            style="width: 40px; height: 40px;"
+                            title="Posts">
+                            <i class="bi bi-grid fs-5"></i>
                         </a>
 
-                        <!-- 사용자 목록 아이콘 -->
-                        <a href="<?= href()->user->list ?>" class="text-dark" title="Users">
-                            <i class="bi bi-people fs-3"></i>
+                        <!-- Users -->
+                        <a href="<?= href()->user->list ?>"
+                            class="btn btn-light rounded-circle p-0 d-flex align-items-center justify-content-center"
+                            style="width: 40px; height: 40px;"
+                            title="Users">
+                            <i class="bi bi-people fs-5"></i>
                         </a>
 
-                        <!-- 채팅 아이콘 -->
-                        <a href="<?= href()->chat->rooms ?>" class="text-dark" title="Chat">
-                            <i class="bi bi-chat-dots fs-3"></i>
+                        <!-- Chat -->
+                        <a href="<?= href()->chat->rooms ?>"
+                            class="btn btn-light rounded-circle p-0 d-flex align-items-center justify-content-center"
+                            style="width: 40px; height: 40px;"
+                            title="Chat">
+                            <i class="bi bi-chat-dots fs-5"></i>
                         </a>
 
-                        <!-- 로그인 상태에 따른 아이콘 -->
-                        <!-- Temporarily change to icon instead of profile picture -->
+                        <!-- Profile / Login -->
                         <?php if (login()) : ?>
-                            <a href="<?= href()->user->profile ?>" class="text-dark" title="Profile">
+                            <a href="<?= href()->user->profile ?>"
+                                class="d-flex align-items-center justify-content-center rounded-circle overflow-hidden"
+                                style="width: 40px; height: 40px;"
+                                title="Profile">
                                 <?php login_user_profile_photo() ?>
                             </a>
                         <?php else: ?>
-                            <a href="<?= href()->user->login ?>" class="text-dark" title="Login">
-                                <i class="bi bi-person-circle fs-3"></i>
+                            <a href="<?= href()->user->login ?>"
+                                class="btn btn-light rounded-circle p-0 d-flex align-items-center justify-content-center"
+                                style="width: 40px; height: 40px;"
+                                title="Login">
+                                <i class="bi bi-person-circle fs-5"></i>
                             </a>
                         <?php endif; ?>
 
-                        <!-- 메뉴 아이콘 (로그아웃 대신) -->
-                        <a href="<?= href()->menu->intro ?>" class="text-dark" title="Menu">
-                            <i class="bi bi-list fs-3"></i>
+                        <!-- Menu -->
+                        <a href="<?= href()->menu->intro ?>"
+                            class="btn btn-light rounded-circle p-0 d-flex align-items-center justify-content-center"
+                            style="width: 40px; height: 40px;"
+                            title="Menu">
+                            <i class="bi bi-list fs-5"></i>
                         </a>
                     </div>
                 </div>
@@ -291,7 +273,6 @@ if (file_exists($module_path)) {
             <!-- Left Sidebar -->
             <aside class="sticky-sidebar d-none d-md-flex d-lg-flex flex-column gap-4 col-12 col-md-4 col-lg-3">
                 <?php include_once WIDGET_DIR . '/sidebar/quick-user-menu.php'; ?>
-                <?php include_once WIDGET_DIR . '/sidebar/new-users.php'; ?>
                 <?php include_once WIDGET_DIR . '/sidebar/quick-links.php'; ?>
             </aside>
 
@@ -303,6 +284,7 @@ if (file_exists($module_path)) {
             <!-- Right Sidebar -->
             <aside class="sticky-sidebar d-none d-lg-flex flex-column gap-4 col-12 col-md-3 col-lg-3">
                 <?php include_once WIDGET_DIR . '/sidebar/latest-posts.php'; ?>
+                <?php include_once WIDGET_DIR . '/sidebar/new-users.php'; ?>
                 <?php include_once WIDGET_DIR . '/sidebar/sidebar-stats.php'; ?>
             </aside>
         </div>

@@ -262,7 +262,7 @@ const postComponent = {
     </div>
 
     <!-- 댓글 섹션 (Bootstrap 패딩) -->
-    <div v-if="!edit.enabled" class="card-footer">
+    <div v-if="!edit.enabled" class="card-footer bg-white border-top">
         <!-- 가짜 댓글 입력 박스 (클릭 시 Modal 열림) -->
 
 
