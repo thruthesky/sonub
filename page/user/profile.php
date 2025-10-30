@@ -1,42 +1,8 @@
 <?php
 
-/**
- * 사용자 프로필 페이지
- *
- * 다른 사용자의 프로필을 조회하는 페이지입니다.
- * URL 파라미터로 사용자 ID를 받아서 해당 사용자의 정보를 표시합니다.
- */
-
-/**
- * 다국어 텍스트 주입 함수
- */
-function inject_user_profile_language()
-{
-    t()->inject([
-        '사용자 프로필' => ['ko' => '사용자 프로필', 'en' => 'User Profile', 'ja' => 'ユーザープロフィール', 'zh' => '用户资料'],
-        '사용자 ID가 필요합니다.' => ['ko' => '사용자 ID가 필요합니다.', 'en' => 'User ID is required.', 'ja' => 'ユーザーIDが必要です。', 'zh' => '需要用户ID。'],
-        '사용자를 찾을 수 없습니다.' => ['ko' => '사용자를 찾을 수 없습니다.', 'en' => 'User not found.', 'ja' => 'ユーザーが見つかりません。', 'zh' => '找不到用户。'],
-        '성별' => ['ko' => '성별', 'en' => 'Gender', 'ja' => '性別', 'zh' => '性别'],
-        '남성' => ['ko' => '남성', 'en' => 'Male', 'ja' => '男性', 'zh' => '男性'],
-        '여성' => ['ko' => '여성', 'en' => 'Female', 'ja' => '女性', 'zh' => '女性'],
-        '생년월일' => ['ko' => '생년월일', 'en' => 'Birthday', 'ja' => '生年月日', 'zh' => '出生日期'],
-        '가입일' => ['ko' => '가입일', 'en' => 'Joined', 'ja' => '登録日', 'zh' => '注册日期'],
-        '프로필_수정' => ['ko' => '프로필 수정', 'en' => 'Edit Profile', 'ja' => 'プロフィール編集', 'zh' => '编辑资料'],
-        '정보 없음' => ['ko' => '정보 없음', 'en' => 'Not provided', 'ja' => '情報なし', 'zh' => '无信息'],
-        '친구_추가' => ['ko' => '친구 추가', 'en' => 'Add Friend', 'ja' => '友達追加', 'zh' => '添加好友'],
-        '요청_중' => ['ko' => '요청 중...', 'en' => 'Requesting...', 'ja' => 'リクエスト中...', 'zh' => '请求中...'],
-        '친구_요청_전송_완료' => ['ko' => '친구 요청을 보냈습니다.', 'en' => 'Friend request sent.', 'ja' => '友達リクエストを送信しました。', 'zh' => '已发送好友请求。'],
-        '오류_발생' => ['ko' => '오류가 발생했습니다.', 'en' => 'An error occurred.', 'ja' => 'エラーが発生しました。', 'zh' => '发生错误。'],
-        '로그인이_필요합니다' => ['ko' => '로그인이 필요합니다.', 'en' => 'Login required.', 'ja' => 'ログインが必要です。', 'zh' => '需要登录。'],
-        '자기_자신에게는_친구_요청을_보낼_수_없습니다' => ['ko' => '자기 자신에게는 친구 요청을 보낼 수 없습니다.', 'en' => 'You cannot send a friend request to yourself.', 'ja' => '自分自身にはフレンドリクエストを送信できません。', 'zh' => '您不能向自己发送好友请求。'],
-        '이미_친구입니다' => ['ko' => '이미 친구입니다.', 'en' => 'Already friends.', 'ja' => 'すでに友達です。', 'zh' => '已经是朋友了。'],
-        '친구_요청에_실패했습니다' => ['ko' => '친구 요청에 실패했습니다.', 'en' => 'Friend request failed.', 'ja' => 'フレンドリクエストに失敗しました。', 'zh' => '好友请求失败。'],
-        '친구_요청_실패' => ['ko' => '친구 요청 실패', 'en' => 'Friend request failed', 'ja' => 'フレンドリクエスト失敗', 'zh' => '好友请求失败'],
-    ]);
-}
-
 // 다국어 텍스트 주입
 inject_user_profile_language();
+
 load_page_css();
 
 // 사용자 ID 가져오기: URL 파라미터 'id' 또는 로그인한 사용자의 ID
@@ -82,6 +48,30 @@ if (!empty($user->created_at)) {
 
 // 로그인한 사용자 본인인지 확인
 $is_me = login() && login()->id === $user->id;
+
+// 게시물 목록 초기 로드 (첫 페이지만 5개)
+$per_page = 5;
+$page = 1;
+
+$result = get_user_posts([
+    'user_id' => $user->id,
+    'limit' => $per_page,
+    'page' => $page
+]);
+
+$initial_posts = $result->posts ?? [];
+
+// Create postList structure (similar to index.my-page.php)
+$postList = [
+    'posts' => $initial_posts,
+    'page' => $page,
+    'isEmpty' => empty($initial_posts),
+    'isLastPage' => count($initial_posts) < $per_page
+];
+
+// Vue.js 컴포넌트 로드
+load_deferred_js('vue-components/post.component');
+load_deferred_js('infinite-scroll');
 ?>
 
 <style>
@@ -267,45 +257,74 @@ $is_me = login() && login()->id === $user->id;
             </div>
         </div>
 
-        <!-- 구분선 -->
-        <hr class="my-3">
+        <ul class="nav nav-tabs mt-4" id="profileTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active"
+                    id="posts-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#posts-tab-pane"
+                    type="button"
+                    role="tab"
+                    aria-controls="posts-tab-pane"
+                    aria-selected="true">
+                    <i class="fa-solid fa-file-lines me-2"></i><?= t()->게시물 ?>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link"
+                    id="about-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#about-tab-pane"
+                    type="button"
+                    role="tab"
+                    aria-controls="about-tab-pane"
+                    aria-selected="false">
+                    <i class="fa-solid fa-circle-info me-2"></i><?= t()->소개 ?>
+                </button>
+            </li>
+        </ul>
 
-        <!-- 상세 정보 -->
-        <div class="profile-details">
-            <div class="row g-3">
-                <!-- 성별 정보 -->
-                <?php if (!empty($user->gender)): ?>
-                    <div class="col-md-4">
-                        <div class="detail-item">
-                            <i class="fa-solid fa-venus-mars detail-icon"></i>
-                            <div class="detail-content">
-                                <div class="detail-label"><?= tr(['en' => 'Gender', 'ko' => '성별']) ?></div>
-                                <div class="detail-value"><?= htmlspecialchars($gender_text) ?></div>
-                            </div>
+        <!-- 탭 콘텐츠 -->
+        <div class="tab-content mt-3" id="profileTabsContent">
+            <!-- 게시물 탭 -->
+            <div class="tab-pane fade show active"
+                id="posts-tab-pane"
+                role="tabpanel"
+                aria-labelledby="posts-tab"
+                tabindex="0">
+                <!-- 게시물 목록 (Vue.js) -->
+                <div v-if="postList.isEmpty" class="alert alert-info text-center">
+                    <i class="fa-solid fa-inbox me-2"></i><?= t()->게시물_없음 ?>
+                </div>
+
+                <div v-else class="row g-3">
+                    <article v-for="post in postList.posts" :key="post.id" class="col-12">
+                        <div class="card shadow-sm">
+                            <post-component
+                                :post="post"
+                                @post-deleted="handlePostDeleted">
+                            </post-component>
                         </div>
-                    </div>
-                <?php endif; ?>
+                    </article>
+                </div>
+            </div>
 
-                <!-- 생년월일 정보 -->
-                <?php if ($user->birthday > 0): ?>
-                    <div class="col-md-4">
-                        <div class="detail-item">
-                            <i class="fa-solid fa-cake-candles detail-icon"></i>
-                            <div class="detail-content">
-                                <div class="detail-label"><?= tr(['en' => 'Birthday', 'ko' => '생년월일']) ?></div>
-                                <div class="detail-value"><?= htmlspecialchars($birthday_formatted) ?></div>
-                            </div>
+            <!-- 소개 탭 -->
+            <div class="tab-pane fade"
+                id="about-tab-pane"
+                role="tabpanel"
+                aria-labelledby="about-tab"
+                tabindex="0">
+                <div class="">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <strong><?= t()->성별 ?>:</strong> <?= htmlspecialchars($gender_text ?: t()->정보_없음) ?>
                         </div>
-                    </div>
-                <?php endif; ?>
-
-                <!-- 가입일 정보 -->
-                <div class="col-md-4">
-                    <div class="detail-item">
-                        <i class="fa-solid fa-clock detail-icon"></i>
-                        <div class="detail-content">
-                            <div class="detail-label"><?= tr(['en' => 'Joined', 'ko' => '가입일']) ?></div>
-                            <div class="detail-value"><?= htmlspecialchars($created_at_formatted) ?></div>
+                        <div class="col-md-6">
+                            <strong><?= t()->생년월일 ?>:</strong> <?= htmlspecialchars($birthday_formatted ?: t()->정보_없음) ?>
+                        </div>
+                        <div class="col-md-6">
+                            <strong><?= t()->가입일 ?>:</strong> <?= htmlspecialchars($created_at_formatted) ?>
                         </div>
                     </div>
                 </div>
@@ -313,26 +332,99 @@ $is_me = login() && login()->id === $user->id;
         </div>
     </div>
 </div>
-<script>
-    /**
-     * 프로필 페이지 JavaScript (Vue.js)
-     *
-     * 사용자 프로필 페이지의 친구 추가 기능을 처리합니다.
-     */
 
+<script>
+    ready(() => {
+        // InfiniteScroll 초기화 (body에 적용)
+        const scrollController = InfiniteScroll.init('body', {
+            onScrolledToBottom: () => {
+                console.log('하단 도달: 더 많은 데이터 로드');
+                if (window.profileApp) {
+                    window.profileApp.loadNextPage();
+                }
+            },
+            threshold: 400,
+            debounceDelay: 100,
+            initialScrollToBottom: false
+        });
+    });
+</script>
+
+<script>
     ready(() => {
         // Vue.js 프로필 앱 생성
-        Vue.createApp({
+        const app = Vue.createApp({
+            components: {
+                'post-component': postComponent
+            },
             data() {
                 console.log('window.Store in profile:', window.Store);
+
+                // 서버에서 hydrate된 게시물 목록을 Store에 저장
+                if (!window.Store.state.userPostList) {
+                    window.Store.state.userPostList = {};
+                }
+                Object.assign(window.Store.state.userPostList, <?= json_encode($postList, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>);
+
                 return {
                     // 친구 요청 상태
                     requesting: false,
                     isFriend: false,
                     state: window.Store?.state || {},
+                    // 서버에서 hydrate된 게시물 목록
+                    postList: window.Store.state.userPostList,
                 };
             },
+            mounted() {
+                console.log('[profile] Vue.js 프로필 페이지 초기화 완료');
+                console.log('Initial posts loaded:', this.postList.posts.length);
+            },
             methods: {
+                async loadNextPage() {
+                    if (this.postList.isLastPage) {
+                        console.log('마지막 페이지에 도달했습니다.');
+                        return;
+                    }
+
+                    const nextPage = this.postList.page + 1;
+                    try {
+                        console.log(`Loading next page: ${nextPage}`);
+
+                        const result = await func('get_user_posts', {
+                            user_id: <?= $user->id ?>,
+                            limit: <?= $per_page ?>,
+                            page: nextPage,
+                            alertOnError: true
+                        });
+
+                        console.log('다음 페이지 데이터:', result);
+
+                        if (result.posts && result.posts.length > 0) {
+                            this.postList.posts.push(...result.posts);
+                            this.postList.page = nextPage;
+                            this.postList.isLastPage = result.posts.length < <?= $per_page ?>;
+                            console.log(`${nextPage}번 째 페이지 로드 완료, 총 게시물 수:`, this.postList.posts.length);
+                        } else {
+                            this.postList.isLastPage = true;
+                            console.log('더 이상 로드할 게시물이 없습니다.');
+                        }
+                    } catch (error) {
+                        console.error('게시물 로드 중 오류 발생:', error);
+                    }
+                },
+
+                /**
+                 * 게시물 삭제 이벤트 핸들러
+                 * @param {number} postId - 삭제된 게시물 ID
+                 */
+                handlePostDeleted(postId) {
+                    console.log('Post deleted event received:', postId);
+                    const index = this.postList.posts.findIndex(p => p.id === postId);
+                    if (index !== -1) {
+                        this.postList.posts.splice(index, 1);
+                        console.log('Post removed from list. Remaining posts:', this.postList.posts.length);
+                    }
+                },
                 /**
                  * 친구 추가 요청
                  * @param {number} otherUserId - 친구 요청을 보낼 사용자 ID
@@ -388,10 +480,54 @@ $is_me = login() && login()->id === $user->id;
                         alert(`<?= t()->친구_요청_실패 ?>: ${errorMessage}`);
                     }
                 }
-            },
-            mounted() {
-                console.log('[profile] Vue.js 프로필 페이지 초기화 완료');
             }
-        }).mount('#profile-component');
+        });
+
+        const vm = app.mount('#profile-component');
+        console.log('Vue 인스턴스 마운트됨:', vm);
+
+        // Vue 인스턴스를 전역 변수로 노출 (무한 스크롤에서 사용)
+        window.profileApp = vm;
     });
 </script>
+
+<?php
+/**
+ * 사용자 프로필 페이지
+ *
+ * 다른 사용자의 프로필을 조회하는 페이지입니다.
+ * URL 파라미터로 사용자 ID를 받아서 해당 사용자의 정보를 표시합니다.
+ */
+
+/**
+ * 다국어 텍스트 주입 함수
+ */
+function inject_user_profile_language()
+{
+    t()->inject([
+        '사용자 프로필' => ['ko' => '사용자 프로필', 'en' => 'User Profile', 'ja' => 'ユーザープロフィール', 'zh' => '用户资料'],
+        '사용자 ID가 필요합니다.' => ['ko' => '사용자 ID가 필요합니다.', 'en' => 'User ID is required.', 'ja' => 'ユーザーIDが必要です。', 'zh' => '需要用户ID。'],
+        '사용자를 찾을 수 없습니다.' => ['ko' => '사용자를 찾을 수 없습니다.', 'en' => 'User not found.', 'ja' => 'ユーザーが見つかりません。', 'zh' => '找不到用户。'],
+        '성별' => ['ko' => '성별', 'en' => 'Gender', 'ja' => '性別', 'zh' => '性别'],
+        '남성' => ['ko' => '남성', 'en' => 'Male', 'ja' => '男性', 'zh' => '男性'],
+        '여성' => ['ko' => '여성', 'en' => 'Female', 'ja' => '女性', 'zh' => '女性'],
+        '생년월일' => ['ko' => '생년월일', 'en' => 'Birthday', 'ja' => '生年月日', 'zh' => '出生日期'],
+        '가입일' => ['ko' => '가입일', 'en' => 'Joined', 'ja' => '登録日', 'zh' => '注册日期'],
+        '프로필_수정' => ['ko' => '프로필 수정', 'en' => 'Edit Profile', 'ja' => 'プロフィール編集', 'zh' => '编辑资料'],
+        '정보 없음' => ['ko' => '정보 없음', 'en' => 'Not provided', 'ja' => '情報なし', 'zh' => '无信息'],
+        '친구_추가' => ['ko' => '친구 추가', 'en' => 'Add Friend', 'ja' => '友達追加', 'zh' => '添加好友'],
+        '요청_중' => ['ko' => '요청 중...', 'en' => 'Requesting...', 'ja' => 'リクエスト中...', 'zh' => '请求中...'],
+        '친구_요청_전송_완료' => ['ko' => '친구 요청을 보냈습니다.', 'en' => 'Friend request sent.', 'ja' => '友達リクエストを送信しました。', 'zh' => '已发送好友请求。'],
+        '오류_발생' => ['ko' => '오류가 발생했습니다.', 'en' => 'An error occurred.', 'ja' => 'エラーが発生しました。', 'zh' => '发生错误。'],
+        '로그인이_필요합니다' => ['ko' => '로그인이 필요합니다.', 'en' => 'Login required.', 'ja' => 'ログインが必要です。', 'zh' => '需要登录。'],
+        '자기_자신에게는_친구_요청을_보낼_수_없습니다' => ['ko' => '자기 자신에게는 친구 요청을 보낼 수 없습니다.', 'en' => 'You cannot send a friend request to yourself.', 'ja' => '自分自身にはフレンドリクエストを送信できません。', 'zh' => '您不能向自己发送好友请求。'],
+        '이미_친구입니다' => ['ko' => '이미 친구입니다.', 'en' => 'Already friends.', 'ja' => 'すでに友達です。', 'zh' => '已经是朋友了。'],
+        '친구_요청에_실패했습니다' => ['ko' => '친구 요청에 실패했습니다.', 'en' => 'Friend request failed.', 'ja' => 'フレンドリクエストに失敗しました。', 'zh' => '好友请求失败。'],
+        '친구_요청_실패' => ['ko' => '친구 요청 실패', 'en' => 'Friend request failed', 'ja' => 'フレンドリクエスト失敗', 'zh' => '好友请求失败'],
+        '게시물' => ['ko' => '게시물', 'en' => 'Posts', 'ja' => '投稿', 'zh' => '帖子'],
+        '소개' => ['ko' => '소개', 'en' => 'About', 'ja' => '概要', 'zh' => '简介'],
+        '게시물_없음' => ['ko' => '게시물이 없습니다.', 'en' => 'No posts yet.', 'ja' => '投稿がありません。', 'zh' => '没有帖子。'],
+        '사용자_정보' => ['ko' => '사용자 정보', 'en' => 'User Information', 'ja' => 'ユーザー情報', 'zh' => '用户信息'],
+    ]);
+}
+?>
