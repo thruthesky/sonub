@@ -150,21 +150,7 @@ if (file_exists($module_path)) {
 
 
     <style>
-        :root {
-            --primary-color: green;
-            --primary-color-dark: #b30000;
-            --secondary-color: #6c757d;
-        }
 
-
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-
-        .text-primary {
-            color: var(--primary-color) !important;
-        }
 
 
 

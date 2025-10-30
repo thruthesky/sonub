@@ -1,4 +1,5 @@
 <?php
+
 /**
  * 사이드바 통계 위젯
  *
@@ -57,7 +58,7 @@ $total_comments = count_comments();
 <!-- 통계 위젯 - Bootstrap Card -->
 <div class="card mb-4">
     <!-- 카드 헤더 -->
-    <div class="card-header d-flex align-items-center gap-2">
+    <div class="card-header d-flex align-items-center gap-2 border-bottom-0 bg-white">
         <i class="fa-solid fa-chart-simple text-primary fs-5"></i>
         <h6 class="mb-0 fw-bold flex-grow-1"><?= t()->통계 ?></h6>
     </div>

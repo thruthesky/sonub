@@ -615,6 +615,7 @@ function update_post_comment_count(int $post_id): void
  *                       - created_after: 생성일 이후 (Unix timestamp, 정수)
  *                       - created_before: 생성일 이전 (Unix timestamp, 정수)
  *                       - limit: 최대 결과 수 (정수)
+ *                       - visibility: posts 테이블의 visibility 컬럼
  *
  * @return PostListModel 게시글 목록 배열 (조건에 맞는 게시글이 없으면 빈 배열)
  *

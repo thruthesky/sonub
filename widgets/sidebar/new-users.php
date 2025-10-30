@@ -10,7 +10,7 @@
 inject_new_users_widget_language();
 
 // 최근 가입한 사용자 16명 가져오기
-$result = list_users(['page' => 1, 'per_page' => 16]);
+$result = list_users(['page' => 1, 'per_page' => 6]);
 $users = $result['users'] ?? [];
 $displayUsers = array_slice($users, 0, 6);
 $userCount = count($displayUsers);
@@ -25,7 +25,7 @@ load_deferred_js('vue-components/user-search.component');
 <!-- 신규 회원 위젯 - Bootstrap Card -->
 <div class="card shadow-sm">
     <!-- 카드 헤더 -->
-    <div class="card-header d-flex align-items-center gap-2">
+    <div class="card-header d-flex align-items-center gap-2 border-bottom-0 bg-white">
         <div class="flex-grow-1">
             <h6 class="mb-1 fw-bold"><?= t()->신규_회원 ?></h6>
             <p class="text-muted mb-0 small"><?= t()->최근_가입자 ?></p>
@@ -59,7 +59,7 @@ load_deferred_js('vue-components/user-search.component');
                     $photo_url = !empty($user['photo_url']) ? htmlspecialchars($user['photo_url']) : null;
                     ?>
                     <a href="<?= href()->user->profile ?>?id=<?= $user['id'] ?>"
-                        class="d-flex align-items-center gap-2 rounded text-decoration-none hover-animate">
+                        class="d-flex align-items-center gap-2 rounded text-decoration-none">
                         <!-- 프로필 이미지 (원형) -->
                         <?php if ($photo_url): ?>
                             <img src="<?= $photo_url ?>"

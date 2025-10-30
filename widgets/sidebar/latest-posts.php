@@ -38,13 +38,13 @@ function inject_latest_posts_language(): void
 inject_latest_posts_language();
 
 // 최신 10개 게시글 조회
-$result = list_posts(['limit' => 10]);
+$result = list_posts(['limit' => 10, 'visibility' => 'public']);
 ?>
 
 <!-- 최신 게시글 위젯 - Bootstrap Card -->
 <div class="card shadow-sm">
     <!-- 카드 헤더 -->
-    <div class="card-header d-flex align-items-center gap-2">
+    <div class="card-header d-flex align-items-center gap-2 border-bottom-0 bg-white">
         <i class="fa-solid fa-newspaper text-primary fs-5"></i>
         <h6 class="mb-0 fw-bold flex-grow-1"><?= t()->최신_게시글 ?></h6>
     </div>
@@ -66,7 +66,7 @@ $result = list_posts(['limit' => 10]);
                     $displayText = !empty($post->title) ? $post->title : strip_tags($post->content);
                     ?>
                     <a href="<?= href()->post->view($post->id) ?>"
-                        class="d-flex gap-2 rounded text-decoration-none hover-animate"
+                        class="d-flex gap-2 rounded text-decoration-none "
                         style="align-items: flex-start;">
                         <i class="fa-solid fa-angle-right text-secondary small" style="margin-top: 3px; flex-shrink: 0;"></i>
                         <div class="flex-grow-1">

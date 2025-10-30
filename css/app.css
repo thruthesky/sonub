@@ -1,3 +1,73 @@
+:root {
+  --blue:    #3459e6;
+  --indigo:  #6610f2;
+  --purple:  #6f42c1;
+  --pink:    #d63384;
+  --red:     #da292e;
+  --orange:  #f8765f;
+  --yellow:  #f4bd61;
+  --green:   #2fb380;
+  --teal:    #20c997;
+  --cyan:    #287bb5;
+  --gray:    #ced4da;
+  --white:   #fff;
+  --black:   #000;
+
+  --primary-color: var(--blue);
+  --secondary-color: var(--gray);
+  --success-color: var(--green);
+  --danger-color: var(--red);
+  --warning-color: var(--yellow);
+  --info-color: var(--cyan);
+  --light-color: var(--white);
+  --dark-color: var(--black);
+}
+
+
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-primary:hover { 
+  background-color: color-mix(in srgb, var(--primary-color), black 20%);
+}
+
+.btn-secondary {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+  color: var(--black);
+}
+
+.btn-success {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+  color: var(--white);
+}
+
+.btn-danger {
+  background-color: var(--danger-color);
+  border-color: var(--danger-color);
+  color: var(--white);
+}
+
+.btn-warning {
+  background-color: var(--warning-color);
+  border-color: var(--warning-color);
+  color: var(--black);
+}
+
+.btn-info {
+  background-color: var(--info-color);
+  border-color: var(--info-color);
+  color: var(--white);
+}
+
+.text-primary {
+  color: var(--primary-color) !important;
+}
+
+
 /* 헤더 아이콘 크기 */
 .top-bar .bi {
   font-size: 1.375rem; /* Bootstrap 아이콘 크기 증가 */
@@ -50,14 +120,6 @@
 
 [v-cloak] {
   display: none;
-}
-
-.hover-animate {
-    transition: background-color 0.2s ease;
-}
-
-.hover-animate:hover {
-    background-color: #f8f9fa;
 }
 
 .btn-pill-gray {

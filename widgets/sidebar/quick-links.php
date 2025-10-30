@@ -9,7 +9,7 @@
 
 <div class="card shadow-sm">
     <!-- 카드 헤더 -->
-    <div class="card-header d-flex align-items-center gap-2">
+    <div class="card-header d-flex align-items-center gap-2 border-bottom-0 bg-white">
         <i class="fa-solid fa-link text-primary fs-5"></i>
         <h6 class="mb-0 fw-bold flex-grow-1">Quick Links</h6>
     </div>
