@@ -16,6 +16,7 @@
 // 1단계: 파라미터 및 설정
 // ========================================================================
 $category = http_param('category');
+$visibility = http_param('visibility');
 $per_page = 5;
 $page = 1;
 
@@ -37,7 +38,8 @@ $postListData = list_posts([
     'category' => $category,
     'limit' => $per_page,
     'offset' => $offset,
-    'page' => $page
+    'page' => $page,
+    'visibility' => $visibility
 ]);
 
 // list_posts()의 PostListModel을 배열 형식으로 변환
@@ -116,6 +118,7 @@ $postList = [
                     // 서버에서 hydrate된 게시물 목록 (window.Store 사용)
                     postList: window.Store.state.postList,
                     category: '<?= $category ?>',
+                    visibility: '<?= $visibility ?>',
                     perPage: <?= $per_page ?>,
                     // 현재 로그인한 사용자 프로필 사진
                     currentUserPhoto: <?= login() && login()->photo_url ? json_encode(login()->photo_url) : 'null' ?>
@@ -137,6 +140,7 @@ $postList = [
                         // list_posts API 호출
                         const result = await func('list_posts', {
                             category: this.category,
+                            visibility: this.visibility,
                             limit: this.perPage,
                             page: nextPage,
                             alertOnError: true,

@@ -62,11 +62,7 @@ page_header([
                             <i class="fa-solid fa-user-group text-muted" style="font-size: 64px;"></i>
                         </div>
                         <h5 class="mb-2"><?= t()->친구가_없습니다 ?></h5>
-                        <p class="text-muted mb-4"><?= t()->친구를_찾아보세요 ?></p>
-                        <a class="btn btn-primary" href="<?= href()->friend->find_friend ?>">
-                            <i class="fa-solid fa-user-plus me-2"></i>
-                            <?= t()->친구_찾기 ?>
-                        </a>
+
                     </div>
                 </div>
             <?php else: ?>
