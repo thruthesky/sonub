@@ -420,16 +420,16 @@
 
             <h5 class="mb-2">Circular Icon Buttons</h5>
             <div class="d-flex flex-wrap gap-2">
-                <button type="button" class="btn btn-primary rounded-circle flex-center" style="width: 40px; height: 40px;" aria-label="Add">
+                <button type="button" class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" aria-label="Add">
                     <i class="fa-solid fa-plus"></i>
                 </button>
-                <button type="button" class="btn btn-danger rounded-circle flex-center" style="width: 40px; height: 40px;" aria-label="Delete">
+                <button type="button" class="btn btn-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" aria-label="Delete">
                     <i class="fa-solid fa-trash"></i>
                 </button>
-                <button type="button" class="btn btn-success rounded-circle flex-center" style="width: 40px; height: 40px;" aria-label="Check">
+                <button type="button" class="btn btn-success rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" aria-label="Check">
                     <i class="fa-solid fa-check"></i>
                 </button>
-                <button type="button" class="btn btn-outline-secondary rounded-circle flex-center" style="width: 40px; height: 40px;" aria-label="Settings">
+                <button type="button" class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" aria-label="Settings">
                     <i class="fa-solid fa-gear"></i>
                 </button>
             </div>
@@ -546,17 +546,17 @@
             <h5 class="mb-2">With Custom Hover Colors</h5>
             <div class="d-flex flex-wrap gap-2 mb-4">
                 <button type="button" class="btn btn-link text-warning p-2 rounded"
-                        style="transition: background-color 0.2s ease;"
-                        onmouseover="this.style.backgroundColor='#fff3cd'"
-                        onmouseout="this.style.backgroundColor='transparent'"
-                        aria-label="Edit">
+                    style="transition: background-color 0.2s ease;"
+                    onmouseover="this.style.backgroundColor='#fff3cd'"
+                    onmouseout="this.style.backgroundColor='transparent'"
+                    aria-label="Edit">
                     <i class="fa-solid fa-pen"></i>
                 </button>
                 <button type="button" class="btn btn-link text-danger p-2 rounded"
-                        style="transition: background-color 0.2s ease;"
-                        onmouseover="this.style.backgroundColor='#ffe5e5'"
-                        onmouseout="this.style.backgroundColor='transparent'"
-                        aria-label="Delete">
+                    style="transition: background-color 0.2s ease;"
+                    onmouseover="this.style.backgroundColor='#ffe5e5'"
+                    onmouseout="this.style.backgroundColor='transparent'"
+                    aria-label="Delete">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             </div>
@@ -571,17 +571,17 @@
                         </div>
                         <div class="d-flex gap-1">
                             <button type="button" class="btn btn-link text-warning p-2 rounded"
-                                    style="transition: background-color 0.2s ease;"
-                                    onmouseover="this.style.backgroundColor='#fff3cd'"
-                                    onmouseout="this.style.backgroundColor='transparent'"
-                                    aria-label="Edit">
+                                style="transition: background-color 0.2s ease;"
+                                onmouseover="this.style.backgroundColor='#fff3cd'"
+                                onmouseout="this.style.backgroundColor='transparent'"
+                                aria-label="Edit">
                                 <i class="fa-solid fa-pen"></i>
                             </button>
                             <button type="button" class="btn btn-link text-danger p-2 rounded"
-                                    style="transition: background-color 0.2s ease;"
-                                    onmouseover="this.style.backgroundColor='#ffe5e5'"
-                                    onmouseout="this.style.backgroundColor='transparent'"
-                                    aria-label="Delete">
+                                style="transition: background-color 0.2s ease;"
+                                onmouseover="this.style.backgroundColor='#ffe5e5'"
+                                onmouseout="this.style.backgroundColor='transparent'"
+                                aria-label="Delete">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
@@ -598,30 +598,30 @@
             <h5 class="mb-2">Basic Icon + Text Links</h5>
             <div class="d-flex flex-wrap gap-3 mb-4">
                 <a href="#" class="text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2"
-                   style="transition: color 0.2s ease;"
-                   onmouseover="this.style.color='#0d6efd'"
-                   onmouseout="this.style.color='#6c757d'">
+                    style="transition: color 0.2s ease;"
+                    onmouseover="this.style.color='#0d6efd'"
+                    onmouseout="this.style.color='#6c757d'">
                     <i class="fa-solid fa-shield-halved"></i>
                     <span>Privacy</span>
                 </a>
                 <a href="#" class="text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2"
-                   style="transition: color 0.2s ease;"
-                   onmouseover="this.style.color='#0d6efd'"
-                   onmouseout="this.style.color='#6c757d'">
+                    style="transition: color 0.2s ease;"
+                    onmouseover="this.style.color='#0d6efd'"
+                    onmouseout="this.style.color='#6c757d'">
                     <i class="fa-solid fa-file-contract"></i>
                     <span>Terms</span>
                 </a>
                 <a href="#" class="text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2"
-                   style="transition: color 0.2s ease;"
-                   onmouseover="this.style.color='#0d6efd'"
-                   onmouseout="this.style.color='#6c757d'">
+                    style="transition: color 0.2s ease;"
+                    onmouseover="this.style.color='#0d6efd'"
+                    onmouseout="this.style.color='#6c757d'">
                     <i class="fa-solid fa-bullhorn"></i>
                     <span>Advertising</span>
                 </a>
                 <a href="#" class="text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2"
-                   style="transition: color 0.2s ease;"
-                   onmouseover="this.style.color='#0d6efd'"
-                   onmouseout="this.style.color='#6c757d'">
+                    style="transition: color 0.2s ease;"
+                    onmouseover="this.style.color='#0d6efd'"
+                    onmouseout="this.style.color='#6c757d'">
                     <i class="fa-solid fa-ellipsis"></i>
                     <span>About</span>
                 </a>
@@ -630,16 +630,16 @@
             <h5 class="mb-2">Button Version (for non-link actions)</h5>
             <div class="d-flex flex-wrap gap-3">
                 <button type="button" class="btn p-0 border-0 text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2"
-                        style="background: none; transition: color 0.2s ease;"
-                        onmouseover="this.style.color='#0d6efd'"
-                        onmouseout="this.style.color='#6c757d'">
+                    style="background: none; transition: color 0.2s ease;"
+                    onmouseover="this.style.color='#0d6efd'"
+                    onmouseout="this.style.color='#6c757d'">
                     <i class="fa-solid fa-shield-halved"></i>
                     <span>Privacy</span>
                 </button>
                 <button type="button" class="btn p-0 border-0 text-decoration-none text-secondary fw-semibold d-inline-flex align-items-center gap-2"
-                        style="background: none; transition: color 0.2s ease;"
-                        onmouseover="this.style.color='#0d6efd'"
-                        onmouseout="this.style.color='#6c757d'">
+                    style="background: none; transition: color 0.2s ease;"
+                    onmouseover="this.style.color='#0d6efd'"
+                    onmouseout="this.style.color='#6c757d'">
                     <i class="fa-solid fa-file-contract"></i>
                     <span>Terms</span>
                 </button>
@@ -662,8 +662,8 @@
             <h5 class="mb-2">Interactive Toggle (Chevron Rotates)</h5>
             <div class="mb-4">
                 <button type="button"
-                        class="btn btn-link text-decoration-none text-secondary fw-medium d-inline-flex align-items-center gap-2 p-2"
-                        onclick="this.querySelector('i').classList.toggle('fa-chevron-down'); this.querySelector('i').classList.toggle('fa-chevron-up');">
+                    class="btn btn-link text-decoration-none text-secondary fw-medium d-inline-flex align-items-center gap-2 p-2"
+                    onclick="this.querySelector('i').classList.toggle('fa-chevron-down'); this.querySelector('i').classList.toggle('fa-chevron-up');">
                     <span>See more</span>
                     <i class="fa-solid fa-chevron-down"></i>
                 </button>
@@ -672,11 +672,11 @@
             <h5 class="mb-2">With Bootstrap Collapse</h5>
             <div>
                 <button type="button"
-                        class="btn btn-link text-decoration-none text-secondary fw-medium d-inline-flex align-items-center gap-2 p-2"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#collapseExample"
-                        aria-expanded="false"
-                        aria-controls="collapseExample">
+                    class="btn btn-link text-decoration-none text-secondary fw-medium d-inline-flex align-items-center gap-2 p-2"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#collapseExample"
+                    aria-expanded="false"
+                    aria-controls="collapseExample">
                     <span>See more</span>
                     <i class="fa-solid fa-chevron-down"></i>
                 </button>

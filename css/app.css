@@ -52,12 +52,6 @@
   display: none;
 }
 
-.flex-center { 
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .hover-animate {
     transition: background-color 0.2s ease;
 }
