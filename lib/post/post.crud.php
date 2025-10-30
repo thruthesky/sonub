@@ -81,6 +81,77 @@ function get_post_by_id(int $id): ?PostModel
 }
 
 /**
+ * Get posts by user
+ *
+ * Retrieves a list of posts created by a specific user.
+ * Internally uses the list_posts() function for filtering.
+ *
+ * @param array $input Input parameters
+ *                      - user_id: User ID (required)
+ *                      - category: Category filter (optional)
+ *                      - limit: Maximum number of results (optional, default: 20)
+ *                      - page: Page number (optional, default: 1)
+ *                      - offset: Offset (optional)
+ *                      - created_after: Filter posts created after this timestamp (Unix timestamp, optional)
+ *                      - created_before: Filter posts created before this timestamp (Unix timestamp, optional)
+ *
+ * @return PostListModel Post list (PostListModel object)
+ *
+ * @example
+ * // Get all posts by a specific user
+ * $posts = get_user_posts(['user_id' => 42]);
+ *
+ * // Get posts in a specific category by a user
+ * $posts = get_user_posts(['user_id' => 42, 'category' => 'discussion']);
+ *
+ * // Apply pagination
+ * $posts = get_user_posts(['user_id' => 42, 'page' => 2, 'limit' => 10]);
+ *
+ * // Get posts from the last 7 dayspost-content-input
+ * $one_week_ago = time() - 7 * 24 * 60 * 60;
+ * $posts = get_user_posts(['user_id' => 42, 'created_after' => $one_week_ago]);
+ */
+function get_user_posts(array $input): PostListModel
+{
+    $target_user_id = $input['user_id'] ?? null;
+
+    error_if_empty($target_user_id, 'user-id-required', tr([
+        'en' => 'User ID is required.',
+        'ko' => '사용자 ID는 필수 항목입니다.',
+        'ja' => 'ユーザーIDは必須項目です。',
+        'zh' => '用户ID是必填项。'
+    ]));
+
+    $viewer_id = login() ? login()->id : null;
+
+    if ($viewer_id === $target_user_id) {
+        return list_posts($input);
+    }
+
+
+    if ($viewer_id && is_blocked_either_way($viewer_id, $target_user_id)) {
+        return new PostListModel([], 0, 1, 20);
+    }
+
+
+    if (!$viewer_id) {
+        $input['visibility'] = 'public';
+        return list_posts($input);
+    }
+
+    $friendship_status = get_friendship_status($viewer_id, $target_user_id);
+
+    if ($friendship_status === 'accepted') {
+        $input['visibility'] = ['public', 'friends'];
+        return list_posts($input);
+    }
+
+    $input['visibility'] = 'public';
+    return list_posts($input);
+}
+
+
+/**
  * 게시글 생성 함수 (Fan-out on Write 자동 적용)
  *
  * 새로운 게시글을 데이터베이스에 생성합니다.
@@ -621,6 +692,23 @@ function list_posts(array $filters = []): PostListModel
     if (isset($filters['created_before'])) {
         $conditions[] = 'p.created_at <= ?';
         $params[] = $filters['created_before'];
+    }
+
+    // Visibility 필터 (문자열 또는 배열 지원)
+    // p.visibility: posts 테이블의 visibility 컬럼
+    if (isset($filters['visibility'])) {
+        if (is_array($filters['visibility'])) {
+            // 배열인 경우: IN 절 사용 (예: ['public', 'friends'])
+            $placeholders = array_fill(0, count($filters['visibility']), '?');
+            $conditions[] = 'p.visibility IN (' . implode(', ', $placeholders) . ')';
+            foreach ($filters['visibility'] as $visibility_value) {
+                $params[] = $visibility_value;
+            }
+        } else {
+            // 문자열인 경우: = 연산자 사용 (예: 'public')
+            $conditions[] = 'p.visibility = ?';
+            $params[] = $filters['visibility'];
+        }
     }
 
     // ========================================================================

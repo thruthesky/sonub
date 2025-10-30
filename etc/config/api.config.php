@@ -46,7 +46,8 @@ class AppConfigApi
             'reject_friend' => 'Rejecting a friend request',
             'accept_friend' => 'Accepting the friend request',
             'remove_friend' => "Removing the friendship",
-            'set_language' => "Change the language of sonub website"
+            'set_language' => "Change the language of sonub website",
+            'get_user_posts' => "Get the user posts"
         ];
     }
 
