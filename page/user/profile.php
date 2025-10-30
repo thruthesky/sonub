@@ -299,12 +299,10 @@ load_deferred_js('infinite-scroll');
 
                 <div v-else class="row g-3">
                     <article v-for="post in postList.posts" :key="post.id" class="col-12">
-                        <div class="card shadow-sm">
-                            <post-component
-                                :post="post"
-                                @post-deleted="handlePostDeleted">
-                            </post-component>
-                        </div>
+                        <post-component
+                            :post="post"
+                            @post-deleted="handlePostDeleted">
+                        </post-component>
                     </article>
                 </div>
             </div>
