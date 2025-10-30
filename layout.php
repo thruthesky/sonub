@@ -150,6 +150,24 @@ if (file_exists($module_path)) {
 
 
     <style>
+        :root {
+            --primary-color: green;
+            --primary-color-dark: #b30000;
+            --secondary-color: #6c757d;
+        }
+
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .text-primary {
+            color: var(--primary-color) !important;
+        }
+
+
+
         /* Sonub 컨테이너 - 콘텐츠 최대 너비 제한 */
         .sonub-container {
             max-width: 1200px;
