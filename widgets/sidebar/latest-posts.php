@@ -45,7 +45,7 @@ $result = list_posts(['limit' => 10, 'visibility' => 'public']);
 <div class="card border-0 border-0 bg-transparent">
     <div class="card-body p-3">
         <!-- Header -->
-        <h6 class="fw-bold text-secondary mb-3"><?= t()->최신_게시글 ?></h6>
+        <h6 class="fw-semibold text-secondary mb-3"><?= t()->최신_게시글 ?></h6>
 
         <?php if (empty($result->posts)): ?>
             <!-- Empty state -->
@@ -61,15 +61,22 @@ $result = list_posts(['limit' => 10, 'visibility' => 'public']);
                     $displayText = !empty($post->title) ? $post->title : strip_tags($post->content);
                     ?>
                     <a href="<?= href()->post->view($post->id) ?>"
-                        class="d-flex align-items-start gap-2 p-2 rounded text-decoration-none text-dark">
-                        <div class="flex-grow-1">
-                            <div class="small lh-sm" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        class="d-flex align-items-center gap-2 p-2 rounded text-decoration-none text-dark hover-bg">
+                        <div class="flex-grow-1 overflow-hidden" style="min-width: 0;">
+                            <div class="small lh-sm text-truncate">
                                 <?= htmlspecialchars($displayText ?: 'Image post') ?>
                             </div>
                         </div>
+                        <i class="fa-solid fa-chevron-right text-secondary" style="font-size: 0.75rem;"></i>
                     </a>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
     </div>
 </div>
+
+<style>
+    .hover-bg:hover {
+        background-color: var(--bs-light);
+    }
+</style>

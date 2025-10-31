@@ -194,24 +194,18 @@ if (file_exists($module_path)) {
 </head>
 
 <body page="<?= htmlspecialchars(page(), ENT_QUOTES) ?>">
-
-
-
     <header id="page-header" class="top-bar bg-white border-bottom shadow-sm">
         <nav class="navbar navbar-light">
             <div class="container-fluid px-3">
                 <div class="d-flex align-items-center justify-content-between w-100">
 
-                    <!-- Left: Logo and Search -->
                     <div class="d-flex align-items-center ">
                         <a class="navbar-brand mb-0 p-0" href="/">
                             <img src="/res/img/logo/medium.png" class="navbar-logo rounded-circle" alt="Sonub Logo">
                         </a>
-                        <!-- Search: auto width on mobile, 240px on desktop -->
                         <div class="user-search-component"></div>
                     </div>
 
-                    <!-- Right: Icon Menu (Facebook-style circular buttons) -->
                     <div class="d-flex align-items-center gap-2">
                         <!-- Posts -->
                         <a href="<?= href()->post->categories ?>"
@@ -271,8 +265,10 @@ if (file_exists($module_path)) {
     <div class="sonub-container">
         <div class="row">
             <!-- Left Sidebar -->
-            <aside class="sticky-sidebar d-none d-md-flex d-lg-flex flex-column gap-4 col-12 col-md-4 col-lg-3">
-                <?php include_once WIDGET_DIR . '/sidebar/quick-user-menu.php'; ?>
+            <aside class="sticky-sidebar d-none d-md-flex d-lg-flex flex-column gap-4 col-12 col-md-4 col-lg-3 vh-100">
+                <div class="flex-grow-1">
+                    <?php include_once WIDGET_DIR . '/sidebar/quick-user-menu.php'; ?>
+                </div>
                 <?php include_once WIDGET_DIR . '/sidebar/quick-links.php'; ?>
             </aside>
 

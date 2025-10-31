@@ -15,7 +15,7 @@ $category = http_param('category') ?? 'story';
 
 // 로그인한 사용자 정보 가져오기
 $user = login();
-$user_photo = $user && isset($user->photo_url) ? $user->photo_url : '/images/default-user.png';
+$user_photo = ($user && isset($user->photo_url) && !empty($user->photo_url)) ? $user->photo_url : '';
 // first_name, middle_name, last_name을 조합하여 전체 이름 생성
 $name_parts = [];
 if ($user) {
@@ -48,24 +48,6 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
         background-color: #e4e6eb;
     }
 
-    .post-content-input {
-        width: 100%;
-        border: none;
-        outline: none;
-        font-size: 15px;
-        color: #050505;
-        line-height: 1.5;
-        resize: none;
-        min-height: 80px;
-        max-height: 200px;
-        overflow-y: auto;
-        padding: 0;
-        background: transparent;
-    }
-
-    .post-content-input::placeholder {
-        color: #65676b;
-    }
 
     /* 커스텀 드롭다운 래퍼 */
     .post-select-wrapper {
@@ -131,7 +113,7 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
         cursor: not-allowed;
     }
 </style>
-<section id="post-list-create" class="mb-3 card shadow-sm" v-cloak>
+<section id="post-list-create" class="mb-3 card" v-cloak>
     <div class="">
         <form @submit.prevent="submit_post">
             <div v-if="!expanded" class="d-flex align-items-center p-3 gap-2">
@@ -213,7 +195,8 @@ $user_name = !empty($name_parts) ? implode(' ', $name_parts) : 'Guest';
                     <textarea
                         ref="textarea"
                         v-model="content"
-                        class="post-content-input mb-3"
+                        class="w-100 border-0 mb-3"
+                        style="outline: none; font-size: 15px; color: #050505; line-height: 1.5; resize: none; min-height: 80px; max-height: 200px; overflow-y: auto; padding: 0; background: transparent;"
                         name="content"
                         :placeholder="placeholder"></textarea>
 

@@ -24,7 +24,7 @@ load_deferred_js('vue-components/user-search.component');
 <div class="card border-0 bg-transparent">
     <div class="card-body p-3">
         <!-- Header -->
-        <h6 class="fw-bold text-secondary mb-3"><?= t()->신규_회원 ?></h6>
+        <h6 class="fw-semibold text-secondary mb-3"><?= t()->신규_회원 ?></h6>
 
         <?php if ($userCount === 0): ?>
             <!-- Empty state -->

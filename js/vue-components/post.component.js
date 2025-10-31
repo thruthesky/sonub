@@ -16,7 +16,7 @@ const postComponent = {
         },
     },
     template: /*html*/ `
-    <article ref="postContainer" class="card shadow-sm mb-4">
+    <article ref="postContainer" class="card mb-4">
     <!-- 게시물 헤더 (사용자 정보) -->
     <header class="card-header bg-white d-flex align-items-center justify-content-between p-3 border-bottom" style="border-color: #e4e6eb;">
         <div class="d-flex align-items-center gap-2">
@@ -82,7 +82,8 @@ const postComponent = {
             <!-- Edit Content Textarea -->
             <textarea
                 v-model="edit.content"
-                class="post-content-input mb-3"
+                class="w-100 border-0 mb-3"
+                style="outline: none; font-size: 15px; color: #050505; line-height: 1.5; resize: none; min-height: 80px; max-height: 200px; overflow-y: auto; padding: 0; background: transparent;"
                 placeholder="What's on your mind?"
                 rows="4"></textarea>
 
@@ -262,7 +263,7 @@ const postComponent = {
     </div>
 
     <!-- 댓글 섹션 (Bootstrap 패딩) -->
-    <div v-if="!edit.enabled" class="card-footer bg-white border-top">
+    <div v-if="!edit.enabled" class="card-footer border-top">
         <!-- 가짜 댓글 입력 박스 (클릭 시 Modal 열림) -->
 
 

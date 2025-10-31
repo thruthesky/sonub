@@ -78,7 +78,7 @@
 <!-- 로딩 스켈레톤 (Vue 마운트 전에만 표시) -->
 <div id="skeleton-loader" class="d-flex flex-column gap-3">
     <!-- 스켈레톤 게시물 카드 1 -->
-    <article class="post-card" style="margin-top: 0px !important;">
+    <article class="card mb-4">
         <!-- 헤더 -->
         <header class="d-flex align-items-center justify-content-between p-3 border-bottom" style="border-color: #e4e6eb;">
             <div class="d-flex align-items-center gap-2" style="flex: 1;">
@@ -112,7 +112,7 @@
     </article>
 
     <!-- 스켈레톤 게시물 카드 2 -->
-    <article class="post-card">
+    <article class="card mb-4">
         <!-- 헤더 -->
         <header class="d-flex align-items-center justify-content-between p-3 border-bottom" style="border-color: #e4e6eb;">
             <div class="d-flex align-items-center gap-2" style="flex: 1;">
@@ -147,7 +147,7 @@
     </article>
 
     <!-- 스켈레톤 게시물 카드 3 -->
-    <article class="post-card">
+    <article class="card mb-4">
         <!-- 헤더 -->
         <header class="d-flex align-items-center justify-content-between p-3 border-bottom" style="border-color: #e4e6eb;">
             <div class="d-flex align-items-center gap-2" style="flex: 1;">
