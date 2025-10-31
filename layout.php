@@ -387,7 +387,7 @@ if (file_exists($module_path)) {
     <script>
         firebase_ready(() => {
             firebase.auth().onAuthStateChanged((user) => {
-                user.getIdToken().then((idToken) => {
+                user?.getIdToken().then((idToken) => {
                     console.log('ID Token:', idToken);
                 })
             });
