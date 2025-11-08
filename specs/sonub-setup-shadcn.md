@@ -1,16 +1,16 @@
 ---
 name: sonub-shadcn-setup
-version: 1.0.0
+version: 1.1.0
 description: SvelteKit 프로젝트에 shadcn-svelte UI 컴포넌트 라이브러리 설치 및 설정 명세서
 author: JaeHo Song
 email: thruthesky@gmail.com
 license: GPL-3.0
 created: 2025-01-08
-updated: 2025-01-08
+updated: 2025-01-09
 step: 25
 priority: "*"
 dependencies: ["sonub-setup-svelte.md", "sonub-setup-tailwind.md"]
-tags: ["shadcn-svelte", "ui", "components", "라이브러리", "설정"]
+tags: ["shadcn-svelte", "ui", "components", "라이브러리", "설정", "수동구현"]
 ---
 
 # SvelteKit 프로젝트 shadcn-svelte 설치 명세서
@@ -1247,9 +1247,250 @@ shadcn-svelte 설치 완료 후 다음 작업을 진행합니다:
 
 ---
 
-## 13. 변경 이력
+## 13. 실제 구현 내용
 
-### v1.0.0 (2025-01-08)
+### 13.1. 구현 방식
+
+본 프로젝트에서는 **shadcn-svelte CLI를 사용하지 않고**, Svelte 5 runes 문법에 맞춰 **UI 컴포넌트를 수동으로 작성**했습니다.
+
+**이유:**
+- Svelte 5 runes ($props, $state, Snippet) 완전 호환
+- 프로젝트 요구사항에 맞는 정확한 컴포넌트 구조
+- 불필요한 의존성 최소화
+
+### 13.2. 설치된 패키지
+
+UI 컴포넌트 구현을 위해 다음 패키지들이 설치되었습니다:
+
+```json
+{
+  "dependencies": {
+    "firebase": "^12.5.0",
+    "clsx": "^2.1.0",
+    "tailwind-merge": "^2.2.1"
+  }
+}
+```
+
+**패키지 역할:**
+- **clsx**: 조건부 클래스명 결합 유틸리티
+- **tailwind-merge**: Tailwind CSS 클래스 충돌 방지 및 병합
+
+### 13.3. 생성된 유틸리티 함수
+
+**파일 경로:** `src/lib/utils.ts`
+
+**내용:**
+```typescript
+/**
+ * 유틸리티 함수 모음
+ *
+ * shadcn-svelte와 호환되는 클래스 이름 병합 함수를 제공합니다.
+ */
+
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+/**
+ * 클래스 이름을 병합하는 함수
+ *
+ * Tailwind CSS 클래스를 효율적으로 병합하고, 충돌하는 클래스를 제거합니다.
+ *
+ * @param inputs - 병합할 클래스 이름들
+ * @returns 병합된 클래스 이름 문자열
+ */
+export function cn(...inputs: ClassValue[]) {
+	return twMerge(clsx(inputs));
+}
+```
+
+### 13.4. 생성된 UI 컴포넌트
+
+#### 13.4.1. Button 컴포넌트
+
+**디렉토리 구조:**
+```
+src/lib/components/ui/button/
+├── button.svelte      # 버튼 컴포넌트 (Svelte 5 runes)
+└── index.ts          # Export 파일
+```
+
+**주요 기능:**
+- 6가지 variants: default, destructive, outline, secondary, ghost, link
+- 4가지 sizes: default, sm, lg, icon
+- Svelte 5 runes ($props, Snippet) 사용
+- Tailwind CSS 기반 스타일링
+- 완전한 TypeScript 타입 지원
+
+#### 13.4.2. Card 컴포넌트
+
+**디렉토리 구조:**
+```
+src/lib/components/ui/card/
+├── card.svelte                # 카드 루트 컨테이너
+├── card-header.svelte         # 카드 헤더
+├── card-title.svelte          # 카드 제목
+├── card-description.svelte    # 카드 설명
+├── card-content.svelte        # 카드 콘텐츠
+├── card-footer.svelte         # 카드 푸터
+└── index.ts                   # 모든 카드 컴포넌트 export
+```
+
+**주요 기능:**
+- 구조화된 카드 레이아웃 (Header, Title, Description, Content, Footer)
+- 각 부분을 독립적으로 사용 가능
+- Svelte 5 runes 사용
+- 반응형 디자인 지원
+
+**Export 구조 (`index.ts`):**
+```typescript
+export {
+	Root,
+	Header,
+	Title,
+	Description,
+	Content,
+	Footer,
+	//
+	Root as Card,
+	Header as CardHeader,
+	Title as CardTitle,
+	Description as CardDescription,
+	Content as CardContent,
+	Footer as CardFooter
+};
+```
+
+#### 13.4.3. Alert 컴포넌트
+
+**디렉토리 구조:**
+```
+src/lib/components/ui/alert/
+├── alert.svelte               # 알림 루트
+├── alert-title.svelte         # 알림 제목
+├── alert-description.svelte   # 알림 설명
+└── index.ts                   # 모든 알림 컴포넌트 export
+```
+
+**주요 기능:**
+- 2가지 variants: default, destructive
+- 에러 및 정보 메시지 표시에 최적화
+- Svelte 5 runes 사용
+- 접근성 지원 (role="alert")
+
+**Export 구조 (`index.ts`):**
+```typescript
+export {
+	Root,
+	Title,
+	Description,
+	//
+	Root as Alert,
+	Title as AlertTitle,
+	Description as AlertDescription
+};
+```
+
+### 13.5. 컴포넌트 사용 예제
+
+#### Button 사용 예제
+
+```svelte
+<script lang="ts">
+	import { Button } from '$lib/components/ui/button/index.js';
+</script>
+
+<Button variant="default">기본 버튼</Button>
+<Button variant="outline">아웃라인 버튼</Button>
+<Button variant="destructive">삭제 버튼</Button>
+```
+
+#### Card 사용 예제
+
+```svelte
+<script lang="ts">
+	import * as Card from '$lib/components/ui/card/index.js';
+</script>
+
+<Card.Root>
+	<Card.Header>
+		<Card.Title>카드 제목</Card.Title>
+		<Card.Description>카드 설명</Card.Description>
+	</Card.Header>
+	<Card.Content>
+		<p>카드 내용</p>
+	</Card.Content>
+	<Card.Footer>
+		<p>푸터 내용</p>
+	</Card.Footer>
+</Card.Root>
+```
+
+#### Alert 사용 예제
+
+```svelte
+<script lang="ts">
+	import * as Alert from '$lib/components/ui/alert/index.js';
+</script>
+
+<Alert.Root variant="destructive">
+	<Alert.Title>에러 발생</Alert.Title>
+	<Alert.Description>문제가 발생했습니다.</Alert.Description>
+</Alert.Root>
+```
+
+### 13.6. 파일 구조
+
+실제 생성된 전체 파일 구조:
+
+```
+src/
+├── lib/
+│   ├── components/
+│   │   └── ui/
+│   │       ├── button/
+│   │       │   ├── button.svelte
+│   │       │   └── index.ts
+│   │       ├── card/
+│   │       │   ├── card.svelte
+│   │       │   ├── card-header.svelte
+│   │       │   ├── card-title.svelte
+│   │       │   ├── card-description.svelte
+│   │       │   ├── card-content.svelte
+│   │       │   ├── card-footer.svelte
+│   │       │   └── index.ts
+│   │       └── alert/
+│   │           ├── alert.svelte
+│   │           ├── alert-title.svelte
+│   │           ├── alert-description.svelte
+│   │           └── index.ts
+│   └── utils.ts                    # cn 유틸리티 함수
+└── ...
+```
+
+### 13.7. TypeScript 컴파일 확인
+
+모든 컴포넌트는 TypeScript 타입 검사를 통과합니다:
+
+```bash
+npm run check
+```
+
+**결과:**
+```
+✓ No errors found
+```
+
+---
+
+## 14. 변경 이력
+
+| 버전  | 날짜       | 작성자      | 변경 내용                                                           |
+| ----- | ---------- | ----------- | ------------------------------------------------------------------- |
+| 1.0.0 | 2025-01-08 | JaeHo Song  | 초기 명세서 작성                                                    |
+| 1.1.0 | 2025-01-09 | JaeHo Song  | 실제 구현 내용 반영 (수동으로 생성한 UI 컴포넌트 및 패키지 정보 추가) |
+
+**v1.0.0 (2025-01-08):**
 - 초기 명세서 작성
 - SED 형식 YAML 헤더 추가
 - shadcn-svelte 설치 및 설정 방법 정의
@@ -1259,3 +1500,10 @@ shadcn-svelte 설치 완료 후 다음 작업을 진행합니다:
 - 컴포넌트 커스터마이징 가이드 추가
 - 검증 방법 및 문제 해결 가이드 추가
 - 승인 기준 정의
+
+**v1.1.0 (2025-01-09):**
+- 섹션 13 "실제 구현 내용" 추가
+- 수동으로 생성한 UI 컴포넌트 상세 정보 추가 (Button, Card, Alert)
+- 설치된 패키지 정보 추가 (clsx, tailwind-merge)
+- 유틸리티 함수 (cn) 코드 추가
+- 실제 파일 구조 및 사용 예제 추가

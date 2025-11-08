@@ -5,7 +5,6 @@
 - [ ] 반드시 ./specs/instructions.md 및 ./specs/index.md 파일을 먼저 읽고 이해해야 합니다.
 - [ ] 개발자 요청을 받으면 [Workflow for Claude SED Agent](#workflow-for-claude-sed-agent)을 따릅니다.
 - [ ] 관련된 사양 문서를 모두 읽고 YAML 헤더를 구문 분석합니다.
-- [ ] 모든 개발작업이 끝나면, 반드시 작업한 내용을 요약하여 ./specs/*.md 파일에 SED 형식에 맞게 기록해야 합니다.
 
 
 ## Workflow for Claude SED Agent

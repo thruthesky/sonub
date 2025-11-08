@@ -1,0 +1,20 @@
+/**
+ * 유틸리티 함수 모음
+ *
+ * shadcn-svelte와 호환되는 클래스 이름 병합 함수를 제공합니다.
+ */
+
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+/**
+ * 클래스 이름을 병합하는 함수
+ *
+ * Tailwind CSS 클래스를 효율적으로 병합하고, 충돌하는 클래스를 제거합니다.
+ *
+ * @param inputs - 병합할 클래스 이름들
+ * @returns 병합된 클래스 이름 문자열
+ */
+export function cn(...inputs: ClassValue[]) {
+	return twMerge(clsx(inputs));
+}

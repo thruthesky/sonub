@@ -1,6 +1,6 @@
 ---
 name: sonub-user-login
-version: 1.0.0
+version: 1.1.0
 description: Firebase를 사용한 Google 및 Apple 소셜 로그인 기능 구현 명세서
 author: JaeHo Song
 email: thruthesky@gmail.com
@@ -34,11 +34,29 @@ tags: ["firebase", "authentication", "google-login", "apple-login", "oauth", "sv
 ### 1.3 사전 요구사항
 
 - ✅ Firebase 프로젝트 설정 완료 (sonub-setup-firebase.md 참조)
-- ✅ shadcn-svelte 설치 완료 (sonub-setup-shadcn.md 참조)
+- ✅ Tailwind CSS 설치 완료 (sonub-setup-tailwind.md 참조)
 - ✅ SvelteKit 5 프로젝트 환경
 - ✅ Firebase JS SDK 11.0.0 이상 설치
 
-### 1.4 제외 사항
+### 1.4 필수 패키지
+
+다음 패키지들이 필요합니다:
+
+```json
+{
+  "dependencies": {
+    "firebase": "^12.5.0",
+    "clsx": "^2.1.0",
+    "tailwind-merge": "^2.2.1"
+  }
+}
+```
+
+- **firebase**: Firebase Authentication SDK
+- **clsx**: 클래스명 조건부 결합 유틸리티
+- **tailwind-merge**: Tailwind CSS 클래스 충돌 방지
+
+### 1.5 제외 사항
 
 - ❌ 이메일/비밀번호 로그인 (구현하지 않음)
 - ❌ 전화번호 인증
@@ -102,20 +120,222 @@ tags: ["firebase", "authentication", "google-login", "apple-login", "oauth", "sv
 src/
 ├── lib/
 │   ├── components/
+│   │   ├── ui/                         # UI 컴포넌트 라이브러리
+│   │   │   ├── button/
+│   │   │   │   ├── button.svelte      # 버튼 컴포넌트
+│   │   │   │   └── index.ts           # 버튼 export
+│   │   │   ├── card/
+│   │   │   │   ├── card.svelte        # 카드 루트
+│   │   │   │   ├── card-header.svelte # 카드 헤더
+│   │   │   │   ├── card-title.svelte  # 카드 제목
+│   │   │   │   ├── card-description.svelte  # 카드 설명
+│   │   │   │   ├── card-content.svelte     # 카드 콘텐츠
+│   │   │   │   ├── card-footer.svelte      # 카드 푸터
+│   │   │   │   └── index.ts           # 카드 export
+│   │   │   └── alert/
+│   │   │       ├── alert.svelte        # 알림 루트
+│   │   │       ├── alert-title.svelte  # 알림 제목
+│   │   │       ├── alert-description.svelte  # 알림 설명
+│   │   │       └── index.ts           # 알림 export
 │   │   └── user-login.svelte          # 로그인 컴포넌트
 │   ├── stores/
 │   │   └── auth.svelte.ts              # 인증 상태 관리 스토어
 │   └── utils/
-│       └── auth-helpers.ts             # 인증 헬퍼 함수
+│       ├── auth-helpers.ts             # 인증 헬퍼 함수
+│       └── utils.ts                    # 유틸리티 함수 (cn)
 └── routes/
     └── user/
         └── login/
             └── +page.svelte            # 로그인 페이지
 ```
 
-## 4. 구현
+## 4. 설치
 
-### 4.1 인증 헬퍼 함수 작성
+### 4.1 필수 패키지 설치
+
+Firebase와 UI 컴포넌트에 필요한 패키지를 설치합니다.
+
+```bash
+# Firebase (이미 설치되어 있을 경우 skip)
+npm install firebase
+
+# UI 유틸리티 패키지
+npm install clsx tailwind-merge
+```
+
+**설치 확인:**
+
+```bash
+npm list firebase clsx tailwind-merge
+```
+
+**예상 출력:**
+```
+sonub@0.0.1 /Users/thruthesky/apps/sonub
+├── firebase@12.5.0
+├── clsx@2.1.0
+└── tailwind-merge@2.2.1
+```
+
+### 4.2 유틸리티 함수 생성
+
+UI 컴포넌트에서 사용할 `cn` 유틸리티 함수를 생성합니다.
+
+**파일 경로:** `src/lib/utils.ts`
+
+**내용:**
+
+```typescript
+/**
+ * 유틸리티 함수 모음
+ *
+ * shadcn-svelte와 호환되는 클래스 이름 병합 함수를 제공합니다.
+ */
+
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+/**
+ * 클래스 이름을 병합하는 함수
+ *
+ * Tailwind CSS 클래스를 효율적으로 병합하고, 충돌하는 클래스를 제거합니다.
+ *
+ * @param inputs - 병합할 클래스 이름들
+ * @returns 병합된 클래스 이름 문자열
+ */
+export function cn(...inputs: ClassValue[]) {
+	return twMerge(clsx(inputs));
+}
+```
+
+### 4.3 UI 컴포넌트 생성
+
+로그인 화면에 필요한 UI 컴포넌트들을 생성합니다.
+
+#### 4.3.1 Button 컴포넌트
+
+**파일 경로:** `src/lib/components/ui/button/button.svelte`
+
+**전체 코드는 실제 구현 파일을 참조하세요.**
+
+**주요 기능:**
+- 다양한 variant 지원 (default, destructive, outline, secondary, ghost, link)
+- 다양한 size 지원 (default, sm, lg, icon)
+- Svelte 5 runes ($props, Snippet) 사용
+- Tailwind CSS 기반 스타일링
+
+**파일 경로:** `src/lib/components/ui/button/index.ts`
+
+```typescript
+/**
+ * Button 컴포넌트 export
+ */
+
+import Button from './button.svelte';
+
+export { Button };
+```
+
+#### 4.3.2 Card 컴포넌트
+
+**파일들:**
+- `src/lib/components/ui/card/card.svelte` - 카드 루트 컨테이너
+- `src/lib/components/ui/card/card-header.svelte` - 카드 헤더
+- `src/lib/components/ui/card/card-title.svelte` - 카드 제목
+- `src/lib/components/ui/card/card-description.svelte` - 카드 설명
+- `src/lib/components/ui/card/card-content.svelte` - 카드 콘텐츠
+- `src/lib/components/ui/card/card-footer.svelte` - 카드 푸터
+- `src/lib/components/ui/card/index.ts` - 모든 카드 컴포넌트 export
+
+**주요 기능:**
+- 구조화된 카드 레이아웃
+- 헤더, 콘텐츠, 푸터 분리
+- Svelte 5 runes 사용
+- 반응형 디자인
+
+**파일 경로:** `src/lib/components/ui/card/index.ts`
+
+```typescript
+/**
+ * Card 컴포넌트 export
+ */
+
+import Root from './card.svelte';
+import Header from './card-header.svelte';
+import Title from './card-title.svelte';
+import Description from './card-description.svelte';
+import Content from './card-content.svelte';
+import Footer from './card-footer.svelte';
+
+export {
+	Root,
+	Header,
+	Title,
+	Description,
+	Content,
+	Footer,
+	//
+	Root as Card,
+	Header as CardHeader,
+	Title as CardTitle,
+	Description as CardDescription,
+	Content as CardContent,
+	Footer as CardFooter
+};
+```
+
+#### 4.3.3 Alert 컴포넌트
+
+**파일들:**
+- `src/lib/components/ui/alert/alert.svelte` - 알림 루트
+- `src/lib/components/ui/alert/alert-title.svelte` - 알림 제목
+- `src/lib/components/ui/alert/alert-description.svelte` - 알림 설명
+- `src/lib/components/ui/alert/index.ts` - 모든 알림 컴포넌트 export
+
+**주요 기능:**
+- 기본 및 위험(destructive) variant 지원
+- 에러 메시지 표시에 최적화
+- Svelte 5 runes 사용
+- 접근성 지원 (role="alert")
+
+**파일 경로:** `src/lib/components/ui/alert/index.ts`
+
+```typescript
+/**
+ * Alert 컴포넌트 export
+ */
+
+import Root from './alert.svelte';
+import Title from './alert-title.svelte';
+import Description from './alert-description.svelte';
+
+export {
+	Root,
+	Title,
+	Description,
+	//
+	Root as Alert,
+	Title as AlertTitle,
+	Description as AlertDescription
+};
+```
+
+**참고:** 각 UI 컴포넌트의 전체 소스 코드는 프로젝트의 `src/lib/components/ui/` 디렉토리에서 확인할 수 있습니다. 모든 컴포넌트는 Svelte 5 문법을 사용하며, `Snippet` 타입을 통해 children을 지원합니다.
+
+## 5. 구현
+
+### 5.1 Firebase 초기화 확인
+
+Firebase는 이미 `sonub-setup-firebase.md`에 따라 초기화되어 있어야 합니다.
+
+**파일 경로:** `src/lib/firebase.ts`
+
+**확인 사항:**
+- ✅ Firebase 앱 초기화
+- ✅ Authentication 인스턴스 export
+- ✅ 환경 변수 설정 (.env 파일)
+
+### 5.2 인증 헬퍼 함수 작성
 
 **파일 경로:** `src/lib/utils/auth-helpers.ts`
 
@@ -275,7 +495,7 @@ export function getAuthErrorMessage(errorCode: string, provider: 'google' | 'app
 }
 ```
 
-### 4.2 인증 상태 관리 스토어 작성
+### 5.3 인증 상태 관리 스토어 작성
 
 **파일 경로:** `src/lib/stores/auth.svelte.ts`
 
@@ -385,7 +605,7 @@ class AuthStore {
 export const authStore = new AuthStore();
 ```
 
-### 4.3 로그인 컴포넌트 작성
+### 5.4 로그인 컴포넌트 작성
 
 **파일 경로:** `src/lib/components/user-login.svelte`
 
@@ -615,7 +835,7 @@ export const authStore = new AuthStore();
 </div>
 ```
 
-### 4.4 로그인 페이지 작성
+### 5.5 로그인 페이지 작성
 
 **파일 경로:** `src/routes/user/login/+page.svelte`
 
@@ -697,9 +917,9 @@ export const authStore = new AuthStore();
 </div>
 ```
 
-## 5. 사용자 정보 표시 예제
+## 6. 사용자 정보 표시 예제
 
-### 5.1 홈페이지에서 사용자 정보 표시
+### 6.1 홈페이지에서 사용자 정보 표시
 
 **파일 경로:** `src/routes/+page.svelte` (예제)
 
@@ -775,9 +995,9 @@ export const authStore = new AuthStore();
 </div>
 ```
 
-## 6. 검증 방법
+## 7. 검증 방법
 
-### 6.1 설치 검증 체크리스트
+### 7.1 설치 검증 체크리스트
 
 **필수 검증 단계:**
 
@@ -821,9 +1041,9 @@ export const authStore = new AuthStore();
    - 컴파일 에러 없음
    - 브라우저 콘솔에 Firebase 관련 에러 없음
 
-### 6.2 기능 검증
+### 7.2 기능 검증
 
-#### 6.2.1 Google 로그인 테스트
+#### 7.2.1 Google 로그인 테스트
 
 ```
 1. 브라우저에서 http://localhost:5173/user/login 접속
@@ -842,7 +1062,7 @@ export const authStore = new AuthStore();
    - 네트워크 끊기: "네트워크 연결을 확인하고 다시 시도해주세요" 표시
 ```
 
-#### 6.2.2 Apple 로그인 테스트
+#### 7.2.2 Apple 로그인 테스트
 
 ```
 1. 브라우저에서 http://localhost:5173/user/login 접속
@@ -857,7 +1077,7 @@ export const authStore = new AuthStore();
 7. 에러 처리 테스트 (Google과 동일)
 ```
 
-#### 6.2.3 인증 상태 관리 테스트
+#### 7.2.3 인증 상태 관리 테스트
 
 ```
 1. 로그인 후 페이지 새로고침
@@ -873,7 +1093,7 @@ export const authStore = new AuthStore();
    - 로그인 페이지로 리다이렉트되는지 확인
 ```
 
-#### 6.2.4 다국어 지원 테스트
+#### 7.2.4 다국어 지원 테스트
 
 ```
 1. 브라우저 언어 설정 변경:
@@ -890,7 +1110,7 @@ export const authStore = new AuthStore();
    - provider.setCustomParameters()에 올바른 locale 전달
 ```
 
-### 6.3 보안 검증
+### 7.3 보안 검증
 
 ```
 1. Firebase Console에서 보안 규칙 확인
@@ -899,9 +1119,9 @@ export const authStore = new AuthStore();
 4. .gitignore에 .env 파일이 포함되어 있는지 확인
 ```
 
-## 7. 문제 해결
+## 8. 문제 해결
 
-### 7.1 일반적인 문제
+### 8.1 일반적인 문제
 
 **문제 1: 팝업이 차단됨**
 
@@ -949,7 +1169,7 @@ export const authStore = new AuthStore();
 4. 브라우저 언어 설정 확인 및 변경
 ```
 
-### 7.2 Apple 로그인 관련 문제
+### 8.2 Apple 로그인 관련 문제
 
 **문제 1: Apple 로그인 실패**
 
@@ -975,9 +1195,9 @@ export const authStore = new AuthStore();
 3. 테스트 중에는 Apple ID 설정에서 앱 연동 해제 후 재시도
 ```
 
-## 8. 추가 기능 구현 가이드
+## 9. 추가 기능 구현 가이드
 
-### 8.1 로그인 후 사용자 프로필 저장
+### 9.1 로그인 후 사용자 프로필 저장
 
 Firestore에 사용자 프로필을 저장하려면 다음과 같이 구현:
 
@@ -1023,7 +1243,7 @@ const result = await signInWithPopup(auth, provider);
 await saveUserProfile(result.user);
 ```
 
-### 8.2 로그인 리다이렉션 개선
+### 9.2 로그인 리다이렉션 개선
 
 이전 페이지로 돌아가기:
 
@@ -1035,9 +1255,9 @@ const redirectUrl = new URL(window.location.href).searchParams.get('redirect') |
 goto(redirectUrl);
 ```
 
-## 9. 승인 기준
+## 10. 승인 기준
 
-### 9.1 설치 완료 조건
+### 10.1 설치 완료 조건
 
 다음 모든 조건을 만족해야 설치가 완료된 것으로 간주합니다:
 
@@ -1056,7 +1276,7 @@ goto(redirectUrl);
 - ✅ 로그아웃 기능 동작 확인
 - ✅ Firebase Console에서 로그인된 사용자 확인 가능
 
-### 9.2 품질 기준
+### 10.2 품질 기준
 
 - **보안**: Firebase 보안 규칙이 적절히 설정됨
 - **타입 안전성**: TypeScript 타입 정의 완료, any 사용 최소화
@@ -1066,9 +1286,9 @@ goto(redirectUrl);
 - **반응성**: Svelte 5 runes를 사용한 반응형 상태 관리
 - **다국어**: ko, ja, zh, en 언어 지원 확인
 
-## 10. 참고 자료
+## 11. 참고 자료
 
-### 10.1 공식 문서
+### 11.1 공식 문서
 
 - **Firebase Google Sign-in**: https://firebase.google.com/docs/auth/web/google-signin
 - **Firebase Apple Sign-in**: https://firebase.google.com/docs/auth/web/apple
@@ -1076,17 +1296,18 @@ goto(redirectUrl);
 - **Svelte 5 Documentation**: https://svelte.dev/docs/svelte/overview
 - **shadcn-svelte**: https://www.shadcn-svelte.com/
 
-### 10.2 추가 리소스
+### 11.2 추가 리소스
 
 - **Firebase Authentication Limits**: https://firebase.google.com/docs/auth/limits
 - **Apple Developer - Sign in with Apple**: https://developer.apple.com/sign-in-with-apple/
 - **Google Identity Platform**: https://developers.google.com/identity
 
-## 11. 변경 이력
+## 12. 변경 이력
 
 | 버전  | 날짜       | 작성자      | 변경 내용                                       |
 | ----- | ---------- | ----------- | ----------------------------------------------- |
 | 1.0.0 | 2025-01-09 | JaeHo Song  | 초기 명세서 작성                                |
+| 1.1.0 | 2025-01-09 | JaeHo Song  | 실제 구현 내용 반영 (UI 컴포넌트, 패키지 정보) |
 
 ---
 

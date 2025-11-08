@@ -1,16 +1,16 @@
 ---
 name: sonub-firebase-setup
-version: 1.0.0
+version: 1.1.0
 description: SvelteKit 프로젝트에 Firebase JS SDK 설치 및 설정 명세서
 author: JaeHo Song
 email: thruthesky@gmail.com
 license: GPL-3.0
 created: 2025-01-08
-updated: 2025-01-08
+updated: 2025-01-09
 step: 20
 priority: "**"
 dependencies: ["sonub-setup-svelte.md"]
-tags: ["firebase", "backend", "database", "authentication", "storage", "설정"]
+tags: ["firebase", "backend", "database", "authentication", "storage", "설정", "SSR"]
 ---
 
 # Firebase JS SDK 설치 및 설정 명세서
@@ -228,14 +228,15 @@ sonub@0.0.1
 **내용:**
 ```bash
 # Firebase 설정
-PUBLIC_FIREBASE_API_KEY="AIza..."
-PUBLIC_FIREBASE_AUTH_DOMAIN="sonub.firebaseapp.com"
-PUBLIC_FIREBASE_PROJECT_ID="sonub"
-PUBLIC_FIREBASE_STORAGE_BUCKET="sonub.appspot.com"
-PUBLIC_FIREBASE_MESSAGING_SENDER_ID="123456789"
-PUBLIC_FIREBASE_APP_ID="1:123456789:web:abc123"
-PUBLIC_FIREBASE_MEASUREMENT_ID="G-XXXXXXXXXX"
-PUBLIC_FIREBASE_DATABASE_URL="https://sonub-default-rtdb.asia-southeast1.firebasedatabase.app"
+# Firebase Console에서 가져온 Web Config 정보
+PUBLIC_FIREBASE_API_KEY=AIza...
+PUBLIC_FIREBASE_AUTH_DOMAIN=sonub.firebaseapp.com
+PUBLIC_FIREBASE_PROJECT_ID=sonub
+PUBLIC_FIREBASE_STORAGE_BUCKET=sonub.appspot.com
+PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
+PUBLIC_FIREBASE_APP_ID=1:123456789:web:abc123
+PUBLIC_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
+PUBLIC_FIREBASE_DATABASE_URL=https://sonub-default-rtdb.asia-southeast1.firebasedatabase.app
 ```
 
 **중요 사항:**
@@ -246,7 +247,17 @@ PUBLIC_FIREBASE_DATABASE_URL="https://sonub-default-rtdb.asia-southeast1.firebas
 
 2. **실제 값 입력:**
    - 위의 예시 값을 Firebase Console에서 복사한 실제 값으로 교체
-   - 따옴표 안에 값을 입력
+   - **⚠️ 중요**: 값에 **큰따옴표(`"`)를 사용하지 마세요**
+   - Vite는 큰따옴표를 값의 일부로 읽어서 Firebase 초기화 오류가 발생할 수 있습니다
+
+3. **올바른 형식:**
+   ```bash
+   # ✅ 올바른 형식 (큰따옴표 없음)
+   PUBLIC_FIREBASE_API_KEY=AIzaSyCXAFYnNf7QYcZNpIngCA...
+
+   # ❌ 잘못된 형식 (큰따옴표 사용)
+   PUBLIC_FIREBASE_API_KEY="AIzaSyCXAFYnNf7QYcZNpIngCA..."
+   ```
 
 3. **.gitignore 확인:**
    ```bash
@@ -292,67 +303,101 @@ PUBLIC_FIREBASE_DATABASE_URL="YOUR_DATABASE_URL"
  * 이 파일은 Firebase 앱을 초기화하고 필요한 서비스들을 export합니다.
  * - 중복 초기화 방지
  * - 브라우저 환경 체크 (SSR 대응)
- * - 에뮬레이터 연결 지원 (개발 환경)
  */
 
 import { browser } from '$app/environment';
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
 
+// SvelteKit 환경 변수 (PUBLIC_ 접두사가 있는 환경 변수)
+import {
+	PUBLIC_FIREBASE_API_KEY,
+	PUBLIC_FIREBASE_AUTH_DOMAIN,
+	PUBLIC_FIREBASE_PROJECT_ID,
+	PUBLIC_FIREBASE_STORAGE_BUCKET,
+	PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+	PUBLIC_FIREBASE_APP_ID,
+	PUBLIC_FIREBASE_MEASUREMENT_ID,
+	PUBLIC_FIREBASE_DATABASE_URL
+} from '$env/static/public';
+
 // Authentication
-import { getAuth, type Auth, connectAuthEmulator } from 'firebase/auth';
+import { getAuth, type Auth } from 'firebase/auth';
 
 // Firestore
-import { getFirestore, type Firestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getFirestore, type Firestore } from 'firebase/firestore';
 
 // Realtime Database
-import { getDatabase, type Database, connectDatabaseEmulator } from 'firebase/database';
+import { getDatabase, type Database } from 'firebase/database';
 
 // Storage
-import { getStorage, type FirebaseStorage, connectStorageEmulator } from 'firebase/storage';
+import { getStorage, type FirebaseStorage } from 'firebase/storage';
 
 // Analytics (브라우저에서만 사용)
 import { getAnalytics, type Analytics } from 'firebase/analytics';
 
 /**
  * Firebase 설정
- * 환경 변수에서 값을 가져옵니다.
+ * SvelteKit 환경 변수에서 값을 가져옵니다.
  */
 const firebaseConfig = {
-	apiKey: import.meta.env.PUBLIC_FIREBASE_API_KEY,
-	authDomain: import.meta.env.PUBLIC_FIREBASE_AUTH_DOMAIN,
-	projectId: import.meta.env.PUBLIC_FIREBASE_PROJECT_ID,
-	storageBucket: import.meta.env.PUBLIC_FIREBASE_STORAGE_BUCKET,
-	messagingSenderId: import.meta.env.PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-	appId: import.meta.env.PUBLIC_FIREBASE_APP_ID,
-	measurementId: import.meta.env.PUBLIC_FIREBASE_MEASUREMENT_ID,
-	databaseURL: import.meta.env.PUBLIC_FIREBASE_DATABASE_URL
+	apiKey: PUBLIC_FIREBASE_API_KEY,
+	authDomain: PUBLIC_FIREBASE_AUTH_DOMAIN,
+	projectId: PUBLIC_FIREBASE_PROJECT_ID,
+	storageBucket: PUBLIC_FIREBASE_STORAGE_BUCKET,
+	messagingSenderId: PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+	appId: PUBLIC_FIREBASE_APP_ID,
+	measurementId: PUBLIC_FIREBASE_MEASUREMENT_ID,
+	databaseURL: PUBLIC_FIREBASE_DATABASE_URL
 };
+
+// 디버깅: Firebase 설정 확인
+if (browser) {
+	console.log('✅ Firebase 환경 변수 로드 성공');
+	console.log('Firebase Config:', {
+		apiKey: firebaseConfig.apiKey ? '✓ Loaded' : '✗ Missing',
+		authDomain: firebaseConfig.authDomain ? '✓ Loaded' : '✗ Missing',
+		projectId: firebaseConfig.projectId ? '✓ Loaded' : '✗ Missing',
+		appId: firebaseConfig.appId ? '✓ Loaded' : '✗ Missing'
+	});
+}
 
 /**
  * Firebase 앱 초기화
  * 중복 초기화 방지: getApps()로 기존 앱 확인
  */
-const app: FirebaseApp = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+let app: FirebaseApp;
+
+if (browser) {
+	// 브라우저 환경에서만 Firebase 초기화
+	app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+} else {
+	// 서버 환경에서는 더미 앱 생성 (사용되지 않음)
+	app = {} as FirebaseApp;
+}
 
 /**
  * Authentication 서비스
+ * 브라우저 환경에서만 초기화
  */
-export const auth: Auth = getAuth(app);
+export const auth: Auth | null = browser ? getAuth(app) : null;
 
 /**
  * Firestore 서비스
+ * 브라우저 환경에서만 초기화
  */
-export const db: Firestore = getFirestore(app);
+export const db: Firestore | null = browser ? getFirestore(app) : null;
 
 /**
  * Realtime Database 서비스
+ * 브라우저 환경에서만 초기화
  */
-export const rtdb: Database = getDatabase(app);
+export const rtdb: Database | null = browser ? getDatabase(app) : null;
 
 /**
  * Storage 서비스
+ * 브라우저 환경에서만 초기화
  */
-export const storage: FirebaseStorage = getStorage(app);
+export const storage: FirebaseStorage | null = browser ? getStorage(app) : null;
 
 /**
  * Analytics 서비스
@@ -361,46 +406,26 @@ export const storage: FirebaseStorage = getStorage(app);
 export const analytics: Analytics | null = browser ? getAnalytics(app) : null;
 
 /**
- * 개발 환경에서 Firebase 에뮬레이터 연결
- * - 로컬 테스트 시 사용
- * - 프로덕션에서는 실행되지 않음
- */
-if (browser && import.meta.env.DEV) {
-	try {
-		// Auth 에뮬레이터 (포트: 9099)
-		connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-	} catch (error) {
-		// 이미 연결된 경우 에러 무시
-		console.debug('Auth emulator already connected');
-	}
-
-	try {
-		// Firestore 에뮬레이터 (포트: 8080)
-		connectFirestoreEmulator(db, '127.0.0.1', 8080);
-	} catch (error) {
-		console.debug('Firestore emulator already connected');
-	}
-
-	try {
-		// Realtime Database 에뮬레이터 (포트: 9000)
-		connectDatabaseEmulator(rtdb, '127.0.0.1', 9000);
-	} catch (error) {
-		console.debug('RTDB emulator already connected');
-	}
-
-	try {
-		// Storage 에뮬레이터 (포트: 9199)
-		connectStorageEmulator(storage, '127.0.0.1', 9199);
-	} catch (error) {
-		console.debug('Storage emulator already connected');
-	}
-}
-
-/**
  * Firebase 앱 인스턴스 export (고급 사용)
  */
 export default app;
 ```
+
+**주요 변경 사항:**
+
+1. **환경 변수 로딩 방법 변경**
+   - ❌ 이전: `import.meta.env.PUBLIC_FIREBASE_API_KEY`
+   - ✅ 현재: `import { PUBLIC_FIREBASE_API_KEY } from '$env/static/public'`
+   - **이유**: SvelteKit은 Vite의 `import.meta.env` 대신 자체 환경 변수 모듈을 사용합니다.
+
+2. **SSR 대응 강화**
+   - 모든 Firebase 서비스를 nullable 타입으로 변경 (`Auth | null` 등)
+   - 브라우저 환경에서만 초기화하도록 조건 추가
+   - 서버 환경에서는 더미 앱 객체 생성
+
+3. **디버깅 로그 추가**
+   - 환경 변수가 올바르게 로드되었는지 확인하는 콘솔 로그
+   - 개발 중 문제 해결에 유용
 
 ### 6.2 TypeScript 타입 정의 파일 생성 (선택)
 
@@ -1401,13 +1426,20 @@ npm run dev
 
 **문제 2: 환경 변수 인식 안 됨**
 ```
-증상: Firebase config 값이 undefined
+증상: Firebase config 값이 undefined 또는 auth/invalid-api-key 에러
 원인: 환경 변수가 로드되지 않음
 해결:
 1. .env 파일이 프로젝트 루트에 있는지 확인
 2. 변수명이 PUBLIC_ 접두사로 시작하는지 확인
-3. 개발 서버 재시작 (환경 변수 변경 후 필수)
-4. vite.config.ts에서 환경 변수 로딩 확인
+3. ⚠️ 중요: .env 파일에서 큰따옴표(") 제거
+   - ❌ PUBLIC_FIREBASE_API_KEY="AIza..."
+   - ✅ PUBLIC_FIREBASE_API_KEY=AIza...
+4. src/lib/firebase.ts에서 $env/static/public 사용 확인
+   - ❌ import.meta.env.PUBLIC_FIREBASE_API_KEY
+   - ✅ import { PUBLIC_FIREBASE_API_KEY } from '$env/static/public'
+5. 빌드 캐시 삭제 및 개발 서버 재시작
+   - rm -rf .svelte-kit node_modules/.vite
+   - npm run dev
 ```
 
 **문제 3: CORS 오류**
@@ -1640,6 +1672,7 @@ Firebase Project (sonub)
 | 버전 | 날짜 | 작성자 | 변경 내용 |
 |------|------|--------|-----------|
 | 1.0.0 | 2025-01-08 | JaeHo Song | 초기 명세서 작성 |
+| 1.1.0 | 2025-01-09 | JaeHo Song | 실제 구현 내용 반영<br>- 환경 변수 로딩 방법 변경 ($env/static/public 사용)<br>- SSR 대응 강화 (nullable 타입)<br>- .env 파일 형식 수정 (큰따옴표 제거)<br>- 문제 해결 섹션 업데이트 |
 
 ---
 
