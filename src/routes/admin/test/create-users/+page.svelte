@@ -102,14 +102,15 @@
 						onclick={handleCreateUsers}
 						disabled={isLoading}
 						size="lg"
-						class="min-w-48 cursor-pointer text-base"
+						variant="default"
+						class="min-w-64 cursor-pointer text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
 					>
 						{#if isLoading}
-							생성 중...
+							⏳ 생성 중...
 						{:else if isCompleted}
-							완료됨
+							✓ 완료됨
 						{:else}
-							테스트 사용자 생성
+							🚀 테스트 사용자 생성
 						{/if}
 					</Button>
 				</div>
