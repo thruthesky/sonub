@@ -99,10 +99,10 @@
 				<!-- 버튼 -->
 				<div class="flex justify-center">
 					<Button
-						onClick={handleCreateUsers}
+						onclick={handleCreateUsers}
 						disabled={isLoading}
 						size="lg"
-						class="min-w-48 text-base"
+						class="min-w-48 cursor-pointer text-base"
 					>
 						{#if isLoading}
 							생성 중...
