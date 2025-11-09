@@ -164,6 +164,25 @@ This document provides a detailed index of all specifications related to the son
   - Light Mode Only 스타일링
   - 접근성 지원 (ARIA 라벨, 의미론적 HTML)
 
+### Sonub Design Components
+- **File**: [sonub-design-components.md](./sonub-design-components.md)
+- **Title**: Sonub Design Components
+- **Description**: Light Mode 전용 UI 컴포넌트(Button, Card, Alert)의 설계 지침과 사용 예시를 정리한 문서
+- **Version**: 1.1.0
+- **Step**: 35
+- **Priority**: '**'
+- **Dependencies**:
+  - sonub-design-workflow.md
+  - sonub-design-guideline.md
+  - sonub-setup-shadcn.md
+  - sonub-setup-tailwind.md
+- **Tags**: ui-components, shadcn-svelte, tailwindcss, light-mode, svelte5
+- **주요 내용**:
+  - `src/lib/components/ui/button`, `card`, `alert` 구조 설명
+  - Svelte 5 runes, `cn()` 헬퍼, Light Mode-only 정책을 반영한 구현 패턴
+  - 버튼의 variant/size, disabled 링크 접근성, 아이콘 사이즈 자동화 규칙
+  - Card/Alert 조합 예시 및 관리자 페이지 적용 사례
+
 ### Shadcn-Svelte Setup
 - **File**: [sonub-setup-shadcn.md](./sonub-setup-shadcn.md)
 - **Title**: SvelteKit 프로젝트 shadcn-svelte 설치 명세서

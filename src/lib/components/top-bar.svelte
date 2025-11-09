@@ -11,6 +11,7 @@
 	import { signOut } from 'firebase/auth';
 	import { auth } from '$lib/firebase';
 	import { goto } from '$app/navigation';
+	import Avatar from '$lib/components/user/avatar.svelte';
 
 	// 로그아웃 처리 중 상태
 	let isSigningOut = $state(false);
@@ -32,7 +33,6 @@
 			isSigningOut = false;
 		}
 	}
-
 </script>
 
 <nav class="fixed inset-x-0 top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
@@ -69,42 +69,112 @@
 			</div>
 
 			<!-- 우측: 사용자 메뉴 -->
-			<div class="flex items-center gap-4">
+			<div class="flex items-center gap-2">
+				<!-- 게시판 아이콘 -->
+				<Button
+					href="/post/list"
+					variant="ghost"
+					size="icon"
+					aria-label="게시판"
+					title="게시판"
+					class="cursor-pointer text-gray-600 hover:text-gray-900"
+				>
+					<svg
+						class="h-6 w-6"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						stroke-width="2"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M3 7h18M3 12h18M3 17h18"
+						/>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M7 3v18M17 3v18"
+						/>
+					</svg>
+				</Button>
+
+				<!-- 채팅 아이콘 -->
+				<Button
+					href="/chat/list"
+					variant="ghost"
+					size="icon"
+					aria-label="채팅"
+					title="채팅"
+					class="cursor-pointer text-gray-600 hover:text-gray-900"
+				>
+					<svg
+						class="h-6 w-6"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						stroke-width="2"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+						/>
+					</svg>
+				</Button>
+
+				<!-- 사용자 찾기 아이콘 -->
+				<Button
+					href="/user/list"
+					variant="ghost"
+					size="icon"
+					aria-label="사용자 찾기"
+					title="사용자 찾기"
+					class="cursor-pointer text-gray-600 hover:text-gray-900"
+				>
+					<svg
+						class="h-6 w-6"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						stroke-width="2"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+						/>
+					</svg>
+				</Button>
+
 				{#if authStore.loading}
 					<!-- 로딩 중 -->
-					<div class="text-sm text-gray-500">로딩 중...</div>
-				{:else if authStore.isAuthenticated}
-					<!-- 로그인 상태 -->
-					<div class="flex items-center gap-4">
-						<div class="hidden items-center gap-2 sm:flex">
-							{#if authStore.user?.photoURL}
-								<img
-									src={authStore.user.photoURL}
-									alt={authStore.user.displayName || '사용자'}
-									class="h-8 w-8 rounded-full"
-								/>
-							{/if}
-							<span class="text-sm text-gray-700">
-								{authStore.user?.displayName || authStore.user?.email || '사용자'}
-							</span>
-						</div>
-						<Button variant="ghost" size="sm" onclick={handleSignOut} disabled={isSigningOut}>
-							{isSigningOut ? '로그아웃 중...' : '로그아웃'}
-						</Button>
-					</div>
+					<div class="h-10 w-10 animate-pulse rounded-full bg-gray-200"></div>
+				{:else if authStore.isAuthenticated && authStore.user}
+					<!-- 로그인 상태: 사용자 아바타 -->
+					<a
+						href="/my/profile"
+						class="cursor-pointer hover:opacity-80 transition-opacity"
+						aria-label="내 프로필"
+						title={authStore.user.displayName || authStore.user.email || '내 프로필'}
+					>
+						<Avatar uid={authStore.user.uid} size={40} />
+					</a>
 				{:else}
-					<!-- 비로그인 상태 -->
-					<Button variant="ghost" size="sm" href="/user/login">로그인</Button>
+					<!-- 비로그인 상태: 로그인 버튼 -->
+					<Button variant="ghost" size="sm" href="/user/login" class="cursor-pointer">
+						로그인
+					</Button>
 				{/if}
 
-				<!-- 메뉴 아이콘 (모든 상태에서 표시) -->
+				<!-- 햄버거 메뉴 아이콘 -->
 				<Button
 					href="/menu"
 					variant="ghost"
 					size="icon"
 					aria-label="메뉴"
 					title="메뉴"
-					class="text-gray-600 hover:text-gray-900"
+					class="cursor-pointer text-gray-600 hover:text-gray-900"
 				>
 					<svg
 						class="h-6 w-6"

@@ -11,7 +11,8 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { signOut } from 'firebase/auth';
 	import { auth } from '$lib/firebase';
-import { goto } from '$app/navigation';
+	import { goto } from '$app/navigation';
+	import Avatar from '$lib/components/user/avatar.svelte';
 
 	// 로그아웃 처리 중 상태
 	let isSigningOut = $state(false);
@@ -65,15 +66,9 @@ import { goto } from '$app/navigation';
 				</Card.Header>
 				<Card.Content class="space-y-3">
 					<!-- 프로필 정보 -->
-					{#if authStore.user?.photoURL}
-						<div class="flex justify-center">
-							<img
-								src={authStore.user.photoURL}
-								alt={authStore.user.displayName || '사용자'}
-								class="h-16 w-16 rounded-full"
-							/>
-						</div>
-					{/if}
+					<div class="flex justify-center">
+						<Avatar uid={authStore.user?.uid} size={64} />
+					</div>
 					<div class="text-center">
 						<p class="font-medium text-gray-900">
 							{authStore.user?.displayName || '사용자'}

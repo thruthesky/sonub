@@ -169,7 +169,767 @@ tags:
 - `onAuthStateChanged` 구독은 컴포넌트 언마운트 시 반드시 해제합니다.
 - Google 로그인 외 다른 공급자를 사용할 경우 `provider` 객체만 교체하면 됩니다.
 
-## 3. 테스트 및 참고 문서
+## 3. Firebase Auth 프로필 RTDB 동기화
+
+### 3.1 해결하려는 문제
+
+#### 3.1.1 문제 배경
+
+Firebase Authentication과 Realtime Database(RTDB)는 각각 독립적인 시스템입니다:
+- **Firebase Auth**: 사용자 인증 정보 관리 (uid, email, photoURL, displayName 등)
+- **RTDB**: 애플리케이션 데이터 저장소 (`/users/{uid}` 경로에 사용자 프로필 저장)
+
+문제는 두 시스템 간의 데이터 불일치입니다:
+1. Google/Apple 로그인 시 Auth에는 photoURL, displayName이 자동 저장됨
+2. 하지만 RTDB `/users/{uid}/photoUrl`, `/users/{uid}/displayName`은 자동 동기화되지 않음
+3. 애플리케이션은 RTDB 데이터를 기반으로 UI를 렌더링하므로 프로필 사진/이름이 표시되지 않음
+
+#### 3.1.2 기존 구현의 문제점
+
+조사 결과 다음과 같은 문제가 발견되었습니다:
+- **로그인 함수**: `signInWithGoogle()`, `signInWithApple()`은 Auth 로그인만 수행, RTDB 저장 없음
+- **onAuthStateChanged**: 관리자 목록만 로드, 프로필 동기화 없음
+- **Cloud Functions**: `/users/{uid}` 노드 변경사항만 감지, Auth photoURL 자동 가져오기 불가
+
+결과적으로 **신규 사용자의 프로필 정보가 RTDB에 저장되지 않는 문제**가 발생합니다.
+
+#### 3.1.3 요구사항
+
+1. **자동 동기화**: 새 접속/리프레시 시 Auth 프로필을 RTDB에 자동 동기화
+2. **조건부 저장**:
+   - `photoUrl`: RTDB에 **없거나 null이거나 공백일 때만** Auth photoURL 저장
+   - `displayName`: RTDB에 **없을 때만** Auth displayName 저장
+3. **필드 제외**: email, phoneNumber는 동기화하지 않음
+4. **타임스탬프**: createdAt, updatedAt은 Cloud Functions가 자동 처리 (클라이언트 건드리지 않음)
+5. **덮어쓰기 방지**: 기존 값이 있으면 절대 덮어쓰지 않음 (사용자가 수동으로 수정한 프로필 보호)
+
+### 3.2 전체 구조 및 아키텍처
+
+#### 3.2.1 동기화 흐름도
+
+```
+사용자 액션
+    ↓
+┌─────────────────────────────────────┐
+│ 1. 새 접속 / 페이지 리프레시        │
+│    또는 로그인 (Google/Apple)       │
+└─────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────┐
+│ 2. onAuthStateChanged 트리거        │
+│    (auth.svelte.ts)                 │
+└─────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────┐
+│ 3. user 객체 확인                   │
+│    - user === null → 로그아웃 처리  │
+│    - user !== null → 4단계로 진행   │
+└─────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────┐
+│ 4. syncUserProfile(user) 호출       │
+└─────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────┐
+│ 5. RTDB에서 기존 데이터 조회        │
+│    GET /users/{uid}                 │
+└─────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────┐
+│ 6. 조건 검사 및 업데이트 준비       │
+│    - photoUrl 조건 체크             │
+│    - displayName 조건 체크          │
+└─────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────┐
+│ 7. 업데이트할 데이터가 있으면       │
+│    UPDATE /users/{uid}              │
+└─────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────┐
+│ 8. Cloud Functions 자동 트리거      │
+│    (createdAt, updatedAt 업데이트)  │
+└─────────────────────────────────────┘
+```
+
+#### 3.2.2 시스템 컴포넌트 구성
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ Firebase Authentication                                   │
+│ - uid, email, photoURL, displayName                      │
+└───────────────────┬──────────────────────────────────────┘
+                    │
+                    │ onAuthStateChanged
+                    │
+                    ↓
+┌──────────────────────────────────────────────────────────┐
+│ AuthStore (auth.svelte.ts)                               │
+│ ┌──────────────────────────────────────────────────────┐ │
+│ │ initializeAuthListener()                             │ │
+│ │   - onAuthStateChanged 리스너 등록                   │ │
+│ │   - user 객체 변경 감지                              │ │
+│ └──────────────────────────────────────────────────────┘ │
+│ ┌──────────────────────────────────────────────────────┐ │
+│ │ syncUserProfile(user)                                │ │
+│ │   - RTDB 기존 데이터 조회                            │ │
+│ │   - 조건부 업데이트 수행                             │ │
+│ └──────────────────────────────────────────────────────┘ │
+└───────────────────┬──────────────────────────────────────┘
+                    │
+                    │ update()
+                    │
+                    ↓
+┌──────────────────────────────────────────────────────────┐
+│ Firebase Realtime Database                               │
+│ /users/{uid}/                                            │
+│   - displayName                                          │
+│   - photoUrl                                             │
+│   - createdAt (Cloud Functions 관리)                     │
+│   - updatedAt (Cloud Functions 관리)                     │
+└──────────────────────────────────────────────────────────┘
+```
+
+### 3.3 상세 구현
+
+#### 3.3.1 파일 위치 및 수정 사항
+
+**파일:** `src/lib/stores/auth.svelte.ts`
+
+#### 3.3.2 Import 추가
+
+```typescript
+import { ref, get, update } from 'firebase/database';
+```
+
+**설명:**
+- `ref`: RTDB 참조 생성
+- `get`: RTDB 데이터 읽기 (1회성)
+- `update`: RTDB 데이터 부분 업데이트 (병합)
+
+**주의:** `set()`이 아닌 `update()`를 사용하여 기존 필드를 덮어쓰지 않습니다.
+
+#### 3.3.3 syncUserProfile() 메서드 구현
+
+```typescript
+/**
+ * Firebase Auth 사용자 프로필을 RTDB에 동기화
+ *
+ * 동기화 규칙:
+ * - photoUrl: RTDB에 값이 없거나 null이거나 공백일 때만 Auth의 photoURL 저장
+ * - displayName: RTDB에 값이 없을 때만 Auth의 displayName 저장
+ * - email, phoneNumber는 동기화하지 않음
+ * - createdAt, updatedAt은 Cloud Functions가 자동 처리
+ *
+ * @param user - Firebase Auth User 객체
+ */
+private async syncUserProfile(user: User) {
+	if (!rtdb) {
+		console.warn('Firebase Realtime Database가 초기화되지 않았습니다.');
+		return;
+	}
+
+	try {
+		// RTDB에서 현재 사용자 데이터 확인
+		const userRef = ref(rtdb, `users/${user.uid}`);
+		const snapshot = await get(userRef);
+		const existingData = snapshot.val() || {};
+
+		// 동기화할 데이터 준비
+		const updates: Record<string, any> = {};
+
+		// photoUrl: 없거나 null이거나 공백일 때만 동기화
+		// trim() 전에 undefined 체크를 위해 옵셔널 체이닝 사용
+		if (!existingData.photoUrl?.trim() && user.photoURL) {
+			updates.photoUrl = user.photoURL;
+			console.log('photoUrl 동기화:', user.photoURL);
+		}
+
+		// displayName: 없을 때만 동기화
+		if (!existingData.displayName && user.displayName) {
+			updates.displayName = user.displayName;
+			console.log('displayName 동기화:', user.displayName);
+		}
+
+		// 업데이트할 항목이 있으면 RTDB에 저장
+		if (Object.keys(updates).length > 0) {
+			await update(userRef, updates);
+			console.log('사용자 프로필 동기화 완료:', updates);
+		} else {
+			console.log('동기화할 프로필 정보 없음');
+		}
+	} catch (error) {
+		console.error('사용자 프로필 동기화 실패:', error);
+	}
+}
+```
+
+**로직 상세 설명:**
+
+1. **RTDB 초기화 확인**
+   ```typescript
+   if (!rtdb) {
+       console.warn('Firebase Realtime Database가 초기화되지 않았습니다.');
+       return;
+   }
+   ```
+   - 서버 사이드 렌더링(SSR) 환경에서 rtdb가 null일 수 있음
+   - 브라우저 환경에서만 동기화 수행
+
+2. **기존 데이터 조회**
+   ```typescript
+   const userRef = ref(rtdb, `users/${user.uid}`);
+   const snapshot = await get(userRef);
+   const existingData = snapshot.val() || {};
+   ```
+   - `ref()`: `/users/{uid}` 경로 참조 생성
+   - `get()`: 현재 저장된 데이터 1회 조회 (리스너 아님)
+   - `snapshot.val()`: 데이터 추출, 없으면 `null` 반환 → `{}` 기본값 사용
+
+3. **photoUrl 조건 검사**
+   ```typescript
+   if (!existingData.photoUrl?.trim() && user.photoURL) {
+       updates.photoUrl = user.photoURL;
+   }
+   ```
+   - **조건 1**: `!existingData.photoUrl?.trim()`
+     - `existingData.photoUrl`가 `undefined` → `true`
+     - `existingData.photoUrl`가 `null` → `true`
+     - `existingData.photoUrl`가 `""` (빈 문자열) → `true`
+     - `existingData.photoUrl`가 `"   "` (공백만) → `true`
+     - `existingData.photoUrl`가 `"https://..."` → `false` (저장 안 함)
+   - **조건 2**: `user.photoURL`
+     - Auth에 photoURL이 있어야 저장
+   - **결과**: 두 조건 모두 충족 시에만 `updates` 객체에 추가
+
+4. **displayName 조건 검사**
+   ```typescript
+   if (!existingData.displayName && user.displayName) {
+       updates.displayName = user.displayName;
+   }
+   ```
+   - **조건 1**: `!existingData.displayName`
+     - `undefined`, `null`, `""` 모두 `true`
+     - **주의**: photoUrl과 달리 `trim()` 없음 (빈 문자열도 "값 없음"으로 간주)
+   - **조건 2**: `user.displayName`
+     - Auth에 displayName이 있어야 저장
+
+5. **RTDB 업데이트**
+   ```typescript
+   if (Object.keys(updates).length > 0) {
+       await update(userRef, updates);
+   }
+   ```
+   - `update()` 사용: 기존 필드 보존하며 병합
+   - `set()` 사용 시 기존 필드가 모두 삭제되므로 **절대 사용 금지**
+
+#### 3.3.4 onAuthStateChanged 리스너 수정
+
+```typescript
+onAuthStateChanged(auth, async (user) => {
+	this._state.user = user;
+
+	// 사용자 로그인 시 프로필 동기화 및 관리자 목록 로드
+	if (user) {
+		console.log('사용자 로그인됨:', user.uid);
+
+		// Firebase Auth의 photoURL, displayName을 RTDB에 동기화
+		await this.syncUserProfile(user);
+
+		// 관리자 목록 로드
+		await this.loadAdminList();
+	} else {
+		console.log('사용자 로그아웃됨');
+		this._state.adminList = [];
+	}
+
+	this._state.loading = false;
+	this._state.initialized = true;
+});
+```
+
+**실행 순서:**
+1. `user` 상태 업데이트
+2. 사용자가 로그인한 경우:
+   - **먼저** `syncUserProfile()` 실행 (프로필 동기화)
+   - **그 다음** `loadAdminList()` 실행 (관리자 목록 로드)
+3. 로그아웃한 경우: 관리자 목록 초기화
+4. 로딩 완료 표시
+
+**순서가 중요한 이유:**
+- `syncUserProfile()`이 실패해도 `loadAdminList()`는 실행되어야 함
+- 하지만 프로필 동기화를 먼저 수행하여 사용자 정보를 최신 상태로 유지
+
+### 3.4 동작 시나리오
+
+#### 3.4.1 신규 사용자 최초 로그인
+
+```
+1. 사용자가 "Google 로그인" 클릭
+2. signInWithGoogle() 실행 → Firebase Auth 로그인 성공
+3. onAuthStateChanged 트리거
+   - user.uid = "abc123"
+   - user.photoURL = "https://lh3.googleusercontent.com/..."
+   - user.displayName = "홍길동"
+4. syncUserProfile(user) 실행
+   - GET /users/abc123 → null (신규 사용자)
+   - existingData = {}
+   - photoUrl 조건: !undefined && true → ✅ 저장
+   - displayName 조건: !undefined && true → ✅ 저장
+   - UPDATE /users/abc123
+     {
+       photoUrl: "https://lh3.googleusercontent.com/...",
+       displayName: "홍길동"
+     }
+5. Cloud Functions 트리거
+   - createdAt: 1699999999999
+   - updatedAt: 1699999999999 자동 추가
+```
+
+#### 3.4.2 기존 사용자 재로그인
+
+```
+1. 사용자가 이미 RTDB에 프로필 저장되어 있음
+   /users/abc123
+   {
+     photoUrl: "https://lh3.googleusercontent.com/old.jpg",
+     displayName: "홍길동",
+     createdAt: 1699999999999,
+     updatedAt: 1699999999999
+   }
+2. onAuthStateChanged 트리거
+3. syncUserProfile(user) 실행
+   - GET /users/abc123 → 기존 데이터 조회
+   - photoUrl 조건: !"https://...".trim() → ❌ 저장 안 함
+   - displayName 조건: !"홍길동" → ❌ 저장 안 함
+   - updates = {} (빈 객체)
+   - "동기화할 프로필 정보 없음" 로그 출력
+   - RTDB 업데이트 안 함 ✅
+```
+
+#### 3.4.3 photoUrl이 공백인 경우
+
+```
+1. 사용자가 수동으로 photoUrl을 삭제하거나 공백으로 설정
+   /users/abc123
+   {
+     photoUrl: "   ",  // 공백만 있음
+     displayName: "홍길동"
+   }
+2. 페이지 리프레시
+3. syncUserProfile(user) 실행
+   - photoUrl 조건: !"   ".trim() → !("") → true ✅
+   - user.photoURL이 있으면 복원됨
+   - UPDATE /users/abc123
+     {
+       photoUrl: "https://lh3.googleusercontent.com/..."
+     }
+```
+
+#### 3.4.4 사용자가 프로필 사진을 변경한 경우
+
+```
+1. 사용자가 앱 내에서 프로필 사진을 커스텀 이미지로 변경
+   /users/abc123
+   {
+     photoUrl: "https://custom-cdn.com/my-photo.jpg",
+     displayName: "홍길동"
+   }
+2. 페이지 리프레시
+3. syncUserProfile(user) 실행
+   - photoUrl 조건: !"https://custom-cdn.com/my-photo.jpg".trim()
+   - → !("https://...") → false ❌
+   - 덮어쓰지 않음 ✅ (사용자의 커스텀 사진 보호)
+```
+
+### 3.5 전체 소스 코드
+
+**파일:** `src/lib/stores/auth.svelte.ts`
+
+```typescript
+/**
+ * 인증 상태 관리 스토어
+ *
+ * Svelte 5의 runes를 사용하여 Firebase Authentication 상태를 전역으로 관리합니다.
+ */
+
+import { auth, rtdb } from '$lib/firebase';
+import { onAuthStateChanged, type User } from 'firebase/auth';
+import { ref, get, update } from 'firebase/database';
+
+/**
+ * 인증 상태 타입 정의
+ */
+export interface AuthState {
+	user: User | null; // 현재 로그인한 사용자 (null이면 비로그인)
+	loading: boolean; // 인증 상태 확인 중 여부
+	initialized: boolean; // 인증 시스템 초기화 완료 여부
+	adminList: string[]; // 관리자 UID 배열 (/system/settings/admins)
+}
+
+/**
+ * 인증 상태를 관리하는 클래스
+ */
+class AuthStore {
+	// Svelte 5 runes를 사용한 반응형 상태
+	private _state = $state<AuthState>({
+		user: null,
+		loading: true,
+		initialized: false,
+		adminList: []
+	});
+
+	constructor() {
+		// 브라우저 환경에서만 Firebase 인증 상태 리스너 등록
+		if (typeof window !== 'undefined') {
+			this.initializeAuthListener();
+		} else {
+			// 서버 환경에서는 초기화만 완료 처리
+			this._state.loading = false;
+			this._state.initialized = true;
+		}
+	}
+
+	/**
+	 * RTDB에서 관리자 목록 로드
+	 *
+	 * /system/settings/admins는 객체 형식으로 저장됨:
+	 * { "uid-user1": true, "uid-user2": true, ... }
+	 *
+	 * 이를 UID 배열로 변환하여 저장합니다.
+	 * Firebase SDK v9+ 모듈식 API를 사용합니다.
+	 */
+	private async loadAdminList() {
+		if (!rtdb) {
+			console.warn('Firebase Realtime Database가 초기화되지 않았습니다.');
+			return;
+		}
+
+		try {
+			// Firebase SDK v9+ 모듈식 API 사용
+			const adminRef = ref(rtdb, 'system/settings/admins');
+			const snapshot = await get(adminRef);
+			const adminsObj = snapshot.val();
+
+			// 객체에서 UID 배열로 변환 (value가 true인 항목만 포함)
+			if (adminsObj && typeof adminsObj === 'object') {
+				this._state.adminList = Object.keys(adminsObj).filter(uid => adminsObj[uid] === true);
+			} else {
+				this._state.adminList = [];
+			}
+
+			console.log('관리자 목록 로드됨:', this._state.adminList);
+		} catch (error) {
+			console.error('관리자 목록 로드 실패:', error);
+			this._state.adminList = [];
+		}
+	}
+
+	/**
+	 * Firebase Auth 사용자 프로필을 RTDB에 동기화
+	 *
+	 * 동기화 규칙:
+	 * - photoUrl: RTDB에 값이 없거나 null이거나 공백일 때만 Auth의 photoURL 저장
+	 * - displayName: RTDB에 값이 없을 때만 Auth의 displayName 저장
+	 * - email, phoneNumber는 동기화하지 않음
+	 * - createdAt, updatedAt은 Cloud Functions가 자동 처리
+	 *
+	 * @param user - Firebase Auth User 객체
+	 */
+	private async syncUserProfile(user: User) {
+		if (!rtdb) {
+			console.warn('Firebase Realtime Database가 초기화되지 않았습니다.');
+			return;
+		}
+
+		try {
+			// RTDB에서 현재 사용자 데이터 확인
+			const userRef = ref(rtdb, `users/${user.uid}`);
+			const snapshot = await get(userRef);
+			const existingData = snapshot.val() || {};
+
+			// 동기화할 데이터 준비
+			const updates: Record<string, any> = {};
+
+			// photoUrl: 없거나 null이거나 공백일 때만 동기화
+			// trim() 전에 undefined 체크를 위해 옵셔널 체이닝 사용
+			if (!existingData.photoUrl?.trim() && user.photoURL) {
+				updates.photoUrl = user.photoURL;
+				console.log('photoUrl 동기화:', user.photoURL);
+			}
+
+			// displayName: 없을 때만 동기화
+			if (!existingData.displayName && user.displayName) {
+				updates.displayName = user.displayName;
+				console.log('displayName 동기화:', user.displayName);
+			}
+
+			// 업데이트할 항목이 있으면 RTDB에 저장
+			if (Object.keys(updates).length > 0) {
+				await update(userRef, updates);
+				console.log('사용자 프로필 동기화 완료:', updates);
+			} else {
+				console.log('동기화할 프로필 정보 없음');
+			}
+		} catch (error) {
+			console.error('사용자 프로필 동기화 실패:', error);
+		}
+	}
+
+	/**
+	 * Firebase 인증 상태 변경 리스너 초기화
+	 */
+	private initializeAuthListener() {
+		if (!auth) {
+			console.warn('Firebase Auth가 초기화되지 않았습니다.');
+			this._state.loading = false;
+			this._state.initialized = true;
+			return;
+		}
+
+		onAuthStateChanged(auth, async (user) => {
+			this._state.user = user;
+
+			// 사용자 로그인 시 프로필 동기화 및 관리자 목록 로드
+			if (user) {
+				console.log('사용자 로그인됨:', user.uid);
+
+				// Firebase Auth의 photoURL, displayName을 RTDB에 동기화
+				await this.syncUserProfile(user);
+
+				// 관리자 목록 로드
+				await this.loadAdminList();
+			} else {
+				console.log('사용자 로그아웃됨');
+				this._state.adminList = [];
+			}
+
+			this._state.loading = false;
+			this._state.initialized = true;
+		});
+	}
+
+	/**
+	 * 현재 인증 상태 가져오기
+	 */
+	get state(): AuthState {
+		return this._state;
+	}
+
+	/**
+	 * 현재 사용자 가져오기
+	 */
+	get user(): User | null {
+		return this._state.user;
+	}
+
+	/**
+	 * 로딩 상태 가져오기
+	 */
+	get loading(): boolean {
+		return this._state.loading;
+	}
+
+	/**
+	 * 초기화 상태 가져오기
+	 */
+	get initialized(): boolean {
+		return this._state.initialized;
+	}
+
+	/**
+	 * 사용자가 로그인했는지 확인
+	 */
+	get isAuthenticated(): boolean {
+		return this._state.user !== null;
+	}
+
+	/**
+	 * 현재 사용자가 관리자인지 확인
+	 * 로그인되어 있고, 관리자 목록에 포함되어 있으면 true
+	 */
+	get isAdmin(): boolean {
+		return this.isAuthenticated && this._state.adminList.includes(this._state.user?.uid ?? '');
+	}
+
+	/**
+	 * 관리자 목록 가져오기
+	 */
+	get adminList(): string[] {
+		return this._state.adminList;
+	}
+}
+
+/**
+ * 인증 스토어 인스턴스 export
+ *
+ * 사용 예:
+ * import { authStore } from '$lib/stores/auth.svelte';
+ *
+ * const user = authStore.user;
+ * const isLoggedIn = authStore.isAuthenticated;
+ */
+export const authStore = new AuthStore();
+```
+
+### 3.6 주요 설계 결정 사항
+
+#### 3.6.1 왜 onAuthStateChanged를 사용하는가?
+
+**대안 검토:**
+- **로그인 함수에서 직접 동기화**: `signInWithGoogle()` 내부에서 RTDB 저장
+- **별도 유틸리티 함수**: 로그인 후 수동으로 `syncProfile()` 호출
+- **Cloud Functions**: Auth Triggers 사용
+
+**onAuthStateChanged 선택 이유:**
+1. **중앙 집중화**: 모든 로그인 경로(Google, Apple, Email 등)에서 자동 동작
+2. **새로고침 대응**: 페이지 리프레시 시에도 자동 실행
+3. **상태 일관성**: Auth 상태와 RTDB 데이터가 항상 동기화됨
+4. **유지보수성**: 한 곳에서만 관리, 로그인 함수 수정 불필요
+
+#### 3.6.2 왜 update()를 사용하는가?
+
+**set() vs update() 비교:**
+
+```typescript
+// ❌ 잘못된 방법: set() 사용
+await set(userRef, {
+    photoUrl: user.photoURL,
+    displayName: user.displayName
+});
+// 결과: 기존 필드(createdAt, 커스텀 필드 등) 모두 삭제됨!
+
+// ✅ 올바른 방법: update() 사용
+await update(userRef, {
+    photoUrl: user.photoURL,
+    displayName: user.displayName
+});
+// 결과: 기존 필드 보존, 지정한 필드만 병합됨
+```
+
+**update() 선택 이유:**
+- 기존 필드 보존 (createdAt, 커스텀 필드 등)
+- 부분 업데이트로 네트워크 효율성 향상
+- Cloud Functions 트리거 최소화
+
+#### 3.6.3 왜 trim()을 사용하는가?
+
+**photoUrl에만 trim() 적용:**
+
+```typescript
+// photoUrl: 공백 문자열도 "값 없음"으로 간주
+if (!existingData.photoUrl?.trim() && user.photoURL)
+
+// displayName: 빈 문자열만 "값 없음"으로 간주
+if (!existingData.displayName && user.displayName)
+```
+
+**이유:**
+- **photoUrl**: URL은 공백만 있으면 무효한 값 → 복원 필요
+- **displayName**: 사용자가 의도적으로 이름을 지울 수 있음 → 복원 안 함
+
+### 3.7 테스트 및 검증
+
+#### 3.7.1 수동 테스트 체크리스트
+
+1. **신규 사용자 테스트**
+   - [ ] Google 로그인 → RTDB에 photoUrl, displayName 저장 확인
+   - [ ] Apple 로그인 → RTDB에 photoUrl, displayName 저장 확인
+   - [ ] Firebase Console에서 `/users/{uid}` 확인
+
+2. **기존 사용자 테스트**
+   - [ ] 이미 RTDB에 데이터가 있는 사용자 로그인
+   - [ ] 기존 photoUrl 덮어쓰지 않는지 확인
+   - [ ] 기존 displayName 덮어쓰지 않는지 확인
+
+3. **공백 데이터 테스트**
+   - [ ] Firebase Console에서 photoUrl을 `"   "` (공백)으로 설정
+   - [ ] 페이지 리프레시
+   - [ ] photoUrl이 Auth photoURL로 복원되는지 확인
+
+4. **페이지 리프레시 테스트**
+   - [ ] 로그인 상태에서 새로고침
+   - [ ] 불필요한 업데이트가 발생하지 않는지 콘솔 로그 확인
+   - [ ] "동기화할 프로필 정보 없음" 메시지 확인
+
+5. **네트워크 오류 테스트**
+   - [ ] 개발자 도구에서 오프라인 모드 활성화
+   - [ ] 페이지 리프레시
+   - [ ] 에러 로그 확인, 앱이 중단되지 않는지 확인
+
+#### 3.7.2 콘솔 로그 예시
+
+**신규 사용자 로그인:**
+```
+사용자 로그인됨: abc123
+photoUrl 동기화: https://lh3.googleusercontent.com/...
+displayName 동기화: 홍길동
+사용자 프로필 동기화 완료: { photoUrl: "https://...", displayName: "홍길동" }
+관리자 목록 로드됨: []
+```
+
+**기존 사용자 로그인:**
+```
+사용자 로그인됨: abc123
+동기화할 프로필 정보 없음
+관리자 목록 로드됨: []
+```
+
+### 3.8 향후 확장 가능성
+
+#### 3.8.1 추가 필드 동기화
+
+필요 시 다음 필드도 동기화 가능:
+
+```typescript
+// phoneNumber 동기화 (옵션)
+if (!existingData.phoneNumber && user.phoneNumber) {
+    updates.phoneNumber = user.phoneNumber;
+}
+
+// emailVerified 상태 동기화 (옵션)
+if (user.emailVerified !== undefined) {
+    updates.emailVerified = user.emailVerified;
+}
+```
+
+#### 3.8.2 양방향 동기화
+
+현재는 **Auth → RTDB 단방향 동기화**만 구현됨.
+필요 시 **RTDB → Auth 동기화**도 가능:
+
+```typescript
+// RTDB의 displayName을 Auth에 동기화
+if (existingData.displayName && existingData.displayName !== user.displayName) {
+    await updateProfile(user, {
+        displayName: existingData.displayName
+    });
+}
+```
+
+#### 3.8.3 프로필 변경 이벤트
+
+사용자가 프로필을 수정할 때 이벤트 발행:
+
+```typescript
+// 프로필 변경 이벤트 타입
+export interface ProfileUpdateEvent {
+    uid: string;
+    before: Partial<UserProfile>;
+    after: Partial<UserProfile>;
+    timestamp: number;
+}
+
+// 이벤트 저장
+await set(ref(rtdb, `events/profile-updates/${Date.now()}`), {
+    uid: user.uid,
+    before: { photoUrl: existingData.photoUrl },
+    after: { photoUrl: user.photoURL },
+    timestamp: Date.now()
+});
+```
+
+## 4. 테스트 및 참고 문서
 
 - [sonub-user-login.md](./sonub-user-login.md): 실제 로그인 UI/UX 흐름 정의.
 - [sonub-setup-firebase.md](./sonub-setup-firebase.md): Firebase 앱 초기화 및 환경 변수 설정.
@@ -177,3 +937,6 @@ tags:
   1. 로그인 성공 후 사용자 정보가 즉시 UI에 표시되는지 확인
   2. 새로 고침 시 로그인 상태가 유지되는지 확인
   3. 로그아웃 후 `currentUser`가 null이 되는지 확인
+  4. **신규**: 신규 사용자 로그인 시 RTDB에 photoUrl, displayName 자동 저장 확인
+  5. **신규**: 기존 사용자 로그인 시 기존 프로필 덮어쓰지 않는지 확인
+  6. **신규**: photoUrl이 공백일 때 Auth photoURL로 복원되는지 확인

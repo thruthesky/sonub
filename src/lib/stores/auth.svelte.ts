@@ -6,7 +6,7 @@
 
 import { auth, rtdb } from '$lib/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { ref, get } from 'firebase/database';
+import { ref, get, update } from 'firebase/database';
 
 /**
  * 인증 상태 타입 정의
@@ -77,6 +77,57 @@ class AuthStore {
 	}
 
 	/**
+	 * Firebase Auth 사용자 프로필을 RTDB에 동기화
+	 *
+	 * 동기화 규칙:
+	 * - photoUrl: RTDB에 값이 없거나 null이거나 공백일 때만 Auth의 photoURL 저장
+	 * - displayName: RTDB에 값이 없을 때만 Auth의 displayName 저장
+	 * - email, phoneNumber는 동기화하지 않음
+	 * - createdAt, updatedAt은 Cloud Functions가 자동 처리
+	 *
+	 * @param user - Firebase Auth User 객체
+	 */
+	private async syncUserProfile(user: User) {
+		if (!rtdb) {
+			console.warn('Firebase Realtime Database가 초기화되지 않았습니다.');
+			return;
+		}
+
+		try {
+			// RTDB에서 현재 사용자 데이터 확인
+			const userRef = ref(rtdb, `users/${user.uid}`);
+			const snapshot = await get(userRef);
+			const existingData = snapshot.val() || {};
+
+			// 동기화할 데이터 준비
+			const updates: Record<string, any> = {};
+
+			// photoUrl: 없거나 null이거나 공백일 때만 동기화
+			// trim() 전에 undefined 체크를 위해 옵셔널 체이닝 사용
+			if (!existingData.photoUrl?.trim() && user.photoURL) {
+				updates.photoUrl = user.photoURL;
+				console.log('photoUrl 동기화:', user.photoURL);
+			}
+
+			// displayName: 없을 때만 동기화
+			if (!existingData.displayName && user.displayName) {
+				updates.displayName = user.displayName;
+				console.log('displayName 동기화:', user.displayName);
+			}
+
+			// 업데이트할 항목이 있으면 RTDB에 저장
+			if (Object.keys(updates).length > 0) {
+				await update(userRef, updates);
+				console.log('사용자 프로필 동기화 완료:', updates);
+			} else {
+				console.log('동기화할 프로필 정보 없음');
+			}
+		} catch (error) {
+			console.error('사용자 프로필 동기화 실패:', error);
+		}
+	}
+
+	/**
 	 * Firebase 인증 상태 변경 리스너 초기화
 	 */
 	private initializeAuthListener() {
@@ -90,9 +141,14 @@ class AuthStore {
 		onAuthStateChanged(auth, async (user) => {
 			this._state.user = user;
 
-			// 사용자 로그인 시 관리자 목록 로드
+			// 사용자 로그인 시 프로필 동기화 및 관리자 목록 로드
 			if (user) {
 				console.log('사용자 로그인됨:', user.uid);
+
+				// Firebase Auth의 photoURL, displayName을 RTDB에 동기화
+				await this.syncUserProfile(user);
+
+				// 관리자 목록 로드
 				await this.loadAdminList();
 			} else {
 				console.log('사용자 로그아웃됨');

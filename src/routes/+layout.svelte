@@ -4,6 +4,8 @@
 	import TopBar from '$lib/components/top-bar.svelte';
 	import LeftSidebar from '$lib/components/left-sidebar.svelte';
 	import RightSidebar from '$lib/components/right-sidebar.svelte';
+	import DevIcon from '$lib/components/dev/dev-icon.svelte';
+	import { dev } from '$app/environment';
 
 	let { children } = $props();
 </script>
@@ -31,3 +33,8 @@
 		</div>
 	</div>
 </div>
+
+<!-- 개발 모드에서만 표시되는 개발자 도구 -->
+{#if dev}
+	<DevIcon />
+{/if}
