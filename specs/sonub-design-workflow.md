@@ -28,7 +28,7 @@ tags: ["design", "tailwindcss", "shadcn", "ui", "styling"]
 - 디자인 토큰 및 테마 관리
 - 반응형 디자인 가이드라인
 - 접근성(a11y) 고려사항
-- 다크 모드 지원
+- ✅ **Light Mode Only**: Sonub는 오직 Light Mode만 지원합니다
 
 ### 1.3 사전 요구사항
 
@@ -318,34 +318,7 @@ xl:  1280px  (큰 데스크톱)
 </div>
 ```
 
-## 6. 다크 모드
-
-### 6.1 다크 모드 설정
-
-**TailwindCSS 다크 모드 활성화:**
-
-```javascript
-// tailwind.config.js
-export default {
-  darkMode: 'class', // 'class' 또는 'media'
-  // ...
-};
-```
-
-### 6.2 다크 모드 스타일링
-
-```svelte
-<div class="
-  bg-white dark:bg-gray-900
-  text-gray-900 dark:text-white
-  border border-gray-200 dark:border-gray-700
-">
-  <h1 class="text-black dark:text-white">제목</h1>
-  <p class="text-gray-700 dark:text-gray-300">본문</p>
-</div>
-```
-
-## 7. 접근성 (Accessibility)
+## 6. 접근성 (Accessibility)
 
 ### 7.1 접근성 체크리스트
 
@@ -466,13 +439,13 @@ export default {
 - [ ] TailwindCSS 유틸리티 클래스 우선 사용
 - [ ] shadcn-svelte 컴포넌트 최대한 활용
 - [ ] 반응형 클래스 적용 (sm:, md:, lg: 등)
-- [ ] 다크 모드 고려 (dark: prefix)
+- [ ] Light Mode 기준으로 설계 (다크 모드 미지원)
 - [ ] 접근성 고려 (aria-label, 키보드 내비게이션 등)
 
 ### 10.3 디자인 작업 후 체크리스트
 
 - [ ] 모바일, 태블릿, 데스크톱 반응형 확인
-- [ ] 다크 모드 동작 확인
+- [ ] Light Mode에서 색상이 올바르게 표시되는지 확인
 - [ ] 키보드 내비게이션 테스트
 - [ ] 색상 대비 확인 (접근성)
 - [ ] 불필요한 커스텀 CSS 제거
@@ -496,8 +469,9 @@ export default {
 모든 디자인 작업은 **반드시** TailwindCSS와 shadcn-svelte를 통해 구현해야 합니다. 이는 코드 일관성, 유지보수성, 그리고 개발 효율성을 극대화하기 위한 필수 원칙입니다.
 
 **핵심 규칙 요약:**
-1. TailwindCSS 유틸리티 클래스 우선 사용
-2. shadcn-svelte 컴포넌트 최대한 활용
-3. 커스텀 CSS는 최후의 수단
-4. 반응형 및 접근성 필수 고려
-5. 일관된 디자인 패턴 유지
+1. **Light Mode Only**: Sonub는 오직 Light Mode만 지원합니다 (다크 모드 미지원)
+2. TailwindCSS 유틸리티 클래스 우선 사용
+3. shadcn-svelte 컴포넌트 최대한 활용
+4. 커스텀 CSS는 최후의 수단
+5. 반응형 및 접근성 필수 고려
+6. 일관된 디자인 패턴 유지

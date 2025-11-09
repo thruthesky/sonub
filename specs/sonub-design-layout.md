@@ -29,7 +29,10 @@ tags: ["layout", "topbar", "sidebar", "navigation", "ui", "authentication", "sve
 - 우측 사이드바 컴포넌트 구현 (`right-sidebar.svelte`)
 - 사용자 인증 상태 기반 네비게이션
 - 반응형 디자인 (모바일/태블릿/데스크톱)
-- 다크 모드 지원
+- **🔴 Light Mode Only 정책**: Sonub는 **오직 Light Mode만 지원합니다** (다크 모드 완전 미지원)
+  - 웹브라우저 또는 모바일 디바이스의 시스템 기본 테마가 dark 모드이어도 무시하고 항상 Light Mode로 표시
+  - 모든 컬러는 Light Mode 컬러만 사용 (dark: Tailwind 프리픽스 절대 금지)
+  - color-scheme: light 메타 태그로 명시적으로 Light Mode 강제
 - 접근성 고려
 
 ### 1.3 사전 요구사항
@@ -88,7 +91,7 @@ src/
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+<div class="min-h-screen bg-gray-50">
 	<TopBar />
 	<div class="container mx-auto px-4 py-8">
 		<div class="flex gap-6">
@@ -112,17 +115,16 @@ src/
 #### 2.3.1 최상위 컨테이너
 
 ```svelte
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+<div class="min-h-screen bg-gray-50">
 ```
 
 **TailwindCSS 클래스 설명:**
 - `min-h-screen`: 최소 높이를 100vh로 설정하여 화면 전체 높이 보장
-- `bg-gray-50`: 라이트 모드 배경색 (연한 회색)
-- `dark:bg-gray-900`: 다크 모드 배경색 (진한 회색)
+- `bg-gray-50`: Light Mode 배경색 (연한 회색)
 
 **목적:**
 - 페이지 전체를 감싸는 컨테이너
-- 다크 모드 지원
+- Light Mode 일관성 유지
 - 콘텐츠가 적어도 화면 전체를 채우도록 보장
 
 #### 2.3.2 컨테이너 래퍼
@@ -267,33 +269,33 @@ src/
 	}
 </script>
 
-<nav class="border-b bg-white dark:bg-gray-900">
+<nav class="border-b bg-white">
 	<div class="container mx-auto px-4">
 		<div class="flex h-16 items-center justify-between">
 			<!-- 좌측: 로고 및 네비게이션 링크 -->
 			<div class="flex items-center gap-8">
 				<a
 					href="/"
-					class="text-xl font-bold text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300"
+					class="text-xl font-bold text-gray-900 hover:text-gray-700"
 				>
 					Sonub
 				</a>
 				<div class="hidden gap-4 md:flex">
 					<a
 						href="/about"
-						class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+						class="text-gray-600 hover:text-gray-900"
 					>
 						소개
 					</a>
 					<a
 						href="/products"
-						class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+						class="text-gray-600 hover:text-gray-900"
 					>
 						제품
 					</a>
 					<a
 						href="/contact"
-						class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+						class="text-gray-600 hover:text-gray-900"
 					>
 						연락
 					</a>
@@ -304,7 +306,7 @@ src/
 			<div class="flex items-center gap-4">
 				{#if authStore.loading}
 					<!-- 로딩 중 -->
-					<div class="text-sm text-gray-500 dark:text-gray-400">로딩 중...</div>
+					<div class="text-sm text-gray-500">로딩 중...</div>
 				{:else if authStore.isAuthenticated}
 					<!-- 로그인 상태 -->
 					<div class="flex items-center gap-4">
@@ -316,7 +318,7 @@ src/
 									class="h-8 w-8 rounded-full"
 								/>
 							{/if}
-							<span class="text-sm text-gray-700 dark:text-gray-300">
+							<span class="text-sm text-gray-700">
 								{authStore.user?.displayName || authStore.user?.email || '사용자'}
 							</span>
 						</div>
@@ -339,13 +341,12 @@ src/
 #### 3.3.1 최상위 네비게이션 컨테이너
 
 ```svelte
-<nav class="border-b bg-white dark:bg-gray-900">
+<nav class="border-b bg-white">
 ```
 
 **TailwindCSS 클래스 설명:**
 - `border-b`: 하단 테두리 (1px solid)
-- `bg-white`: 라이트 모드 배경색 (흰색)
-- `dark:bg-gray-900`: 다크 모드 배경색 (진한 회색)
+- `bg-white`: Light Mode 배경색 (흰색)
 
 **HTML 시맨틱:**
 - `<nav>` 태그 사용으로 접근성 향상
@@ -401,7 +402,7 @@ src/
 ```svelte
 <a
 	href="/"
-	class="text-xl font-bold text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300"
+	class="text-xl font-bold text-gray-900 hover:text-gray-700"
 >
 	Sonub
 </a>
@@ -410,10 +411,8 @@ src/
 **TailwindCSS 클래스 설명:**
 - `text-xl`: 폰트 크기 1.25rem (20px)
 - `font-bold`: 폰트 두께 700
-- `text-gray-900`: 라이트 모드 텍스트 색상 (진한 회색)
-- `hover:text-gray-700`: 라이트 모드 호버 색상
-- `dark:text-white`: 다크 모드 텍스트 색상 (흰색)
-- `dark:hover:text-gray-300`: 다크 모드 호버 색상
+- `text-gray-900`: Light Mode 텍스트 색상 (진한 회색)
+- `hover:text-gray-700`: Light Mode 호버 색상
 
 **목적:**
 - 브랜드 아이덴티티 표시
@@ -424,7 +423,7 @@ src/
 
 ```svelte
 <div class="hidden gap-4 md:flex">
-	<a href="/about" class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+	<a href="/about" class="text-gray-600 hover:text-gray-900">
 		소개
 	</a>
 	<!-- 추가 링크들... -->
@@ -435,10 +434,8 @@ src/
 - `hidden`: 기본적으로 숨김 (모바일)
 - `md:flex`: 중간 화면(768px) 이상에서 표시
 - `gap-4`: 링크 간 간격 1rem (16px)
-- `text-gray-600`: 라이트 모드 기본 색상 (중간 회색)
-- `hover:text-gray-900`: 라이트 모드 호버 색상 (진한 회색)
-- `dark:text-gray-400`: 다크 모드 기본 색상
-- `dark:hover:text-white`: 다크 모드 호버 색상
+- `text-gray-600`: Light Mode 기본 색상 (중간 회색)
+- `hover:text-gray-900`: Light Mode 호버 색상 (진한 회색)
 
 **반응형 동작:**
 - 모바일 (< 768px): 링크 숨김
@@ -466,15 +463,14 @@ src/
 
 ```svelte
 {#if authStore.loading}
-	<div class="text-sm text-gray-500 dark:text-gray-400">로딩 중...</div>
+	<div class="text-sm text-gray-500">로딩 중...</div>
 ```
 
 **조건:** `authStore.loading === true`
 
 **TailwindCSS 클래스 설명:**
 - `text-sm`: 폰트 크기 0.875rem (14px)
-- `text-gray-500`: 라이트 모드 텍스트 색상 (중간 회색)
-- `dark:text-gray-400`: 다크 모드 텍스트 색상
+- `text-gray-500`: Light Mode 텍스트 색상 (중간 회색)
 
 **목적:**
 - Firebase 인증 초기화 중 사용자에게 피드백 제공
@@ -494,7 +490,7 @@ src/
 					class="h-8 w-8 rounded-full"
 				/>
 			{/if}
-			<span class="text-sm text-gray-700 dark:text-gray-300">
+			<span class="text-sm text-gray-700">
 				{authStore.user?.displayName || authStore.user?.email || '사용자'}
 			</span>
 		</div>
@@ -588,25 +584,25 @@ src/
 			<Card.Content class="space-y-2">
 				<a
 					href="/"
-					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
 				>
 					홈
 				</a>
 				<a
 					href="/about"
-					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
 				>
 					소개
 				</a>
 				<a
 					href="/products"
-					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
 				>
 					제품
 				</a>
 				<a
 					href="/contact"
-					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
 				>
 					연락
 				</a>
@@ -618,7 +614,7 @@ src/
 				<Card.Title class="text-base">최근 활동</Card.Title>
 			</Card.Header>
 			<Card.Content>
-				<p class="text-sm text-gray-600 dark:text-gray-400">최근 활동이 없습니다.</p>
+				<p class="text-sm text-gray-600">최근 활동이 없습니다.</p>
 			</Card.Content>
 		</Card.Root>
 	</div>
@@ -665,7 +661,7 @@ src/
 ```svelte
 <a
 	href="/"
-	class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+	class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
 >
 	홈
 </a>
@@ -677,10 +673,8 @@ src/
 - `px-3`: 좌우 패딩 0.75rem (12px)
 - `py-2`: 상하 패딩 0.5rem (8px)
 - `text-sm`: 폰트 크기 0.875rem (14px)
-- `text-gray-700`: 라이트 모드 텍스트 색상
-- `hover:bg-gray-100`: 라이트 모드 호버 배경
-- `dark:text-gray-300`: 다크 모드 텍스트 색상
-- `dark:hover:bg-gray-800`: 다크 모드 호버 배경
+- `text-gray-700`: Light Mode 텍스트 색상
+- `hover:bg-gray-100`: Light Mode 호버 배경
 
 ### 4.2 우측 사이드바
 
@@ -733,10 +727,10 @@ src/
 						</div>
 					{/if}
 					<div class="text-center">
-						<p class="font-medium text-gray-900 dark:text-white">
+						<p class="font-medium text-gray-900">
 							{authStore.user?.displayName || '사용자'}
 						</p>
-						<p class="text-sm text-gray-600 dark:text-gray-400">
+						<p class="text-sm text-gray-600">
 							{authStore.user?.email || ''}
 						</p>
 					</div>
@@ -749,7 +743,7 @@ src/
 				<Card.Title class="text-base">알림</Card.Title>
 			</Card.Header>
 			<Card.Content>
-				<p class="text-sm text-gray-600 dark:text-gray-400">새로운 알림이 없습니다.</p>
+				<p class="text-sm text-gray-600">새로운 알림이 없습니다.</p>
 			</Card.Content>
 		</Card.Root>
 
@@ -760,13 +754,13 @@ src/
 			<Card.Content class="space-y-2">
 				<button
 					type="button"
-					class="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+					class="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
 				>
 					인기 게시물
 				</button>
 				<button
 					type="button"
-					class="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+					class="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
 				>
 					새로운 기능
 				</button>
@@ -807,10 +801,10 @@ src/
 
 ```svelte
 <div class="text-center">
-	<p class="font-medium text-gray-900 dark:text-white">
+	<p class="font-medium text-gray-900">
 		{authStore.user?.displayName || '사용자'}
 	</p>
-	<p class="text-sm text-gray-600 dark:text-gray-400">
+	<p class="text-sm text-gray-600">
 		{authStore.user?.email || ''}
 	</p>
 </div>
@@ -1018,43 +1012,17 @@ function goToLogin() {
 └─────────┴─────────────────┴───────────┘
 ```
 
-### 7.4 반응형 테스트 체크리스트
+### 7.4 Light Mode 테스트 체크리스트
 
 - [ ] 모바일 (375px): 메인 콘텐츠만 표시, 사이드바 숨김
 - [ ] 모바일 (414px): 메인 콘텐츠만 표시, 사이드바 숨김
 - [ ] 태블릿 (768px): 메인 콘텐츠만 표시, 탑바 링크 표시
 - [ ] 데스크톱 (1024px): 3컬럼 레이아웃, 모든 요소 표시
 - [ ] 초대형 (1440px): 3컬럼 레이아웃, 넓은 사이드바
+- [ ] Light Mode에서 모든 텍스트가 명확하게 표시되는지 확인
+- [ ] Light Mode 색상 대비가 WCAG 2.1 AA 기준 준수하는지 확인
 
-## 8. 다크 모드
-
-### 8.1 다크 모드 구현
-
-**TailwindCSS 다크 모드 클래스:**
-- `dark:bg-gray-900`: 다크 배경
-- `dark:text-white`: 다크 텍스트
-- `dark:text-gray-300`: 다크 보조 텍스트
-- `dark:hover:text-gray-300`: 다크 호버 색상
-
-### 8.2 색상 팔레트
-
-**라이트 모드:**
-- 배경: `bg-white`, `bg-gray-50`
-- 텍스트: `text-gray-900`, `text-gray-600`, `text-gray-500`
-- 호버: `hover:text-gray-900`, `hover:text-gray-700`
-
-**다크 모드:**
-- 배경: `dark:bg-gray-900`
-- 텍스트: `dark:text-white`, `dark:text-gray-300`, `dark:text-gray-400`
-- 호버: `dark:hover:text-white`, `dark:hover:text-gray-300`
-
-### 8.3 다크 모드 테스트
-
-- [ ] 라이트 모드에서 모든 텍스트가 읽기 쉬운지 확인
-- [ ] 다크 모드에서 모든 텍스트가 읽기 쉬운지 확인
-- [ ] 호버 상태가 양쪽 모드에서 명확한지 확인
-
-## 9. 접근성 (Accessibility)
+## 8. 접근성 (Accessibility)
 
 ### 9.1 시맨틱 HTML
 
@@ -1375,21 +1343,22 @@ await goto('/user/login'); // 로그인 페이지로 이동
 - 모바일에서는 아이콘으로 표시
 - 클릭 시 검색 모달 열기
 
-## 16. 결론
+## 15. 결론
 
 본 명세서에 따라 구현된 레이아웃 및 탑바는 다음과 같은 특징을 가집니다:
 
+✅ **Light Mode Only**: Sonub는 오직 Light Mode만 지원합니다 (다크 모드 미지원)
 ✅ **일관된 디자인**: TailwindCSS와 shadcn-svelte만 사용
 ✅ **반응형**: 모바일, 태블릿, 데스크톱 모두 지원
-✅ **다크 모드**: 완전한 다크 모드 지원
 ✅ **접근성**: WCAG 2.1 AA 기준 준수
 ✅ **사용자 인증 통합**: Firebase Auth와 완벽 연동
 ✅ **성능**: 최적화된 컴포넌트 구조
 ✅ **유지보수성**: 명확한 컴포넌트 분리 및 주석
 
 **핵심 원칙:**
-1. 모든 스타일링은 TailwindCSS 유틸리티 클래스 사용
-2. shadcn-svelte 컴포넌트 최대한 활용
-3. 반응형 및 접근성 필수 고려
-4. 사용자 인증 상태에 따른 동적 UI 제공
-5. 일관된 디자인 패턴 유지
+1. **Light Mode Only**: 오직 Light Mode만 지원 (다크 모드 미지원)
+2. 모든 스타일링은 TailwindCSS 유틸리티 클래스 사용
+3. shadcn-svelte 컴포넌트 최대한 활용
+4. 반응형 및 접근성 필수 고려
+5. 사용자 인증 상태에 따른 동적 UI 제공
+6. 일관된 디자인 패턴 유지

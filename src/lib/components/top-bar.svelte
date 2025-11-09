@@ -39,35 +39,42 @@
 	function goToLogin() {
 		goto('/user/login');
 	}
+
+	/**
+	 * 메뉴 페이지로 이동
+	 */
+	function goToMenu() {
+		goto('/menu');
+	}
 </script>
 
-<nav class="border-b bg-white dark:bg-gray-900">
+<nav class="border-b bg-white">
 	<div class="container mx-auto px-4">
 		<div class="flex h-16 items-center justify-between">
 			<!-- 좌측: 로고 및 네비게이션 링크 -->
 			<div class="flex items-center gap-8">
 				<a
 					href="/"
-					class="text-xl font-bold text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300"
+					class="text-xl font-bold text-gray-900 hover:text-gray-700"
 				>
 					Sonub
 				</a>
 				<div class="hidden gap-4 md:flex">
 					<a
 						href="/about"
-						class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+						class="text-gray-600 hover:text-gray-900"
 					>
 						소개
 					</a>
 					<a
 						href="/products"
-						class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+						class="text-gray-600 hover:text-gray-900"
 					>
 						제품
 					</a>
 					<a
 						href="/contact"
-						class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+						class="text-gray-600 hover:text-gray-900"
 					>
 						연락
 					</a>
@@ -78,7 +85,7 @@
 			<div class="flex items-center gap-4">
 				{#if authStore.loading}
 					<!-- 로딩 중 -->
-					<div class="text-sm text-gray-500 dark:text-gray-400">로딩 중...</div>
+					<div class="text-sm text-gray-500">로딩 중...</div>
 				{:else if authStore.isAuthenticated}
 					<!-- 로그인 상태 -->
 					<div class="flex items-center gap-4">
@@ -90,7 +97,7 @@
 									class="h-8 w-8 rounded-full"
 								/>
 							{/if}
-							<span class="text-sm text-gray-700 dark:text-gray-300">
+							<span class="text-sm text-gray-700">
 								{authStore.user?.displayName || authStore.user?.email || '사용자'}
 							</span>
 						</div>
@@ -102,6 +109,29 @@
 					<!-- 비로그인 상태 -->
 					<Button variant="ghost" size="sm" onclick={goToLogin}>로그인</Button>
 				{/if}
+
+				<!-- 메뉴 아이콘 (모든 상태에서 표시) -->
+				<button
+					onclick={goToMenu}
+					class="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors"
+					aria-label="메뉴"
+					title="메뉴"
+				>
+					<!-- 햄버거 메뉴 아이콘 -->
+					<svg
+						class="h-6 w-6"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						stroke-width="2"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M4 6h16M4 12h16M4 18h16"
+						/>
+					</svg>
+				</button>
 			</div>
 		</div>
 	</div>

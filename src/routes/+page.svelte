@@ -23,8 +23,8 @@
 	<div class="mx-auto max-w-4xl space-y-8 text-center">
 		<!-- 메인 타이틀 -->
 		<div class="space-y-4">
-			<h1 class="text-4xl font-bold text-gray-900 md:text-6xl dark:text-white">Welcome to Sonub</h1>
-			<p class="text-lg text-gray-600 md:text-xl dark:text-gray-400">
+			<h1 class="text-4xl font-bold text-gray-900 md:text-6xl">Welcome to Sonub</h1>
+			<p class="text-lg text-gray-600 md:text-xl">
 				SedAi.Dev 에 Sonub spec 으로 커뮤니티 기능을 집어 넣는다.
 			</p>
 		</div>
@@ -33,7 +33,7 @@
 		{#if authStore.loading}
 			<Card.Root class="mx-auto max-w-md">
 				<Card.Content class="pt-6">
-					<p class="text-center text-gray-600 dark:text-gray-400">로딩 중...</p>
+					<p class="text-center text-gray-600">로딩 중...</p>
 				</Card.Content>
 			</Card.Root>
 		{:else if authStore.isAuthenticated}
@@ -75,7 +75,7 @@
 					<Card.Title class="text-lg">SvelteKit 5</Card.Title>
 				</Card.Header>
 				<Card.Content>
-					<p class="text-sm text-gray-600 dark:text-gray-400">
+					<p class="text-sm text-gray-600">
 						최신 Svelte 5 runes를 사용한 모던 프레임워크
 					</p>
 				</Card.Content>
@@ -86,7 +86,7 @@
 					<Card.Title class="text-lg">Firebase Auth</Card.Title>
 				</Card.Header>
 				<Card.Content>
-					<p class="text-sm text-gray-600 dark:text-gray-400">Google 및 Apple 소셜 로그인 지원</p>
+					<p class="text-sm text-gray-600">Google 및 Apple 소셜 로그인 지원</p>
 				</Card.Content>
 			</Card.Root>
 
@@ -95,7 +95,7 @@
 					<Card.Title class="text-lg">TailwindCSS</Card.Title>
 				</Card.Header>
 				<Card.Content>
-					<p class="text-sm text-gray-600 dark:text-gray-400">
+					<p class="text-sm text-gray-600">
 						shadcn-svelte와 함께하는 아름다운 UI
 					</p>
 				</Card.Content>
@@ -104,13 +104,13 @@
 
 		<!-- 링크 -->
 		<div
-			class="flex flex-col items-center justify-center gap-4 text-sm text-gray-600 sm:flex-row dark:text-gray-400"
+			class="flex flex-col items-center justify-center gap-4 text-sm text-gray-600 sm:flex-row"
 		>
 			<a
 				href="https://svelte.dev/docs/kit"
 				target="_blank"
 				rel="noopener noreferrer"
-				class="hover:text-gray-900 dark:hover:text-white"
+				class="hover:text-gray-900"
 			>
 				SvelteKit 문서
 			</a>
@@ -119,7 +119,7 @@
 				href="https://firebase.google.com/docs"
 				target="_blank"
 				rel="noopener noreferrer"
-				class="hover:text-gray-900 dark:hover:text-white"
+				class="hover:text-gray-900"
 			>
 				Firebase 문서
 			</a>
@@ -128,7 +128,7 @@
 				href="https://www.shadcn-svelte.com"
 				target="_blank"
 				rel="noopener noreferrer"
-				class="hover:text-gray-900 dark:hover:text-white"
+				class="hover:text-gray-900"
 			>
 				shadcn-svelte
 			</a>

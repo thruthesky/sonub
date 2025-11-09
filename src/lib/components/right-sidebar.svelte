@@ -28,10 +28,10 @@
 						</div>
 					{/if}
 					<div class="text-center">
-						<p class="font-medium text-gray-900 dark:text-white">
+						<p class="font-medium text-gray-900">
 							{authStore.user?.displayName || '사용자'}
 						</p>
-						<p class="text-sm text-gray-600 dark:text-gray-400">
+						<p class="text-sm text-gray-600">
 							{authStore.user?.email || ''}
 						</p>
 					</div>
@@ -44,7 +44,7 @@
 				<Card.Title class="text-base">알림</Card.Title>
 			</Card.Header>
 			<Card.Content>
-				<p class="text-sm text-gray-600 dark:text-gray-400">새로운 알림이 없습니다.</p>
+				<p class="text-sm text-gray-600">새로운 알림이 없습니다.</p>
 			</Card.Content>
 		</Card.Root>
 
@@ -55,13 +55,13 @@
 			<Card.Content class="space-y-2">
 				<button
 					type="button"
-					class="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+					class="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
 				>
 					인기 게시물
 				</button>
 				<button
 					type="button"
-					class="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+					class="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
 				>
 					새로운 기능
 				</button>

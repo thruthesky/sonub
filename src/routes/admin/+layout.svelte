@@ -25,11 +25,25 @@
 				<h2 class="admin-title">관리 메뉴</h2>
 				<ul class="nav-list">
 					<li>
+						<a href="/admin/dashboard" class="nav-link" class:active={$page.url.pathname === '/admin/dashboard'}>
+							대시보드
+						</a>
+					</li>
+					<li>
+						<a href="/admin/test" class="nav-link" class:active={$page.url.pathname === '/admin/test'}>
+							테스트
+						</a>
+					</li>
+					<li>
+						<a href="/admin/users" class="nav-link" class:active={$page.url.pathname === '/admin/users'}>
+							사용자목록
+						</a>
+					</li>
+					<li>
 						<a href="/admin/reports" class="nav-link" class:active={$page.url.pathname === '/admin/reports'}>
 							신고 목록
 						</a>
 					</li>
-					<!-- 향후 추가 관리자 메뉴 -->
 				</ul>
 			</nav>
 		</aside>
@@ -42,9 +56,10 @@
 </div>
 
 <style>
+	/* 🔴 Light Mode Only: 모든 색상은 Light Mode 전용입니다 */
 	.admin-layout {
 		min-height: 100vh;
-		background-color: #f9fafb;
+		background-color: #f9fafb; /* Light gray background */
 	}
 
 	.admin-container {
@@ -62,8 +77,8 @@
 	}
 
 	.admin-nav {
-		background-color: #ffffff;
-		border: 1px solid #e5e7eb;
+		background-color: #ffffff; /* Light white background */
+		border: 1px solid #e5e7eb; /* Light gray border */
 		border-radius: 0.5rem;
 		padding: 1.5rem;
 		position: sticky;
@@ -74,7 +89,7 @@
 		margin: 0 0 1rem 0;
 		font-size: 1.1rem;
 		font-weight: 700;
-		color: #111827;
+		color: #111827; /* Light dark gray text */
 	}
 
 	.nav-list {
@@ -90,7 +105,7 @@
 	.nav-link {
 		display: block;
 		padding: 0.75rem 1rem;
-		color: #4b5563;
+		color: #4b5563; /* Light gray text */
 		text-decoration: none;
 		border-radius: 0.375rem;
 		transition: all 0.2s ease;
@@ -98,13 +113,13 @@
 	}
 
 	.nav-link:hover {
-		background-color: #f3f4f6;
-		color: #111827;
+		background-color: #f3f4f6; /* Light hover background */
+		color: #111827; /* Light dark text */
 	}
 
 	.nav-link.active {
-		background-color: #3b82f6;
-		color: #ffffff;
+		background-color: #3b82f6; /* Blue accent (light friendly) */
+		color: #ffffff; /* White text on blue */
 	}
 
 	/* 관리자 메인 컨텐츠 */

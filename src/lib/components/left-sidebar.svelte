@@ -18,25 +18,25 @@
 			<Card.Content class="space-y-2">
 				<a
 					href="/"
-					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
 				>
 					홈
 				</a>
 				<a
 					href="/about"
-					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
 				>
 					소개
 				</a>
 				<a
 					href="/products"
-					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
 				>
 					제품
 				</a>
 				<a
 					href="/contact"
-					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
 				>
 					연락
 				</a>
@@ -48,7 +48,7 @@
 				<Card.Title class="text-base">최근 활동</Card.Title>
 			</Card.Header>
 			<Card.Content>
-				<p class="text-sm text-gray-600 dark:text-gray-400">최근 활동이 없습니다.</p>
+				<p class="text-sm text-gray-600">최근 활동이 없습니다.</p>
 			</Card.Content>
 		</Card.Root>
 	</div>
