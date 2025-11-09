@@ -47,7 +47,7 @@
     endAt,
     endBefore
   } from 'firebase/database';
-  import { database } from '../utils/firebase.js';
+  import { rtdb as database } from '$lib/firebase';
 
   // ============================================================================
   // Props (컴포넌트 속성)
