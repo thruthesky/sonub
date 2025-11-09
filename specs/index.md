@@ -209,6 +209,30 @@ This document provides a detailed index of all specifications related to the son
   - Cloud Functions를 통한 자동 동기화
   - 선택적 조회를 통한 데이터 전송량 최소화
 
+## Admin Management
+
+### Sonub Admin Report
+- **File**: [sonub-admin-report.md](./sonub-admin-report.md)
+- **Title**: 신고 목록 표시 기능 (Admin & User Report List)
+- **Description**: 관리자 신고 목록 페이지 및 사용자 신고 목록 페이지 구현 명세서 - 신고된 게시글/댓글을 관리하고 사용자가 자신의 신고를 추적할 수 있는 기능
+- **Version**: 1.0.0
+- **Step**: 60
+- **Priority**: *
+- **Dependencies**:
+  - sonub-user-overview.md
+  - sonub-setup-firebase.md
+  - sonub-setup-shadcn.md
+- **Tags**: admin, report, firebase, list-view, svelte5
+- **구현 페이지**:
+  - `/admin/reports` - 관리자 신고 목록 (모든 신고 조회)
+  - `/my/reports` - 사용자 신고 목록 (자신의 신고만 조회)
+- **핵심 기능**:
+  - 신고 목록 조회 및 필터링
+  - 신고된 게시글/댓글로 이동
+  - 신고 취소 기능
+  - 실시간 데이터 동기화
+  - 신고 사유 다국어 지원
+
 ## Deployment
 
 ### Sonub Deploy Workflow
