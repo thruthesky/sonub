@@ -546,7 +546,331 @@ src/
 - 비로그인 사용자에게 로그인 유도
 - 일관된 버튼 디자인
 
-## 4. 인증 상태 관리
+## 4. 사이드바 컴포넌트
+
+### 4.1 좌측 사이드바
+
+#### 4.1.1 좌측 사이드바 개요
+
+**파일 경로:** `src/lib/components/left-sidebar.svelte`
+
+**목적:** 데스크톱에서만 표시되는 좌측 네비게이션/메뉴 영역
+
+**주요 기능:**
+- 메인 네비게이션 링크
+- 최근 활동 표시
+- sticky 포지셔닝으로 스크롤 시 고정
+- 데스크톱에서만 표시 (lg 이상)
+- 다크 모드 지원
+
+#### 4.1.2 좌측 사이드바 구현
+
+**파일:** `src/lib/components/left-sidebar.svelte`
+
+```svelte
+<script lang="ts">
+	/**
+	 * 좌측 사이드바 컴포넌트
+	 *
+	 * 데스크톱에서만 표시되는 좌측 네비게이션/메뉴 영역입니다.
+	 * TailwindCSS를 사용하여 스타일링합니다.
+	 */
+
+	import * as Card from '$lib/components/ui/card/index.js';
+</script>
+
+<aside class="hidden lg:block lg:w-64 xl:w-72">
+	<div class="sticky top-20 space-y-4">
+		<Card.Root>
+			<Card.Header>
+				<Card.Title class="text-base">메뉴</Card.Title>
+			</Card.Header>
+			<Card.Content class="space-y-2">
+				<a
+					href="/"
+					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+				>
+					홈
+				</a>
+				<a
+					href="/about"
+					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+				>
+					소개
+				</a>
+				<a
+					href="/products"
+					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+				>
+					제품
+				</a>
+				<a
+					href="/contact"
+					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+				>
+					연락
+				</a>
+			</Card.Content>
+		</Card.Root>
+
+		<Card.Root>
+			<Card.Header>
+				<Card.Title class="text-base">최근 활동</Card.Title>
+			</Card.Header>
+			<Card.Content>
+				<p class="text-sm text-gray-600 dark:text-gray-400">최근 활동이 없습니다.</p>
+			</Card.Content>
+		</Card.Root>
+	</div>
+</aside>
+```
+
+#### 4.1.3 좌측 사이드바 구조 분석
+
+**최상위 컨테이너:**
+
+```svelte
+<aside class="hidden lg:block lg:w-64 xl:w-72">
+```
+
+**TailwindCSS 클래스 설명:**
+- `hidden`: 기본적으로 숨김 (모바일/태블릿)
+- `lg:block`: 데스크톱(1024px) 이상에서 표시
+- `lg:w-64`: 데스크톱에서 너비 16rem (256px)
+- `xl:w-72`: 초대형 화면(1280px)에서 너비 18rem (288px)
+
+**반응형 동작:**
+- **모바일/태블릿 (< 1024px)**: 완전히 숨김
+- **데스크톱 (1024px ~ 1279px)**: 너비 256px로 표시
+- **초대형 화면 (≥ 1280px)**: 너비 288px로 표시
+
+**Sticky 컨테이너:**
+
+```svelte
+<div class="sticky top-20 space-y-4">
+```
+
+**TailwindCSS 클래스 설명:**
+- `sticky`: position: sticky (스크롤 시 고정)
+- `top-20`: 상단에서 5rem (80px) 위치에 고정
+- `space-y-4`: 자식 요소 간 세로 간격 1rem (16px)
+
+**목적:**
+- 스크롤 시 사이드바가 화면 상단에 고정
+- 탑바(h-16 = 64px) 아래에 위치
+- 카드 간 일정한 간격 유지
+
+**네비게이션 링크:**
+
+```svelte
+<a
+	href="/"
+	class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+>
+	홈
+</a>
+```
+
+**TailwindCSS 클래스 설명:**
+- `block`: 블록 레벨 요소
+- `rounded-lg`: 둥근 모서리 (0.5rem)
+- `px-3`: 좌우 패딩 0.75rem (12px)
+- `py-2`: 상하 패딩 0.5rem (8px)
+- `text-sm`: 폰트 크기 0.875rem (14px)
+- `text-gray-700`: 라이트 모드 텍스트 색상
+- `hover:bg-gray-100`: 라이트 모드 호버 배경
+- `dark:text-gray-300`: 다크 모드 텍스트 색상
+- `dark:hover:bg-gray-800`: 다크 모드 호버 배경
+
+### 4.2 우측 사이드바
+
+#### 4.2.1 우측 사이드바 개요
+
+**파일 경로:** `src/lib/components/right-sidebar.svelte`
+
+**목적:** 데스크톱에서만 표시되는 우측 정보/위젯 영역
+
+**주요 기능:**
+- 사용자 프로필 정보 (로그인 시)
+- 알림 표시
+- 추천 콘텐츠
+- sticky 포지셔닝으로 스크롤 시 고정
+- 데스크톱에서만 표시 (lg 이상)
+- 다크 모드 지원
+
+#### 4.2.2 우측 사이드바 구현
+
+**파일:** `src/lib/components/right-sidebar.svelte`
+
+```svelte
+<script lang="ts">
+	/**
+	 * 우측 사이드바 컴포넌트
+	 *
+	 * 데스크톱에서만 표시되는 우측 정보/위젯 영역입니다.
+	 * TailwindCSS를 사용하여 스타일링합니다.
+	 */
+
+	import * as Card from '$lib/components/ui/card/index.js';
+	import { authStore } from '$lib/stores/auth.svelte';
+</script>
+
+<aside class="hidden lg:block lg:w-64 xl:w-72">
+	<div class="sticky top-20 space-y-4">
+		{#if authStore.isAuthenticated}
+			<Card.Root>
+				<Card.Header>
+					<Card.Title class="text-base">내 프로필</Card.Title>
+				</Card.Header>
+				<Card.Content class="space-y-3">
+					{#if authStore.user?.photoURL}
+						<div class="flex justify-center">
+							<img
+								src={authStore.user.photoURL}
+								alt={authStore.user.displayName || '사용자'}
+								class="h-16 w-16 rounded-full"
+							/>
+						</div>
+					{/if}
+					<div class="text-center">
+						<p class="font-medium text-gray-900 dark:text-white">
+							{authStore.user?.displayName || '사용자'}
+						</p>
+						<p class="text-sm text-gray-600 dark:text-gray-400">
+							{authStore.user?.email || ''}
+						</p>
+					</div>
+				</Card.Content>
+			</Card.Root>
+		{/if}
+
+		<Card.Root>
+			<Card.Header>
+				<Card.Title class="text-base">알림</Card.Title>
+			</Card.Header>
+			<Card.Content>
+				<p class="text-sm text-gray-600 dark:text-gray-400">새로운 알림이 없습니다.</p>
+			</Card.Content>
+		</Card.Root>
+
+		<Card.Root>
+			<Card.Header>
+				<Card.Title class="text-base">추천</Card.Title>
+			</Card.Header>
+			<Card.Content class="space-y-2">
+				<button
+					type="button"
+					class="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+				>
+					인기 게시물
+				</button>
+				<button
+					type="button"
+					class="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+				>
+					새로운 기능
+				</button>
+			</Card.Content>
+		</Card.Root>
+	</div>
+</aside>
+```
+
+#### 4.2.3 우측 사이드바 구조 분석
+
+**구조:** 좌측 사이드바와 동일한 기본 구조 사용
+
+**차이점:**
+1. **조건부 프로필 카드**: 로그인 상태에서만 표시
+2. **authStore 통합**: 사용자 인증 정보 표시
+3. **프로필 이미지**: 사용자 photoURL 표시
+4. **중앙 정렬**: 프로필 정보 중앙 배치
+
+**프로필 이미지:**
+
+```svelte
+<div class="flex justify-center">
+	<img
+		src={authStore.user.photoURL}
+		alt={authStore.user.displayName || '사용자'}
+		class="h-16 w-16 rounded-full"
+	/>
+</div>
+```
+
+**TailwindCSS 클래스 설명:**
+- `flex justify-center`: flexbox로 중앙 정렬
+- `h-16 w-16`: 크기 4rem × 4rem (64px × 64px)
+- `rounded-full`: 완전한 원형
+
+**사용자 정보:**
+
+```svelte
+<div class="text-center">
+	<p class="font-medium text-gray-900 dark:text-white">
+		{authStore.user?.displayName || '사용자'}
+	</p>
+	<p class="text-sm text-gray-600 dark:text-gray-400">
+		{authStore.user?.email || ''}
+	</p>
+</div>
+```
+
+**TailwindCSS 클래스 설명:**
+- `text-center`: 텍스트 중앙 정렬
+- `font-medium`: 폰트 두께 500
+- `text-sm`: 작은 폰트 크기 (이메일)
+
+### 4.3 사이드바 디자인 패턴
+
+#### 4.3.1 shadcn Card 컴포넌트 사용
+
+**구조:**
+```svelte
+<Card.Root>
+	<Card.Header>
+		<Card.Title class="text-base">제목</Card.Title>
+	</Card.Header>
+	<Card.Content>
+		<!-- 내용 -->
+	</Card.Content>
+</Card.Root>
+```
+
+**장점:**
+- 일관된 디자인
+- 자동 패딩 및 간격
+- 다크 모드 자동 지원
+- 테두리 및 배경 자동 적용
+
+#### 4.3.2 Sticky 포지셔닝
+
+**설정:**
+```svelte
+<div class="sticky top-20 space-y-4">
+```
+
+**동작:**
+- 사용자가 페이지를 스크롤해도 사이드바가 화면에 고정
+- 탑바(64px) + 여유 공간(16px) = 80px 위치에 고정
+- 메인 콘텐츠가 길어도 사이드바에 쉽게 접근 가능
+
+#### 4.3.3 반응형 너비
+
+**설정:**
+```svelte
+<aside class="hidden lg:block lg:w-64 xl:w-72">
+```
+
+**너비 조정:**
+- **lg (1024px ~ 1279px)**: 256px
+- **xl (≥ 1280px)**: 288px
+
+**이유:**
+- 큰 화면에서 더 많은 정보 표시
+- 메인 콘텐츠 영역과 균형 유지
+
+## 5. 인증 상태 관리
 
 ### 4.1 authStore 통합
 
@@ -577,9 +901,9 @@ authStore.loading === false && authStore.isAuthenticated === false
   → 로그인 버튼 표시
 ```
 
-## 5. 로그인/로그아웃 기능
+## 6. 로그인/로그아웃 기능
 
-### 5.1 로그아웃 처리
+### 6.1 로그아웃 처리
 
 **함수:** `handleSignOut()`
 
@@ -607,7 +931,7 @@ async function handleSignOut() {
 - 에러 핸들링
 - 성공 시 홈페이지로 리다이렉트
 
-### 5.2 로그인 페이지 이동
+### 6.2 로그인 페이지 이동
 
 **함수:** `goToLogin()`
 
@@ -622,19 +946,36 @@ function goToLogin() {
 - 로그인 페이지로 프로그래매틱 네비게이션
 - SvelteKit의 `goto` 함수 사용
 
-## 6. 반응형 디자인
+## 7. 반응형 디자인
 
-### 6.1 브레이크포인트 전략
+### 7.1 브레이크포인트 전략
 
 **TailwindCSS 브레이크포인트:**
 - `sm`: 640px (작은 화면)
 - `md`: 768px (중간 화면)
-- `lg`: 1024px (큰 화면)
+- `lg`: 1024px (큰 화면) - **사이드바 표시 시작**
 - `xl`: 1280px (초대형 화면)
 
-### 6.2 반응형 요소
+### 7.2 반응형 요소
 
-#### 6.2.1 네비게이션 링크
+#### 7.2.1 사이드바
+
+**모바일/태블릿 (< 1024px):**
+- 좌측 사이드바 숨김 (`hidden`)
+- 우측 사이드바 숨김 (`hidden`)
+- 메인 콘텐츠만 전체 너비로 표시
+
+**데스크톱 (1024px ~ 1279px):**
+- 좌측 사이드바 표시 (`lg:block`, 너비 256px)
+- 우측 사이드바 표시 (`lg:block`, 너비 256px)
+- 3컬럼 레이아웃
+
+**초대형 화면 (≥ 1280px):**
+- 좌측 사이드바 표시 (너비 288px, `xl:w-72`)
+- 우측 사이드바 표시 (너비 288px, `xl:w-72`)
+- 더 넓은 사이드바
+
+#### 7.2.2 탑바 네비게이션 링크
 
 **모바일 (< 768px):**
 - 링크 숨김 (`hidden`)
@@ -642,7 +983,7 @@ function goToLogin() {
 **태블릿 이상 (≥ 768px):**
 - 링크 표시 (`md:flex`)
 
-#### 6.2.2 사용자 프로필
+#### 7.2.3 사용자 프로필 (탑바)
 
 **모바일 (< 640px):**
 - 프로필 정보 숨김 (`hidden`)
@@ -651,15 +992,43 @@ function goToLogin() {
 **태블릿 이상 (≥ 640px):**
 - 프로필 이미지 및 이름 표시 (`sm:flex`)
 
-### 6.3 반응형 테스트 체크리스트
+### 7.3 레이아웃 반응형 동작
 
-- [ ] 모바일 (375px): 로고 + 로그인/로그아웃 버튼만 표시
-- [ ] 태블릿 (768px): 네비게이션 링크 표시
-- [ ] 데스크톱 (1024px): 모든 요소 표시
+**모바일 (< 1024px):**
+```
+┌─────────────────────┐
+│       TopBar        │
+├─────────────────────┤
+│                     │
+│    Main Content     │
+│     (full width)    │
+│                     │
+└─────────────────────┘
+```
 
-## 7. 다크 모드
+**데스크톱 (≥ 1024px):**
+```
+┌───────────────────────────────────────┐
+│              TopBar                    │
+├─────────┬─────────────────┬───────────┤
+│  Left   │                 │   Right   │
+│ Sidebar │  Main Content   │  Sidebar  │
+│ (256px) │    (flex-1)     │  (256px)  │
+│         │                 │           │
+└─────────┴─────────────────┴───────────┘
+```
 
-### 7.1 다크 모드 구현
+### 7.4 반응형 테스트 체크리스트
+
+- [ ] 모바일 (375px): 메인 콘텐츠만 표시, 사이드바 숨김
+- [ ] 모바일 (414px): 메인 콘텐츠만 표시, 사이드바 숨김
+- [ ] 태블릿 (768px): 메인 콘텐츠만 표시, 탑바 링크 표시
+- [ ] 데스크톱 (1024px): 3컬럼 레이아웃, 모든 요소 표시
+- [ ] 초대형 (1440px): 3컬럼 레이아웃, 넓은 사이드바
+
+## 8. 다크 모드
+
+### 8.1 다크 모드 구현
 
 **TailwindCSS 다크 모드 클래스:**
 - `dark:bg-gray-900`: 다크 배경
@@ -667,7 +1036,7 @@ function goToLogin() {
 - `dark:text-gray-300`: 다크 보조 텍스트
 - `dark:hover:text-gray-300`: 다크 호버 색상
 
-### 7.2 색상 팔레트
+### 8.2 색상 팔레트
 
 **라이트 모드:**
 - 배경: `bg-white`, `bg-gray-50`
@@ -679,20 +1048,22 @@ function goToLogin() {
 - 텍스트: `dark:text-white`, `dark:text-gray-300`, `dark:text-gray-400`
 - 호버: `dark:hover:text-white`, `dark:hover:text-gray-300`
 
-### 7.3 다크 모드 테스트
+### 8.3 다크 모드 테스트
 
 - [ ] 라이트 모드에서 모든 텍스트가 읽기 쉬운지 확인
 - [ ] 다크 모드에서 모든 텍스트가 읽기 쉬운지 확인
 - [ ] 호버 상태가 양쪽 모드에서 명확한지 확인
 
-## 8. 접근성 (Accessibility)
+## 9. 접근성 (Accessibility)
 
-### 8.1 시맨틱 HTML
+### 9.1 시맨틱 HTML
 
 **사용된 시맨틱 태그:**
 - `<nav>`: 네비게이션 영역
+- `<aside>`: 사이드바 영역
 - `<main>`: 메인 콘텐츠 영역
 - `<a>`: 링크 요소
+- `<button>`: 버튼 요소
 
 **목적:**
 - 스크린 리더가 페이지 구조를 올바르게 인식
@@ -712,14 +1083,14 @@ function goToLogin() {
 - 스크린 리더 사용자에게 이미지 설명 제공
 - 이미지 로드 실패 시 대체 정보 제공
 
-### 8.3 키보드 내비게이션
+### 9.3 키보드 내비게이션
 
 **지원 기능:**
 - Tab 키로 모든 인터랙티브 요소 접근 가능
 - Enter 키로 버튼 및 링크 활성화
 - 포커스 상태 시각적 표시 (shadcn Button 기본 제공)
 
-### 8.4 접근성 체크리스트
+### 9.4 접근성 체크리스트
 
 - [x] 시맨틱 HTML 사용
 - [x] 이미지 대체 텍스트 제공
@@ -727,9 +1098,9 @@ function goToLogin() {
 - [x] 충분한 색상 대비 (WCAG 2.1 AA)
 - [x] 포커스 상태 표시
 
-## 9. shadcn-svelte 컴포넌트 사용
+## 10. shadcn-svelte 컴포넌트 사용
 
-### 9.1 Button 컴포넌트
+### 10.1 Button 컴포넌트
 
 **임포트:**
 ```typescript
@@ -755,9 +1126,55 @@ import { Button } from '$lib/components/ui/button/index.js';
 - 다크 모드 자동 지원
 - 호버/포커스 상태 자동 처리
 
-## 10. 상태 관리
+### 10.2 Card 컴포넌트
 
-### 10.1 Svelte 5 Runes
+**임포트:**
+```typescript
+import * as Card from '$lib/components/ui/card/index.js';
+```
+
+**사용 예:**
+```svelte
+<Card.Root>
+	<Card.Header>
+		<Card.Title class="text-base">제목</Card.Title>
+	</Card.Header>
+	<Card.Content>
+		<p>내용</p>
+	</Card.Content>
+</Card.Root>
+```
+
+**장점:**
+- 일관된 카드 디자인
+- 자동 패딩 및 간격
+- 다크 모드 자동 지원
+- 테두리 및 배경 자동 적용
+
+**사용처:**
+- 좌측 사이드바 메뉴 카드
+- 우측 사이드바 정보 카드
+
+## 11. 상태 관리
+	{isSigningOut ? '로그아웃 중...' : '로그아웃'}
+</Button>
+```
+
+**Props:**
+- `variant="ghost"`: 투명한 배경, 호버 시 배경 표시
+- `size="sm"`: 작은 크기
+- `onclick`: 클릭 이벤트 핸들러
+- `disabled`: 비활성화 상태
+
+**장점:**
+- 일관된 디자인
+- 접근성 기본 내장
+- 다크 모드 자동 지원
+- 호버/포커스 상태 자동 처리
+
+## 11. 상태 관리
+
+### 11.1 Svelte 5 Runes
 
 **사용된 runes:**
 ```typescript
@@ -768,16 +1185,16 @@ let isSigningOut = $state(false);
 - 반응형 상태 관리
 - 컴포넌트 리렌더링 자동화
 
-### 10.2 상태 변수
+### 11.2 상태 변수
 
 **isSigningOut:**
 - 타입: `boolean`
 - 초기값: `false`
 - 용도: 로그아웃 진행 중 표시 및 중복 실행 방지
 
-## 11. 네비게이션
+## 12. 네비게이션
 
-### 11.1 SvelteKit goto
+### 12.1 SvelteKit goto
 
 **임포트:**
 ```typescript
@@ -795,7 +1212,7 @@ await goto('/user/login'); // 로그인 페이지로 이동
 - 페이지 새로고침 없이 이동
 - SvelteKit의 표준 네비게이션 방법
 
-## 12. 홈페이지 개선
+## 13. 홈페이지 개선
 
 ### 12.1 홈페이지 구조
 
@@ -862,18 +1279,21 @@ await goto('/user/login'); // 로그인 페이지로 이동
 - 모바일 (< 768px): 1컬럼 (세로 배치)
 - 태블릿 이상 (≥ 768px): 3컬럼 (가로 배치)
 
-## 13. 구현 체크리스트
+## 14. 구현 체크리스트
 
-### 13.1 레이아웃 구현
+### 14.1 레이아웃 구현
 
 - [x] `+layout.svelte` 파일 생성
 - [x] 전역 CSS 임포트
 - [x] 탑바 컴포넌트 배치
+- [x] 좌측 사이드바 컴포넌트 배치
+- [x] 우측 사이드바 컴포넌트 배치
+- [x] 3컬럼 레이아웃 구조 적용
 - [x] 메인 콘텐츠 영역 정의
 - [x] 다크 모드 배경 설정
 - [x] 반응형 컨테이너 적용
 
-### 13.2 탑바 구현
+### 14.2 탑바 구현
 
 - [x] `top-bar.svelte` 컴포넌트 생성
 - [x] authStore 통합
@@ -885,7 +1305,19 @@ await goto('/user/login'); // 로그인 페이지로 이동
 - [x] 반응형 디자인 적용
 - [x] 다크 모드 지원
 
-### 13.3 홈페이지 개선
+### 14.3 사이드바 구현
+
+- [x] `left-sidebar.svelte` 컴포넌트 생성
+- [x] `right-sidebar.svelte` 컴포넌트 생성
+- [x] 메뉴 네비게이션 링크 추가
+- [x] 사용자 프로필 카드 추가 (우측)
+- [x] sticky 포지셔닝 적용
+- [x] 데스크톱에서만 표시 (lg 이상)
+- [x] shadcn Card 컴포넌트 사용
+- [x] 반응형 너비 조정
+- [x] 다크 모드 지원
+
+### 14.4 홈페이지 개선
 
 - [x] 메인 타이틀 작성
 - [x] 로그인 상태별 메시지 구현
@@ -893,17 +1325,19 @@ await goto('/user/login'); // 로그인 페이지로 이동
 - [x] 외부 링크 추가
 - [x] 반응형 레이아웃 적용
 
-### 13.4 테스트
+### 14.5 테스트
 
 - [ ] 로그인/로그아웃 기능 테스트
-- [ ] 모바일 반응형 확인
-- [ ] 태블릿 반응형 확인
-- [ ] 데스크톱 반응형 확인
+- [ ] 모바일 반응형 확인 (사이드바 숨김)
+- [ ] 태블릿 반응형 확인 (사이드바 숨김)
+- [ ] 데스크톱 반응형 확인 (3컬럼 레이아웃)
+- [ ] 초대형 화면 반응형 확인 (넓은 사이드바)
 - [ ] 다크 모드 동작 확인
 - [ ] 키보드 내비게이션 테스트
 - [ ] 스크린 리더 테스트
+- [ ] Sticky 포지셔닝 동작 확인
 
-## 14. 성능 최적화
+## 15. 성능 최적화
 
 ### 14.1 이미지 최적화
 

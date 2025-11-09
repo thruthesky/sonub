@@ -25,7 +25,7 @@
 		<div class="space-y-4">
 			<h1 class="text-4xl font-bold text-gray-900 md:text-6xl dark:text-white">Welcome to Sonub</h1>
 			<p class="text-lg text-gray-600 md:text-xl dark:text-gray-400">
-				SvelteKit 5 기반의 모던 웹 애플리케이션
+				SedAi.Dev 에 Sonub spec 으로 커뮤니티 기능을 집어 넣는다.
 			</p>
 		</div>
 
