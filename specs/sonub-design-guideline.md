@@ -1,16 +1,16 @@
 ---
 name: sonub-design-guideline
-version: 1.0.0
+version: 1.1.0
 description: Sonub UI의 공통 디자인 정책(테마, 인터랙션)을 정의하는 SED 명세서
 author: JaeHo Song
 email: thruthesky@gmail.com
 license: GPL-3.0
 created: 2025-01-10
-updated: 2025-01-10
-step: 15
+updated: 2025-01-09
+step: 16
 priority: "*"
 dependencies: ["sonub-design-workflow.md", "sonub-setup-tailwind.md"]
-tags: ["design", "ui", "theme", "interaction", "cursor"]
+tags: ["design", "ui", "theme", "interaction", "cursor", "button", "href"]
 ---
 
 # Sonub Design Guideline
@@ -91,20 +91,32 @@ body {
    <button style="cursor: pointer;">클릭</button>
    ```
 
-3. **shadcn-svelte 컴포넌트도 예외 없음**
-   - 컴포넌트 자체에 커서가 없으면 **반드시 래퍼 요소에서 지정**
+3. **🔥 shadcn Button 컴포넌트에서 링크 기능이 필요할 때는 `href` 속성 사용 (필수)**
+   - Button 컴포넌트에 `href` 속성을 전달하면 최종 결과물이 자동으로 `<a>` 태그로 빌드됩니다
+   - **`<a>` 태그 안에 `<button>` 중첩이 아닙니다** - 조건부 렌더링으로 하나의 요소만 생성됩니다
+   - **이것이 올바른 방식입니다.** 래퍼 div 사용은 더 이상 필요하지 않습니다.
+   ```svelte
+   <!-- ✅ 올바름: Button의 href 속성 사용 (최종 결과: <a> 태그) -->
+   <Button href="/profile" class="cursor-pointer">
+     프로필로 이동
+   </Button>
+   ```
+   - 자세한 내용은 [shadcn-svelte Button 공식 문서](https://www.shadcn-svelte.com/docs/components/button)를 참고하세요.
+
+4. **shadcn-svelte 컴포넌트도 예외 없음**
+   - Button의 `href`를 사용하지 않는 경우, 컴포넌트 자체에 커서가 없으면 **반드시 래퍼 요소에서 지정**
    ```svelte
    <div class="cursor-pointer">
      <Button>클릭</Button>
    </div>
    ```
 
-4. **비활성화 상태도 명시적으로 지정**
+5. **비활성화 상태도 명시적으로 지정**
    ```svelte
    <button disabled class="cursor-not-allowed ...">비활성화</button>
    ```
 
-5. **Hover 상태에서도 cursor가 유지되는지 확인**
+6. **Hover 상태에서도 cursor가 유지되는지 확인**
    - `hover:` 클래스가 cursor를 덮어쓰지 않도록 주의
 
 ### 3.3 구현 예시 (모두 따라야 할 필수 패턴)
@@ -118,12 +130,17 @@ body {
   로그인
 </button>
 
-<!-- ✅ 올바른 예: 링크 -->
+<!-- ✅ 올바른 예: 링크 (shadcn Button href 사용) - 최종 결과: <a> 태그 -->
+<Button href="/profile" class="cursor-pointer">
+  프로필로 이동
+</Button>
+
+<!-- ✅ 올바른 예: 일반 링크 -->
 <a href="/profile" class="cursor-pointer text-blue-600 hover:text-blue-800">
   프로필
 </a>
 
-<!-- ✅ 올바른 예: shadcn Button 래핑 -->
+<!-- ✅ 올바른 예: shadcn Button 래핑 (href 미사용 시) -->
 <div class="cursor-pointer">
   <Button onclick={handleGoogleLogin}>
     Google로 로그인
@@ -313,30 +330,43 @@ body {
 
 #### ✅ 권장 2: Button 및 Link 컴포넌트 사용
 
-**모든 button 또는 `<a>` 태그는 가능하면 shadcn의 Button 또는 Link 컴포넌트를 사용합니다.**
+**모든 button 또는 `<a>` 태그는 가능하면 shadcn의 Button 컴포넌트를 사용합니다.**
+
+**특히 링크가 필요한 경우, Button 컴포넌트에 `href` 속성을 전달하면 최종 결과물이 `<a>` 태그로 자동 빌드됩니다:**
 
 ```svelte
-<!-- ❌ 피해야 할 것: 직접 구현 -->
+<!-- ❌ 피해야 할 것: 직접 HTML 구현 -->
 <button class="cursor-pointer px-4 py-2 bg-blue-600 text-white rounded">
   클릭
 </button>
 
-<!-- ✅ 권장: shadcn Button 사용 -->
+<!-- ✅ 권장: shadcn Button 사용 (액션) -->
 <script>
   import { Button } from '$lib/components/ui/button';
 </script>
 
-<Button class="cursor-pointer">
+<Button class="cursor-pointer" onclick={handleClick}>
   클릭
 </Button>
+
+<!-- ✅ 권장: shadcn Button href 사용 (링크 - 최종 결과: <a> 태그) -->
+<Button href="/profile" class="cursor-pointer">
+  프로필로 이동
+</Button>
 ```
+
+**이유:**
+- 시맨틱 HTML 자동 처리 (href 있으면 `<a>`, 없으면 `<button>`)
+- cursor-pointer 추가 불필요 (내부에서 관리 가능)
+- 접근성 자동 보장
+- 일관된 스타일 유지
 
 #### ✅ 권장 3: shadcn 컴포넌트 선택 기준
 
 | 요소 타입 | shadcn 컴포넌트 | 사용 시기 |
 |----------|-----------------|---------|
 | 일반 버튼 | `Button` | 모든 버튼 요소 |
-| 링크 버튼 | `Button` (href 포함) | 버튼처럼 보이는 링크 |
+| 링크 버튼 | `Button` (href 포함) | 버튼처럼 보이는 링크 - **최종 결과는 `<a>` 태그** |
 | 텍스트 링크 | `<a>` + `cursor-pointer` | 인라인 텍스트 링크 |
 | 아이콘 버튼 | `Button` + Icon | 아이콘만으로 표현 |
 | 드롭다운 | `DropdownMenu` | 메뉴 네비게이션 |
@@ -420,3 +450,4 @@ npx shadcn-svelte@latest add dropdown-menu
 - [sonub-design-workflow.md](./sonub-design-workflow.md) - Tailwind/shadcn 활용 워크플로우
 - [sonub-design-layout.md](./sonub-design-layout.md) - 레이아웃 및 네비게이션 구조
 - [sonub-user-login.md](./sonub-user-login.md) - 로그인 UI 및 상호작용 명세
+- [shadcn-svelte Button 공식 문서](https://www.shadcn-svelte.com/docs/components/button) - Button 컴포넌트 href 사용 방법 및 상세 가이드

@@ -14,6 +14,7 @@
 		size?: 'default' | 'sm' | 'lg' | 'icon';
 		class?: string;
 		children?: Snippet;
+		href?: string; // 링크로 사용할 때의 href 속성
 	}
 
 	let {
@@ -21,6 +22,7 @@
 		size = 'default',
 		class: className,
 		children,
+		href,
 		...restProps
 	}: Props = $props();
 
@@ -47,14 +49,31 @@
 	};
 </script>
 
-<button
-	class={cn(
-		'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
-		variantStyles[variant],
-		sizeStyles[size],
-		className
-	)}
-	{...restProps}
->
-	{@render children?.()}
-</button>
+{#if href}
+	<!-- href가 있으면 <a> 태그로 렌더링 -->
+	<a
+		{href}
+		class={cn(
+			'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+			variantStyles[variant],
+			sizeStyles[size],
+			className
+		)}
+		{...restProps}
+	>
+		{@render children?.()}
+	</a>
+{:else}
+	<!-- href가 없으면 <button> 태그로 렌더링 -->
+	<button
+		class={cn(
+			'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+			variantStyles[variant],
+			sizeStyles[size],
+			className
+		)}
+		{...restProps}
+	>
+		{@render children?.()}
+	</button>
+{/if}
