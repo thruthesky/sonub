@@ -15,6 +15,10 @@ const gitignorePath = fileURLToPath(new URL('./.gitignore', import.meta.url));
 
 export default defineConfig(
 	includeIgnoreFile(gitignorePath),
+	// firebase 및 specs 폴더 eslint 검사 제외
+	{
+		ignores: ['firebase/**', 'specs/**']
+	},
 	js.configs.recommended,
 	...ts.configs.recommended,
 	...svelte.configs.recommended,
