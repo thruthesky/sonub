@@ -18,7 +18,7 @@
 
 	// 폼 데이터 상태
 	let displayName = $state('');
-	let gender = $state<'male' | 'female' | 'other' | 'none'>('none');
+	let gender = $state<'M' | 'F' | ''>('');
 	let birthYear = $state<number | null>(null);
 	let birthMonth = $state<number | null>(null);
 	let birthDay = $state<number | null>(null);
@@ -59,7 +59,7 @@
 			if (snapshot.exists()) {
 				const userData = snapshot.val();
 				displayName = userData.displayName || '';
-				gender = userData.gender || 'none';
+				gender = userData.gender || '';
 
 				// dateOfBirth 파싱 (YYYY-MM-DD 형식)
 				if (userData.dateOfBirth) {
@@ -108,9 +108,13 @@
 
 		try {
 			const updateData: Record<string, string> = {
-				displayName: displayName.trim(),
-				gender
+				displayName: displayName.trim()
 			};
+
+			// gender가 선택된 경우에만 저장
+			if (gender) {
+				updateData.gender = gender;
+			}
 
 			// 생년월일이 모두 선택된 경우에만 저장
 			if (birthYear !== null && birthMonth !== null && birthDay !== null) {
@@ -230,10 +234,9 @@
 							bind:value={gender}
 							class="w-full cursor-pointer rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 						>
-							<option value="none">선택 안 함</option>
-							<option value="male">남성</option>
-							<option value="female">여성</option>
-							<option value="other">기타</option>
+							<option value="">선택 안 함</option>
+							<option value="M">남성</option>
+							<option value="F">여성</option>
 						</select>
 					</div>
 
@@ -289,13 +292,13 @@
 					</div>
 
 					<!-- 저장 버튼 -->
-					<div class="pt-4">
+					<div class="pt-6">
 						<Button
-							class="w-full cursor-pointer"
+							class="w-full cursor-pointer bg-blue-600 py-6 text-lg font-semibold text-white hover:bg-blue-700"
 							onclick={handleSave}
 							disabled={saving}
 						>
-							{saving ? '저장 중...' : '저장'}
+							{saving ? '저장 중...' : '프로필 저장'}
 						</Button>
 					</div>
 				</Card.Content>
