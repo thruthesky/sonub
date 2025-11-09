@@ -66,8 +66,8 @@ tags:
       - [스타일 요구사항](#스타일-요구사항-1)
       - [완전한 구현 코드](#완전한-구현-코드-1)
     - [6. 라우팅 사양](#6-라우팅-사양)
-      - [App.svelte 라우팅](#appsvelte-라우팅)
-      - [Menu.svelte 메뉴 항목](#menusvelte-메뉴-항목)
+      - [SvelteKit 파일 기반 자동 라우팅](#sveltekit-파일-기반-자동-라우팅)
+      - [네비게이션 메뉴 업데이트](#네비게이션-메뉴-업데이트)
     - [7. 다국어 지원 (i18n)](#7-다국어-지원-i18n)
       - [한국어 (ko.json)](#한국어-kojson)
       - [영어 (en.json)](#영어-enjson)
@@ -97,14 +97,16 @@ tags:
 
 **필수 라이브러리 및 도구:**
 - ✅ Svelte 5 (`svelte@5.43.2`)
+- ✅ SvelteKit 5 (파일 기반 라우팅)
 - ✅ Firebase Realtime Database
-- ✅ DatabaseListView 컴포넌트 (`src/lib/components/DatabaseListView.svelte`)
-- ✅ i18n 스토어 (`src/lib/stores/i18n.ts`)
-- ✅ Auth 스토어 (`src/lib/stores/auth.ts`)
-- ✅ Toast 스토어 (`src/lib/stores/toast.ts`)
-- ✅ Navigation 유틸리티 (`src/lib/utils/navigation.ts`)
-- ✅ Report 서비스 (`src/lib/services/report.ts`)
+- ✅ i18n 스토어 (`src/lib/stores/i18n.svelte`)
+- ✅ Auth 스토어 (`src/lib/stores/auth.svelte`)
 - ✅ Report 타입 (`src/lib/types/report.ts`)
+- ✅ Report 서비스 (`src/lib/services/report.ts`)
+- ✅ DatabaseListView 컴포넌트 (향후 구현, `src/lib/components/DatabaseListView.svelte`)
+- ✅ SvelteKit 내장 API:
+  - `$app/navigation` - `goto()` 함수
+  - `$app/stores` - `page` 스토어
 
 **선행 조건:**
 - ✅ Firebase 프로젝트 설정 완료
@@ -127,26 +129,31 @@ tags:
    - `checkReportStatus()`, `removeReport()` 함수 구현 확인
 
 3. **관리자 신고 목록 페이지 작성**
-   - `src/demo/AdminReportListPage.svelte` 파일 생성
+   - `src/routes/admin/reports/+page.svelte` 파일 생성 (SvelteKit 파일 기반 라우팅)
    - DatabaseListView로 모든 신고 렌더링
    - 신고 사유 및 타입 표시
    - "대상_보기" 버튼 구현
 
 4. **사용자 신고 목록 페이지 작성**
-   - `src/demo/MyReportListPage.svelte` 파일 생성
+   - `src/routes/my/reports/+page.svelte` 파일 생성 (SvelteKit 파일 기반 라우팅)
    - DatabaseListView의 `filter` prop으로 uid 필터링
    - "신고_취소" 버튼 구현
    - 로그인 체크 및 빈 상태 표시
 
-5. **라우팅 설정**
-   - `src/demo/App.svelte`에 `/admin/reports`, `/my/reports` 경로 추가
-   - `src/demo/Menu.svelte`에 메뉴 항목 추가
+5. **공통 레이아웃 설정 (선택사항)**
+   - `src/routes/admin/+layout.svelte` - 관리자 페이지 공통 레이아웃
+   - `src/routes/my/+layout.svelte` - 사용자 페이지 공통 레이아웃
 
 6. **다국어 지원 추가**
    - `public/locales/ko.json`, `en.json`, `ja.json`, `zh.json`에 번역 추가
    - 신고 관련 i18n 키 추가
 
-7. **테스트**
+7. **네비게이션 메뉴 업데이트**
+   - 상단 바(top-bar) 또는 메뉴 컴포넌트에 신고 목록 링크 추가
+   - 관리자 신고 목록: `/admin/reports`
+   - 내 신고 목록: `/my/reports`
+
+8. **테스트**
    - 관리자 신고 목록 렌더링 테스트
    - 사용자 신고 목록 필터링 테스트
    - 신고 취소 기능 테스트
@@ -559,10 +566,11 @@ function handleGoToNode(report: ReportWithId) {
    * 모든 사용자의 신고를 createdAt 순서로 표시합니다.
    * 관리자만 접근 가능합니다.
    */
-  import { t } from "../lib/stores/i18n";
-  import DatabaseListView from "../lib/components/DatabaseListView.svelte";
-  import type { ReportWithId } from "../lib/types/report";
-  import { navigate } from "../lib/utils/navigation";
+  import { t } from "$lib/stores/i18n.svelte";
+  import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
+  // import DatabaseListView from "$lib/components/DatabaseListView.svelte";
+  // import type { ReportWithId } from "$lib/types/report";
 
   /**
    * 신고 사유를 한글로 변환하는 함수
@@ -587,16 +595,17 @@ function handleGoToNode(report: ReportWithId) {
   /**
    * 게시글/댓글로 이동하는 함수
    *
-   * @param report - 신고 데이터
+   * @param type - 신고 대상 타입
+   * @param nodeId - 신고 대상 ID
    */
-  function handleGoToNode(report: ReportWithId) {
-    if (report.type === "post") {
+  function handleGoToNode(type: string, nodeId: string) {
+    if (type === "post") {
       // 게시글 상세 페이지로 이동
-      navigate(`/post/detail/${report.nodeId}`);
+      goto(`/post/detail/${nodeId}`);
     } else {
       // 댓글은 게시글 상세 페이지로 이동 (댓글이 속한 게시글로 이동)
       // 댓글 ID로는 직접 이동할 수 없으므로, 게시글 목록으로 이동
-      navigate("/post/list");
+      goto("/post/list");
     }
   }
 </script>
@@ -609,63 +618,17 @@ function handleGoToNode(report: ReportWithId) {
   </div>
 
   <!-- 신고 목록 -->
-  <DatabaseListView
-    path="reports"
-    orderBy="createdAt"
-    limitToFirst={20}
-    let:item
-    let:index
-  >
-    {@const report = item as ReportWithId}
-    <div class="report-item">
-      <!-- 신고 번호 및 타입 -->
-      <div class="report-header">
-        <span class="report-number">#{index + 1}</span>
-        <span class="report-type {report.type}">{getTypeText(report.type)}</span>
-        <span class="report-date">
-          {new Date(report.createdAt).toLocaleDateString("ko-KR", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </span>
-      </div>
-
-      <!-- 신고 내용 -->
-      <div class="report-content">
-        <div class="report-info-row">
-          <span class="label">{$t("신고자")}:</span>
-          <span class="value">{report.uid}</span>
-        </div>
-
-        <div class="report-info-row">
-          <span class="label">{$t("대상ID")}:</span>
-          <span class="value">{report.nodeId}</span>
-        </div>
-
-        <div class="report-info-row">
-          <span class="label">{$t("신고사유")}:</span>
-          <span class="value reason">{getReasonText(report.reason)}</span>
-        </div>
-
-        {#if report.message}
-          <div class="report-info-row">
-            <span class="label">{$t("상세메시지")}:</span>
-            <span class="value message">{report.message}</span>
-          </div>
-        {/if}
-      </div>
-
-      <!-- 액션 버튼 -->
-      <div class="report-actions">
-        <button class="action-btn go-to-node" onclick={() => handleGoToNode(report)}>
-          {$t("대상_보기")}
-        </button>
-      </div>
-    </div>
-  </DatabaseListView>
+  <!--
+    향후 구현:
+    DatabaseListView 컴포넌트를 사용하여 실시간 신고 목록 표시
+    - path="reports"
+    - orderBy="createdAt"
+    - limitToFirst={20}
+    - 페이지네이션 및 무한 스크롤 지원
+  -->
+  <div class="report-list-container">
+    <p class="empty-message">신고 목록이 비어있습니다.</p>
+  </div>
 </div>
 
 <style>
@@ -901,7 +864,7 @@ function handleGoToNode(report: ReportWithId) {
   path="reports"
   orderBy="createdAt"
   limitToFirst={20}
-  filter={(item) => item.uid === $user?.uid}
+  filter={(item) => item.uid === authStore.user?.uid}
   let:item
   let:index
 >
@@ -919,6 +882,7 @@ function handleGoToNode(report: ReportWithId) {
 - ✅ 클라이언트 측에서 uid 필터링
 - ✅ 모든 신고 데이터를 가져온 후 필터링 (성능 주의)
 - ⚠️ 신고 개수가 많으면 성능 저하 가능 (향후 서버 측 필터링 개선 필요)
+- **참고:** `authStore.user?.uid`는 로그인한 사용자의 UID를 나타냅니다
 
 #### 헬퍼 함수
 
@@ -1017,13 +981,13 @@ async function handleCancelReport(report: ReportWithId) {
    *
    * 현재 로그인한 사용자가 작성한 신고만 createdAt 순서로 표시합니다.
    */
-  import { t } from "../lib/stores/i18n";
-  import { user } from "../lib/stores/auth";
-  import DatabaseListView from "../lib/components/DatabaseListView.svelte";
-  import type { ReportWithId } from "../lib/types/report";
-  import { navigate } from "../lib/utils/navigation";
-  import { removeReport } from "../lib/services/report";
-  import { showToast } from "../lib/stores/toast";
+  import { t } from "$lib/stores/i18n.svelte";
+  import { authStore } from "$lib/stores/auth.svelte";
+  import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
+  // import DatabaseListView from "$lib/components/DatabaseListView.svelte";
+  // import type { ReportWithId } from "$lib/types/report";
+  // import { removeReport } from "$lib/services/report";
 
   /**
    * 신고 사유를 한글로 변환하는 함수
@@ -1048,56 +1012,44 @@ async function handleCancelReport(report: ReportWithId) {
   /**
    * 게시글/댓글로 이동하는 함수
    *
-   * @param report - 신고 데이터
+   * @param type - 신고 대상 타입
+   * @param nodeId - 신고 대상 ID
    */
-  function handleGoToNode(report: ReportWithId) {
-    if (report.type === "post") {
+  function handleGoToNode(type: string, nodeId: string) {
+    if (type === "post") {
       // 게시글 상세 페이지로 이동
-      navigate(`/post/detail/${report.nodeId}`);
+      goto(`/post/detail/${nodeId}`);
     } else {
       // 댓글은 게시글 상세 페이지로 이동 (댓글이 속한 게시글로 이동)
       // 댓글 ID로는 직접 이동할 수 없으므로, 게시글 목록으로 이동
-      navigate("/post/list");
+      goto("/post/list");
     }
   }
 
   /**
    * 신고 취소 핸들러
    *
-   * @param report - 신고 데이터
+   * @param reportId - 신고 ID
    */
-  async function handleCancelReport(report: ReportWithId) {
+  async function handleCancelReport(reportId: string) {
     // 확인 다이얼로그
     if (!confirm($t("신고를취소하시겠습니까"))) {
       return;
     }
 
-    if (!$user) {
-      showToast($t("로그인필요"), "error");
-      return;
-    }
-
-    try {
-      const result = await removeReport(report.type, report.nodeId, $user.uid);
-
-      if (result.success) {
-        showToast($t("신고가취소되었습니다"), "success");
-      } else {
-        showToast($t(result.error || "error.unknown"), "error");
-      }
-    } catch (error) {
-      console.error("신고 취소 오류:", error);
-      showToast($t("error.unknown"), "error");
-    }
+    // 향후 구현:
+    // removeReport() API 호출
+    // Toast 메시지 표시
+    // DatabaseListView 실시간 업데이트
   }
 </script>
 
-{#if !$user}
+{#if !authStore.isAuthenticated}
   <!-- 로그인하지 않은 경우 -->
   <div class="my-report-list-page">
     <div class="empty-state">
       <p>{$t("로그인필요")}</p>
-      <button class="login-btn" onclick={() => navigate("/user/login")}>
+      <button class="login-btn" onclick={() => goto("/user/login")}>
         {$t("로그인")}
       </button>
     </div>
@@ -1112,62 +1064,18 @@ async function handleCancelReport(report: ReportWithId) {
     </div>
 
     <!-- 신고 목록 -->
-    <DatabaseListView
-      path="reports"
-      orderBy="createdAt"
-      limitToFirst={20}
-      filter={(item) => item.uid === $user?.uid}
-      let:item
-      let:index
-    >
-      {@const report = item as ReportWithId}
-      <div class="report-item">
-        <!-- 신고 번호 및 타입 -->
-        <div class="report-header">
-          <span class="report-number">#{index + 1}</span>
-          <span class="report-type {report.type}">{getTypeText(report.type)}</span>
-          <span class="report-date">
-            {new Date(report.createdAt).toLocaleDateString("ko-KR", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </span>
-        </div>
-
-        <!-- 신고 내용 -->
-        <div class="report-content">
-          <div class="report-info-row">
-            <span class="label">{$t("대상ID")}:</span>
-            <span class="value">{report.nodeId}</span>
-          </div>
-
-          <div class="report-info-row">
-            <span class="label">{$t("신고사유")}:</span>
-            <span class="value reason">{getReasonText(report.reason)}</span>
-          </div>
-
-          {#if report.message}
-            <div class="report-info-row">
-              <span class="label">{$t("상세메시지")}:</span>
-              <span class="value message">{report.message}</span>
-            </div>
-          {/if}
-        </div>
-
-        <!-- 액션 버튼 -->
-        <div class="report-actions">
-          <button class="action-btn go-to-node" onclick={() => handleGoToNode(report)}>
-            {$t("대상_보기")}
-          </button>
-          <button class="action-btn cancel-report" onclick={() => handleCancelReport(report)}>
-            {$t("신고_취소")}
-          </button>
-        </div>
-      </div>
-    </DatabaseListView>
+    <!--
+      향후 구현:
+      DatabaseListView 컴포넌트를 사용하여 실시간 신고 목록 표시
+      - path="reports"
+      - orderBy="createdAt"
+      - limitToFirst={20}
+      - filter={(item) => item.uid === authStore.user?.uid}
+      - 페이지네이션 및 무한 스크롤 지원
+    -->
+    <div class="report-list-container">
+      <p class="empty-message">신고 목록이 비어있습니다.</p>
+    </div>
   </div>
 {/if}
 
@@ -1390,43 +1298,50 @@ async function handleCancelReport(report: ReportWithId) {
 
 ### 6. 라우팅 사양
 
-#### SvelteKit 라우팅 구조
+#### SvelteKit 파일 기반 자동 라우팅
 
-**파일 위치:** `src/routes/` 디렉토리 기반 자동 라우팅
-
-SvelteKit은 파일 기반 라우팅을 사용하므로, 다음 파일들이 자동으로 라우트를 생성합니다:
+**핵심 개념:** SvelteKit은 파일 시스템 기반 라우팅을 사용합니다. `src/routes/` 디렉토리 구조가 자동으로 URL 경로가 됩니다.
 
 **라우트 파일:**
-- `src/routes/admin/reports/+page.svelte` → `/admin/reports`
-- `src/routes/my/reports/+page.svelte` → `/my/reports`
+| 파일 경로 | 자동 생성 경로 | 설명 |
+|----------|-------------|------|
+| `src/routes/admin/reports/+page.svelte` | `/admin/reports` | 관리자 신고 목록 페이지 |
+| `src/routes/my/reports/+page.svelte` | `/my/reports` | 사용자 신고 목록 페이지 |
 
 **레이아웃 파일 (선택사항):**
-- `src/routes/admin/+layout.svelte` → 관리자 페이지 공통 레이아웃
-- `src/routes/my/+layout.svelte` → 사용자 페이지 공통 레이아웃
+| 파일 경로 | 적용 범위 | 설명 |
+|----------|---------|------|
+| `src/routes/admin/+layout.svelte` | `/admin/*` 모든 경로 | 관리자 페이지 공통 레이아웃 |
+| `src/routes/my/+layout.svelte` | `/my/*` 모든 경로 | 사용자 페이지 공통 레이아웃 |
+
+**중요:** 명시적인 라우팅 설정이 필요 없습니다. 파일을 생성하는 것만으로 자동으로 라우트가 생성됩니다.
 
 #### 네비게이션 메뉴 업데이트
 
-**파일 위치:** `src/lib/components/top-bar.svelte` 또는 `src/lib/components/menu.svelte`
+**파일 위치:** `src/lib/components/top-bar.svelte` 또는 유사 네비게이션 컴포넌트
 
 **추가할 메뉴 항목:**
 ```svelte
-<!-- 관리자 신고 목록 -->
-<a href="/admin/reports" class="nav-link">
-  {$t('관리자_신고_목록')}
-</a>
+<!-- 관리자 신고 목록 (관리자만 표시) -->
+{#if authStore.isAdmin}
+  <a href="/admin/reports" class="nav-link">
+    {$t('관리자_신고_목록')}
+  </a>
+{/if}
 
-<!-- 내 신고 목록 -->
-<a href="/my/reports" class="nav-link">
-  {$t('내_신고_목록')}
-</a>
+<!-- 내 신고 목록 (로그인한 사용자만 표시) -->
+{#if authStore.isAuthenticated}
+  <a href="/my/reports" class="nav-link">
+    {$t('내_신고_목록')}
+  </a>
+{/if}
 ```
 
-**삽입 위치:** 관리자 메뉴 다음, 사용자 페이지 메뉴 이전
-
 **주의사항:**
-- ✅ 관리자 신고 목록은 관리자만 접근 가능하도록 `+page.svelte`에서 인증 체크 필요
-- ✅ 내 신고 목록은 로그인한 사용자만 접근 가능
-- ✅ SvelteKit은 파일 기반 라우팅을 사용하므로 명시적인 라우트 설정 불필요
+- ✅ 관리자 신고 목록은 관리자(`authStore.isAdmin`)만 접근 가능하도록 조건부 렌더링
+- ✅ 내 신고 목록은 로그인한 사용자(`authStore.isAuthenticated`)만 접근 가능하도록 조건부 렌더링
+- ✅ 페이지 내부에서도 추가적인 권한 검사를 수행하는 것 권장
+- ✅ SvelteKit 파일 기반 라우팅은 명시적인 라우트 설정 불필요
 
 ---
 
