@@ -30,16 +30,23 @@ export function generateTestUsers(): TestUser[] {
 		const paddedNumber = String(i).padStart(3, '0');
 		const uid = generateTestUserId(i);
 		const genders: Array<'male' | 'female' | 'other'> = ['male', 'female', 'other'];
+		const timestamp = now + i * 1000; // 초 단위(1000ms) 오프셋으로 createdAt 중복 방지
+		const date = new Date(timestamp);
+		const month = String(date.getMonth() + 1).padStart(2, '0');
+		const day = String(date.getDate()).padStart(2, '0');
+		const hours = String(date.getHours()).padStart(2, '0');
+		const minutes = String(date.getMinutes()).padStart(2, '0');
+		const nicknameSuffix = `${month}-${day} ${hours}:${minutes}`;
 
 		users.push({
 			uid,
-			displayName: `테스트 사용자 ${paddedNumber}`,
+			displayName: `테스트 사용자 ${paddedNumber} (${nicknameSuffix})`,
 			email: `test.user.${paddedNumber}@example.com`,
 			photoUrl: null, // 필요시 아바타 URL 생성 가능
 			gender: genders[Math.floor(Math.random() * genders.length)],
 			birthYear: generateRandomBirthYear(), // 1950~2010년 랜덤
-			createdAt: now,
-			updatedAt: now,
+			createdAt: timestamp,
+			updatedAt: timestamp,
 			isTemporary: true
 		});
 	}

@@ -19,9 +19,9 @@
 
 	const testMenuItems: TestMenuItem[] = [
 		{
-			title: '테스트 사용자 생성',
-			description: '테스트용 임시 사용자 100명을 일괄 생성합니다',
-			href: '/admin/test/create-users',
+			title: '테스트 사용자 관리',
+			description: '사용자 목록에서 테스트 사용자 생성/삭제를 모두 처리합니다',
+			href: '/admin/users',
 			icon: '👥'
 		},
 		{

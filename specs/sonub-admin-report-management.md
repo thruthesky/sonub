@@ -2218,7 +2218,7 @@ let menuItems = $derived([
   { label: $t('홈'), path: '/' },
   { label: $t('메뉴'), path: '/menu' },
   { label: $t('로그인'), path: '/user/login' },
-  { label: $t('프로필'), path: '/user/profile' },
+  { label: $t('프로필'), path: '/my/profile' },
   { label: $t('게시글목록'), path: '/post/list' },
   { label: $t('설정'), path: '/settings' },
   { label: $t('관리자'), path: '/admin' },

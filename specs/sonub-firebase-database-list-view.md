@@ -1657,3 +1657,1454 @@ users/
    - 가상 스크롤링
    - 지연 로딩
    - 캐싱 전략
+
+---
+
+## 15. 아키텍처 및 구조
+
+DatabaseListView 컴포넌트는 **Svelte 5 Runes 기반**으로 설계되어 강력한 반응성과 타입 안전성을 제공합니다.
+
+### 15.1. 상태 관리 ($state)
+
+컴포넌트의 모든 상태는 `$state` rune을 사용하여 관리되며, 자동 반응성을 제공합니다.
+
+```typescript
+// 아이템 목록
+let items = $state<ItemData[]>([]);
+
+// 로딩 상태
+let loading = $state<boolean>(false);
+let initialLoading = $state<boolean>(true);
+
+// 페이지네이션 상태
+let hasMore = $state<boolean>(true);
+let lastLoadedValue = $state<any>(null);
+let lastLoadedKey = $state<string | null>(null);
+let currentPage = $state<number>(0);
+
+// 에러 상태
+let error = $state<string | null>(null);
+
+// 스크롤 컨테이너
+let scrollContainer = $state<HTMLDivElement | null>(null);
+
+// 실시간 리스너 관리
+let childAddedListenerReady = $state<boolean>(false);
+```
+
+**주요 상태 변수 설명**:
+
+| 변수 | 타입 | 설명 |
+|------|------|------|
+| `items` | `ItemData[]` | 현재 화면에 표시 중인 아이템 목록 |
+| `loading` | `boolean` | 추가 페이지 로드 중 여부 |
+| `initialLoading` | `boolean` | 초기 데이터 로드 중 여부 |
+| `hasMore` | `boolean` | 더 가져올 데이터가 있는지 여부 |
+| `lastLoadedValue` | `any` | 마지막 로드한 아이템의 orderBy 필드 값 (커서) |
+| `lastLoadedKey` | `string \| null` | 마지막 로드한 아이템의 key |
+| `currentPage` | `number` | 현재 로드된 페이지 번호 (0부터 시작) |
+| `error` | `string \| null` | 에러 메시지 |
+| `scrollContainer` | `HTMLDivElement \| null` | 스크롤 컨테이너 DOM 참조 |
+| `childAddedListenerReady` | `boolean` | onChildAdded 리스너 준비 여부 |
+
+### 15.2. Props 및 타입 정의
+
+#### Props 인터페이스
+
+```typescript
+interface Props {
+  path?: string;           // RTDB 경로 (예: "users")
+  pageSize?: number;       // 한 번에 가져올 아이템 개수 (기본: 10)
+  orderBy?: string;        // 정렬 기준 필드 (기본: "createdAt")
+  orderPrefix?: string;    // 정렬 필드 prefix 필터 (선택사항)
+  threshold?: number;      // 스크롤 threshold (px, 기본: 300)
+  reverse?: boolean;       // 역순 정렬 여부 (기본: false)
+  item: ItemSnippet;       // 아이템 렌더링 snippet (필수)
+  loading?: StatusSnippet; // 로딩 상태 snippet
+  empty?: StatusSnippet;   // 빈 상태 snippet
+  error?: ErrorSnippet;    // 에러 상태 snippet
+  loadingMore?: StatusSnippet; // 더 로드 중 snippet
+  noMore?: StatusSnippet;  // 더 이상 데이터 없음 snippet
+}
+```
+
+#### 타입 정의
+
+```typescript
+// 아이템 데이터 타입
+type ItemData = {
+  key: string;  // Firebase 노드 key
+  data: any;    // 노드 데이터
+};
+
+// Snippet 타입들
+type ItemSnippet = Snippet<[itemData: ItemData, index: number]>;
+type StatusSnippet = Snippet<[]>;
+type ErrorSnippet = Snippet<[errorMessage: string | null]>;
+```
+
+**Snippet 파라미터**:
+- `ItemSnippet`: `(itemData, index)` - 아이템 데이터와 배열 인덱스를 전달
+- `StatusSnippet`: 파라미터 없음
+- `ErrorSnippet`: `(errorMessage)` - 에러 메시지를 전달
+
+### 15.3. 라이프사이클 ($effect)
+
+DatabaseListView는 두 개의 `$effect`를 사용하여 라이프사이클을 관리합니다.
+
+#### Effect 1: 데이터 로드 및 cleanup
+
+```typescript
+$effect(() => {
+  if (path && database) {
+    loadInitialData(); // 초기 데이터 로드
+  }
+
+  // cleanup: 컴포넌트 언마운트 시 모든 리스너 해제
+  return () => {
+    console.log('DatabaseListView: Cleaning up listeners');
+
+    // child_added 리스너 해제
+    if (childAddedUnsubscribe) {
+      childAddedUnsubscribe();
+      childAddedUnsubscribe = null;
+    }
+
+    // child_removed 리스너 해제
+    if (childRemovedUnsubscribe) {
+      childRemovedUnsubscribe();
+      childRemovedUnsubscribe = null;
+    }
+
+    // 모든 onValue 리스너 해제
+    unsubscribers.forEach((unsubscribe) => {
+      unsubscribe();
+    });
+    unsubscribers.clear();
+
+    console.log('DatabaseListView: All listeners cleaned up');
+  };
+});
+```
+
+**역할**:
+- 컴포넌트 마운트 시 `loadInitialData()` 호출
+- 컴포넌트 언마운트 시 모든 Firebase 리스너 해제
+- 메모리 누수 방지
+
+#### Effect 2: 스크롤 이벤트 리스너
+
+```typescript
+$effect(() => {
+  if (scrollContainer) {
+    // 컨테이너 자체 스크롤 감지
+    scrollContainer.addEventListener('scroll', handleScroll);
+    // window 스크롤 감지 (body 스크롤)
+    window.addEventListener('scroll', handleWindowScroll);
+
+    return () => {
+      scrollContainer?.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', handleWindowScroll);
+    };
+  }
+});
+```
+
+**역할**:
+- 컨테이너 스크롤과 window 스크롤을 모두 감지
+- 무한 스크롤 구현
+- cleanup에서 이벤트 리스너 제거
+
+### 15.4. 리스너 관리 시스템
+
+DatabaseListView는 여러 종류의 Firebase 리스너를 관리합니다.
+
+```typescript
+// 1. onValue 리스너 맵 (아이템별 실시간 업데이트)
+let unsubscribers = new Map<string, () => void>();
+
+// 2. onChildAdded 리스너 (신규 노드 감지)
+let childAddedUnsubscribe: (() => void) | null = null;
+
+// 3. onChildRemoved 리스너 (삭제 노드 감지)
+let childRemovedUnsubscribe: (() => void) | null = null;
+```
+
+**리스너 종류**:
+
+| 리스너 | 목적 | 개수 |
+|--------|------|------|
+| `onValue` | 각 아이템의 데이터 변경 감지 | 아이템 개수만큼 |
+| `onChildAdded` | 새로운 노드 생성 감지 | 1개 (path 전체) |
+| `onChildRemoved` | 노드 삭제 감지 | 1개 (path 전체) |
+
+---
+
+## 16. 주요 함수 상세
+
+### 16.1. loadInitialData()
+
+**목적**: 첫 페이지 데이터를 로드하고 초기 상태를 설정합니다.
+
+**동작 순서**:
+
+1. **초기화**
+   ```typescript
+   initialLoading = true;
+   error = null;
+   items = [];
+   pageItems.clear();
+
+   // 기존 리스너들 정리
+   unsubscribers.forEach((unsubscribe) => unsubscribe());
+   unsubscribers.clear();
+
+   // child_added, child_removed 리스너 해제
+   if (childAddedUnsubscribe) {
+     childAddedUnsubscribe();
+     childAddedUnsubscribe = null;
+   }
+   if (childRemovedUnsubscribe) {
+     childRemovedUnsubscribe();
+     childRemovedUnsubscribe = null;
+   }
+   ```
+
+2. **Firebase 쿼리 생성**
+   ```typescript
+   const baseRef = dbRef(database, path);
+   let dataQuery;
+
+   if (reverse) {
+     // 역순: limitToLast 사용
+     if (orderPrefix) {
+       dataQuery = query(
+         baseRef,
+         orderByChild(orderBy),
+         startAt(orderPrefix),
+         endAt(orderPrefix + '\uf8ff'),
+         limitToLast(pageSize + 1)
+       );
+     } else {
+       dataQuery = query(
+         baseRef,
+         orderByChild(orderBy),
+         startAt(false), // null/undefined 제외
+         limitToLast(pageSize + 1)
+       );
+     }
+   } else {
+     // 정순: limitToFirst 사용
+     if (orderPrefix) {
+       dataQuery = query(
+         baseRef,
+         orderByChild(orderBy),
+         startAt(orderPrefix),
+         endAt(orderPrefix + '\uf8ff'),
+         limitToFirst(pageSize + 1)
+       );
+     } else {
+       dataQuery = query(
+         baseRef,
+         orderByChild(orderBy),
+         startAt(false), // null/undefined 제외
+         limitToFirst(pageSize + 1)
+       );
+     }
+   }
+   ```
+
+3. **데이터 로드 및 처리**
+   ```typescript
+   const snapshot = await get(dataQuery);
+
+   if (snapshot.exists()) {
+     let loadedItems: ItemData[] = [];
+
+     // 🔥 중요: snapshot.forEach()로 정렬 순서 유지
+     snapshot.forEach((childSnapshot) => {
+       const key = childSnapshot.key;
+       const data = childSnapshot.val();
+       if (key) {
+         loadedItems.push({ key, data });
+       }
+     });
+   }
+   ```
+
+4. **orderBy 필드 필터링**
+   ```typescript
+   loadedItems = loadedItems.filter((item) => {
+     return item.data[orderBy] != null && item.data[orderBy] !== '';
+   });
+   ```
+
+5. **reverse 처리**
+   ```typescript
+   if (reverse) {
+     loadedItems.reverse(); // 최신 글이 먼저 오도록
+   }
+   ```
+
+6. **hasMore 판단 및 커서 설정**
+   ```typescript
+   if (loadedItems.length > pageSize) {
+     hasMore = true;
+     items = loadedItems.slice(0, pageSize);
+
+     const cursor = getLastItemCursor(items, orderBy);
+     if (cursor) {
+       lastLoadedValue = cursor.value;
+       lastLoadedKey = cursor.key;
+     }
+   } else {
+     hasMore = false;
+     items = loadedItems;
+   }
+   ```
+
+7. **실시간 리스너 설정**
+   ```typescript
+   // 각 아이템에 onValue 리스너 설정
+   items.forEach((item, index) => {
+     setupItemListener(item.key, index);
+   });
+
+   // child_added 리스너 설정 (신규 노드 감지)
+   setupChildAddedListener();
+
+   // child_removed 리스너 설정 (삭제 노드 감지)
+   setupChildRemovedListener();
+   ```
+
+**중요 포인트**:
+- `pageSize + 1`개를 로드하여 hasMore 판단
+- `snapshot.forEach()` 사용으로 정렬 순서 보존
+- `startAt(false)`로 null/undefined 값 제외
+- reverse 모드에서는 `limitToLast` + `reverse()` 사용
+
+### 16.2. loadMore()
+
+**목적**: 다음 페이지 데이터를 로드합니다.
+
+**동작 순서**:
+
+1. **사전 검증**
+   ```typescript
+   if (loading || !hasMore) {
+     return; // 이미 로딩 중이거나 더 이상 데이터 없음
+   }
+
+   if (lastLoadedValue == null) {
+     hasMore = false;
+     return; // 커서 값이 없으면 중단
+   }
+   ```
+
+2. **Firebase 쿼리 생성**
+   ```typescript
+   let dataQuery;
+
+   if (reverse) {
+     // 역순: endBefore + limitToLast
+     if (orderPrefix) {
+       dataQuery = query(
+         baseRef,
+         orderByChild(orderBy),
+         startAt(orderPrefix),
+         endBefore(lastLoadedValue),
+         limitToLast(pageSize + 1)
+       );
+     } else {
+       dataQuery = query(
+         baseRef,
+         orderByChild(orderBy),
+         endBefore(lastLoadedValue),
+         limitToLast(pageSize + 1)
+       );
+     }
+   } else {
+     // 정순: startAfter + limitToFirst
+     if (orderPrefix) {
+       dataQuery = query(
+         baseRef,
+         orderByChild(orderBy),
+         startAfter(lastLoadedValue),
+         endAt(orderPrefix + '\uf8ff'),
+         limitToFirst(pageSize + 1)
+       );
+     } else {
+       dataQuery = query(
+         baseRef,
+         orderByChild(orderBy),
+         startAfter(lastLoadedValue),
+         limitToFirst(pageSize + 1)
+       );
+     }
+   }
+   ```
+
+3. **데이터 로드 및 처리**
+   ```typescript
+   const snapshot = await get(dataQuery);
+   const newItems: ItemData[] = [];
+
+   snapshot.forEach((childSnapshot) => {
+     const key = childSnapshot.key;
+     const data = childSnapshot.val();
+     if (key) {
+       newItems.push({ key, data });
+     }
+   });
+
+   // reverse 처리
+   if (reverse) {
+     newItems.reverse();
+   }
+   ```
+
+4. **중복 제거 및 필터링**
+   ```typescript
+   // 중복 제거
+   const existingKeys = new Set(items.map(item => item.key));
+   let uniqueItems = newItems.filter((item) => !existingKeys.has(item.key));
+
+   // orderBy 필드 필터링
+   uniqueItems = uniqueItems.filter((item) => {
+     return item.data[orderBy] != null && item.data[orderBy] !== '';
+   });
+   ```
+
+5. **items 배열 업데이트**
+   ```typescript
+   if (newItems.length > pageSize) {
+     hasMore = true;
+     const itemsToAdd = uniqueItems.slice(0, pageSize);
+     items = [...items, ...itemsToAdd];
+
+     const cursor = getLastItemCursor(itemsToAdd, orderBy);
+     if (cursor) {
+       lastLoadedValue = cursor.value;
+       lastLoadedKey = cursor.key;
+     }
+   } else {
+     hasMore = false;
+     items = [...items, ...uniqueItems];
+   }
+   ```
+
+6. **새 아이템에 리스너 설정**
+   ```typescript
+   const startIndex = items.length - uniqueItems.length;
+   items.slice(startIndex).forEach((item, relativeIndex) => {
+     setupItemListener(item.key, startIndex + relativeIndex);
+   });
+   ```
+
+**중요 포인트**:
+- reverse에 따라 `startAfter` vs `endBefore` 사용
+- 중복 제거로 같은 아이템이 두 번 나오지 않도록 방지
+- orderBy 필드 필터링으로 유효하지 않은 아이템 제외
+- 새 아이템에만 리스너 설정 (기존 아이템은 이미 리스너 있음)
+
+### 16.3. setupItemListener()
+
+**목적**: 각 아이템에 `onValue` 리스너를 설정하여 실시간 업데이트를 감지합니다.
+
+```typescript
+function setupItemListener(itemKey: string, index: number): void {
+  if (!database) return;
+
+  // 이미 리스닝 중이면 스킵
+  const listenerKey = `${itemKey}`;
+  if (unsubscribers.has(listenerKey)) {
+    return;
+  }
+
+  const itemRef = dbRef(database, `${path}/${itemKey}`);
+  const unsubscribe = onValue(
+    itemRef,
+    (snapshot) => {
+      if (snapshot.exists()) {
+        const updatedData = snapshot.val();
+        // items 배열 업데이트
+        items[index] = {
+          key: itemKey,
+          data: updatedData
+        };
+        items = [...items]; // 반응성을 위해 배열 재할당
+        console.log(`DatabaseListView: Item updated ${itemKey}`, updatedData);
+      }
+    },
+    (error) => {
+      console.error(`DatabaseListView: Error listening to item ${itemKey}`, error);
+    }
+  );
+
+  // 리스너 해제 함수 저장
+  unsubscribers.set(listenerKey, unsubscribe);
+}
+```
+
+**동작 방식**:
+1. `itemKey`로 중복 체크 (이미 리스닝 중이면 스킵)
+2. `onValue` 리스너 등록
+3. 데이터 변경 시 `items[index]` 업데이트
+4. `items = [...items]`로 반응성 트리거
+5. 해제 함수를 `unsubscribers` Map에 저장
+
+**중요 포인트**:
+- 각 아이템마다 별도의 `onValue` 리스너
+- 중복 방지로 같은 아이템에 여러 리스너 설정 안 함
+- 배열 재할당으로 Svelte 반응성 보장
+
+### 16.4. setupChildAddedListener()
+
+**목적**: 새로운 노드가 생성되면 실시간으로 화면에 추가합니다.
+
+```typescript
+function setupChildAddedListener() {
+  if (!database) return;
+
+  if (childAddedUnsubscribe) {
+    childAddedUnsubscribe();
+    childAddedUnsubscribe = null;
+  }
+
+  console.log('DatabaseListView: Setting up child_added listener for', path);
+  childAddedListenerReady = false;
+
+  const baseRef = dbRef(database, path);
+
+  // 쿼리 생성
+  let dataQuery;
+  if (orderPrefix) {
+    dataQuery = query(
+      baseRef,
+      orderByChild(orderBy),
+      startAt(orderPrefix),
+      endAt(orderPrefix + '\uf8ff')
+    );
+  } else {
+    dataQuery = query(
+      baseRef,
+      orderByChild(orderBy),
+      startAt(false)
+    );
+  }
+
+  childAddedUnsubscribe = onChildAdded(dataQuery, (snapshot) => {
+    // 초기 로드 완료 전에는 무시
+    if (!childAddedListenerReady) {
+      return;
+    }
+
+    const newItemKey = snapshot.key;
+    const newItemData = snapshot.val();
+
+    if (!newItemKey) return;
+
+    // 중복 체크
+    const exists = items.some(item => item.key === newItemKey);
+    if (exists) {
+      console.log('DatabaseListView: Child already exists, skipping:', newItemKey);
+      return;
+    }
+
+    console.log('DatabaseListView: New child added:', newItemKey, newItemData);
+
+    const newItem: ItemData = {
+      key: newItemKey,
+      data: newItemData
+    };
+
+    // reverse 여부에 따라 위치 결정
+    if (reverse) {
+      // 최신 글이 위에 → 배열 맨 앞에 추가
+      items = [newItem, ...items];
+      setupItemListener(newItemKey, 0);
+    } else {
+      // 오래된 글이 위에 → 배열 맨 뒤에 추가
+      const newIndex = items.length;
+      items = [...items, newItem];
+      setupItemListener(newItemKey, newIndex);
+    }
+  }, (error) => {
+    console.error('DatabaseListView: Error in child_added listener', error);
+  });
+
+  // 1초 후 리스너 활성화 (기존 아이템 이벤트 건너뛰기)
+  setTimeout(() => {
+    childAddedListenerReady = true;
+    console.log('DatabaseListView: child_added listener is now ready');
+  }, 1000);
+}
+```
+
+**동작 방식**:
+1. orderPrefix 여부에 따라 쿼리 생성
+2. `onChildAdded` 리스너 등록
+3. `childAddedListenerReady` 플래그로 초기 이벤트 무시
+4. 새 노드 감지 시 중복 체크 후 items에 추가
+5. reverse에 따라 배열 앞 또는 뒤에 추가
+6. 새 아이템에 `onValue` 리스너 설정
+
+**중요 포인트**:
+- 초기 로드 시 기존 아이템에 대한 child_added 이벤트가 발생하므로 1초 지연
+- 중복 체크로 같은 아이템 두 번 추가 방지
+- reverse 모드에 따라 추가 위치 결정
+
+### 16.5. setupChildRemovedListener()
+
+**목적**: 노드가 삭제되면 실시간으로 화면에서 제거합니다.
+
+```typescript
+function setupChildRemovedListener() {
+  if (!database) return;
+
+  if (childRemovedUnsubscribe) {
+    childRemovedUnsubscribe();
+    childRemovedUnsubscribe = null;
+  }
+
+  console.log('DatabaseListView: Setting up child_removed listener for', path);
+
+  const baseRef = dbRef(database, path);
+
+  // child_added와 동일한 쿼리 사용
+  let dataQuery;
+  if (orderPrefix) {
+    dataQuery = query(
+      baseRef,
+      orderByChild(orderBy),
+      startAt(orderPrefix),
+      endAt(orderPrefix + '\uf8ff')
+    );
+  } else {
+    dataQuery = query(
+      baseRef,
+      orderByChild(orderBy),
+      startAt(false)
+    );
+  }
+
+  childRemovedUnsubscribe = onChildRemoved(dataQuery, (snapshot) => {
+    const removedKey = snapshot.key;
+
+    if (!removedKey) return;
+
+    console.log('DatabaseListView: Child removed:', removedKey);
+
+    // items 배열에서 제거
+    const removedIndex = items.findIndex(item => item.key === removedKey);
+
+    if (removedIndex !== -1) {
+      items = items.filter(item => item.key !== removedKey);
+      console.log('DatabaseListView: Removed item from list:', removedKey);
+
+      // 해당 아이템의 onValue 리스너 해제
+      const listenerKey = `${removedKey}`;
+      const unsubscribe = unsubscribers.get(listenerKey);
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribers.delete(listenerKey);
+        console.log('DatabaseListView: Unsubscribed from removed item:', removedKey);
+      }
+    }
+  }, (error) => {
+    console.error('DatabaseListView: Error in child_removed listener', error);
+  });
+}
+```
+
+**동작 방식**:
+1. child_added와 동일한 쿼리 사용 (범위 일치)
+2. `onChildRemoved` 리스너 등록
+3. 삭제 감지 시 items에서 필터링
+4. 해당 아이템의 `onValue` 리스너 해제
+5. unsubscribers Map에서 제거
+
+**중요 포인트**:
+- child_added와 동일한 쿼리로 범위 일치 보장
+- 메모리 누수 방지를 위해 onValue 리스너도 해제
+- filter로 배열에서 제거하여 반응성 트리거
+
+### 16.6. getLastItemCursor()
+
+**목적**: 페이지네이션 커서 값을 추출합니다.
+
+```typescript
+function getLastItemCursor(
+  itemList: ItemData[],
+  primaryField: string
+): {value: any, key: string} | null {
+  if (itemList.length === 0) return null;
+
+  const lastItem = itemList[itemList.length - 1];
+  if (!lastItem) return null;
+
+  const value = lastItem.data[primaryField];
+
+  // 주 필드 값이 있으면 사용
+  if (value != null && value !== '') {
+    console.log(`DatabaseListView: Using cursor from '${primaryField}':`, {
+      value: value,
+      key: lastItem.key
+    });
+    return {
+      value: value,
+      key: lastItem.key
+    };
+  }
+
+  // 주 필드가 없으면 null 반환 (무한 스크롤 중단)
+  console.warn(
+    `DatabaseListView: Field '${primaryField}' not found in last item (key: ${lastItem.key}).`,
+    `Pagination will stop here.`
+  );
+  return null;
+}
+```
+
+**동작 방식**:
+1. 배열의 마지막 아이템 가져오기
+2. primaryField (orderBy) 값 추출
+3. 값이 유효하면 `{value, key}` 반환
+4. 값이 없으면 null 반환 (페이지네이션 중단)
+
+**중요 포인트**:
+- null/undefined/빈 문자열 체크
+- 값이 없으면 경고 출력하고 null 반환
+- 커서가 없으면 hasMore가 false로 설정됨
+
+---
+
+## 17. 실시간 동기화 시스템
+
+DatabaseListView는 세 가지 Firebase 실시간 리스너를 조합하여 완전한 동기화를 구현합니다.
+
+### 17.1. onValue - 아이템별 실시간 업데이트
+
+**목적**: 각 아이템의 데이터가 변경되면 자동으로 화면에 반영합니다.
+
+**설정 시점**:
+- `loadInitialData()` 완료 후 각 아이템에 설정
+- `loadMore()` 완료 후 새 아이템에 설정
+
+**동작 예시**:
+```typescript
+// 사용자 1이 게시글 제목 수정
+await update(ref(db, 'posts/post1'), {
+  title: '수정된 제목'
+});
+
+// → onValue 리스너가 감지
+// → items[index] 자동 업데이트
+// → 화면에 새 제목 표시
+```
+
+**특징**:
+- 아이템 개수만큼 리스너 생성 (N개)
+- 각 리스너는 독립적으로 동작
+- 메모리 효율을 위해 언마운트 시 모두 해제
+
+### 17.2. onChildAdded - 신규 노드 감지
+
+**목적**: 새로운 노드가 생성되면 실시간으로 리스트에 추가합니다.
+
+**설정 시점**: `loadInitialData()` 완료 후
+
+**동작 예시**:
+```typescript
+// 사용자 2가 새 게시글 작성
+await push(ref(db, 'posts'), {
+  title: '새 게시글',
+  createdAt: Date.now()
+});
+
+// → onChildAdded 리스너가 감지
+// → reverse=true면 배열 맨 앞에 추가
+// → reverse=false면 배열 맨 뒤에 추가
+// → 화면에 새 게시글 즉시 표시
+```
+
+**초기화 지연**:
+```typescript
+// onChildAdded는 리스너 등록 시 기존 아이템들에 대해서도 이벤트 발생
+// 따라서 1초 지연 후 리스너 활성화
+setTimeout(() => {
+  childAddedListenerReady = true;
+}, 1000);
+```
+
+**특징**:
+- path 전체에 대해 1개의 리스너만 생성
+- orderPrefix 범위 내의 신규 노드만 감지
+- 중복 방지 로직으로 같은 아이템 두 번 추가 방지
+
+### 17.3. onChildRemoved - 삭제 노드 감지
+
+**목적**: 노드가 삭제되면 실시간으로 리스트에서 제거합니다.
+
+**설정 시점**: `loadInitialData()` 완료 후
+
+**동작 예시**:
+```typescript
+// 사용자 1이 게시글 삭제
+await remove(ref(db, 'posts/post1'));
+
+// → onChildRemoved 리스너가 감지
+// → items에서 필터링하여 제거
+// → 해당 아이템의 onValue 리스너 해제
+// → 화면에서 게시글 즉시 사라짐
+```
+
+**메모리 정리**:
+```typescript
+// 삭제된 아이템의 onValue 리스너도 해제
+const unsubscribe = unsubscribers.get(removedKey);
+if (unsubscribe) {
+  unsubscribe();
+  unsubscribers.delete(removedKey);
+}
+```
+
+**특징**:
+- path 전체에 대해 1개의 리스너만 생성
+- child_added와 동일한 쿼리 범위 사용
+- 메모리 누수 방지를 위해 onValue 리스너도 함께 해제
+
+### 17.4. 실시간 동기화 흐름도
+
+```
+┌─────────────────────────────────────────────────────┐
+│ DatabaseListView 컴포넌트 마운트                      │
+└─────────────────┬───────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│ loadInitialData() 실행                              │
+│ - Firebase 쿼리로 첫 페이지 로드                     │
+│ - items 배열 초기화                                  │
+└─────────────────┬───────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│ 각 아이템에 onValue 리스너 설정                      │
+│ - items.forEach(item => setupItemListener(item))    │
+│ - 개별 아이템 변경 감지 시작                         │
+└─────────────────┬───────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│ setupChildAddedListener() 실행                      │
+│ - 신규 노드 생성 감지 시작                           │
+│ - 1초 후 리스너 활성화                               │
+└─────────────────┬───────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│ setupChildRemovedListener() 실행                    │
+│ - 노드 삭제 감지 시작                                │
+└─────────────────┬───────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│ 실시간 동기화 활성화 완료                            │
+│                                                      │
+│ ┌───────────────────┐  ┌───────────────────┐        │
+│ │ 데이터 변경       │  │ 신규 노드 생성    │        │
+│ │ → onValue 감지   │  │ → onChildAdded   │        │
+│ │ → items 업데이트 │  │ → items에 추가   │        │
+│ └───────────────────┘  └───────────────────┘        │
+│                                                      │
+│         ┌──────────────────────┐                    │
+│         │ 노드 삭제             │                    │
+│         │ → onChildRemoved     │                    │
+│         │ → items에서 제거     │                    │
+│         │ → onValue 리스너 해제│                    │
+│         └──────────────────────┘                    │
+└─────────────────────────────────────────────────────┘
+                  │
+                  ▼
+┌─────────────────────────────────────────────────────┐
+│ 컴포넌트 언마운트                                    │
+│ - $effect cleanup 실행                              │
+│ - 모든 리스너 해제                                   │
+│   - childAddedUnsubscribe()                         │
+│   - childRemovedUnsubscribe()                       │
+│   - unsubscribers.forEach(unsubscribe)              │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+## 18. 메모리 관리 및 정리
+
+메모리 누수는 SPA(Single Page Application)에서 치명적인 문제입니다. DatabaseListView는 철저한 cleanup으로 메모리 누수를 방지합니다.
+
+### 18.1. Cleanup 함수와 $effect
+
+모든 리스너는 `$effect` cleanup 함수에서 해제됩니다.
+
+```typescript
+$effect(() => {
+  if (path && database) {
+    loadInitialData();
+  }
+
+  // 🔥 cleanup: 컴포넌트 언마운트 시 실행
+  return () => {
+    console.log('DatabaseListView: Cleaning up listeners');
+
+    // 1. child_added 리스너 해제
+    if (childAddedUnsubscribe) {
+      childAddedUnsubscribe();
+      childAddedUnsubscribe = null;
+    }
+
+    // 2. child_removed 리스너 해제
+    if (childRemovedUnsubscribe) {
+      childRemovedUnsubscribe();
+      childRemovedUnsubscribe = null;
+    }
+
+    // 3. 모든 onValue 리스너 해제
+    unsubscribers.forEach((unsubscribe) => {
+      unsubscribe();
+    });
+    unsubscribers.clear();
+
+    console.log('DatabaseListView: All listeners cleaned up');
+  };
+});
+```
+
+**cleanup 실행 시점**:
+- 컴포넌트 언마운트 (페이지 이동, 컴포넌트 제거)
+- `path` prop 변경 (새로운 경로로 변경 시)
+
+### 18.2. unsubscribers Map 관리
+
+`unsubscribers` Map은 모든 `onValue` 리스너의 해제 함수를 추적합니다.
+
+```typescript
+// Map 구조
+let unsubscribers = new Map<string, () => void>();
+
+// 리스너 추가
+unsubscribers.set(itemKey, unsubscribe);
+
+// 리스너 해제
+const unsubscribe = unsubscribers.get(itemKey);
+if (unsubscribe) {
+  unsubscribe();
+  unsubscribers.delete(itemKey);
+}
+
+// 모든 리스너 해제
+unsubscribers.forEach((unsubscribe) => {
+  unsubscribe();
+});
+unsubscribers.clear();
+```
+
+**Map 사용 이유**:
+- 빠른 조회 (O(1))
+- 키 기반 관리로 중복 방지
+- 개별 해제 및 전체 해제 모두 지원
+
+### 18.3. 리스너 해제 타이밍
+
+| 시나리오 | 해제 대상 | 해제 시점 |
+|---------|----------|----------|
+| 컴포넌트 언마운트 | 모든 리스너 | `$effect` cleanup |
+| `loadInitialData()` 재실행 | 기존 모든 리스너 | 새 데이터 로드 전 |
+| 노드 삭제 감지 | 삭제된 노드의 onValue | onChildRemoved 콜백 |
+| path prop 변경 | 모든 리스너 | `$effect` cleanup → 재초기화 |
+
+### 18.4. 메모리 누수 방지 체크리스트
+
+✅ **리스너 등록 시**:
+- [ ] 중복 체크 (이미 리스닝 중인지 확인)
+- [ ] 해제 함수를 `unsubscribers` Map에 저장
+- [ ] 리스너 개수 제한 고려 (페이지 크기 조절)
+
+✅ **컴포넌트 언마운트 시**:
+- [ ] childAddedUnsubscribe 호출
+- [ ] childRemovedUnsubscribe 호출
+- [ ] unsubscribers.forEach(unsubscribe) 호출
+- [ ] unsubscribers.clear() 호출
+
+✅ **노드 삭제 시**:
+- [ ] items에서 제거
+- [ ] 해당 onValue 리스너 해제
+- [ ] unsubscribers에서 제거
+
+✅ **초기화 재실행 시**:
+- [ ] 기존 리스너 모두 해제
+- [ ] unsubscribers.clear() 호출
+- [ ] 새 리스너 등록
+
+### 18.5. 메모리 사용량 추정
+
+```
+리스너 개수 = (페이지 개수 × pageSize) + 2
+
+예시:
+- pageSize = 20
+- 3 페이지 로드됨
+- items.length = 60
+
+리스너 개수:
+- onValue: 60개 (각 아이템마다)
+- onChildAdded: 1개
+- onChildRemoved: 1개
+→ 총 62개
+```
+
+**최적화 권장사항**:
+- pageSize를 너무 크게 설정하지 마세요 (권장: 10~30)
+- 무한 스크롤로 너무 많은 아이템을 로드하지 마세요
+- 필요시 "맨 위로" 버튼과 함께 새로고침 제공
+
+---
+
+## 19. 문제 해결 가이드
+
+### 19.1. 정렬이 제대로 안 되는 경우
+
+**증상**:
+- 아이템들이 무작위 순서로 표시됨
+- orderBy 필드 순서와 화면 순서가 다름
+- 특히 문자열 정렬 시 문제 발생
+
+**원인**:
+- `Object.entries()` 사용으로 정렬 순서 깨짐
+- Firebase 쿼리는 정렬된 순서로 반환하지만, JavaScript 객체로 변환 시 순서 유실
+
+**해결책**:
+```typescript
+// ❌ 잘못된 코드
+const data = snapshot.val();
+Object.entries(data).forEach(([key, value]) => {
+  items.push({ key, data: value });
+});
+
+// ✅ 올바른 코드
+snapshot.forEach((childSnapshot) => {
+  const key = childSnapshot.key;
+  const data = childSnapshot.val();
+  if (key) {
+    items.push({ key, data });
+  }
+});
+```
+
+**확인 방법**:
+- 콘솔 로그 확인: `Items in Firebase order`
+- orderBy 필드 값이 순서대로 나오는지 확인
+
+### 19.2. 무한 스크롤이 작동하지 않는 경우
+
+**증상**:
+- 스크롤해도 다음 페이지가 로드되지 않음
+- hasMore가 true인데도 loadMore가 실행 안 됨
+
+**원인 및 해결책**:
+
+#### 원인 1: 컨테이너 높이 미설정
+
+```css
+/* ❌ 잘못된 코드 */
+.list-container {
+  overflow-y: auto; /* 높이가 없으면 스크롤 안 됨! */
+}
+
+/* ✅ 올바른 코드 */
+.list-container {
+  height: 600px; /* 또는 calc(100vh - 4rem) */
+  overflow-y: auto;
+}
+```
+
+#### 원인 2: scrollContainer 바인딩 누락
+
+```svelte
+<!-- ❌ 잘못된 코드 -->
+<div class="list-container">
+  <DatabaseListView ... />
+</div>
+
+<!-- ✅ 올바른 코드 (body 스크롤 사용) -->
+<DatabaseListView ... />
+
+<!-- ✅ 올바른 코드 (컨테이너 스크롤 사용) -->
+<div class="list-container" style="height: 600px; overflow-y: auto;">
+  <DatabaseListView ... />
+</div>
+```
+
+#### 원인 3: threshold 값이 너무 작음
+
+```svelte
+<!-- threshold 값 늘리기 -->
+<DatabaseListView threshold={500} ... />
+```
+
+**확인 방법**:
+- 콘솔 로그 확인: `Near bottom (container scroll)` 또는 `Near bottom (window scroll)`
+- hasMore, loading 상태 확인
+- scrollHeight, clientHeight 값 확인
+
+### 19.3. 실시간 업데이트가 안 되는 경우
+
+**증상**:
+- 다른 사용자가 데이터를 변경해도 화면에 반영 안 됨
+- 새 게시글이 작성되어도 리스트에 나타나지 않음
+- 삭제된 게시글이 계속 화면에 남아있음
+
+**원인 및 해결책**:
+
+#### 원인 1: Firebase RTDB 대신 Firestore 사용
+
+DatabaseListView는 **Firebase Realtime Database 전용**입니다.
+
+```typescript
+// ❌ Firestore는 지원 안 됨
+import { getFirestore } from 'firebase/firestore';
+
+// ✅ RTDB 사용
+import { getDatabase } from 'firebase/database';
+```
+
+#### 원인 2: 리스너 미설정
+
+```typescript
+// 초기 로드 완료 후 리스너가 설정되는지 확인
+console.log('childAddedUnsubscribe:', childAddedUnsubscribe);
+console.log('childRemovedUnsubscribe:', childRemovedUnsubscribe);
+console.log('unsubscribers size:', unsubscribers.size);
+```
+
+#### 원인 3: orderPrefix 범위 밖
+
+```svelte
+<!-- qna- 게시글만 표시 -->
+<DatabaseListView orderPrefix="qna-" ... />
+
+<!-- community- 게시글을 추가해도 화면에 안 나타남 (범위 밖) -->
+```
+
+**확인 방법**:
+- 콘솔 로그 확인:
+  - `Setting up child_added listener`
+  - `Setting up child_removed listener`
+  - `New child added`
+  - `Child removed`
+- Firebase Console에서 직접 데이터 변경해보기
+
+### 19.4. 메모리 누수 확인 방법
+
+**증상**:
+- 페이지를 여러 번 이동한 후 메모리 사용량이 계속 증가
+- 브라우저가 느려짐
+- 콘솔에서 "detached DOM tree" 경고
+
+**확인 방법**:
+
+#### 1. Chrome DevTools Memory Profiler
+
+1. Chrome DevTools → Performance → Memory
+2. "Take heap snapshot" 클릭
+3. DatabaseListView 페이지로 이동
+4. 다시 "Take heap snapshot" 클릭
+5. Comparison 뷰에서 "Detached" 필터
+
+**정상 상태**:
+- DatabaseListView 컴포넌트가 detached로 표시되지 않음
+- Firebase 리스너가 모두 해제됨
+
+#### 2. 콘솔 로그 확인
+
+```
+DatabaseListView: Cleaning up listeners
+DatabaseListView: All listeners cleaned up
+```
+
+**비정상 상태**:
+- cleanup 로그가 출력되지 않음
+- 리스너 개수가 계속 증가
+
+#### 3. 수동 테스트
+
+```typescript
+// 테스트 코드 (브라우저 콘솔)
+let count = 0;
+const interval = setInterval(() => {
+  console.log('Current listeners:', {
+    onValue: unsubscribers.size,
+    childAdded: childAddedUnsubscribe ? 'active' : 'inactive',
+    childRemoved: childRemovedUnsubscribe ? 'active' : 'inactive'
+  });
+  count++;
+  if (count > 10) clearInterval(interval);
+}, 1000);
+```
+
+**해결책**:
+- `$effect` cleanup 함수 확인
+- 모든 리스너가 제대로 해제되는지 확인
+- unsubscribers.clear() 호출 확인
+
+### 19.5. orderBy 필드가 없는 아이템이 표시되는 경우
+
+**증상**:
+- orderBy로 지정한 필드가 없는 아이템이 리스트에 나타남
+- 콘솔에서 "Filtering out item without field" 경고
+
+**원인**:
+- 데이터베이스에 orderBy 필드가 없는 노드 존재
+- 페이지네이션 시 클라이언트 필터링만으로는 부족
+
+**해결책**:
+
+#### 1. 데이터 정합성 확보
+
+```javascript
+// 모든 노드에 orderBy 필드 추가
+await update(ref(db, 'posts/post1'), {
+  createdAt: Date.now() // orderBy 필드 추가
+});
+```
+
+#### 2. Firebase Security Rules
+
+```json
+{
+  "rules": {
+    "posts": {
+      "$postId": {
+        ".validate": "newData.hasChildren(['createdAt', 'title'])"
+      }
+    }
+  }
+}
+```
+
+#### 3. 클라이언트 검증
+
+```typescript
+// 노드 생성 시 필수 필드 확인
+async function createPost(data: any) {
+  if (!data.createdAt) {
+    data.createdAt = Date.now();
+  }
+  await push(ref(db, 'posts'), data);
+}
+```
+
+**확인 방법**:
+- Firebase Console에서 데이터 구조 확인
+- 모든 노드에 orderBy 필드가 있는지 확인
+- 콘솔 경고 메시지 확인
+
+---
+
+## 20. 요약 및 베스트 프랙티스
+
+### 20.1. 핵심 개념 요약
+
+| 개념 | 설명 |
+|------|------|
+| **snapshot.forEach()** | Firebase 정렬 순서를 보존하는 유일한 방법 (Object.entries() 사용 금지) |
+| **startAt(false)** | null/undefined 값을 자동으로 필터링 (네트워크 비용 절감) |
+| **pageSize + 1** | hasMore 판단을 위해 1개 더 로드 |
+| **reverse + limitToLast** | 최신 데이터부터 표시할 때 사용 |
+| **orderPrefix** | 특정 prefix로 시작하는 데이터만 필터링 |
+| **onValue** | 각 아이템의 실시간 업데이트 감지 (N개) |
+| **onChildAdded** | 신규 노드 생성 감지 (1개) |
+| **onChildRemoved** | 노드 삭제 감지 (1개) |
+| **$effect cleanup** | 모든 리스너를 해제하여 메모리 누수 방지 |
+| **unsubscribers Map** | onValue 리스너들을 추적 및 관리 |
+
+### 20.2. 베스트 프랙티스
+
+#### ✅ DO (권장)
+
+1. **항상 snapshot.forEach() 사용**
+   ```typescript
+   snapshot.forEach((child) => {
+     items.push({ key: child.key, data: child.val() });
+   });
+   ```
+
+2. **orderBy 필드는 모든 노드에 존재해야 함**
+   ```javascript
+   // 노드 생성 시 자동으로 createdAt 추가
+   const newPost = {
+     ...data,
+     createdAt: data.createdAt || Date.now()
+   };
+   ```
+
+3. **pageSize는 10~30 사이로 설정**
+   ```svelte
+   <DatabaseListView pageSize={20} />
+   ```
+
+4. **컨테이너 스크롤 사용 시 명시적 높이 설정**
+   ```css
+   .list-container {
+     height: calc(100vh - 4rem);
+     overflow-y: auto;
+   }
+   ```
+
+5. **디버깅 로그 활용**
+   - 콘솔에서 색상별 로그 확인
+   - 정렬 순서, 필터링 결과 추적
+
+#### ❌ DON'T (비권장)
+
+1. **Object.entries() 절대 사용 금지**
+   ```typescript
+   // ❌ 정렬이 깨짐!
+   Object.entries(snapshot.val()).forEach(...)
+   ```
+
+2. **orderBy 필드 없는 노드 생성 금지**
+   ```javascript
+   // ❌ createdAt 없음
+   await push(ref(db, 'posts'), {
+     title: 'Test'
+   });
+   ```
+
+3. **pageSize를 너무 크게 설정 금지**
+   ```svelte
+   <!-- ❌ 성능 저하 및 메모리 낭비 -->
+   <DatabaseListView pageSize={1000} />
+   ```
+
+4. **리스너 수동 해제 금지**
+   ```typescript
+   // ❌ $effect cleanup에서 자동 처리됨
+   // unsubscribe();
+   ```
+
+5. **reverse 모드에서 limitToFirst 사용 금지**
+   ```typescript
+   // ❌ 역순일 때는 limitToLast 사용
+   if (reverse) {
+     query(..., limitToFirst(pageSize)); // 틀림!
+   }
+   ```
+
+### 20.3. 성능 최적화 팁
+
+1. **index 추가 (Firebase Console)**
+   ```json
+   {
+     "rules": {
+       "posts": {
+         ".indexOn": ["createdAt", "categoryKey", "order"]
+       }
+     }
+   }
+   ```
+
+2. **threshold 값 조절**
+   ```svelte
+   <!-- 스크롤 반응성 향상 -->
+   <DatabaseListView threshold={500} />
+   ```
+
+3. **pageSize 최적화**
+   - 모바일: 10~15
+   - 데스크톱: 20~30
+
+4. **orderPrefix 활용**
+   ```svelte
+   <!-- 서버 측 필터링으로 네트워크 비용 절감 -->
+   <DatabaseListView orderPrefix="community-" />
+   ```
+
+### 20.4. 다른 프로젝트에 적용하기
+
+DatabaseListView 컴포넌트를 다른 프로젝트에 재사용하려면:
+
+1. **파일 복사**
+   ```
+   src/lib/components/DatabaseListView.svelte → 복사
+   ```
+
+2. **Firebase 설정 확인**
+   ```typescript
+   // src/lib/firebase.ts
+   export const rtdb = getDatabase(app);
+   ```
+
+3. **Props 설정**
+   ```svelte
+   <DatabaseListView
+     path="your-path"
+     pageSize={20}
+     orderBy="createdAt"
+     threshold={300}
+   >
+     {#snippet item(itemData, index)}
+       <!-- 커스텀 UI -->
+     {/snippet}
+   </DatabaseListView>
+   ```
+
+4. **스타일 커스터마이징**
+   - 기본 스타일은 컴포넌트 내부에 정의됨
+   - item snippet에서 커스텀 스타일 적용
+
+5. **테스트**
+   - 초기 로드 확인
+   - 무한 스크롤 확인
+   - 실시간 업데이트 확인
+   - 메모리 누수 확인
+
+---
+
+## 21. 참고 자료
+
+### 21.1. 관련 파일
+
+- **컴포넌트**: [src/lib/components/DatabaseListView.svelte](../src/lib/components/DatabaseListView.svelte)
+- **사용자 목록**: [src/routes/user/list/+page.svelte](../src/routes/user/list/+page.svelte)
+- **테스트 페이지**: [src/routes/dev/test/database-list-view/+page.svelte](../src/routes/dev/test/database-list-view/+page.svelte)
+- **테스트 사양**: [sonub-test-database-list-view.md](./sonub-test-database-list-view.md)
+
+### 21.2. Firebase 공식 문서
+
+- [Firebase Realtime Database - Query Data](https://firebase.google.com/docs/database/web/lists-of-data)
+- [Firebase Realtime Database - Sorting and Filtering](https://firebase.google.com/docs/database/web/lists-of-data#sorting_and_filtering_data)
+- [Firebase Realtime Database - Pagination](https://firebase.google.com/docs/database/web/lists-of-data#filtering_data)
+
+### 21.3. Svelte 공식 문서
+
+- [Svelte 5 - Runes](https://svelte.dev/docs/svelte/$state)
+- [Svelte 5 - $effect](https://svelte.dev/docs/svelte/$effect)
+- [Svelte 5 - Snippets](https://svelte.dev/docs/svelte/snippet)
+
+### 21.4. 버전 히스토리
+
+| 날짜 | 버전 | 변경사항 |
+|------|------|----------|
+| 2025-11-09 | 1.0.0 | Custom Elements → Svelte 5 마이그레이션 |
+| 2025-11-09 | 1.1.0 | orderBy 필드 필터링 추가 |
+| 2025-11-09 | 1.2.0 | snapshot.forEach() 적용으로 정렬 문제 해결 |
+| 2025-11-09 | 1.3.0 | 색상별 디버깅 로그 시스템 추가 |
+| 2025-11-09 | 1.4.0 | 실제 인덱스 전달 기능 추가 (snippet에 index 파라미터) |
+| 2025-11-09 | 2.0.0 | 종합 문서화 완료 (SED 형식) |
+
+---
+
+**문서 마지막 업데이트**: 2025-11-09
+**작성자**: Claude Code
+**문서 버전**: 2.0.0

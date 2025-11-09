@@ -59,6 +59,13 @@ step: 20
    - **디자인 정책**:
      - Light Mode Only (다크 모드 미지원)
      - 모든 클릭 가능한 요소에 `cursor-pointer` 적용
+   - **라우팅 규칙**:
+     - **로그인한 사용자 자신의 정보**: `/my/xxx` 경로 사용
+       - 예: `/my/profile` (내 프로필 수정), `/my/reports` (내 신고 목록)
+       - 본인의 데이터를 조회하고 수정하는 모든 페이지에 적용
+     - **다른 사용자 정보 조회**: `/user/xxx/${uid}` 경로 사용
+       - 예: `/user/profile/${uid}` (다른 사용자 프로필 조회)
+       - 읽기 전용 또는 제한된 권한으로 다른 사용자 정보를 조회
 
 ---
 
@@ -471,11 +478,11 @@ This document provides a detailed index of all specifications related to the son
   - 실시간 데이터 동기화
   - 신고 사유 다국어 지원
 
-### Sonub Admin Test User Creation
+### Sonub Admin Test User Management
 - **File**: [sonub-admin-test-create-user-accounts.md](./sonub-admin-test-create-user-accounts.md)
-- **Title**: Sonub Admin Test User Creation
-- **Description**: `/admin/test/create-users`에서 100명의 임시 사용자를 일괄 생성하는 기능 명세
-- **Version**: 1.0.0
+- **Title**: Sonub Admin Test User Management
+- **Description**: `/admin/users` 페이지에서 테스트 사용자 생성·목록·삭제를 통합 관리하는 명세 (이전 `/admin/test/create-users` 기능 통합)
+- **Version**: 2.0.0
 - **Step**: 65
 - **Priority**: **
 - **Dependencies**:
@@ -485,9 +492,9 @@ This document provides a detailed index of all specifications related to the son
   - sonub-design-layout.md
 - **Tags**: admin, test-user, firebase, rtdb, svelte5
 - **주요 기능**:
-  - `/admin` 상단 메뉴(대시보드/테스트/사용자목록) 공유 레이아웃
-  - 버튼 한 번으로 100명 생성, displayName/email/gender/birthYear 랜덤 제공
-  - `isTemporary` 플래그와 생성/삭제 진행률 표시, 추후 권한 검증 확장 여지
+  - 상단 탭 공유 레이아웃 (`/admin/+layout.svelte`)
+  - `/admin/users`에서 테스트 사용자 100명 생성/진행률/완료 메시지를 표시
+  - 동일 페이지에서 목록 조회, 개별 및 일괄 삭제 UI 제공
 
 ## Chat System
 

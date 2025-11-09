@@ -19,9 +19,9 @@
 
 	const dashboardItems: DashboardItem[] = [
 		{
-			title: '테스트 사용자 생성',
-			description: '테스트용 임시 사용자 100명을 일괄 생성합니다',
-			href: '/admin/test/create-users',
+			title: '테스트 사용자 관리',
+			description: '임시 사용자 생성/목록/삭제를 한 페이지에서 관리합니다',
+			href: '/admin/users',
 			icon: '👥'
 		},
 		{

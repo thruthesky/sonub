@@ -9,21 +9,27 @@
 	import { Card } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import { Alert } from '$lib/components/ui/alert';
-	import {
-		getTemporaryUsers,
-		deleteUserByUid,
-		deleteAllTemporaryUsers,
-		getTemporaryUserCount
-	} from '$lib/utils/admin-service';
-	import type { TestUser } from '$lib/utils/test-user-generator';
+import {
+	getTemporaryUsers,
+	deleteUserByUid,
+	deleteAllTemporaryUsers,
+	getTemporaryUserCount,
+	saveTestUsersToFirebase
+} from '$lib/utils/admin-service';
+import { generateTestUsers, type TestUser } from '$lib/utils/test-user-generator';
 
 	// 상태 관리
 	let users: Record<string, TestUser> = $state({});
-	let isLoading = $state(true);
-	let error: string | null = $state(null);
-	let isDeleting = $state(false);
-	let deleteProgress = $state(0);
-	let deleteTotal = $state(0);
+let isLoading = $state(true);
+let error: string | null = $state(null);
+let isDeleting = $state(false);
+let deleteProgress = $state(0);
+let deleteTotal = $state(0);
+let isCreating = $state(false);
+let isCreationCompleted = $state(false);
+let creationError: string | null = $state(null);
+let creationProgress = $state(0);
+let creationTotal = $state(0);
 
 	/**
 	 * 사용자 목록을 로드합니다.
@@ -62,7 +68,7 @@
 	/**
 	 * 모든 테스트 사용자를 삭제합니다.
 	 */
-	async function handleDeleteAllUsers() {
+async function handleDeleteAllUsers() {
 		const count = await getTemporaryUserCount();
 
 		if (count === 0) {
@@ -93,11 +99,41 @@
 		} finally {
 			isDeleting = false;
 		}
-	}
+}
 
-	/**
-	 * 생년월일을 포맷팅합니다.
-	 */
+/**
+ * 테스트 사용자 100명을 생성하고 저장합니다.
+ */
+async function handleCreateUsers() {
+	if (isCreating) return;
+
+	isCreating = true;
+	isCreationCompleted = false;
+	creationError = null;
+	creationProgress = 0;
+
+	try {
+		const testUsers = generateTestUsers();
+		creationTotal = testUsers.length;
+
+		await saveTestUsersToFirebase(testUsers, (index, total) => {
+			creationProgress = index;
+			creationTotal = total;
+		});
+
+		isCreationCompleted = true;
+		await loadUsers();
+	} catch (err) {
+		console.error('테스트 사용자 생성 중 오류:', err);
+		creationError = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
+	} finally {
+		isCreating = false;
+	}
+}
+
+/**
+ * 생년월일을 포맷팅합니다.
+ */
 	function formatBirthYear(year: number): string {
 		return `${year}년`;
 	}
@@ -125,9 +161,12 @@
 		loadUsers();
 	});
 
-	const userList = $derived(Object.entries(users));
-	const userCount = $derived(userList.length);
-	const deletePercentage = $derived(deleteTotal > 0 ? Math.round((deleteProgress / deleteTotal) * 100) : 0);
+const userList = $derived(Object.entries(users));
+const userCount = $derived(userList.length);
+const deletePercentage = $derived(deleteTotal > 0 ? Math.round((deleteProgress / deleteTotal) * 100) : 0);
+const creationPercentage = $derived(
+	creationTotal > 0 ? Math.round((creationProgress / creationTotal) * 100) : 0
+);
 </script>
 
 <div class="space-y-6">
@@ -160,6 +199,71 @@
 			</div>
 		</Card>
 	</div>
+
+	<!-- 테스트 사용자 생성 영역 -->
+	<Card>
+		<div class="space-y-6 p-6">
+			<div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+				<div>
+					<h2 class="text-xl font-semibold text-gray-900">테스트 사용자 생성</h2>
+					<p class="text-sm text-gray-600">
+						버튼을 클릭하면 테스트용 임시 사용자 100명이 순차적으로 생성되고 목록에 추가됩니다.
+					</p>
+				</div>
+				<Button
+					onclick={handleCreateUsers}
+					disabled={isCreating}
+					size="lg"
+					class="min-w-48 bg-blue-600 text-white hover:bg-blue-700"
+				>
+					{#if isCreating}
+						⏳ 생성 중...
+					{:else if isCreationCompleted}
+						✓ 생성 완료
+					{:else}
+						🚀 테스트 사용자 생성
+					{/if}
+				</Button>
+			</div>
+
+			{#if isCreating || creationProgress > 0}
+				<div class="space-y-2">
+					<div class="flex justify-between text-sm">
+						<span class="text-gray-700">진행 상황</span>
+						<span class="font-semibold text-gray-900">
+							{creationProgress} / {creationTotal} ({creationPercentage}%)
+						</span>
+					</div>
+					<div class="h-3 w-full overflow-hidden rounded-full bg-gray-200">
+						<div class="h-full bg-blue-500 transition-all duration-300" style="width: {creationPercentage}%"></div>
+					</div>
+				</div>
+			{/if}
+
+			{#if isCreationCompleted}
+				<div class="rounded-lg bg-green-50 p-4 text-sm text-green-800">
+					<strong>✓ 완료:</strong> {creationProgress}명의 테스트 사용자가 생성되었습니다.
+				</div>
+			{/if}
+
+			{#if creationError}
+				<div class="rounded-lg bg-red-50 p-4 text-sm text-red-800">
+					<strong>✗ 오류:</strong> {creationError}
+				</div>
+			{/if}
+
+			<div class="grid gap-4 md:grid-cols-2">
+				<div class="rounded-lg bg-gray-50 p-4">
+					<p class="text-sm text-gray-600">한 번에 생성되는 수</p>
+					<p class="mt-1 text-2xl font-bold text-gray-900">100</p>
+				</div>
+				<div class="rounded-lg bg-gray-50 p-4">
+					<p class="text-sm text-gray-600">현재 생성된 수</p>
+					<p class="mt-1 text-2xl font-bold text-gray-900">{creationProgress}</p>
+				</div>
+			</div>
+		</div>
+	</Card>
 
 	<!-- 삭제 진행 상황 -->
 	{#if isDeleting}
@@ -224,12 +328,9 @@
 	{:else if userCount === 0}
 		<Card>
 			<div class="p-6">
-				<p class="text-center text-gray-600">생성된 테스트 사용자가 없습니다.</p>
-				<div class="mt-4 text-center">
-					<Button href="/admin/test/create-users" class="cursor-pointer">
-						테스트 사용자 생성
-					</Button>
-				</div>
+				<p class="text-center text-gray-600">
+					생성된 테스트 사용자가 없습니다. 위의 <strong>테스트 사용자 생성</strong> 기능을 사용해 100명을 생성할 수 있습니다.
+				</p>
 			</div>
 		</Card>
 	{:else}
