@@ -6,16 +6,26 @@
 	 */
 
 	import { cn } from '$lib/utils.js';
-	import type { HTMLButtonAttributes } from 'svelte/elements';
+	import type { HTMLButtonAttributes, HTMLAnchorAttributes } from 'svelte/elements';
 	import type { Snippet } from 'svelte';
 
-	interface Props extends HTMLButtonAttributes {
+	interface ButtonProps extends HTMLButtonAttributes {
 		variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
 		size?: 'default' | 'sm' | 'lg' | 'icon';
 		class?: string;
 		children?: Snippet;
-		href?: string; // 링크로 사용할 때의 href 속성
+		href?: never; // 버튼일 때는 href가 없음
 	}
+
+	interface LinkProps extends HTMLAnchorAttributes {
+		variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+		size?: 'default' | 'sm' | 'lg' | 'icon';
+		class?: string;
+		children?: Snippet;
+		href: string; // 링크일 때는 href가 필수
+	}
+
+	type Props = ButtonProps | LinkProps;
 
 	let {
 		variant = 'default',
@@ -54,12 +64,12 @@
 	<a
 		{href}
 		class={cn(
-			'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+			'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer disabled:pointer-events-none disabled:opacity-50',
 			variantStyles[variant],
 			sizeStyles[size],
 			className
 		)}
-		{...restProps}
+		{...(restProps as any)}
 	>
 		{@render children?.()}
 	</a>
@@ -67,12 +77,12 @@
 	<!-- href가 없으면 <button> 태그로 렌더링 -->
 	<button
 		class={cn(
-			'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+			'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer disabled:pointer-events-none disabled:opacity-50',
 			variantStyles[variant],
 			sizeStyles[size],
 			className
 		)}
-		{...restProps}
+		{...(restProps as any)}
 	>
 		{@render children?.()}
 	</button>

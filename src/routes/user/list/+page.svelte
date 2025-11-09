@@ -1,6 +1,5 @@
 <script lang="ts">
   import DatabaseListView from '$lib/components/DatabaseListView.svelte';
-  import { login } from '$lib/utils/firebase-login-user.svelte.js';
 
   /**
    * /user/list 페이지
@@ -8,13 +7,6 @@
    * Firebase Realtime Database의 users 노드에서 사용자 목록을 가져와
    * 무한 스크롤로 표시합니다.
    */
-
-  /**
-   * 사용자 프로필 페이지로 이동
-   */
-  function goToProfile(uid: string) {
-    window.location.href = `/user/profile/${uid}`;
-  }
 
   /**
    * 날짜 포맷팅 함수
@@ -49,18 +41,8 @@
     threshold={300}
     reverse={false}
   >
-    {#snippet item(itemData)}
-      <div
-        class="user-card"
-        onclick={() => goToProfile(itemData.key)}
-        role="button"
-        tabindex="0"
-        onkeydown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            goToProfile(itemData.key);
-          }
-        }}
-      >
+    {#snippet item(itemData: { key: string; data: any })}
+      <a class="user-card" href={`/user/profile/${itemData.key}`} aria-label="사용자 프로필 상세">
         <div class="user-avatar">
           {#if itemData.data?.photoUrl}
             <img src={itemData.data.photoUrl} alt={itemData.data?.displayName || '사용자'} />
@@ -111,7 +93,7 @@
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </div>
-      </div>
+      </a>
     {/snippet}
 
     {#snippet loading()}
@@ -129,11 +111,11 @@
       </div>
     {/snippet}
 
-    {#snippet error(errorMessage)}
+    {#snippet error(errorMessage: string | null)}
       <div class="error-state">
         <div class="error-icon">⚠️</div>
         <h3>사용자 목록을 불러올 수 없습니다</h3>
-        <p class="error-message">{errorMessage}</p>
+        <p class="error-message">{errorMessage ?? '알 수 없는 오류가 발생했습니다.'}</p>
         <button class="retry-button" onclick={() => window.location.reload()}>
           다시 시도
         </button>
@@ -192,6 +174,8 @@
     background-color: #ffffff;
     cursor: pointer;
     transition: all 0.2s;
+    text-decoration: none;
+    color: inherit;
   }
 
   .user-card:hover {

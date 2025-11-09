@@ -47,7 +47,20 @@
     endAt,
     endBefore
   } from 'firebase/database';
+  import type { Snippet } from 'svelte';
   import { rtdb as database } from '$lib/firebase';
+
+  /**
+   * 아이템 데이터 타입
+   */
+  type ItemData = {
+    key: string;
+    data: any;
+  };
+
+  type ItemSnippet = Snippet<[itemData: ItemData, index: number]>;
+  type StatusSnippet = Snippet<[]>;
+  type ErrorSnippet = Snippet<[errorMessage: string | null]>;
 
   // ============================================================================
   // Props (컴포넌트 속성)
@@ -68,6 +81,21 @@
    * - loadingMore: 더 로드 중 snippet
    * - noMore: 더 이상 데이터 없음 snippet
    */
+  interface Props {
+    path?: string;
+    pageSize?: number;
+    orderBy?: string;
+    orderPrefix?: string;
+    threshold?: number;
+    reverse?: boolean;
+    item: ItemSnippet;
+    loading?: StatusSnippet;
+    empty?: StatusSnippet;
+    error?: ErrorSnippet;
+    loadingMore?: StatusSnippet;
+    noMore?: StatusSnippet;
+  }
+
   let {
     path = '',
     pageSize = 10,
@@ -76,24 +104,16 @@
     threshold = 300,
     reverse = false,
     item,
-    loading: loadingSnippet,
-    empty,
-    error: errorSnippet,
-    loadingMore,
-    noMore
-  } = $props();
+    loading: loadingSnippet = undefined,
+    empty = undefined,
+    error: errorSnippet = undefined,
+    loadingMore = undefined,
+    noMore = undefined
+  }: Props = $props();
 
   // ============================================================================
   // Types (타입 정의)
   // ============================================================================
-
-  /**
-   * 아이템 데이터 타입
-   */
-  type ItemData = {
-    key: string;
-    data: any;
-  };
 
   // ============================================================================
   // State (반응형 상태)
@@ -242,7 +262,7 @@
    * 아이템 목록의 마지막 항목에서 orderBy 필드 값 추출
    *
    * 페이지 커서를 위해 마지막 항목의 orderBy 필드 값이 필요합니다.
-   * 필드가 없으면 에러를 발생시킵니다.
+   * 필드가 없으면 createdAt을 폴백으로 사용합니다.
    */
   function getLastItemCursor(
     itemList: ItemData[],
@@ -268,14 +288,12 @@
     }
 
     // 주 필드가 없으면 null 반환 (무한 스크롤 중단)
-    // Firebase orderByChild와 startAfter를 사용할 때는 반드시 해당 필드가 있어야 합니다
-    console.error(
-      `DatabaseListView: CRITICAL ERROR - Field '${primaryField}' not found in last item (key: ${lastItem.key}).`,
-      `This will prevent pagination from working correctly.`,
-      `Please ensure all items in '${path}' have the '${primaryField}' field.`,
+    // 에러가 아닌 경고로 처리하여 앱이 중단되지 않도록 함
+    console.warn(
+      `DatabaseListView: Field '${primaryField}' not found in last item (key: ${lastItem.key}).`,
+      `Pagination will stop here. This is normal if not all items have the '${primaryField}' field.`,
       `Item data:`, lastItem.data
     );
-    error = `데이터 정렬 필드 '${primaryField}'가 누락되었습니다. 데이터베이스 구조를 확인해주세요.`;
     return null;
   }
 
@@ -285,6 +303,12 @@
    * Firebase의 onValue()를 사용하여 각 아이템의 변경사항을 실시간으로 감지합니다.
    */
   function setupItemListener(itemKey: string, index: number): void {
+    // database null 체크
+    if (!database) {
+      console.error('DatabaseListView: Database is not initialized');
+      return;
+    }
+
     // 이미 리스닝 중이면 스킵
     const listenerKey = `${itemKey}`;
     if (unsubscribers.has(listenerKey)) {
@@ -326,6 +350,12 @@
    * childAddedListenerReady 플래그를 사용하여 초기 로드 완료 후에만 새 아이템으로 처리합니다.
    */
   function setupChildAddedListener() {
+    // database null 체크
+    if (!database) {
+      console.error('DatabaseListView: Database is not initialized');
+      return;
+    }
+
     if (childAddedUnsubscribe) {
       // 기존 리스너가 있으면 먼저 해제
       childAddedUnsubscribe();
@@ -430,6 +460,12 @@
    * - 해당 노드의 onValue 리스너도 해제
    */
   function setupChildRemovedListener() {
+    // database null 체크
+    if (!database) {
+      console.error('DatabaseListView: Database is not initialized');
+      return;
+    }
+
     if (childRemovedUnsubscribe) {
       // 기존 리스너가 있으면 먼저 해제
       childRemovedUnsubscribe();
@@ -506,6 +542,14 @@
    * reverse가 true일 때는 limitToLast를 사용하여 최신 아이템부터 가져옵니다.
    */
   async function loadInitialData() {
+    // database null 체크
+    if (!database) {
+      console.error('DatabaseListView: Database is not initialized');
+      error = 'Database가 초기화되지 않았습니다.';
+      initialLoading = false;
+      return;
+    }
+
     console.log('DatabaseListView: Loading initial data from', path, '(reverse:', reverse, ')');
     initialLoading = true;
     error = null;
@@ -694,6 +738,13 @@
    * pageSize + 1개를 로드하여 hasMore를 판단합니다.
    */
   async function loadMore() {
+    // database null 체크
+    if (!database) {
+      console.error('DatabaseListView: Database is not initialized');
+      error = 'Database가 초기화되지 않았습니다.';
+      return;
+    }
+
     if (loading || !hasMore) {
       console.log('DatabaseListView: Cannot load more - loading:', loading, 'hasMore:', hasMore);
       return;

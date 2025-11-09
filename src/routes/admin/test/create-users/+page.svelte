@@ -129,7 +129,7 @@
 							<div
 								class="h-full bg-blue-500 transition-all duration-300"
 								style="width: {getProgressPercentage()}%"
-							/>
+							></div>
 						</div>
 					</div>
 				{/if}

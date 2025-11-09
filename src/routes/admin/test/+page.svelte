@@ -23,6 +23,12 @@
 			description: '테스트용 임시 사용자 100명을 일괄 생성합니다',
 			href: '/admin/test/create-users',
 			icon: '👥'
+		},
+		{
+			title: '테스트 데이터 생성',
+			description: '/test/data 노드에 카테고리별 타임스탬프 데이터를 추가합니다',
+			href: '/admin/test/create-test-data',
+			icon: '🧪'
 		}
 	];
 </script>

@@ -8,11 +8,6 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { authStore } from '$lib/stores/auth.svelte';
-	import { goto } from '$app/navigation';
-
-	function goToLogin() {
-		goto('/user/login');
-	}
 </script>
 
 <svelte:head>
@@ -63,7 +58,7 @@
 					<Card.Description>Google 또는 Apple 계정으로 로그인하여 시작하세요</Card.Description>
 				</Card.Header>
 				<Card.Content>
-					<Button class="w-full" onclick={goToLogin}>로그인하기</Button>
+					<Button class="w-full" href="/user/login">로그인하기</Button>
 				</Card.Content>
 			</Card.Root>
 		{/if}

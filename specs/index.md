@@ -26,6 +26,7 @@ step: 20
    - 사양 해석 없음, 가정 없음
 
 4. **기술 표준**:
+   - Svelte 5.4.1 + SvelteKit 버전 `"@sveltejs/kit": "^2.47.1"` 사용
    - TypeScript 엄격 모드(strict mode) 필수
    - UTF-8 인코딩 필수 (BOM 제외)
    - 최소 80% 코드 커버리지

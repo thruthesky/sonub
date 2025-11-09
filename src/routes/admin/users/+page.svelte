@@ -125,9 +125,9 @@
 		loadUsers();
 	});
 
-	const userList = Object.entries(users);
-	const userCount = userList.length;
-	const deletePercentage = deleteTotal > 0 ? Math.round((deleteProgress / deleteTotal) * 100) : 0;
+	const userList = $derived(Object.entries(users));
+	const userCount = $derived(userList.length);
+	const deletePercentage = $derived(deleteTotal > 0 ? Math.round((deleteProgress / deleteTotal) * 100) : 0);
 </script>
 
 <div class="space-y-6">
@@ -176,7 +176,7 @@
 						<div
 							class="h-full bg-red-500 transition-all duration-300"
 							style="width: {deletePercentage}%"
-						/>
+						></div>
 					</div>
 				</div>
 			</div>
@@ -194,14 +194,14 @@
 	{#if !isLoading && userCount > 0}
 		<div class="flex gap-2">
 			<Button
-				onClick={() => loadUsers()}
+				onclick={() => loadUsers()}
 				variant="outline"
 				disabled={isDeleting}
 			>
 				새로고침
 			</Button>
 			<Button
-				onClick={handleDeleteAllUsers}
+				onclick={handleDeleteAllUsers}
 				variant="destructive"
 				disabled={isDeleting}
 			>
@@ -271,7 +271,7 @@
 
 							<!-- 삭제 버튼 -->
 							<Button
-								onClick={() => handleDeleteUser(uid)}
+								onclick={() => handleDeleteUser(uid)}
 								variant="destructive"
 								size="sm"
 								disabled={isDeleting}

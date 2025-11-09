@@ -103,7 +103,13 @@ body {
    ```
    - 자세한 내용은 [shadcn-svelte Button 공식 문서](https://www.shadcn-svelte.com/docs/components/button)를 참고하세요.
 
-4. **shadcn-svelte 컴포넌트도 예외 없음**
+4. **모든 네비게이션/링크 동작은 `<a>`로 렌더링되어야 함**
+   - `goto()` 호출이나 `window.location`을 사용하는 **네비게이션 버튼은 금지**
+   - 반드시 `<Button href=\"...\">` 또는 순수 `<a href=\"...\">`로 구현해 최종 DOM이 `<a>`가 되도록 한다
+   - 아이콘 버튼(예: 탑바 메뉴, 카드 액션 등)도 가능하면 `href`를 부여해 `<a>` 태그로 렌더링한다
+   - 이렇게 하면 **손가락 커서가 자동으로 표시**되고 접근성도 향상된다
+
+5. **shadcn-svelte 컴포넌트도 예외 없음**
    - Button의 `href`를 사용하지 않는 경우, 컴포넌트 자체에 커서가 없으면 **반드시 래퍼 요소에서 지정**
    ```svelte
    <div class="cursor-pointer">
@@ -111,24 +117,24 @@ body {
    </div>
    ```
 
-5. **비활성화 상태도 명시적으로 지정**
+6. **비활성화 상태도 명시적으로 지정**
    ```svelte
    <button disabled class="cursor-not-allowed ...">비활성화</button>
    ```
 
-6. **Hover 상태에서도 cursor가 유지되는지 확인**
+7. **Hover 상태에서도 cursor가 유지되는지 확인**
    - `hover:` 클래스가 cursor를 덮어쓰지 않도록 주의
 
 ### 3.3 구현 예시 (모두 따라야 할 필수 패턴)
 
 ```svelte
-<!-- ✅ 올바른 예: 탑바 로그인 버튼 -->
-<button
+<!-- ✅ 올바른 예: 탑바 로그인 버튼 (Button href 사용) -->
+<Button
+  href="/user/login"
   class="cursor-pointer font-medium text-sm text-gray-900 hover:text-gray-700 transition-colors"
-  onclick={handleLogin}
 >
   로그인
-</button>
+</Button>
 
 <!-- ✅ 올바른 예: 링크 (shadcn Button href 사용) - 최종 결과: <a> 태그 -->
 <Button href="/profile" class="cursor-pointer">

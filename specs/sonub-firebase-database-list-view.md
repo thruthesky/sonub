@@ -978,8 +978,8 @@ orderPrefix를 사용하는 경우, **해당 범위 내에서 삭제된 노드�
 
 #### 2. DatabaseListView 테스트 페이지
 
-**경로**: `/admin/test/database-list-view`
-**파일**: [src/routes/admin/test/database-list-view/+page.svelte](../src/routes/admin/test/database-list-view/+page.svelte)
+**경로**: `/dev/test/database-list-view`
+**파일**: [src/routes/dev/test/database-list-view/+page.svelte](../src/routes/dev/test/database-list-view/+page.svelte)
 
 **테스트 케이스**:
 
@@ -1011,6 +1011,8 @@ orderPrefix를 사용하는 경우, **해당 범위 내에서 삭제된 노드�
 - 테스트 설명 및 주의사항 표시
 - 실시간 동작 확인 가능
 
+> ℹ️ 2025-11-09 기준으로 `/admin/test/database-list-view` 페이지는 `/dev/test/database-list-view`와 기능이 완전히 중복되어 제거되었습니다. 이제 모든 DatabaseListView QA는 개발용 경로(`/dev/test/...`)에서만 수행합니다.
+
 ### 13.3. 구현 과정
 
 #### Phase 1: Custom Elements → Svelte 5 변환 (2025-01-09)
@@ -1039,7 +1041,7 @@ orderPrefix를 사용하는 경우, **해당 범위 내에서 삭제된 노드�
    - 사용자 목록 UI 디자인
    - 프로필 페이지 연동
 
-2. `/admin/test/database-list-view` 테스트 페이지 생성
+2. `/dev/test/database-list-view` 테스트 페이지 생성
    - 4가지 테스트 케이스 구현
    - 코드 예시 제공
    - 인터랙티브 테스트 환경
@@ -1060,7 +1062,7 @@ orderPrefix를 사용하는 경우, **해당 범위 내에서 삭제된 노드�
 
 **테스트 페이지 접속**:
 ```
-http://localhost:5173/admin/test/database-list-view
+http://localhost:5173/dev/test/database-list-view
 ```
 
 **확인 항목**:

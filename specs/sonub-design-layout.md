@@ -93,18 +93,20 @@ src/
 
 <div class="min-h-screen bg-gray-50">
 	<TopBar />
-	<div class="container mx-auto px-4 py-8">
-		<div class="flex gap-6">
-			<!-- 좌측 사이드바 (데스크톱만) -->
-			<LeftSidebar />
+	<div class="pt-20">
+		<div class="container mx-auto px-4 py-8">
+			<div class="flex gap-6">
+				<!-- 좌측 사이드바 (데스크톱만) -->
+				<LeftSidebar />
 
-			<!-- 메인 콘텐츠 -->
-			<main class="flex-1 min-w-0">
-				{@render children()}
-			</main>
+				<!-- 메인 콘텐츠 -->
+				<main class="min-w-0 flex-1">
+					{@render children()}
+				</main>
 
-			<!-- 우측 사이드바 (데스크톱만) -->
-			<RightSidebar />
+				<!-- 우측 사이드바 (데스크톱만) -->
+				<RightSidebar />
+			</div>
 		</div>
 	</div>
 </div>
@@ -127,7 +129,18 @@ src/
 - Light Mode 일관성 유지
 - 콘텐츠가 적어도 화면 전체를 채우도록 보장
 
-#### 2.3.2 컨테이너 래퍼
+#### 2.3.2 고정 탑바 오프셋
+
+```svelte
+<div class="pt-20">
+```
+
+**설명:**
+- `pt-20`은 5rem(약 80px) 패딩을 의미하며, `h-16`(64px) 탑바 + 여유 공간 16px을 확보한다.
+- 탑바가 `position: fixed`로 상단에 고정되어 있으므로, 본문이 헤더 아래에 가려지지 않도록 글로벌 여백을 강제한다.
+- 새로운 페이지를 추가할 때 별도의 상단 마진 계산 없이 일관된 오프셋을 보장한다.
+
+#### 2.3.3 컨테이너 래퍼
 
 ```svelte
 <div class="container mx-auto px-4 py-8">
@@ -144,7 +157,7 @@ src/
 - `px-4`: 좌우 패딩 1rem (16px)
 - `py-8`: 상하 패딩 2rem (32px)
 
-#### 2.3.3 3컬럼 플렉스 레이아웃
+#### 2.3.4 3컬럼 플렉스 레이아웃
 
 ```svelte
 <div class="flex gap-6">
@@ -180,7 +193,7 @@ src/
 - **모바일/태블릿 (< 1024px)**: 사이드바 숨김, 메인 콘텐츠만 표시
 - **데스크톱 (≥ 1024px)**: 3컬럼 레이아웃 표시
 
-#### 2.3.4 메인 콘텐츠 영역
+#### 2.3.5 메인 콘텐츠 영역
 
 ```svelte
 <main class="flex-1 min-w-0">
@@ -247,7 +260,7 @@ src/
 	 * 로그아웃 처리
 	 */
 	async function handleSignOut() {
-		if (isSigningOut) return;
+		if (isSigningOut || !auth) return;
 
 		isSigningOut = true;
 		try {
@@ -267,9 +280,16 @@ src/
 	function goToLogin() {
 		goto('/user/login');
 	}
+
+	/**
+	 * 메뉴 페이지로 이동
+	 */
+	function goToMenu() {
+		goto('/menu');
+	}
 </script>
 
-<nav class="border-b bg-white">
+<nav class="fixed inset-x-0 top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
 	<div class="container mx-auto px-4">
 		<div class="flex h-16 items-center justify-between">
 			<!-- 좌측: 로고 및 네비게이션 링크 -->
@@ -330,6 +350,29 @@ src/
 					<!-- 비로그인 상태 -->
 					<Button variant="ghost" size="sm" onclick={goToLogin}>로그인</Button>
 				{/if}
+
+				<!-- 메뉴 아이콘 (모든 상태에서 표시) -->
+				<button
+					onclick={goToMenu}
+					class="rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+					aria-label="메뉴"
+					title="메뉴"
+				>
+					<!-- 햄버거 메뉴 아이콘 -->
+					<svg
+						class="h-6 w-6"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+						stroke-width="2"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M4 6h16M4 12h16M4 18h16"
+						/>
+					</svg>
+				</button>
 			</div>
 		</div>
 	</div>
@@ -341,12 +384,16 @@ src/
 #### 3.3.1 최상위 네비게이션 컨테이너
 
 ```svelte
-<nav class="border-b bg-white">
+<nav class="fixed inset-x-0 top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
 ```
 
 **TailwindCSS 클래스 설명:**
-- `border-b`: 하단 테두리 (1px solid)
-- `bg-white`: Light Mode 배경색 (흰색)
+- `fixed inset-x-0 top-0`: 화면 상단에 고정하며 좌우 폭을 100%로 확장한다.
+- `z-50`: 탑바가 다른 콘텐츠 위에 올라오도록 보장한다.
+- `border-b border-gray-200`: Light Mode에 맞는 하단 테두리를 적용한다.
+- `bg-white/95`: 약간의 투명도를 가진 흰색 배경으로 스크롤 시 자연스러운 레이어를 만든다.
+- `backdrop-blur supports-[backdrop-filter]:bg-white/60`: 브라우저가 지원할 경우 배경 블러 + 더 투명한 색상을 적용하여 Glassmorphism 효과를 준다.
+- `shadow-sm`: 고정 헤더가 구분되도록 은은한 그림자를 추가한다.
 
 **HTML 시맨틱:**
 - `<nav>` 태그 사용으로 접근성 향상
@@ -1362,3 +1409,9 @@ await goto('/user/login'); // 로그인 페이지로 이동
 4. 반응형 및 접근성 필수 고려
 5. 사용자 인증 상태에 따른 동적 UI 제공
 6. 일관된 디자인 패턴 유지
+
+## 16. 작업 이력 (SED Log)
+
+| 날짜 | 작업자 | 변경 내용 |
+| ---- | ------ | -------- |
+| 2025-11-09 | Codex Agent | TopBar를 `fixed`로 전환하고 투명/블러 효과를 적용, 전역 레이아웃에 `pt-20` 여백을 추가하여 헤더 높이를 보정함. 관리자 전역 레이아웃 명세에 맞춰 코드 예시와 클래스 설명을 최신 상태로 업데이트함. |

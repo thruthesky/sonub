@@ -4,12 +4,35 @@
 	 *
 	 * 현재 로그인한 사용자가 작성한 신고만 createdAt 순서로 표시합니다.
 	 */
-	import { t } from '$lib/stores/i18n.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
 	// import DatabaseListView from "$lib/components/DatabaseListView.svelte";
 	// import type { ReportWithId } from "$lib/types/report";
 	// import { removeReport } from "$lib/services/report";
+
+	/**
+	 * 간단한 번역 함수 (i18n 미구현 시 임시 사용)
+	 *
+	 * @param key - 번역 키
+	 * @returns 번역된 문자열
+	 */
+	function t(key: string): string {
+		const translations: Record<string, string> = {
+			'신고사유_abuse': '욕설 및 비방',
+			'신고사유_fake-news': '허위 정보',
+			'신고사유_spam': '스팸',
+			'신고사유_inappropriate': '부적절한 콘텐츠',
+			'신고사유_other': '기타',
+			'게시글': '게시글',
+			'댓글': '댓글',
+			'신고를취소하시겠습니까': '신고를 취소하시겠습니까?',
+			'로그인필요': '로그인이 필요합니다',
+			'로그인': '로그인',
+			'내_신고_목록': '내 신고 목록',
+			'내가_작성한_신고를_확인할_수_있습니다': '내가 작성한 신고를 확인할 수 있습니다'
+		};
+		return translations[key] || key;
+	}
 
 	/**
 	 * 신고 사유를 한글로 변환하는 함수
@@ -18,7 +41,7 @@
 	 * @returns 한글 신고 사유
 	 */
 	function getReasonText(reason: string): string {
-		return $t(`신고사유_${reason}`);
+		return t(`신고사유_${reason}`);
 	}
 
 	/**
@@ -28,7 +51,7 @@
 	 * @returns 한글 신고 타입
 	 */
 	function getTypeText(type: string): string {
-		return type === 'post' ? $t('게시글') : $t('댓글');
+		return type === 'post' ? t('게시글') : t('댓글');
 	}
 
 	/**
@@ -55,7 +78,7 @@
 	 */
 	async function handleCancelReport(reportId: string) {
 		// 확인 다이얼로그
-		if (!confirm($t('신고를취소하시겠습니까'))) {
+		if (!confirm(t('신고를취소하시겠습니까'))) {
 			return;
 		}
 
@@ -74,10 +97,10 @@
 	<!-- 로그인하지 않은 경우 -->
 	<div class="my-report-list-page">
 		<div class="empty-state">
-			<p>{$t('로그인필요')}</p>
-			<button class="login-btn" onclick={() => goto('/user/login')}>
-				{$t('로그인')}
-			</button>
+			<p>{t('로그인필요')}</p>
+			<a class="login-btn" href="/user/login">
+				{t('로그인')}
+			</a>
 		</div>
 	</div>
 {:else}
@@ -85,8 +108,8 @@
 	<div class="my-report-list-page">
 		<!-- 페이지 헤더 -->
 		<div class="page-header">
-			<h1 class="page-title">{$t('내_신고_목록')}</h1>
-			<p class="page-description">{$t('내가_작성한_신고를_확인할_수_있습니다')}</p>
+			<h1 class="page-title">{t('내_신고_목록')}</h1>
+			<p class="page-description">{t('내가_작성한_신고를_확인할_수_있습니다')}</p>
 		</div>
 
 		<!-- 신고 목록 -->
@@ -126,15 +149,16 @@
 	}
 
 	.login-btn {
+		display: inline-block;
 		padding: 0.75rem 2rem;
 		background-color: #3b82f6;
 		color: #ffffff;
-		border: none;
 		border-radius: 0.5rem;
 		font-size: 1rem;
 		font-weight: 600;
 		cursor: pointer;
 		transition: background-color 0.2s ease;
+		text-decoration: none;
 	}
 
 	.login-btn:hover {
@@ -174,131 +198,6 @@
 		color: #9ca3af;
 	}
 
-	/* 신고 아이템 */
-	.report-item {
-		background-color: #ffffff;
-		border: 1px solid #e5e7eb;
-		border-radius: 0.5rem;
-		padding: 1.5rem;
-		margin-bottom: 1rem;
-		transition: box-shadow 0.2s ease;
-	}
-
-	.report-item:hover {
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-	}
-
-	/* 신고 헤더 */
-	.report-header {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		margin-bottom: 1rem;
-		padding-bottom: 0.75rem;
-		border-bottom: 1px solid #f3f4f6;
-	}
-
-	.report-number {
-		font-size: 0.85rem;
-		font-weight: 700;
-		color: #9ca3af;
-	}
-
-	.report-type {
-		display: inline-flex;
-		align-items: center;
-		padding: 0.25rem 0.75rem;
-		border-radius: 9999px;
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: #ffffff;
-	}
-
-	.report-type.post {
-		background-color: #3b82f6;
-	}
-
-	.report-type.comment {
-		background-color: #10b981;
-	}
-
-	.report-date {
-		margin-left: auto;
-		font-size: 0.8rem;
-		color: #9ca3af;
-	}
-
-	/* 신고 내용 */
-	.report-content {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		margin-bottom: 1rem;
-	}
-
-	.report-info-row {
-		display: flex;
-		align-items: flex-start;
-		gap: 0.5rem;
-	}
-
-	.label {
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: #374151;
-		min-width: 80px;
-	}
-
-	.value {
-		font-size: 0.85rem;
-		color: #4b5563;
-		word-break: break-word;
-	}
-
-	.value.reason {
-		font-weight: 600;
-		color: #dc2626;
-	}
-
-	.value.message {
-		font-style: italic;
-	}
-
-	/* 액션 버튼 */
-	.report-actions {
-		display: flex;
-		gap: 0.5rem;
-		justify-content: flex-end;
-	}
-
-	.action-btn {
-		padding: 0.5rem 1rem;
-		border-radius: 0.375rem;
-		font-size: 0.85rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: all 0.2s ease;
-		border: none;
-	}
-
-	.action-btn.go-to-node {
-		background-color: #3b82f6;
-		color: #ffffff;
-	}
-
-	.action-btn.go-to-node:hover {
-		background-color: #2563eb;
-	}
-
-	.action-btn.cancel-report {
-		background-color: #ef4444;
-		color: #ffffff;
-	}
-
-	.action-btn.cancel-report:hover {
-		background-color: #dc2626;
-	}
-
 	/* 반응형 스타일 */
 	@media (max-width: 768px) {
 		.my-report-list-page {
@@ -307,27 +206,6 @@
 
 		.page-title {
 			font-size: 1.5rem;
-		}
-
-		.report-item {
-			padding: 1rem;
-		}
-
-		.label {
-			min-width: 60px;
-			font-size: 0.8rem;
-		}
-
-		.value {
-			font-size: 0.8rem;
-		}
-
-		.report-actions {
-			flex-direction: column;
-		}
-
-		.action-btn {
-			width: 100%;
 		}
 	}
 </style>

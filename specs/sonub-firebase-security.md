@@ -92,25 +92,33 @@ export const isAdmin = $derived(
 {
   "rules": {
     "users": {
-      "$uid": {
-        // 모든 사용자가 읽기 가능
-        ".read": true,
-        // 2025-12-12 까지는 무조건 쓰기 통과 (테스트 데이터 생성용)
-        // 그 이후는 본인만 쓰기 가능
-        ".write": "now < 1765555200000 || auth.uid == $uid",
-        // 필수 필드 검증
-        ".validate": "newData.hasChildren(['displayName', 'email'])"
-      }
-    },
-    "system": {
-      "settings": {
-        "admins": {
-          // 로그인한 모든 사용자가 읽기 가능 (메뉴에서 사용)
-          ".read": "auth != null",
-          // 관리자만 쓰기 가능 (객체 키에 해당 UID가 있고 value가 true인 사용자만)
-          ".write": "root.child('system/settings/admins').child(auth.uid).val() == true"
+        "$uid": {
+          // 자신만 읽기 가능. 모든 사용자가 읽기 불가능
+        ".read": "auth.uid == $uid",
+          // 2025-12-12 까지는 무조건 쓰기 통과 (테스트 데이터 생성용)
+          // 그 이후는 본인만 쓰기 가능
+          ".write": "now < 1765555200000 || auth.uid == $uid",
+          // 필수 필드 검증
+          ".validate": "newData.hasChildren(['displayName'])"
+        },
+        ".indexOn": ["createdAt"]
+      },
+      "system": {
+        "settings": {
+          "admins": {
+            // 로그인한 모든 사용자가 읽기 가능 (메뉴에서 사용)
+            ".read": "auth != null",
+            // 관리자만 쓰기 가능 (배열에 있는 사용자만)
+            ".write": "root.child('system/settings/admins').val().contains(auth.uid)"
+          }
         }
-      }
+      },
+    "test": {
+        "data": {
+          // QA 전용 테스트 데이터 노드 - 누구나 읽고 쓰기 가능
+          ".read": true,
+          ".write": true
+       }
     }
   }
 }
@@ -121,6 +129,8 @@ export const isAdmin = $derived(
   - `now < 1765555200000`: 2025-12-12 자정(UTC) 이전에는 모든 사용자 쓰기 허용 (테스트 데이터 생성용)
   - `auth.uid == $uid`: 2025-12-12 이후에는 본인 데이터만 쓰기 가능
 - `system/settings/admins`: 관리자 객체 (key: UID, value: true, 로그인 사용자는 읽기, 관리자만 쓰기)
+- `test/data`: QA 테스트 전용 경로. DatabaseListView 데모가 자유롭게 데이터를 생성/삭제할 수 있도록 `.read`와
+  `.write`를 모두 `true`로 설정한다. 이 노드는 **프로덕션 데이터와 분리된 테스트 공간**이므로 민감한 정보를 저장하지 않는다.
 
 
 ## Firebase Storage 보안 규칙

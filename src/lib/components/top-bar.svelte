@@ -33,22 +33,9 @@
 		}
 	}
 
-	/**
-	 * 로그인 페이지로 이동
-	 */
-	function goToLogin() {
-		goto('/user/login');
-	}
-
-	/**
-	 * 메뉴 페이지로 이동
-	 */
-	function goToMenu() {
-		goto('/menu');
-	}
 </script>
 
-<nav class="border-b bg-white">
+<nav class="fixed inset-x-0 top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
 	<div class="container mx-auto px-4">
 		<div class="flex h-16 items-center justify-between">
 			<!-- 좌측: 로고 및 네비게이션 링크 -->
@@ -107,17 +94,18 @@
 					</div>
 				{:else}
 					<!-- 비로그인 상태 -->
-					<Button variant="ghost" size="sm" onclick={goToLogin}>로그인</Button>
+					<Button variant="ghost" size="sm" href="/user/login">로그인</Button>
 				{/if}
 
 				<!-- 메뉴 아이콘 (모든 상태에서 표시) -->
-				<button
-					onclick={goToMenu}
-					class="p-2 rounded-lg hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors"
+				<Button
+					href="/menu"
+					variant="ghost"
+					size="icon"
 					aria-label="메뉴"
 					title="메뉴"
+					class="text-gray-600 hover:text-gray-900"
 				>
-					<!-- 햄버거 메뉴 아이콘 -->
 					<svg
 						class="h-6 w-6"
 						fill="none"
@@ -131,7 +119,7 @@
 							d="M4 6h16M4 12h16M4 18h16"
 						/>
 					</svg>
-				</button>
+				</Button>
 			</div>
 		</div>
 	</div>
