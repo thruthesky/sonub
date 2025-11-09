@@ -7,6 +7,7 @@
 	 */
 
 	import * as Card from '$lib/components/ui/card/index.js';
+	import { BUILD_VERSION } from '$lib/version';
 </script>
 
 <aside class="hidden lg:block lg:w-64 xl:w-72">
@@ -51,5 +52,12 @@
 				<p class="text-sm text-gray-600">최근 활동이 없습니다.</p>
 			</Card.Content>
 		</Card.Root>
+
+		<!-- 빌드 버전 정보 -->
+		<div class="px-4 py-3">
+			<p class="text-xs text-gray-500">
+				빌드버전: {BUILD_VERSION}
+			</p>
+		</div>
 	</div>
 </aside>
