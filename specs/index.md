@@ -53,25 +53,29 @@ This document provides a detailed index of all specifications related to the son
 
 ### Sonub Design Layout
 - **File**: [sonub-design-layout.md](./sonub-design-layout.md)
-- **Title**: Sonub Design Layout - 레이아웃 및 탑바 구조
-- **Description**: Sonub 프로젝트의 레이아웃 및 탑바 구조 구현 명세서
-- **Version**: 1.0.0
+- **Title**: Sonub Design Layout - 레이아웃, 탑바 및 사이드바 구조
+- **Description**: Sonub 프로젝트의 레이아웃, 탑바 및 사이드바 구조 구현 명세서
+- **Version**: 1.1.0
 - **Step**: 20
 - **Priority**: **
 - **Dependencies**:
   - sonub-design-workflow.md
   - sonub-user-login.md
   - sonub-setup-shadcn.md
-- **Tags**: layout, topbar, navigation, ui, authentication, svelte5
+- **Tags**: layout, topbar, sidebar, navigation, ui, authentication, svelte5
 - **Files**:
-  - `src/routes/+layout.svelte` - 전역 레이아웃
+  - `src/routes/+layout.svelte` - 전역 레이아웃 (3컬럼 구조)
   - `src/lib/components/top-bar.svelte` - 탑바 컴포넌트
+  - `src/lib/components/left-sidebar.svelte` - 좌측 사이드바 컴포넌트 (데스크톱만)
+  - `src/lib/components/right-sidebar.svelte` - 우측 사이드바 컴포넌트 (데스크톱만)
   - `src/routes/+page.svelte` - 홈페이지
 - **구현된 기능**:
-  - 전역 레이아웃 구조
+  - 전역 레이아웃 구조 (3컬럼: 좌측/중앙/우측)
   - 반응형 탑바 (모바일/태블릿/데스크톱)
+  - 반응형 사이드바 (데스크톱 lg 이상에서만 표시)
   - 사용자 인증 상태 기반 네비게이션
   - 로그인/로그아웃 기능
+  - Sticky 포지셔닝 (사이드바 스크롤 고정)
   - 다크 모드 지원
   - 접근성 고려
 

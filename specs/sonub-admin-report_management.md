@@ -1,29 +1,34 @@
 ---
-name: snsweb
+name: sonub-admin-report-management
 version: 1.0.0
-description: 글, 댓글에서 신고된 기능을 보드에서 신고 내역 확인 및 처리 기능 제공.
+description: 신고된 게시글 및 댓글 관리 기능 - 관리자 및 사용자 신고 목록 표시
 author: JaeHo Song
 email: thruthesky@gmail.com
-homepage: https://github.com/thruthesky/
-funding: ""
-license: SED Specification License v1.0
+license: GPL-3.0
+created: 2025-01-09
+updated: 2025-01-09
+step: 40
+priority: "**"
 dependencies:
-  - snsweb-firebase-database.md
-  - snsweb-forum-report.md
-  - sns-web-coding-guideline.md
+  - sonub-setup-firebase.md
+  - sonub-firebase-database.md
+  - sonub-user-login.md
+  - sonub-design-workflow.md
+  - sonub-setup-svelte.md
+tags: ["admin", "report", "moderation", "firebase", "sveltekit5"]
 ---
 
-# 신고 목록 표시 기능 (Admin & User Report List)
+# Sonub Admin Report Management - 신고 관리 기능
 
 ## 목차
 
-- [신고 목록 표시 기능 (Admin \& User Report List)](#신고-목록-표시-기능-admin--user-report-list)
+- [Sonub Admin Report Management - 신고 관리 기능](#sonub-admin-report-management---신고-관리-기능)
   - [목차](#목차)
-  - [Overview](#overview)
-  - [Requirements](#requirements)
-  - [Workflow](#workflow)
-  - [Detail Items](#detail-items)
-    - [1. 데이터베이스 구조](#1-데이터베이스-구조)
+  - [1. 개요](#1-개요)
+    - [1.1 목적](#11-목적)
+    - [1.2 범위](#12-범위)
+    - [1.3 사전 요구사항](#13-사전-요구사항)
+    - [1.4 제외 사항](#14-제외-사항)
       - [신고 데이터 경로](#신고-데이터-경로)
       - [신고 데이터 구조](#신고-데이터-구조)
       - [키 형식 규칙](#키-형식-규칙)
@@ -70,85 +75,853 @@ dependencies:
 
 ---
 
-## Overview
+## 1. 개요
 
-본 문서는 **신고된 목록을 표시하는 방법**에 대한 완벽한 사양서입니다. 관리자 신고 목록 페이지와 사용자 신고 목록 페이지의 구현 방법을 정확히 명시합니다.
+### 1.1 목적
 
-**핵심 특징:**
-- ✅ **관리자 신고 목록 페이지** (`/admin/reports`): 모든 사용자의 신고를 createdAt 순서로 표시
-- ✅ **사용자 신고 목록 페이지** (`/my/reports`): 현재 로그인한 사용자가 작성한 신고만 필터링하여 표시
-- ✅ **DatabaseListView 활용**: 무한 스크롤 및 실시간 데이터 동기화
-- ✅ **클라이언트 측 필터링**: 사용자 신고 목록은 `filter` prop으로 uid 필터링
+본 명세서는 Sonub 프로젝트에서 **신고된 게시글 및 댓글을 관리하는 기능**을 정의합니다. 관리자는 모든 신고를 확인할 수 있고, 사용자는 자신이 작성한 신고를 확인하고 취소할 수 있습니다.
+
+### 1.2 범위
+
+- ✅ **관리자 신고 목록 페이지** (`/admin/reports`): 모든 신고를 시간순으로 표시
+- ✅ **사용자 신고 목록 페이지** (`/my/reports`): 현재 사용자의 신고만 필터링하여 표시
 - ✅ **신고 취소 기능**: 사용자는 자신의 신고를 취소 가능
 - ✅ **대상 보기 기능**: 신고된 게시글/댓글로 이동
-- ✅ **실시간 업데이트**: 신고 추가/삭제 시 목록 자동 갱신
+- ✅ **실시간 업데이트**: Firebase Realtime Database 사용
+- ✅ **반응형 디자인**: TailwindCSS 사용
+- ✅ **다국어 지원**: Paraglide i18n 사용
+- ✅ **shadcn-svelte 컴포넌트**: Card, Button 등 활용
+
+### 1.3 사전 요구사항
+
+- ✅ Firebase 프로젝트 설정 완료 ([sonub-setup-firebase.md](./sonub-setup-firebase.md) 참조)
+- ✅ Firebase Realtime Database 활성화
+- ✅ TailwindCSS 설치 완료 ([sonub-design-workflow.md](./sonub-design-workflow.md) 참조)
+- ✅ shadcn-svelte 설치 완료 ([sonub-setup-shadcn.md](./sonub-setup-shadcn.md) 참조)
+- ✅ Paraglide i18n 설정 완료 ([sonub-setup-svelte.md](./sonub-setup-svelte.md) 참조)
+- ✅ Firebase Authentication 활성화 ([sonub-user-login.md](./sonub-user-login.md) 참조)
+- ✅ SvelteKit 5 프로젝트 환경
+
+### 1.4 제외 사항
+
+- ❌ 신고 생성 기능 (별도 명세서에서 정의)
+- ❌ 신고 처리 및 조치 기능 (별도 명세서에서 정의)
+- ❌ 신고 통계 및 분석 기능
 
 ---
 
-## Requirements
+## 2. 데이터베이스 구조
 
-**필수 라이브러리 및 도구:**
-- ✅ Svelte 5 (`svelte@5.43.2`)
-- ✅ Firebase Realtime Database
-- ✅ DatabaseListView 컴포넌트 (`src/lib/components/DatabaseListView.svelte`)
-- ✅ i18n 스토어 (`src/lib/stores/i18n.ts`)
-- ✅ Auth 스토어 (`src/lib/stores/auth.ts`)
-- ✅ Toast 스토어 (`src/lib/stores/toast.ts`)
-- ✅ Navigation 유틸리티 (`src/lib/utils/navigation.ts`)
-- ✅ Report 서비스 (`src/lib/services/report.ts`)
-- ✅ Report 타입 (`src/lib/types/report.ts`)
+### 2.1 신고 데이터 경로
 
-**선행 조건:**
-- ✅ Firebase 프로젝트 설정 완료
-- ✅ Realtime Database `/reports/` 노드 생성 완료
-- ✅ Firebase Authentication 활성화
-- ✅ 신고 기능 구현 완료 (PostItem, CommentItem에 신고 버튼 추가)
+Firebase Realtime Database에서 신고 데이터는 다음 경로에 저장됩니다:
 
----
+```
+/reports/{reportId}
+```
 
-## Workflow
+**경로 설명:**
+- `/reports/`: 모든 신고 데이터의 루트 노드
+- `{reportId}`: 신고 고유 ID (자동 생성 키 또는 커스텀 ID)
 
-신고 목록 표시 기능 개발은 다음 순서로 진행해야 합니다:
+### 2.2 신고 데이터 구조
 
-1. **타입 정의 확인**
-   - `src/lib/types/report.ts` 파일 확인
-   - `ReportWithId`, `ReportType`, `ReportReason` 타입 정의 확인
+각 신고는 다음 필드를 포함합니다:
 
-2. **서비스 API 확인**
-   - `src/lib/services/report.ts` 파일 확인
-   - `checkReportStatus()`, `removeReport()` 함수 구현 확인
+```typescript
+{
+  uid: string;              // 신고자 UID
+  displayName: string;      // 신고자 닉네임
+  photoURL: string;         // 신고자 프로필 사진 URL
+  type: 'post' | 'comment'; // 신고 대상 타입
+  targetId: string;         // 신고된 게시글/댓글 ID
+  targetUid: string;        // 신고된 게시글/댓글 작성자 UID
+  reason: 'spam' | 'abuse' | 'harassment' | 'inappropriate' | 'other'; // 신고 사유
+  description?: string;     // 추가 설명 (선택)
+  createdAt: number;        // 신고 생성 시간 (timestamp)
+}
+```
 
-3. **관리자 신고 목록 페이지 작성**
-   - `src/demo/AdminReportListPage.svelte` 파일 생성
-   - DatabaseListView로 모든 신고 렌더링
-   - 신고 사유 및 타입 표시
-   - "대상_보기" 버튼 구현
+**필드 설명:**
+- `uid`: 신고를 제출한 사용자의 Firebase Authentication UID
+- `displayName`: 신고자의 표시 이름
+- `photoURL`: 신고자의 프로필 사진 URL (옵션)
+- `type`: 신고 대상이 게시글인지 댓글인지 구분
+- `targetId`: 신고된 게시글 또는 댓글의 고유 ID
+- `targetUid`: 신고된 콘텐츠를 작성한 사용자의 UID
+- `reason`: 신고 사유 (스팸, 욕설, 괴롭힘, 부적절한 콘텐츠, 기타)
+- `description`: 사용자가 추가로 작성한 설명 (선택 사항)
+- `createdAt`: 신고가 생성된 시간 (밀리초 단위 timestamp)
 
-4. **사용자 신고 목록 페이지 작성**
-   - `src/demo/MyReportListPage.svelte` 파일 생성
-   - DatabaseListView의 `filter` prop으로 uid 필터링
-   - "신고_취소" 버튼 구현
-   - 로그인 체크 및 빈 상태 표시
+### 2.3 키 형식 규칙
 
-5. **라우팅 설정**
-   - `src/demo/App.svelte`에 `/admin/reports`, `/my/reports` 경로 추가
-   - `src/demo/Menu.svelte`에 메뉴 항목 추가
+신고 ID(`reportId`)는 Firebase의 `push()` 메서드로 자동 생성되거나, 다음 형식을 따를 수 있습니다:
 
-6. **다국어 지원 추가**
-   - `public/locales/ko.json`, `en.json`, `ja.json`, `zh.json`에 번역 추가
-   - 신고 관련 i18n 키 추가
+```
+{uid}_{targetId}_{timestamp}
+```
 
-7. **테스트**
-   - 관리자 신고 목록 렌더링 테스트
-   - 사용자 신고 목록 필터링 테스트
-   - 신고 취소 기능 테스트
-   - 실시간 업데이트 테스트
+**예시:**
+```
+abc123_post_xyz789_1704844800000
+```
 
 ---
 
-## Detail Items
+## 3. 타입 정의
 
-### 1. 데이터베이스 구조
+### 3.1 파일 위치
+
+```
+src/lib/types/report.ts
+```
+
+### 3.2 ReportType 타입
+
+신고 대상 타입을 정의합니다.
+
+```typescript
+export type ReportType = 'post' | 'comment';
+```
+
+### 3.3 ReportReason 타입
+
+신고 사유를 정의합니다.
+
+```typescript
+export type ReportReason = 'spam' | 'abuse' | 'harassment' | 'inappropriate' | 'other';
+```
+
+### 3.4 Report 인터페이스
+
+Firebase에 저장되는 신고 데이터 구조입니다.
+
+```typescript
+export interface Report {
+  uid: string;
+  displayName: string;
+  photoURL?: string;
+  type: ReportType;
+  targetId: string;
+  targetUid: string;
+  reason: ReportReason;
+  description?: string;
+  createdAt: number;
+}
+```
+
+### 3.5 ReportWithId 인터페이스
+
+Firebase에서 조회한 신고 데이터에 ID를 포함한 구조입니다.
+
+```typescript
+export interface ReportWithId extends Report {
+  id: string;
+}
+```
+
+---
+
+## 4. 서비스 API
+
+### 4.1 파일 위치
+
+```
+src/lib/services/report.service.ts
+```
+
+### 4.2 checkReportStatus() 함수
+
+특정 대상(게시글 또는 댓글)에 대해 현재 사용자가 이미 신고했는지 확인합니다.
+
+**함수 시그니처:**
+
+```typescript
+export async function checkReportStatus(
+  targetId: string,
+  uid: string
+): Promise<boolean>
+```
+
+**파라미터:**
+- `targetId`: 확인할 대상의 ID (게시글 또는 댓글)
+- `uid`: 현재 사용자의 UID
+
+**반환값:**
+- `true`: 이미 신고한 경우
+- `false`: 신고하지 않은 경우
+
+**구현 예시:**
+
+```typescript
+import { ref as dbRef, query, orderByChild, equalTo, get } from 'firebase/database';
+import { database } from '$lib/firebase';
+
+export async function checkReportStatus(targetId: string, uid: string): Promise<boolean> {
+  const reportsRef = dbRef(database, 'reports');
+  const q = query(reportsRef, orderByChild('targetId'), equalTo(targetId));
+  
+  const snapshot = await get(q);
+  
+  if (!snapshot.exists()) {
+    return false;
+  }
+  
+  const reports = snapshot.val();
+  return Object.values(reports).some((report: any) => report.uid === uid);
+}
+```
+
+### 4.3 removeReport() 함수
+
+특정 신고를 삭제합니다.
+
+**함수 시그니처:**
+
+```typescript
+export async function removeReport(reportId: string): Promise<void>
+```
+
+**파라미터:**
+- `reportId`: 삭제할 신고의 ID
+
+**반환값:**
+- `Promise<void>`: 삭제 완료 시 resolve
+
+**구현 예시:**
+
+```typescript
+import { ref as dbRef, remove } from 'firebase/database';
+import { database } from '$lib/firebase';
+
+export async function removeReport(reportId: string): Promise<void> {
+  const reportRef = dbRef(database, `reports/${reportId}`);
+  await remove(reportRef);
+}
+```
+
+---
+
+## 5. 관리자 신고 목록 페이지
+
+### 5.1 라우트 및 파일 위치
+
+**라우트:**
+```
+/admin/reports
+```
+
+**파일 위치:**
+```
+src/routes/admin/reports/+page.svelte
+```
+
+### 5.2 페이지 구조
+
+관리자 신고 목록 페이지는 다음 구조를 따릅니다:
+
+1. **페이지 제목**: "신고 관리" (Paraglide i18n 사용)
+2. **신고 목록**:
+   - shadcn Card 컴포넌트로 각 신고 표시
+   - 신고자 정보 (프로필 사진, 닉네임)
+   - 신고 대상 타입 (게시글/댓글)
+   - 신고 사유
+   - 신고 시간 (상대 시간 표시)
+   - "대상 보기" 버튼
+3. **빈 상태**: 신고가 없을 경우 안내 메시지 표시
+
+### 5.3 구현 코드
+
+```svelte
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { ref as dbRef, onValue, off } from 'firebase/database';
+  import { database } from '$lib/firebase';
+  import { Card } from '$lib/components/ui/card';
+  import { Button } from '$lib/components/ui/button';
+  import * as m from '$lib/paraglide/messages';
+  import type { ReportWithId } from '$lib/types/report';
+
+  let reports = $state<ReportWithId[]>([]);
+  let loading = $state(true);
+
+  onMount(() => {
+    const reportsRef = dbRef(database, 'reports');
+    
+    const unsubscribe = onValue(reportsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        reports = Object.entries(data)
+          .map(([id, report]) => ({ id, ...(report as any) }))
+          .sort((a, b) => b.createdAt - a.createdAt);
+      } else {
+        reports = [];
+      }
+      loading = false;
+    });
+
+    return () => {
+      off(reportsRef);
+    };
+  });
+
+  function getReasonText(reason: string): string {
+    switch (reason) {
+      case 'spam':
+        return m.report_reason_spam();
+      case 'abuse':
+        return m.report_reason_abuse();
+      case 'harassment':
+        return m.report_reason_harassment();
+      case 'inappropriate':
+        return m.report_reason_inappropriate();
+      case 'other':
+        return m.report_reason_other();
+      default:
+        return reason;
+    }
+  }
+
+  function getTypeText(type: string): string {
+    return type === 'post' ? m.report_type_post() : m.report_type_comment();
+  }
+
+  function formatTime(timestamp: number): string {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return m.time_just_now();
+    if (minutes < 60) return m.time_minutes_ago({ minutes });
+    if (hours < 24) return m.time_hours_ago({ hours });
+    return m.time_days_ago({ days });
+  }
+
+  function handleViewTarget(report: ReportWithId) {
+    // 신고된 게시글/댓글로 이동하는 로직
+    const path = report.type === 'post' 
+      ? `/posts/${report.targetId}` 
+      : `/comments/${report.targetId}`;
+    window.location.href = path;
+  }
+</script>
+
+<div class="container mx-auto p-4 max-w-4xl">
+  <h1 class="text-3xl font-bold mb-6">{m.admin_reports_title()}</h1>
+
+  {#if loading}
+    <div class="flex justify-center items-center h-64">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+    </div>
+  {:else if reports.length === 0}
+    <Card className="p-8 text-center">
+      <p class="text-gray-500">{m.admin_reports_empty()}</p>
+    </Card>
+  {:else}
+    <div class="space-y-4">
+      {#each reports as report (report.id)}
+        <Card className="p-4">
+          <div class="flex items-start gap-4">
+            {#if report.photoURL}
+              <img 
+                src={report.photoURL} 
+                alt={report.displayName}
+                class="w-12 h-12 rounded-full object-cover"
+              />
+            {:else}
+              <div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
+                <span class="text-gray-600 font-semibold">
+                  {report.displayName[0]?.toUpperCase() || '?'}
+                </span>
+              </div>
+            {/if}
+
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-semibold">{report.displayName}</span>
+                <span class="text-sm text-gray-500">·</span>
+                <span class="text-sm text-gray-500">{formatTime(report.createdAt)}</span>
+              </div>
+
+              <div class="mb-2">
+                <span class="inline-block px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 mr-2">
+                  {getTypeText(report.type)}
+                </span>
+                <span class="inline-block px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
+                  {getReasonText(report.reason)}
+                </span>
+              </div>
+
+              {#if report.description}
+                <p class="text-sm text-gray-700 mb-3">{report.description}</p>
+              {/if}
+
+              <Button 
+                variant="outline" 
+                size="sm"
+                onclick={() => handleViewTarget(report)}
+              >
+                {m.admin_reports_view_target()}
+              </Button>
+            </div>
+          </div>
+        </Card>
+      {/each}
+    </div>
+  {/if}
+</div>
+```
+
+---
+
+## 6. 사용자 신고 목록 페이지
+
+### 6.1 라우트 및 파일 위치
+
+**라우트:**
+```
+/my/reports
+```
+
+**파일 위치:**
+```
+src/routes/my/reports/+page.svelte
+```
+
+### 6.2 페이지 구조
+
+사용자 신고 목록 페이지는 다음 구조를 따릅니다:
+
+1. **페이지 제목**: "내 신고 내역" (Paraglide i18n 사용)
+2. **로그인 체크**: 비로그인 시 로그인 페이지로 리다이렉트
+3. **신고 목록**:
+   - 현재 사용자가 작성한 신고만 필터링
+   - shadcn Card 컴포넌트로 각 신고 표시
+   - 신고 대상 타입 (게시글/댓글)
+   - 신고 사유
+   - 신고 시간
+   - "대상 보기" 버튼
+   - "신고 취소" 버튼
+4. **빈 상태**: 신고가 없을 경우 안내 메시지 표시
+
+### 6.3 구현 코드
+
+```svelte
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { ref as dbRef, onValue, off } from 'firebase/database';
+  import { database, auth } from '$lib/firebase';
+  import { authStore } from '$lib/stores/auth.svelte';
+  import { Card } from '$lib/components/ui/card';
+  import { Button } from '$lib/components/ui/button';
+  import * as m from '$lib/paraglide/messages';
+  import { removeReport } from '$lib/services/report.service';
+  import type { ReportWithId } from '$lib/types/report';
+
+  let reports = $state<ReportWithId[]>([]);
+  let loading = $state(true);
+  let removing = $state<string | null>(null);
+
+  onMount(() => {
+    if (!authStore.user) {
+      window.location.href = '/user/login';
+      return;
+    }
+
+    const reportsRef = dbRef(database, 'reports');
+    
+    const unsubscribe = onValue(reportsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        reports = Object.entries(data)
+          .map(([id, report]) => ({ id, ...(report as any) }))
+          .filter((report) => report.uid === authStore.user?.uid)
+          .sort((a, b) => b.createdAt - a.createdAt);
+      } else {
+        reports = [];
+      }
+      loading = false;
+    });
+
+    return () => {
+      off(reportsRef);
+    };
+  });
+
+  function getReasonText(reason: string): string {
+    switch (reason) {
+      case 'spam':
+        return m.report_reason_spam();
+      case 'abuse':
+        return m.report_reason_abuse();
+      case 'harassment':
+        return m.report_reason_harassment();
+      case 'inappropriate':
+        return m.report_reason_inappropriate();
+      case 'other':
+        return m.report_reason_other();
+      default:
+        return reason;
+    }
+  }
+
+  function getTypeText(type: string): string {
+    return type === 'post' ? m.report_type_post() : m.report_type_comment();
+  }
+
+  function formatTime(timestamp: number): string {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return m.time_just_now();
+    if (minutes < 60) return m.time_minutes_ago({ minutes });
+    if (hours < 24) return m.time_hours_ago({ hours });
+    return m.time_days_ago({ days });
+  }
+
+  function handleViewTarget(report: ReportWithId) {
+    const path = report.type === 'post' 
+      ? `/posts/${report.targetId}` 
+      : `/comments/${report.targetId}`;
+    window.location.href = path;
+  }
+
+  async function handleRemoveReport(reportId: string) {
+    if (!confirm(m.my_reports_confirm_cancel())) {
+      return;
+    }
+
+    removing = reportId;
+    try {
+      await removeReport(reportId);
+      // Firebase onValue로 자동 업데이트됨
+    } catch (error) {
+      console.error('Failed to remove report:', error);
+      alert(m.my_reports_cancel_failed());
+    } finally {
+      removing = null;
+    }
+  }
+</script>
+
+<div class="container mx-auto p-4 max-w-4xl">
+  <h1 class="text-3xl font-bold mb-6">{m.my_reports_title()}</h1>
+
+  {#if loading}
+    <div class="flex justify-center items-center h-64">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+    </div>
+  {:else if reports.length === 0}
+    <Card className="p-8 text-center">
+      <p class="text-gray-500">{m.my_reports_empty()}</p>
+    </Card>
+  {:else}
+    <div class="space-y-4">
+      {#each reports as report (report.id)}
+        <Card className="p-4">
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-sm text-gray-500">{formatTime(report.createdAt)}</span>
+              </div>
+
+              <div class="mb-2">
+                <span class="inline-block px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 mr-2">
+                  {getTypeText(report.type)}
+                </span>
+                <span class="inline-block px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
+                  {getReasonText(report.reason)}
+                </span>
+              </div>
+
+              {#if report.description}
+                <p class="text-sm text-gray-700 mb-3">{report.description}</p>
+              {/if}
+
+              <div class="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onclick={() => handleViewTarget(report)}
+                >
+                  {m.my_reports_view_target()}
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  disabled={removing === report.id}
+                  onclick={() => handleRemoveReport(report.id)}
+                >
+                  {removing === report.id ? m.my_reports_canceling() : m.my_reports_cancel()}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      {/each}
+    </div>
+  {/if}
+</div>
+```
+
+---
+
+## 7. 다국어 지원
+
+Paraglide i18n을 사용하여 다음 메시지 키를 추가합니다.
+
+**메시지 파일 위치:**
+```
+messages/ko.json
+messages/en.json
+messages/ja.json
+messages/zh.json
+```
+
+**한국어 (ko.json):**
+
+```json
+{
+  "admin_reports_title": "신고 관리",
+  "admin_reports_empty": "신고가 없습니다.",
+  "admin_reports_view_target": "대상 보기",
+  "my_reports_title": "내 신고 내역",
+  "my_reports_empty": "신고 내역이 없습니다.",
+  "my_reports_view_target": "대상 보기",
+  "my_reports_cancel": "신고 취소",
+  "my_reports_canceling": "취소 중...",
+  "my_reports_confirm_cancel": "정말 신고를 취소하시겠습니까?",
+  "my_reports_cancel_failed": "신고 취소에 실패했습니다.",
+  "report_reason_spam": "스팸",
+  "report_reason_abuse": "욕설",
+  "report_reason_harassment": "괴롭힘",
+  "report_reason_inappropriate": "부적절한 콘텐츠",
+  "report_reason_other": "기타",
+  "report_type_post": "게시글",
+  "report_type_comment": "댓글",
+  "time_just_now": "방금",
+  "time_minutes_ago": "{minutes}분 전",
+  "time_hours_ago": "{hours}시간 전",
+  "time_days_ago": "{days}일 전"
+}
+```
+
+**영어 (en.json):**
+
+```json
+{
+  "admin_reports_title": "Report Management",
+  "admin_reports_empty": "No reports found.",
+  "admin_reports_view_target": "View Target",
+  "my_reports_title": "My Reports",
+  "my_reports_empty": "You haven't submitted any reports.",
+  "my_reports_view_target": "View Target",
+  "my_reports_cancel": "Cancel Report",
+  "my_reports_canceling": "Canceling...",
+  "my_reports_confirm_cancel": "Are you sure you want to cancel this report?",
+  "my_reports_cancel_failed": "Failed to cancel report.",
+  "report_reason_spam": "Spam",
+  "report_reason_abuse": "Abusive Language",
+  "report_reason_harassment": "Harassment",
+  "report_reason_inappropriate": "Inappropriate Content",
+  "report_reason_other": "Other",
+  "report_type_post": "Post",
+  "report_type_comment": "Comment",
+  "time_just_now": "Just now",
+  "time_minutes_ago": "{minutes} minutes ago",
+  "time_hours_ago": "{hours} hours ago",
+  "time_days_ago": "{days} days ago"
+}
+```
+
+---
+
+## 8. 테스트
+
+### 8.1 유닛 테스트
+
+**테스트 파일 위치:**
+```
+src/lib/services/report.service.spec.ts
+```
+
+**테스트 케이스:**
+
+```typescript
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { ref as dbRef, set, remove } from 'firebase/database';
+import { database } from '$lib/firebase';
+import { checkReportStatus, removeReport } from './report.service';
+
+describe('Report Service', () => {
+  const testReportId = 'test-report-123';
+  const testTargetId = 'test-post-456';
+  const testUid = 'test-user-789';
+
+  beforeEach(async () => {
+    // 테스트 데이터 생성
+    const reportRef = dbRef(database, `reports/${testReportId}`);
+    await set(reportRef, {
+      uid: testUid,
+      displayName: 'Test User',
+      type: 'post',
+      targetId: testTargetId,
+      targetUid: 'target-user-123',
+      reason: 'spam',
+      createdAt: Date.now()
+    });
+  });
+
+  afterEach(async () => {
+    // 테스트 데이터 삭제
+    const reportRef = dbRef(database, `reports/${testReportId}`);
+    await remove(reportRef);
+  });
+
+  it('should check if user has reported', async () => {
+    const hasReported = await checkReportStatus(testTargetId, testUid);
+    expect(hasReported).toBe(true);
+  });
+
+  it('should return false if user has not reported', async () => {
+    const hasReported = await checkReportStatus(testTargetId, 'different-user');
+    expect(hasReported).toBe(false);
+  });
+
+  it('should remove report', async () => {
+    await removeReport(testReportId);
+    const hasReported = await checkReportStatus(testTargetId, testUid);
+    expect(hasReported).toBe(false);
+  });
+});
+```
+
+### 8.2 E2E 테스트
+
+**테스트 파일 위치:**
+```
+e2e/admin-reports.test.ts
+e2e/my-reports.test.ts
+```
+
+**관리자 신고 목록 테스트 (admin-reports.test.ts):**
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+test.describe('Admin Report List', () => {
+  test.beforeEach(async ({ page }) => {
+    // 관리자로 로그인
+    await page.goto('/user/login');
+    await page.fill('input[type="email"]', 'admin@test.com');
+    await page.fill('input[type="password"]', 'password123');
+    await page.click('button[type="submit"]');
+    await page.waitForURL('/');
+  });
+
+  test('should display all reports', async ({ page }) => {
+    await page.goto('/admin/reports');
+    
+    // 신고 목록이 표시되는지 확인
+    const reportCards = page.locator('[data-testid="report-card"]');
+    await expect(reportCards.first()).toBeVisible();
+  });
+
+  test('should show report details', async ({ page }) => {
+    await page.goto('/admin/reports');
+    
+    // 첫 번째 신고 카드 확인
+    const firstReport = page.locator('[data-testid="report-card"]').first();
+    await expect(firstReport.locator('[data-testid="report-type"]')).toBeVisible();
+    await expect(firstReport.locator('[data-testid="report-reason"]')).toBeVisible();
+  });
+
+  test('should navigate to target', async ({ page }) => {
+    await page.goto('/admin/reports');
+    
+    // "대상 보기" 버튼 클릭
+    await page.click('[data-testid="view-target-button"]');
+    
+    // URL이 변경되는지 확인
+    await page.waitForURL(/\/(posts|comments)\/.+/);
+  });
+});
+```
+
+**사용자 신고 목록 테스트 (my-reports.test.ts):**
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+test.describe('My Report List', () => {
+  test.beforeEach(async ({ page }) => {
+    // 일반 사용자로 로그인
+    await page.goto('/user/login');
+    await page.fill('input[type="email"]', 'user@test.com');
+    await page.fill('input[type="password"]', 'password123');
+    await page.click('button[type="submit"]');
+    await page.waitForURL('/');
+  });
+
+  test('should display only my reports', async ({ page }) => {
+    await page.goto('/my/reports');
+    
+    // 내 신고만 표시되는지 확인
+    const reportCards = page.locator('[data-testid="report-card"]');
+    await expect(reportCards.first()).toBeVisible();
+  });
+
+  test('should cancel report', async ({ page }) => {
+    await page.goto('/my/reports');
+    
+    // 첫 번째 신고의 ID 저장
+    const reportCount = await page.locator('[data-testid="report-card"]').count();
+    
+    // "신고 취소" 버튼 클릭
+    page.on('dialog', dialog => dialog.accept());
+    await page.click('[data-testid="cancel-report-button"]');
+    
+    // 신고가 삭제되었는지 확인
+    await page.waitForTimeout(1000);
+    const newReportCount = await page.locator('[data-testid="report-card"]').count();
+    expect(newReportCount).toBe(reportCount - 1);
+  });
+
+  test('should redirect to login if not authenticated', async ({ page }) => {
+    // 로그아웃
+    await page.goto('/user/logout');
+    
+    // /my/reports 접근 시도
+    await page.goto('/my/reports');
+    
+    // 로그인 페이지로 리다이렉트되는지 확인
+    await expect(page).toHaveURL('/user/login');
+  });
+});
+```
+
+---
+
+## 9. 참고 문서
+
+- [Firebase Realtime Database](https://firebase.google.com/docs/database)
+- [SvelteKit 5 Documentation](https://kit.svelte.dev/docs)
+- [TailwindCSS Documentation](https://tailwindcss.com/docs)
+- [shadcn-svelte Documentation](https://www.shadcn-svelte.com/)
+- [Paraglide i18n Documentation](https://inlang.com/m/gerre34r/library-inlang-paraglideJs)
+- [Playwright Testing](https://playwright.dev/)
+- [Vitest Documentation](https://vitest.dev/)
+- [sonub-setup-firebase.md](./sonub-setup-firebase.md)
+- [sonub-firebase-database.md](./sonub-firebase-database.md)
+- [sonub-user-login.md](./sonub-user-login.md)
+- [sonub-design-workflow.md](./sonub-design-workflow.md)
+- [sonub-setup-svelte.md](./sonub-setup-svelte.md)
+- [sonub-setup-shadcn.md](./sonub-setup-shadcn.md)
 
 #### 신고 데이터 경로
 
