@@ -150,8 +150,13 @@
 			const testDataRef = ref(rtdb, 'test/data');
 			const now = Date.now();
 
-			// 100개의 데이터를 순차적으로 생성
-			for (let i = 0; i < 100; i++) {
+			const categoryFieldMap = {
+		qna: 'qnaCreatedAt',
+		news: 'newsCreatedAt',
+		reminder: 'reminderCreatedAt'
+	} as const;
+
+	for (let i = 0; i < 100; i++) {
 				// 1초씩 차이나는 타임스탬프 (역순으로 최신이 먼저 오도록)
 				const createdAt = now - i * 1000;
 				const date = new Date(createdAt);
@@ -162,8 +167,12 @@
 				// 랜덤 order prefix 선택
 				const randomOrderPrefix = orderPrefixes[Math.floor(Math.random() * orderPrefixes.length)];
 
-				// 제목 생성: [orderPrefix] [category] [YYYY-MM-DD HH:II:SS]
-				const title = `[${randomOrderPrefix.label}] [${randomCategory.label}] [${formatDateForTitle(date)}]`;
+				// 페이지 번호 계산 (pageSize=20 기준)
+				const pageNumber = Math.floor(i / 20) + 1;
+				// 순서 번호 (1부터 시작)
+				const orderNumber = i + 1;
+
+				const title = `[${pageNumber}] ${orderNumber}. [${randomOrderPrefix.label}] [${randomCategory.label}] [${formatDateForTitle(date)}]`;
 
 				// order 필드 값 생성: "prefix-timestamp"
 				const orderValue = `${randomOrderPrefix.prefix}${createdAt}`;
@@ -176,11 +185,11 @@
 					title,
 					category: randomCategory.key,
 					order: orderValue,
-					createdAt,
-					qnaCreatedAt: createdAt,
-					newsCreatedAt: createdAt,
-					reminderCreatedAt: createdAt
+					createdAt
 				};
+
+				const field = categoryFieldMap[randomCategory.key as keyof typeof categoryFieldMap];
+				data[field] = createdAt;
 
 				// Firebase에 저장
 				await push(testDataRef, data);
@@ -353,12 +362,17 @@
 
 		{#key `${pageSize}-${combinedOrderBy}-${reverse}`}
 			<DatabaseListView path="test/data" pageSize={pageSize} orderBy={orderBy} orderPrefix={orderPrefix} threshold={320} reverse={reverse}>
-				{#snippet item(itemData: { key: string; data: any })}
+				{#snippet item(itemData: { key: string; data: any }, index: number)}
 					{@const category = getCategory(itemData.data)}
+					{@const actualPageNumber = Math.floor(index / pageSize) + 1}
+					{@const actualOrderNumber = index + 1}
+					{@const displayTitle = itemData.data?.title
+						? itemData.data.title.replace(/^\[\d+\] \d+\./, `[${actualPageNumber}] ${actualOrderNumber}.`)
+						: `[${actualPageNumber}] ${actualOrderNumber}. 제목 없음`}
 					<article class="rounded-xl border border-gray-100 bg-white p-5 shadow-sm transition hover:border-gray-200">
 						<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 							<div>
-								<p class="text-xs uppercase tracking-wide text-gray-400">Key</p>
+								<p class="text-xs uppercase tracking-wide text-gray-400">Key (Index: {index})</p>
 								<p class="font-mono text-sm text-gray-900">{itemData.key}</p>
 							</div>
 							{#if category}
@@ -373,7 +387,7 @@
 						</div>
 
 						<div class="mt-4 space-y-1">
-							<p class="text-lg font-semibold text-gray-900">{itemData.data?.title ?? '제목 없음'}</p>
+							<p class="text-lg font-semibold text-gray-900">{displayTitle}</p>
 							<p class="text-sm text-gray-500">생성 시각: {formatTimestamp(itemData.data?.createdAt)}</p>
 							<p class="text-sm text-gray-500">{formatCategoryTimestamp(itemData.data)}</p>
 						</div>

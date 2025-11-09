@@ -19,34 +19,23 @@
 
 <div class="admin-layout">
 	<div class="admin-container">
-		<!-- 관리자 사이드바 -->
-		<aside class="admin-sidebar">
-			<nav class="admin-nav">
-				<h2 class="admin-title">관리 메뉴</h2>
-				<ul class="nav-list">
-					<li>
-						<a href="/admin/dashboard" class="nav-link" class:active={$page.url.pathname === '/admin/dashboard'}>
-							대시보드
-						</a>
-					</li>
-					<li>
-						<a href="/admin/test" class="nav-link" class:active={$page.url.pathname === '/admin/test'}>
-							테스트
-						</a>
-					</li>
-					<li>
-						<a href="/admin/users" class="nav-link" class:active={$page.url.pathname === '/admin/users'}>
-							사용자목록
-						</a>
-					</li>
-					<li>
-						<a href="/admin/reports" class="nav-link" class:active={$page.url.pathname === '/admin/reports'}>
-							신고 목록
-						</a>
-					</li>
-				</ul>
+		<header class="admin-header">
+			<h2 class="admin-title">관리 메뉴</h2>
+			<nav class="admin-tabs" aria-label="관리자 상단 탭">
+				<a href="/admin/dashboard" class="tab-link" class:active={$page.url.pathname === '/admin/dashboard'}>
+					대시보드
+				</a>
+				<a href="/admin/test" class="tab-link" class:active={$page.url.pathname === '/admin/test'}>
+					테스트
+				</a>
+				<a href="/admin/users" class="tab-link" class:active={$page.url.pathname === '/admin/users'}>
+					사용자목록
+				</a>
+				<a href="/admin/reports" class="tab-link" class:active={$page.url.pathname === '/admin/reports'}>
+					신고 목록
+				</a>
 			</nav>
-		</aside>
+		</header>
 
 		<!-- 관리자 메인 컨텐츠 -->
 		<main class="admin-main">
@@ -63,117 +52,74 @@
 	}
 
 	.admin-container {
-		display: flex;
-		gap: 2rem;
 		max-width: 1400px;
 		margin: 0 auto;
 		padding: 2rem 1rem;
 	}
 
-	/* 관리자 사이드바 */
-	.admin-sidebar {
-		width: 250px;
-		flex-shrink: 0;
-	}
-
-	.admin-nav {
-		background-color: #ffffff; /* Light white background */
-		border: 1px solid #e5e7eb; /* Light gray border */
-		border-radius: 0.5rem;
+	.admin-header {
+		background-color: #ffffff;
+		border: 1px solid #e5e7eb;
+		border-radius: 0.75rem;
 		padding: 1.5rem;
-		position: sticky;
-		top: 100px;
+		margin-bottom: 2rem;
 	}
 
 	.admin-title {
 		margin: 0 0 1rem 0;
 		font-size: 1.1rem;
 		font-weight: 700;
-		color: #111827; /* Light dark gray text */
+		color: #111827;
 	}
 
-	.nav-list {
-		list-style: none;
-		padding: 0;
-		margin: 0;
+	.admin-tabs {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
 	}
 
-	.nav-list li {
-		margin-bottom: 0.5rem;
-	}
-
-	.nav-link {
-		display: block;
-		padding: 0.75rem 1rem;
-		color: #4b5563; /* Light gray text */
+	.tab-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.65rem 1.5rem;
+		border-radius: 999px;
+		border: 1px solid transparent;
+		background-color: #f3f4f6;
+		color: #4b5563;
+		font-weight: 600;
 		text-decoration: none;
-		border-radius: 0.375rem;
 		transition: all 0.2s ease;
-		font-weight: 500;
 	}
 
-	.nav-link:hover {
-		background-color: #f3f4f6; /* Light hover background */
-		color: #111827; /* Light dark text */
+	.tab-link:hover {
+		border-color: #d1d5db;
+		color: #111827;
+		background-color: #ffffff;
 	}
 
-	.nav-link.active {
-		background-color: #3b82f6; /* Blue accent (light friendly) */
-		color: #ffffff; /* White text on blue */
+	.tab-link.active {
+		background-color: #3b82f6;
+		border-color: #2563eb;
+		color: #ffffff;
+		box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
 	}
 
-	/* 관리자 메인 컨텐츠 */
 	.admin-main {
-		flex: 1;
-		min-width: 0;
+		background-color: transparent;
 	}
 
-	/* 반응형 */
-	@media (max-width: 1024px) {
-		.admin-container {
-			flex-direction: column;
-			gap: 1rem;
-		}
-
-		.admin-sidebar {
-			width: 100%;
-		}
-
-		.admin-nav {
-			position: static;
-			display: grid;
-			grid-template-columns: auto 1fr;
-			align-items: center;
-			gap: 1rem;
-		}
-
-		.admin-title {
-			margin: 0;
-		}
-
-		.nav-list {
-			display: flex;
-			gap: 0.5rem;
-		}
-
-		.nav-list li {
-			margin-bottom: 0;
-		}
-	}
-
-	/* 모바일 */
 	@media (max-width: 640px) {
 		.admin-container {
 			padding: 1rem 0.5rem;
 		}
 
-		.admin-nav {
+		.admin-tabs {
 			flex-direction: column;
-			gap: 0.5rem;
 		}
 
-		.nav-list {
-			flex-direction: column;
+		.tab-link {
+			width: 100%;
 		}
 	}
 </style>

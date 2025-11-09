@@ -933,15 +933,504 @@ orderPrefix를 사용하는 경우, **해당 범위 내에서 삭제된 노드�
 
 ---
 
-## 13. 구현 및 테스트 사례
+## 13. 핵심 구현 원리
 
-### 13.1. 컴포넌트 파일 위치
+### 13.1. Firebase 정렬 순서 보존의 중요성
+
+#### 문제: Object.entries()는 정렬 순서를 보장하지 않음
+
+Firebase Realtime Database는 쿼리 결과를 **정렬된 순서로 반환**하지만, JavaScript에서 이를 잘못 처리하면 순서가 깨집니다.
+
+**❌ 잘못된 방식 (순서가 깨짐)**:
+```typescript
+const snapshot = await get(dataQuery);
+if (snapshot.exists()) {
+  const data = snapshot.val(); // 객체로 변환
+  const items: ItemData[] = [];
+
+  // ❌ Object.entries()는 프로퍼티 순서를 보장하지 않음!
+  Object.entries(data).forEach(([key, value]) => {
+    items.push({ key, data: value });
+  });
+
+  // 결과: Firebase의 정렬 순서와 다르게 배열이 구성됨
+}
+```
+
+**문제점**:
+- JavaScript 객체의 프로퍼티 순서는 삽입 순서 또는 키 타입에 따라 결정됨
+- 특히 문자열 키의 경우 예측 불가능한 순서로 정렬될 수 있음
+- `order` 필드처럼 문자열 정렬이 중요한 경우 심각한 문제 발생
+
+**✅ 올바른 방식 (순서 유지)**:
+```typescript
+const snapshot = await get(dataQuery);
+if (snapshot.exists()) {
+  const items: ItemData[] = [];
+
+  // ✅ snapshot.forEach()를 사용하여 Firebase의 정렬 순서 유지
+  snapshot.forEach((childSnapshot) => {
+    const key = childSnapshot.key;
+    const data = childSnapshot.val();
+    if (key) {
+      items.push({ key, data });
+    }
+  });
+
+  // 결과: Firebase가 반환한 정렬 순서 그대로 배열 구성
+}
+```
+
+#### 실제 영향
+
+**테스트 데이터**:
+```javascript
+{
+  "test/data": {
+    "-ABC123": { "order": "cherry-1699520445266", "title": "[3] 57. [Cherry] [News]" },
+    "-ABC124": { "order": "cherry-1699520446266", "title": "[3] 58. [Cherry] [News]" },
+    "-ABC125": { "order": "cherry-1699520447266", "title": "[2] 22. [Cherry] [News]" }
+  }
+}
+```
+
+**Firebase 쿼리**:
+```typescript
+query(
+  ref(db, 'test/data'),
+  orderByChild('order'),
+  startAt('cherry-'),
+  endAt('cherry-\uf8ff'),
+  limitToFirst(20)
+)
+```
+
+**Object.entries() 사용 시**:
+```
+[2] 22. [Cherry] [News]  (order: cherry-1699520447266)
+[3] 57. [Cherry] [News]  (order: cherry-1699520445266)  ← 순서가 뒤바뀜!
+[3] 58. [Cherry] [News]  (order: cherry-1699520446266)
+```
+
+**snapshot.forEach() 사용 시**:
+```
+[3] 57. [Cherry] [News]  (order: cherry-1699520445266)  ← 올바른 순서
+[3] 58. [Cherry] [News]  (order: cherry-1699520446266)
+[2] 22. [Cherry] [News]  (order: cherry-1699520447266)
+```
+
+#### DatabaseListView 구현
+
+```typescript
+// loadInitialData() 함수 내부
+async function loadInitialData() {
+  // ... Firebase 쿼리 생성 ...
+
+  const snapshot = await get(dataQuery);
+
+  if (snapshot.exists()) {
+    let loadedItems: ItemData[] = [];
+
+    // 🔥 중요: snapshot.forEach()를 사용하여 Firebase의 정렬 순서를 유지
+    snapshot.forEach((childSnapshot) => {
+      const key = childSnapshot.key;
+      const data = childSnapshot.val();
+      if (key) {
+        loadedItems.push({ key, data });
+      }
+    });
+
+    console.log(
+      `%c[DatabaseListView] Initial Load - Items in Firebase order:`,
+      'color: #6366f1;',
+      loadedItems.map((item, idx) => ({
+        index: idx,
+        key: item.key,
+        [orderBy]: item.data[orderBy],
+        title: item.data.title
+      }))
+    );
+
+    // ... 필터링 및 정렬 처리 ...
+  }
+}
+
+// loadMore() 함수도 동일한 방식 적용
+async function loadMore() {
+  // ... Firebase 쿼리 생성 ...
+
+  const snapshot = await get(dataQuery);
+
+  if (snapshot.exists()) {
+    const newItems: ItemData[] = [];
+
+    // 🔥 snapshot.forEach() 사용
+    snapshot.forEach((childSnapshot) => {
+      const key = childSnapshot.key;
+      const data = childSnapshot.val();
+      if (key) {
+        newItems.push({ key, data });
+      }
+    });
+
+    // ... 이후 처리 ...
+  }
+}
+```
+
+#### 교훈
+
+1. **항상 snapshot.forEach() 사용**
+   - Firebase의 정렬 순서를 보존하는 유일한 방법
+   - Object.entries()는 절대 사용하지 말 것
+
+2. **디버깅 로그 필수**
+   - Firebase 반환 순서를 콘솔에 출력하여 확인
+   - 순서 문제를 조기에 발견할 수 있음
+
+3. **문자열 정렬에 특히 주의**
+   - `order`, `categoryKey` 같은 문자열 필드로 정렬할 때 더욱 중요
+   - 숫자 타입은 상대적으로 덜 민감하지만 여전히 snapshot.forEach() 사용 권장
+
+### 13.2. 디버깅 로그 시스템
+
+DatabaseListView는 모든 주요 작업에 대해 상세한 디버깅 로그를 제공합니다.
+
+#### 로그 색상 체계
+
+```typescript
+// 초록색: 성공 및 완료
+console.log('%c[DatabaseListView] ✅ Initial Load Complete',
+  'color: #10b981; font-weight: bold; font-size: 14px;', data);
+
+// 파란색: 일반 정보
+console.log('%c[DatabaseListView] Load More - Page 1',
+  'color: #3b82f6; font-weight: bold;', data);
+
+// 보라색: 필터링 결과
+console.log('%c[DatabaseListView] After duplicate filtering: 21 → 20 items',
+  'color: #8b5cf6;');
+
+// 핑크색: reverse 전 상태
+console.log('%c[DatabaseListView] Before reverse:',
+  'color: #ec4899;', items);
+
+// 주황색: 경고
+console.warn('%c[DatabaseListView] Filtering out item without orderBy field:',
+  'color: #f59e0b;', item);
+```
+
+#### 초기 로드 로그
+
+```typescript
+console.log(
+  `%c[DatabaseListView] Initial Load - Query Settings`,
+  'color: #10b981; font-weight: bold;',
+  { path, orderBy, orderPrefix, reverse, pageSize }
+);
+console.log(
+  `%c[DatabaseListView] Initial Load - Firebase returned ${loadedItems.length} items`,
+  'color: #3b82f6; font-weight: bold;'
+);
+console.log(
+  `%c[DatabaseListView] Initial Load - Items in Firebase order:`,
+  'color: #6366f1;',
+  loadedItems.map((item, idx) => ({
+    index: idx,
+    key: item.key,
+    [orderBy]: item.data[orderBy],
+    title: item.data.title
+  }))
+);
+```
+
+#### 필터링 로그
+
+```typescript
+const beforeFilterCount = loadedItems.length;
+loadedItems = loadedItems.filter((item) => {
+  const hasOrderByField = item.data[orderBy] != null && item.data[orderBy] !== '';
+  if (!hasOrderByField) {
+    console.warn(
+      `%c[DatabaseListView] Filtering out item without '${orderBy}' field:`,
+      'color: #f59e0b;',
+      { key: item.key, data: item.data }
+    );
+  }
+  return hasOrderByField;
+});
+
+if (beforeFilterCount !== loadedItems.length) {
+  console.log(
+    `%c[DatabaseListView] After filtering: ${beforeFilterCount} → ${loadedItems.length} items`,
+    'color: #8b5cf6;'
+  );
+}
+```
+
+#### reverse 로그
+
+```typescript
+if (reverse) {
+  console.log(
+    `%c[DatabaseListView] Before reverse:`,
+    'color: #ec4899;',
+    loadedItems.map((item, idx) => ({
+      index: idx,
+      [orderBy]: item.data[orderBy],
+      title: item.data.title
+    }))
+  );
+  loadedItems.reverse();
+  console.log(
+    `%c[DatabaseListView] After reverse (newest first):`,
+    'color: #10b981;',
+    loadedItems.map((item, idx) => ({
+      index: idx,
+      [orderBy]: item.data[orderBy],
+      title: item.data.title
+    }))
+  );
+}
+```
+
+#### 완료 로그
+
+```typescript
+console.log(
+  `%c[DatabaseListView] ✅ Initial Load Complete`,
+  'color: #10b981; font-weight: bold; font-size: 14px;',
+  {
+    page: currentPage,
+    loaded: items.length,
+    hasMore,
+    finalOrder: items.map((item, idx) => ({
+      index: idx,
+      [orderBy]: item.data[orderBy],
+      title: item.data.title
+    }))
+  }
+);
+```
+
+#### 로그 출력 예시
+
+콘솔에서 다음과 같이 표시됩니다:
+
+```
+[DatabaseListView] Initial Load - Query Settings
+  { path: "test/data", orderBy: "order", orderPrefix: "cherry-", reverse: true, pageSize: 20 }
+
+[DatabaseListView] Initial Load - Firebase returned 21 items
+
+[DatabaseListView] Initial Load - Items in Firebase order:
+  [
+    { index: 0, key: "-ABC123", order: "cherry-1699520445266", title: "[3] 57..." },
+    { index: 1, key: "-ABC124", order: "cherry-1699520446266", title: "[3] 58..." },
+    ...
+  ]
+
+[DatabaseListView] Before reverse:
+  [
+    { index: 0, order: "cherry-1699520445266", title: "[3] 57..." },
+    { index: 1, order: "cherry-1699520446266", title: "[3] 58..." },
+    ...
+  ]
+
+[DatabaseListView] After reverse (newest first):
+  [
+    { index: 0, order: "cherry-1699520467266", title: "[2] 22..." },
+    { index: 1, order: "cherry-1699520466266", title: "[3] 58..." },
+    ...
+  ]
+
+[DatabaseListView] ✅ Initial Load Complete
+  {
+    page: 0,
+    loaded: 20,
+    hasMore: true,
+    finalOrder: [...]
+  }
+```
+
+### 13.3. orderBy 필드 필터링
+
+#### 문제: 페이지네이션 시 orderBy 필드가 없는 항목도 반환됨
+
+Firebase는 `startAt()`과 `endBefore()` 또는 `startAfter()`와 `endBefore()`를 **동시에 사용할 수 없습니다**.
+
+**초기 로드**:
+```typescript
+// ✅ startAt(false)로 null/undefined 필터링 가능
+query(
+  baseRef,
+  orderByChild('qnaCreatedAt'),
+  startAt(false),  // null/undefined 제외
+  limitToLast(20)
+)
+```
+
+**페이지네이션**:
+```typescript
+// ❌ startAt(false)와 endBefore()를 동시에 사용할 수 없음!
+query(
+  baseRef,
+  orderByChild('qnaCreatedAt'),
+  startAt(false),           // ← 불가능!
+  endBefore(lastLoadedValue),  // ← 충돌
+  limitToLast(20)
+)
+
+// ✅ endBefore()만 사용
+query(
+  baseRef,
+  orderByChild('qnaCreatedAt'),
+  endBefore(lastLoadedValue),
+  limitToLast(20)
+)
+// 문제: qnaCreatedAt이 없는 항목도 반환될 수 있음
+```
+
+#### 해결: 클라이언트 측 필터링
+
+```typescript
+async function loadMore() {
+  // ... Firebase 쿼리 실행 ...
+
+  snapshot.forEach((childSnapshot) => {
+    newItems.push({ key: childSnapshot.key, data: childSnapshot.val() });
+  });
+
+  // 중복 제거
+  let uniqueItems = newItems.filter((item) => !existingKeys.has(item.key));
+
+  // 🔥 orderBy 필드가 있는 항목만 필터링
+  const validItems = uniqueItems.filter((item) => {
+    const hasOrderByField = item.data[orderBy] != null && item.data[orderBy] !== '';
+    if (!hasOrderByField) {
+      console.warn(
+        `%c[DatabaseListView] Filtering out item without '${orderBy}' field:`,
+        'color: #f59e0b;',
+        { key: item.key, data: item.data }
+      );
+    }
+    return hasOrderByField;
+  });
+
+  uniqueItems = validItems;
+
+  // ... 이후 처리 ...
+}
+```
+
+#### 왜 초기 로드에서도 필터링하나?
+
+초기 로드에서는 `startAt(false)`를 사용하여 서버 측에서 필터링하지만, **추가 안전성**을 위해 클라이언트에서도 필터링합니다:
+
+```typescript
+async function loadInitialData() {
+  // ... Firebase 쿼리 (startAt(false) 포함) ...
+
+  snapshot.forEach((childSnapshot) => {
+    loadedItems.push({ key: childSnapshot.key, data: childSnapshot.val() });
+  });
+
+  // 🔥 추가 안전성을 위한 클라이언트 필터링
+  const beforeFilterCount = loadedItems.length;
+  loadedItems = loadedItems.filter((item) => {
+    return item.data[orderBy] != null && item.data[orderBy] !== '';
+  });
+
+  if (beforeFilterCount !== loadedItems.length) {
+    console.log(`Filtered out ${beforeFilterCount - loadedItems.length} items`);
+  }
+}
+```
+
+**이유**:
+- Firebase 쿼리 동작이 버전에 따라 달라질 수 있음
+- 데이터 무결성 보장
+- 예외 상황 대비
+
+### 13.4. 실제 인덱스 전달
+
+#### snippet에 index 전달
+
+DatabaseListView는 각 아이템의 **실제 배열 인덱스**를 snippet으로 전달합니다:
+
+```typescript
+// Props 타입 정의
+type ItemSnippet = Snippet<[itemData: ItemData, index: number]>;
+
+interface Props {
+  item: ItemSnippet;
+  // ... 다른 props ...
+}
+
+// 템플릿에서 index 전달
+{#each items as itemData, index (itemData.key)}
+  <div class="item-wrapper" data-key={itemData.key}>
+    {#if item}
+      {@render item(itemData, index)}  {/* ← index 전달 */}
+    {/if}
+  </div>
+{/each}
+```
+
+#### 상위 컴포넌트에서 활용
+
+```svelte
+<DatabaseListView path="test/data" pageSize={20} orderBy="order" orderPrefix="cherry-">
+  {#snippet item(itemData: { key: string; data: any }, index: number)}
+    {@const actualPageNumber = Math.floor(index / 20) + 1}
+    {@const actualOrderNumber = index + 1}
+
+    <div class="item-card">
+      <p>페이지: {actualPageNumber}</p>
+      <p>순서: {actualOrderNumber}</p>
+      <p>인덱스: {index}</p>
+      <h3>{itemData.data.title}</h3>
+    </div>
+  {/snippet}
+</DatabaseListView>
+```
+
+**결과**:
+```
+페이지: 1, 순서: 1, 인덱스: 0
+페이지: 1, 순서: 2, 인덱스: 1
+페이지: 1, 순서: 3, 인덱스: 2
+...
+페이지: 1, 순서: 20, 인덱스: 19
+페이지: 2, 순서: 21, 인덱스: 20
+페이지: 2, 순서: 22, 인덱스: 21
+```
+
+#### 필터링된 데이터에서도 정확한 순서
+
+orderBy 필드로 필터링하면 실제 표시되는 항목만 카운트됩니다:
+
+```svelte
+<!-- qnaCreatedAt으로 필터링 -->
+<DatabaseListView orderBy="qnaCreatedAt">
+  {#snippet item(itemData, index)}
+    <div>
+      {index + 1}. {itemData.data.title}
+      <!-- Q&A 항목만 1, 2, 3... 순서로 표시 -->
+    </div>
+  {/snippet}
+</DatabaseListView>
+```
+
+## 14. 구현 및 테스트 사례
+
+### 14.1. 컴포넌트 파일 위치
 
 - **컴포넌트**: [src/lib/components/DatabaseListView.svelte](../src/lib/components/DatabaseListView.svelte)
 - **타입**: Svelte 5 컴포넌트 (`.svelte`)
-- **크기**: ~1000 라인 (주석 포함)
+- **크기**: ~1350 라인 (주석 포함)
 
-### 13.2. 구현된 페이지
+### 14.2. 구현된 페이지
 
 #### 1. 사용자 목록 페이지
 
@@ -1013,7 +1502,7 @@ orderPrefix를 사용하는 경우, **해당 범위 내에서 삭제된 노드�
 
 > ℹ️ 2025-11-09 기준으로 `/admin/test/database-list-view` 페이지는 `/dev/test/database-list-view`와 기능이 완전히 중복되어 제거되었습니다. 이제 모든 DatabaseListView QA는 개발용 경로(`/dev/test/...`)에서만 수행합니다.
 
-### 13.3. 구현 과정
+### 14.3. 구현 과정
 
 #### Phase 1: Custom Elements → Svelte 5 변환 (2025-01-09)
 
@@ -1056,7 +1545,7 @@ orderPrefix를 사용하는 경우, **해당 범위 내에서 삭제된 노드�
 2. 구현 사례 문서화
 3. 테스트 방법 문서화
 
-### 13.4. 검증 방법
+### 14.4. 검증 방법
 
 #### 1. 수동 테스트
 
@@ -1115,7 +1604,7 @@ users/
 - `displayName`: 사용자 이름
 - `email`: 이메일 주소
 
-### 13.5. 성능 최적화
+### 14.5. 성능 최적화
 
 #### 1. 메모리 관리
 
@@ -1135,7 +1624,7 @@ users/
 - key 기반 리스트 렌더링
 - 중복 제거 로직
 
-### 13.6. 알려진 제약사항
+### 14.6. 알려진 제약사항
 
 1. **Firebase 쿼리 제약**:
    - startAt()과 startAfter()를 동시에 사용할 수 없음
@@ -1149,7 +1638,7 @@ users/
    - 명시적인 높이 설정 필요
    - overflow-y: auto 필수
 
-### 13.7. 향후 개선 계획
+### 14.7. 향후 개선 계획
 
 1. **검색 기능 추가**
    - 텍스트 검색

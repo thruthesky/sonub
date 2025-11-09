@@ -25,13 +25,40 @@ step: 20
    - 모호한 부분은 해석하지 말고 개발자에게 명확히 요청합니다
    - 사양 해석 없음, 가정 없음
 
-4. **기술 표준**:
-   - Svelte 5.4.1 + SvelteKit 버전 `"@sveltejs/kit": "^2.47.1"` 사용
-   - TypeScript 엄격 모드(strict mode) 필수
-   - UTF-8 인코딩 필수 (BOM 제외)
-   - 최소 80% 코드 커버리지
-   - 모든 HTML 콘텐츠는 영어로 작성 필수
-   - 모든 한글 주석/문서는 UTF-8로 작성
+4. **기술 스택**:
+   - **프레임워크**: 
+     - Svelte `^5.41.0`
+     - SvelteKit `^2.47.1`
+     - Vite `^7.1.10`
+   - **언어**: 
+     - TypeScript `^5.9.3` (엄격 모드 필수)
+   - **스타일링**: 
+     - TailwindCSS `^4.1.14`
+     - @tailwindcss/forms `^0.5.10`
+     - @tailwindcss/typography `^0.5.19`
+     - @tailwindcss/vite `^4.1.14`
+   - **UI 컴포넌트**: 
+     - shadcn-svelte `^1.0.10` (Button, Card, Alert 등)
+     - clsx `^2.1.1`
+     - tailwind-merge `^3.3.1`
+   - **백엔드**: 
+     - Firebase `^12.5.0` (Authentication, Realtime Database, Firestore, Storage, Cloud Functions)
+   - **다국어**: 
+     - @inlang/paraglide-js `^2.4.0` (ko, ja, zh, en 지원)
+   - **테스트**: 
+     - Vitest `^4.0.5` (유닛 테스트)
+     - Playwright `^1.56.1` (E2E 테스트)
+   - **코드 품질**:
+     - ESLint `^9.38.0`
+     - Prettier `^3.6.2`
+     - 최소 80% 코드 커버리지
+   - **인코딩**: UTF-8 필수 (BOM 제외)
+   - **콘텐츠 규칙**: 
+     - 모든 HTML 콘텐츠는 영어로 작성 필수
+     - 모든 한글 주석/문서는 UTF-8로 작성
+   - **디자인 정책**:
+     - Light Mode Only (다크 모드 미지원)
+     - 모든 클릭 가능한 요소에 `cursor-pointer` 적용
 
 ---
 
@@ -177,6 +204,44 @@ This document provides a detailed index of all specifications related to the son
   - 환경 변수 디버깅 로그
 - **설치된 패키지**:
   - firebase@11.0.0 이상
+
+### Firebase Authentication Example
+- **File**: [sonub-firebase-auth.md](./sonub-firebase-auth.md)
+- **Title**: Firebase Authentication Demo Spec
+- **Description**: `sonub-setup-firebase.md`에서 분리된 Authentication 샘플 코드 명세. Google 로그인/로그아웃 흐름과 onAuthStateChanged 패턴을 정의
+- **Version**: 1.0.0
+- **Step**: 40
+- **Priority**: *
+- **Dependencies**:
+  - sonub-setup-firebase.md
+  - sonub-user-login.md
+- **Tags**: firebase, authentication, login, example
+- **Files**:
+  - `src/routes/demo/auth-example/+page.svelte` - Firebase Auth 데모 페이지
+- **구현된 기능**:
+  - GoogleAuthProvider 기반 로그인/로그아웃 버튼
+  - onAuthStateChanged 구독 및 상태 메시지 처리
+  - 프로필 이미지/UID 표시, 오류 상태 피드백
+- **비고**: 실제 로그인 UI/UX 명세는 `sonub-user-login.md`를 따른다.
+
+### Firebase Storage Upload Example
+- **File**: [sonub-firebase-storage.md](./sonub-firebase-storage.md)
+- **Title**: Firebase Storage 업로드/목록/삭제 예제
+- **Description**: Storage 업로드 툴 전체 코드를 정의. 진행률, 취소, 목록, 삭제 플로우를 포함
+- **Version**: 1.0.0
+- **Step**: 45
+- **Priority**: *
+- **Dependencies**:
+  - sonub-setup-firebase.md
+- **Tags**: firebase, storage, upload, example
+- **Files**:
+  - `src/routes/upload/+page.svelte` - 파일 업로드 페이지
+- **구현된 기능**:
+  - UID 기반 경로에 파일 업로드 (uploadBytesResumable)
+  - 업로드 취소/진행률 UI, 최근 업로드 URL 표시
+  - listAll + getMetadata 조합으로 목록 정렬 및 삭제 기능
+- **검증**:
+  - 로그인 → 파일 업로드 → 목록/삭제 순으로 수동 테스트
 
 ### Firebase Realtime Database Guide
 - **File**: [sonub-firebase-database.md](./sonub-firebase-database.md)

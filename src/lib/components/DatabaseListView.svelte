@@ -640,34 +640,86 @@
       const snapshot = await get(dataQuery);
 
       if (snapshot.exists()) {
-        const loadedItems: ItemData[] = [];
-        const data = snapshot.val();
+        let loadedItems: ItemData[] = [];
 
-        // 데이터를 {key, data} 형태로 변환
-        Object.entries(data).forEach(([key, value]) => {
-          loadedItems.push({
-            key,
-            data: value
-          });
+        // 🔥 중요: snapshot.forEach()를 사용하여 Firebase의 정렬 순서를 유지합니다
+        // Object.entries()를 사용하면 JavaScript 객체 프로퍼티 순서 때문에 정렬이 깨질 수 있습니다
+        snapshot.forEach((childSnapshot) => {
+          const key = childSnapshot.key;
+          const data = childSnapshot.val();
+          if (key) {
+            loadedItems.push({
+              key,
+              data
+            });
+          }
         });
 
         // 🔍 디버깅: 초기 로드 결과
         console.log(
-          `DatabaseListView: Initial query returned ${loadedItems.length} items from Firebase`
+          `%c[DatabaseListView] Initial Load - Query Settings`,
+          'color: #10b981; font-weight: bold;',
+          { path, orderBy, orderPrefix, reverse, pageSize }
         );
         console.log(
-          `DatabaseListView: Items orderBy values:`,
-          loadedItems.map((item) => ({
+          `%c[DatabaseListView] Initial Load - Firebase returned ${loadedItems.length} items`,
+          'color: #3b82f6; font-weight: bold;'
+        );
+        console.log(
+          `%c[DatabaseListView] Initial Load - Items in Firebase order:`,
+          'color: #6366f1;',
+          loadedItems.map((item, idx) => ({
+            index: idx,
             key: item.key,
-            [orderBy]: item.data[orderBy]
+            [orderBy]: item.data[orderBy],
+            title: item.data.title
           }))
         );
+
+        // orderBy 필드가 있는 항목만 필터링
+        // startAt(false)를 사용했지만, 추가 안전성을 위해 클라이언트에서도 필터링합니다
+        const beforeFilterCount = loadedItems.length;
+        loadedItems = loadedItems.filter((item) => {
+          const hasOrderByField = item.data[orderBy] != null && item.data[orderBy] !== '';
+          if (!hasOrderByField) {
+            console.warn(
+              `%c[DatabaseListView] Filtering out item without '${orderBy}' field:`,
+              'color: #f59e0b;',
+              { key: item.key, data: item.data }
+            );
+          }
+          return hasOrderByField;
+        });
+
+        if (beforeFilterCount !== loadedItems.length) {
+          console.log(
+            `%c[DatabaseListView] After filtering: ${beforeFilterCount} → ${loadedItems.length} items`,
+            'color: #8b5cf6;'
+          );
+        }
 
         // limitToLast를 사용하면 Firebase가 오름차순으로 반환하므로
         // reverse가 true일 때는 배열을 뒤집어야 합니다 (최신 글이 먼저 오도록)
         if (reverse) {
+          console.log(
+            `%c[DatabaseListView] Before reverse:`,
+            'color: #ec4899;',
+            loadedItems.map((item, idx) => ({
+              index: idx,
+              [orderBy]: item.data[orderBy],
+              title: item.data.title
+            }))
+          );
           loadedItems.reverse();
-          console.log('DatabaseListView: Reversed items for display (newest first)');
+          console.log(
+            `%c[DatabaseListView] After reverse (newest first):`,
+            'color: #10b981;',
+            loadedItems.map((item, idx) => ({
+              index: idx,
+              [orderBy]: item.data[orderBy],
+              title: item.data.title
+            }))
+          );
         }
 
         // pageSize보다 많으면 hasMore = true, 마지막 아이템은 표시하지 않음
@@ -706,7 +758,18 @@
         });
 
         console.log(
-          `DatabaseListView: Page ${currentPage} - Loaded ${items.length} items, hasMore: ${hasMore}`
+          `%c[DatabaseListView] ✅ Initial Load Complete`,
+          'color: #10b981; font-weight: bold; font-size: 14px;',
+          {
+            page: currentPage,
+            loaded: items.length,
+            hasMore,
+            finalOrder: items.map((item, idx) => ({
+              index: idx,
+              [orderBy]: item.data[orderBy],
+              title: item.data.title
+            }))
+          }
         );
       } else {
         console.log('DatabaseListView: No data found');
@@ -770,7 +833,7 @@
 
       // Firebase 쿼리 생성
       // reverse 여부에 따라 다른 쿼리 사용
-      // orderPrefix가 있으면 범위 쿼리도 함께 적용
+      // orderPrefix가 있으면 범위 쿼리도 함께 적용 (서버 측 필터링)
       // orderPrefix가 없으면 startAt(false)로 null/undefined 값 제외
       let dataQuery;
       if (reverse) {
@@ -778,21 +841,19 @@
         // limitToLast를 사용하면 마지막 N개를 가져오는데,
         // endBefore로 현재 커서 이전 데이터를 가져옵니다
         //
-        // ⚠️ orderPrefix가 있어도 endBefore()만 사용합니다
-        // Firebase는 startAt()과 endBefore()를 동시에 사용할 수 없으므로
-        // orderPrefix 필터링은 클라이언트에서 처리합니다
+        // orderPrefix가 있으면 startAt(orderPrefix)를 추가하여 범위 필터링
+        // Firebase는 startAt()과 endBefore()를 동시에 사용할 수 있습니다
         if (orderPrefix) {
           dataQuery = query(
             baseRef,
             orderByChild(orderBy),
+            startAt(orderPrefix),
             endBefore(lastLoadedValue),
             limitToLast(pageSize + 1)
           );
-          console.log('DatabaseListView: Using endBefore + limitToLast for reverse pagination with orderPrefix (client-side filtering)');
+          console.log('DatabaseListView: Using startAt + endBefore + limitToLast for reverse pagination with orderPrefix:', orderPrefix);
         } else {
           // orderPrefix가 없으면 endBefore()만 사용
-          // ⚠️ startAt(false)를 여기서 사용하면 안 됩니다!
-          // Firebase는 startAt()과 endBefore()를 동시에 사용할 수 없습니다.
           // 초기 로드에서 이미 null/undefined 값을 제외했으므로,
           // 커서 이전의 값들도 유효한 값만 있을 것입니다.
           dataQuery = query(
@@ -801,26 +862,24 @@
             endBefore(lastLoadedValue),
             limitToLast(pageSize + 1)
           );
-          console.log('DatabaseListView: Using endBefore + limitToLast for reverse pagination (no startAt needed)');
+          console.log('DatabaseListView: Using endBefore + limitToLast for reverse pagination');
         }
       } else {
         // 정순 정렬: startAfter + limitToFirst 사용
         //
-        // ⚠️ orderPrefix가 있어도 startAfter()만 사용합니다
-        // Firebase는 startAt()과 startAfter()를 동시에 사용할 수 없으므로
-        // orderPrefix 필터링은 클라이언트에서 처리합니다
+        // orderPrefix가 있으면 endAt(orderPrefix + '\uf8ff')를 추가하여 범위 필터링
+        // Firebase는 startAfter()와 endAt()을 동시에 사용할 수 있습니다
         if (orderPrefix) {
           dataQuery = query(
             baseRef,
             orderByChild(orderBy),
             startAfter(lastLoadedValue),
+            endAt(orderPrefix + '\uf8ff'),
             limitToFirst(pageSize + 1)
           );
-          console.log('DatabaseListView: Using startAfter + limitToFirst for normal pagination with orderPrefix (client-side filtering)');
+          console.log('DatabaseListView: Using startAfter + endAt + limitToFirst for normal pagination with orderPrefix:', orderPrefix);
         } else {
           // orderPrefix가 없으면 startAfter()만 사용
-          // ⚠️ startAt(false)를 여기서 사용하면 안 됩니다!
-          // Firebase는 startAt()과 startAfter()를 동시에 사용할 수 없습니다.
           // 초기 로드에서 이미 null/undefined 값을 제외했으므로,
           // 커서 이후의 값들도 유효한 값만 있을 것입니다.
           dataQuery = query(
@@ -829,7 +888,7 @@
             startAfter(lastLoadedValue),
             limitToFirst(pageSize + 1)
           );
-          console.log('DatabaseListView: Using startAfter + limitToFirst for normal pagination (no startAt needed)');
+          console.log('DatabaseListView: Using startAfter + limitToFirst for normal pagination');
         }
       }
 
@@ -837,68 +896,90 @@
 
       if (snapshot.exists()) {
         const newItems: ItemData[] = [];
-        const data = snapshot.val();
 
-        // 데이터를 {key, data} 형태로 변환
-        Object.entries(data).forEach(([key, value]) => {
-          newItems.push({
-            key,
-            data: value
-          });
+        // 🔥 중요: snapshot.forEach()를 사용하여 Firebase의 정렬 순서를 유지합니다
+        snapshot.forEach((childSnapshot) => {
+          const key = childSnapshot.key;
+          const data = childSnapshot.val();
+          if (key) {
+            newItems.push({
+              key,
+              data
+            });
+          }
         });
 
         // 🔍 디버깅: loadMore 쿼리 결과
         console.log(
-          `DatabaseListView: Page ${currentPage} - Query returned ${newItems.length} items from Firebase`
+          `%c[DatabaseListView] Load More - Page ${currentPage}`,
+          'color: #3b82f6; font-weight: bold;',
+          { cursor: lastLoadedValue, cursorKey: lastLoadedKey }
         );
         console.log(
-          `DatabaseListView: Page ${currentPage} - Items orderBy values:`,
-          newItems.map((item) => ({
+          `%c[DatabaseListView] Load More - Firebase returned ${newItems.length} items`,
+          'color: #3b82f6;',
+          newItems.map((item, idx) => ({
+            index: idx,
             key: item.key,
-            [orderBy]: item.data[orderBy]
+            [orderBy]: item.data[orderBy],
+            title: item.data.title
           }))
         );
-
-        // 📌 orderPrefix가 있는 경우 클라이언트 측 필터링
-        // Firebase 쿼리에서 startAt()과 startAfter()를 동시에 사용할 수 없으므로
-        // 페이지네이션 시 orderPrefix 필터링은 클라이언트에서 처리합니다
-        let prefixFilteredItems = newItems;
-        if (orderPrefix) {
-          prefixFilteredItems = newItems.filter((item) => {
-            const value = item.data[orderBy];
-            if (typeof value === 'string') {
-              return value.startsWith(orderPrefix);
-            }
-            return false;
-          });
-
-          console.log(
-            `DatabaseListView: Filtered ${newItems.length} items to ${prefixFilteredItems.length} items with orderPrefix "${orderPrefix}"`
-          );
-
-          // orderPrefix 범위를 벗어난 항목이 있으면 더 이상 데이터가 없음
-          if (prefixFilteredItems.length < newItems.length) {
-            console.log('DatabaseListView: Reached end of orderPrefix range, no more items');
-            hasMore = false;
-          }
-        }
 
         // reverse가 true이고 limitToLast를 사용했으면 배열을 뒤집어야 합니다
         // (Firebase는 오름차순으로 반환하므로, 최신 글이 먼저 오도록 뒤집기)
         if (reverse) {
-          prefixFilteredItems.reverse();
-          console.log('DatabaseListView: Reversed items for display (newest first)');
+          console.log(
+            `%c[DatabaseListView] Before reverse:`,
+            'color: #ec4899;',
+            newItems.map((item, idx) => ({
+              index: idx,
+              [orderBy]: item.data[orderBy]
+            }))
+          );
+          newItems.reverse();
+          console.log(
+            `%c[DatabaseListView] After reverse:`,
+            'color: #10b981;',
+            newItems.map((item, idx) => ({
+              index: idx,
+              [orderBy]: item.data[orderBy]
+            }))
+          );
         }
 
         // 중복 제거: 이미 로드된 아이템들을 제외
-        // 새로 로드된 아이템 중 이미 화면에 있는 key는 제외합니다
         const existingKeys = new Set(items.map(item => item.key));
-        const uniqueItems = prefixFilteredItems.filter((item) => !existingKeys.has(item.key));
+        let uniqueItems = newItems.filter((item) => !existingKeys.has(item.key));
 
-        // 🔍 디버깅: 필터링 후 결과
         console.log(
-          `DatabaseListView: Page ${currentPage} - After filtering duplicates: ${uniqueItems.length} items`
+          `%c[DatabaseListView] After duplicate filtering: ${newItems.length} → ${uniqueItems.length} items`,
+          'color: #8b5cf6;'
         );
+
+        // orderBy 필드가 있는 항목만 필터링
+        const beforeFieldFilter = uniqueItems.length;
+        const validItems = uniqueItems.filter((item) => {
+          const hasOrderByField = item.data[orderBy] != null && item.data[orderBy] !== '';
+          if (!hasOrderByField) {
+            console.warn(
+              `%c[DatabaseListView] Filtering out item without '${orderBy}' field:`,
+              'color: #f59e0b;',
+              { key: item.key, data: item.data }
+            );
+          }
+          return hasOrderByField;
+        });
+
+        if (beforeFieldFilter !== validItems.length) {
+          console.log(
+            `%c[DatabaseListView] After field filtering: ${beforeFieldFilter} → ${validItems.length} items`,
+            'color: #8b5cf6;'
+          );
+        }
+
+        // validItems를 uniqueItems로 대체
+        uniqueItems = validItems;
 
         if (uniqueItems.length === 0) {
           console.log('DatabaseListView: No more unique items after filtering');
@@ -907,9 +988,9 @@
           return;
         }
 
-        // hasMore 판단은 중복 제거 전 prefixFilteredItems 길이로 결정
+        // hasMore 판단은 중복 제거 전 newItems 길이로 결정
         // Firebase에서 pageSize + 1개를 가져왔다면 더 많은 데이터가 있다는 의미
-        if (prefixFilteredItems.length > pageSize) {
+        if (newItems.length > pageSize) {
           hasMore = true;
           // 중복 제거 후 실제로 표시할 아이템은 pageSize만큼만 추가
           const itemsToAdd = uniqueItems.slice(0, pageSize);
@@ -947,7 +1028,18 @@
         });
 
         console.log(
-          `DatabaseListView: Page ${currentPage} - Loaded ${uniqueItems.length} more items, total: ${items.length}, hasMore: ${hasMore}`
+          `%c[DatabaseListView] ✅ Load More Complete - Page ${currentPage}`,
+          'color: #10b981; font-weight: bold; font-size: 14px;',
+          {
+            addedItems: uniqueItems.length,
+            totalItems: items.length,
+            hasMore,
+            finalOrder: items.slice(-10).map((item, idx) => ({
+              globalIndex: items.length - 10 + idx,
+              [orderBy]: item.data[orderBy],
+              title: item.data.title
+            }))
+          }
         );
       } else {
         console.log('DatabaseListView: Query returned no data, hasMore set to false');

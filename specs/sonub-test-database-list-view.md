@@ -27,15 +27,16 @@ tags:
 
 | 필드 | 타입 | 필수 | 설명 |
 | ---- | ---- | ---- | ---- |
-| `title` | string | ✅ | 리스트 화면에 출력할 제목. 형식: `[orderPrefix] [category] [YYYY-MM-DD HH:II:SS]` (예: `[Apple] [Q&A] [2025-11-09 15:30:45]`) |
+| `title` | string | ✅ | 리스트 화면에 출력할 제목. 형식: `[PageNumber] OrderNumber. [orderPrefix] [category] [YYYY-MM-DD HH:II:SS]` (예: `[1] 1. [Apple] [Q&A] [2025-11-09 15:30:45]`, `[2] 21. [Banana] [News] [2025-11-09 15:30:25]`) |
 | `createdAt` | number | ✅ | 레코드 생성 시각(밀리초). DatabaseListView 정렬 기준 |
 | `category` | string | ✅ | 데이터의 카테고리 (`qna`, `news`, `reminder`) |
 | `order` | string | ✅ | orderPrefix 기반 정렬용 필드. 형식: `prefix-timestamp` (예: `apple-1699520445123`, `banana-1699520446123`) |
-| `qnaCreatedAt` | number | ✅ | Q&A 카테고리 타임스탬프 (모든 데이터에 포함) |
-| `newsCreatedAt` | number | ✅ | News 카테고리 타임스탬프 (모든 데이터에 포함) |
-| `reminderCreatedAt` | number | ✅ | Reminder 카테고리 타임스탬프 (모든 데이터에 포함) |
+| `qnaCreatedAt` | number | ✅/❌ | Q&A 카테고리 전용 타임스탬프. **`category: 'qna'`일 때만 추가** |
+| `newsCreatedAt` | number | ✅/❌ | News 카테고리 전용 타임스탬프. **`category: 'news'`일 때만 추가** |
+| `reminderCreatedAt` | number | ✅/❌ | Reminder 카테고리 전용 타임스탬프. **`category: 'reminder'`일 때만 추가** |
 
-> ℹ️ 모든 카테고리 타임스탬프 필드는 동일한 값으로 설정되어, 어떤 `orderBy` 필드를 선택하더라도 정렬이 가능합니다.
+> ℹ️ **카테고리별 타임스탬프는 배타적**입니다. 하나의 레코드에는 `qnaCreatedAt`, `newsCreatedAt`, `reminderCreatedAt` 중 정확히 하나만 존재합니다.  
+> ℹ️ 따라서 `orderBy="qnaCreatedAt"`을 선택하면 Q&A 데이터만 조회되고, 다른 카테고리는 목록에서 제외됩니다.  
 > ℹ️ 실제 카테고리는 `category` 필드로 구분하며, UI에 배지로 표시됩니다.
 > ℹ️ `order` 필드는 orderPrefix 필터링 테스트를 위한 전용 필드로, `apple-`, `banana-`, `cherry-` 접두사를 포함합니다.
 
@@ -134,3 +135,7 @@ tags:
 | 2025-11-09 | Codex Agent | `/admin/test/database-list-view` 경로가 `/dev/test/database-list-view`와 완전히 중복되어 삭제됨에 따라 관리자 네비게이션 링크를 제거하고 본 문서를 최신 정책(개발 전용 접근)으로 업데이트 |
 | 2025-11-09 | Claude Code | order 필드 및 orderPrefix 필터링 기능 추가: `order` 필드에 `apple-`, `banana-`, `cherry-` 접두사를 포함하도록 테스트 데이터 생성 로직 수정, `/dev/test/database-list-view` 페이지에 orderPrefix 드롭다운 및 reverse 체크박스 추가, DatabaseListView 컴포넌트에 orderPrefix와 reverse props 전달, 연결 정보 섹션 업데이트, 본 명세 문서의 데이터 구조, 필터링 옵션, 검증 절차 섹션 업데이트 |
 | 2025-11-09 | Claude Code | UI 개선: orderBy와 orderPrefix 드롭다운을 하나로 통합하여 사용성 개선. `combinedOrderBy` state 변수 도입 및 `$derived`를 사용해 orderBy/orderPrefix 자동 추출. 2열 그리드 레이아웃으로 변경. 연결 정보 섹션에서 orderPrefix는 값이 있을 때만 표시. 본 명세 문서의 필터링 옵션 및 검증 절차 섹션 업데이트 |
+| 2025-11-09 | Claude Code | 제목 형식 개선: 페이지 번호 [1], [2]와 로딩 순서 번호 1. 2. 3.을 제목에 추가하여 테스트 데이터 식별성 향상. pageNumber는 `Math.floor(i / 20) + 1`로 계산하고 orderNumber는 `i + 1`로 계산. 제목 형식: `[PageNumber] OrderNumber. [orderPrefix] [category] [YYYY-MM-DD HH:II:SS]`. 본 명세 문서의 데이터 구조 섹션 업데이트 |
+| 2025-11-09 | Claude Code | **중요 버그 수정**: DatabaseListView 컴포넌트에서 orderBy 필드 필터링 로직 추가. qnaCreatedAt으로 정렬 시 해당 필드가 없는 항목(newsCreatedAt, reminderCreatedAt만 있는 항목)도 화면에 표시되던 문제 해결. Firebase는 `startAt()`과 `endBefore()`를 동시에 사용할 수 없어 페이지네이션 시 orderBy 필드가 없는 항목도 반환될 수 있음. 이를 해결하기 위해 `loadInitialData()`와 `loadMore()` 함수에서 orderBy 필드가 존재하는 항목만 필터링하도록 수정. `loadedItems`를 `const`에서 `let`으로 변경하여 필터링 결과 재할당 가능하게 수정. |
+| 2025-11-09 | Claude Code | **UI 개선**: DatabaseListView 컴포넌트의 item snippet에서 실제 로드 순서(index)를 상위 컴포넌트로 전달. `/dev/test/database-list-view` 페이지에서 index 파라미터를 받아 실제 페이지 번호(`Math.floor(index / pageSize) + 1`)와 순서 번호(`index + 1`)를 계산하여 표시. 데이터베이스에 저장된 번호 대신 실제 화면 표시 순서를 제목에 반영하도록 정규식으로 제목 재구성 (`title.replace(/^\[\d+\] \d+\./, ...)`). Key 레이블에 현재 인덱스 표시 추가 (`Key (Index: {index})`). 필터링 시에도 순차적인 번호(1, 2, 3...)가 정확하게 표시되도록 개선. |
+| 2025-11-09 | Claude Code | **중요 버그 수정 - 정렬 순서 문제**: DatabaseListView 컴포넌트의 `loadInitialData()`와 `loadMore()`에서 `Object.entries(snapshot.val())`를 사용하면 JavaScript 객체 프로퍼티 순서로 인해 Firebase의 정렬 순서가 보장되지 않는 문제 해결. `snapshot.forEach()`를 사용하여 Firebase가 반환한 정렬 순서를 그대로 유지하도록 수정. 특히 `order` 필드로 정렬 시 문자열 비교 순서가 깨지던 문제 완전 해결. 상세한 디버깅 로그 추가: 쿼리 설정, Firebase 반환 순서, 필터링 전후, reverse 전후, 최종 결과를 색상별로 구분하여 콘솔에 출력. 모든 로그에 `%c` 스타일 적용으로 가독성 향상. |
