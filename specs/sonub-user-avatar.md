@@ -1,7 +1,7 @@
 ---
 name: sonub-user-avatar
-version: 2.0.0
-description: 사용자 아바타 컴포넌트 구현 및 CORS/이미지 로드 문제 해결
+version: 3.0.0
+description: 사용자 아바타 컴포넌트 구현, UserProfileStore 도입, Svelte 5 반응성 이슈 해결
 author: Claude Code
 email: noreply@anthropic.com
 step: 45
@@ -16,6 +16,8 @@ tags:
   - rtdb
   - cors
   - image-loading
+  - svelte5-reactivity
+  - user-profile-store
 ---
 
 ## 1. 개요
@@ -1181,6 +1183,7 @@ const optimizedPhotoUrl = photoUrl?.replace(/=s\d+/, `=s${size * 2}`);
 |------|------|-----------|
 | 1.0.0 | 2025-11-09 | 초기 구현: Avatar 컴포넌트 생성, top-bar 및 menu 적용 |
 | 2.0.0 | 2025-11-09 | 주요 개선: imageLoadFailed 상태 추적, CORS/Referrer 문제 해결 (`referrerpolicy="no-referrer"`, `crossorigin="anonymous"` 추가), Props 단순화 (photoUrl/displayName props 제거), 상세한 디버깅 로그 추가 |
+| 3.0.0 | 2025-11-10 | **중요 개선: UserProfileStore 도입 및 Svelte 5 반응성 이슈 수정**<br/>- `user-profile.svelte.ts` 생성: 중복 RTDB 리스너 제거 (중앙 캐시)<br/>- Avatar 컴포넌트 리팩토링: onMount 제거, `$derived`로 자동 반응성 구현<br/>- **Svelte 5 Map 반응성 이슈 수정**: Map 객체 불변성 패턴 적용 (`this.cache = new Map(this.cache).set(...)`)<br/>- 디버깅 로그 강화: UserProfileStore 데이터 수신 추적, Avatar 상태 변경 추적<br/>- top-bar.svelte: optional chaining 추가 (`authStore.user?.uid`) |
 
 ## 12. 트러블슈팅
 
@@ -1225,6 +1228,66 @@ const optimizedPhotoUrl = photoUrl?.replace(/=s\d+/, `=s${size * 2}`);
   }
 }
 ```
+
+#### 12.2.1 ⚠️ Svelte 5 Map 반응성 이슈 (중요!)
+
+**증상:**
+- RTDB에서 데이터를 수신하고 있음 (콘솔 로그 확인됨)
+- UserProfileStore의 cache에 데이터가 업데이트됨
+- 하지만 Avatar 컴포넌트가 re-render되지 않음
+
+**원인:**
+Svelte 5에서 `$state` Map의 객체를 **변경(mutate)**하고 `.set()`으로 저장해도 반응성이 트리거되지 않습니다.
+
+**잘못된 코드 (반응성 없음):**
+```typescript
+// ❌ WRONG - 동일한 객체 참조를 수정
+const item = this.cache.get(uid);
+if (item) {
+    item.data = data;           // 기존 객체 수정
+    item.loading = false;
+    item.error = null;
+    this.cache.set(uid, item);  // 동일한 참조 → 반응성 X
+}
+```
+
+**올바른 코드 (반응성 O):**
+```typescript
+// ✅ CORRECT - 새 객체 생성 및 Map 재할당
+const newCacheItem: ProfileCacheItem = {
+    data: data,                  // 완전히 새로운 객체 생성
+    loading: false,
+    error: null,
+    unsubscribe: unsubscribe
+};
+
+// Map 자체를 재할당하여 반응성 트리거
+this.cache = new Map(this.cache).set(uid, newCacheItem);
+```
+
+**핵심 원칙:**
+1. **객체 불변성**: 기존 객체를 변경하지 말고 새 객체를 생성
+2. **Map 재할당**: `this.cache.set(...)` 대신 `this.cache = new Map(this.cache).set(...)`
+3. **모든 업데이트에 적용**: onValue 성공/실패 모두 동일한 패턴 사용
+
+**검증 방법:**
+```typescript
+// Avatar 컴포넌트에 $effect 추가
+$effect(() => {
+    console.log('[Avatar] 프로필 상태 변경');
+    console.log('  profile:', profile);
+    console.log('  photoUrl:', photoUrl);
+});
+
+// UserProfileStore에 로그 추가
+console.log(`[UserProfileStore] ✨ 캐시 업데이트 완료: ${uid}`);
+console.log(`[UserProfileStore] 📊 현재 캐시 크기: ${this.cache.size}`);
+```
+
+**참고:**
+- 이 이슈는 Svelte 5의 fine-grained reactivity 시스템 특성입니다
+- Array도 동일한 문제가 있습니다: `arr.push()` 대신 `arr = [...arr, newItem]` 사용
+- 자세한 내용: [Svelte 5 Runes 문서](https://svelte.dev/docs/svelte/$state)
 
 ### 12.3 메모리 누수
 
@@ -1366,3 +1429,32 @@ Avatar 컴포넌트는 다음과 같은 문제를 해결했습니다:
 - 프로덕션 배포 전 디버깅 로그 제거
 - 성능 최적화 (Context API로 리스너 공유)
 - 추가 기능 (온라인 상태, 뱃지 등)
+
+## 16. UI 통합 현황 (2025-02 업데이트)
+
+### 16.1 전역 적용 위치
+
+- `src/routes/+page.svelte`
+  - 로그인 카드에서 `authStore.user.uid`를 Avatar에 전달하여 환영 메시지와 동일한 이미지를 사용합니다.
+  - 이전에 Firebase Auth의 `photoURL`을 직접 `<img>`로 렌더링하던 코드를 제거했습니다.
+- `src/routes/user/list/+page.svelte`
+  - 무한 스크롤 사용자 카드에서 `<Avatar uid={itemData.key} size={60} />`를 사용하여 각 사용자의 RTDB 사진을 실시간으로 표시합니다.
+  - 더 이상 `itemData.data.photoUrl`을 직접 `<img>`로 출력하지 않습니다.
+- `src/routes/my/profile/+page.svelte`
+  - 업로드 버튼 내부에 `<Avatar uid={authStore.user.uid} size={128} />`를 배치하여 저장된 사진 또는 첫 글자를 표시합니다.
+  - 새로 선택한 파일은 `photoPreview` 이미지를 절대 위치로 겹쳐서 보여 주므로 Avatar의 기본 표시와 충돌하지 않습니다.
+
+### 16.2 구현 가이드
+
+```svelte
+<Avatar uid={uid} size={64} class="shadow-sm" />
+```
+
+- `uid`는 항상 RTDB `/users/{uid}` 경로와 일치해야 합니다.
+- `size`는 px 단위이며, Avatar 컴포넌트의 inline style로 고정됩니다.
+- 추가 스타일은 `class` prop으로 전달하되, `rounded-full`과 `overflow-hidden`은 컴포넌트 기본값이므로 다시 선언할 필요가 없습니다.
+
+### 16.3 예외 처리
+
+- 업로드 미리보기나 임시 이미지를 보여줘야 할 때는 Avatar 위에 별도의 `<img>`를 절대 배치하여 겹쳐 사용합니다. 이 경우 `pointer-events-none`을 적용해 버튼/카드 동작을 방해하지 않도록 합니다.
+- 사용자 UID를 알 수 없는 화면(로그인 이전 등)에서는 Avatar 대신 기존 placeholder UI를 유지하고, UID를 확보하는 즉시 Avatar를 렌더링하도록 조건부 분기합니다.

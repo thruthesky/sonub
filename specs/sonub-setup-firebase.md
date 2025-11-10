@@ -924,6 +924,36 @@ service firebase.storage {
 }
 ```
 
+### 8.3 Firebase Storage CORS 설정
+
+프로필 사진 등 Storage 객체를 브라우저에서 직접 불러올 때 CORS 오류가 발생하면 아래 절차로 해결합니다.
+
+1. `firebase/cors.json` 파일을 생성하고 다음 내용을 저장합니다.
+
+   ```json
+   [
+     {
+       "origin": ["*"],
+       "method": ["GET"],
+       "maxAgeSeconds": 86400
+     }
+   ]
+   ```
+
+2. Firebase 프로젝트의 Storage 버킷에 CORS 정책을 반영합니다.
+
+   ```bash
+   cd ./firebase
+   gsutil cors set cors.json <Firebase-Storage-Bucket-Url>
+   ```
+
+   예시:
+   ```bash
+   gsutil cors set cors.json gs://sonub-firebase.firebasestorage.app
+   ```
+
+   명령 실행 시 Google Cloud CLI 업데이트 안내가 표시될 수 있으며, 버킷에 CORS 정책이 적용되면 `Setting CORS on gs://...` 메시지가 출력됩니다.
+
 ## 9. 검증 방법
 
 ### 9.1 설치 검증 체크리스트

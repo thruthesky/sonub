@@ -8,6 +8,7 @@
 
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { authStore } from '$lib/stores/auth.svelte';
+	import Avatar from '$lib/components/user/avatar.svelte';
 </script>
 
 <aside class="hidden lg:block lg:w-64 xl:w-72">
@@ -18,15 +19,9 @@
 					<Card.Title class="text-base">내 프로필</Card.Title>
 				</Card.Header>
 				<Card.Content class="space-y-3">
-					{#if authStore.user?.photoURL}
-						<div class="flex justify-center">
-							<img
-								src={authStore.user.photoURL}
-								alt={authStore.user.displayName || '사용자'}
-								class="h-16 w-16 rounded-full"
-							/>
-						</div>
-					{/if}
+					<div class="flex justify-center">
+						<Avatar uid={authStore.user?.uid} size={64} />
+					</div>
 					<div class="text-center">
 						<p class="font-medium text-gray-900">
 							{authStore.user?.displayName || '사용자'}

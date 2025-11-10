@@ -3,21 +3,26 @@
 	 * 내 프로필 수정 페이지
 	 *
 	 * 로그인한 사용자 자신의 프로필 정보를 수정하는 페이지입니다.
+	 * - 프로필 사진 업로드 (photoUrl)
 	 * - 닉네임 (displayName)
 	 * - 성별 (gender)
 	 * - 생년월일 (birthYear, birthMonth, birthDay)
 	 */
 
 	import { authStore } from '$lib/stores/auth.svelte';
-	import { rtdb } from '$lib/firebase';
-	import { ref, get, update } from 'firebase/database';
+	import { rtdb, storage } from '$lib/firebase';
+	import { ref as dbRef, get, update } from 'firebase/database';
+	import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 	import { goto } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Alert from '$lib/components/ui/alert/index.js';
+	import { Camera, X } from 'lucide-svelte';
+	import Avatar from '$lib/components/user/avatar.svelte';
 
 	// 폼 데이터 상태
 	let displayName = $state('');
+	let photoUrl = $state(''); // 프로필 사진 URL
 	let gender = $state<'M' | 'F' | ''>('');
 	let birthYear = $state<number | null>(null);
 	let birthMonth = $state<number | null>(null);
@@ -28,6 +33,9 @@
 	let saving = $state(false);
 	let successMessage = $state('');
 	let errorMessage = $state('');
+	let photoPreview = $state<string | null>(null); // 사진 미리보기 URL
+	let fileInput: HTMLInputElement | null = null; // 파일 input 참조
+	let isPhotoUploading = $state(false); // 사진 업로드 중 상태
 
 	// 년도 옵션 생성 (현재년도-70 ~ 현재년도-18)
 	const currentYear = new Date().getFullYear();
@@ -53,12 +61,13 @@
 		errorMessage = '';
 
 		try {
-			const userRef = ref(rtdb, `users/${authStore.user.uid}`);
+			const userRef = dbRef(rtdb, `users/${authStore.user.uid}`);
 			const snapshot = await get(userRef);
 
 			if (snapshot.exists()) {
 				const userData = snapshot.val();
 				displayName = userData.displayName || '';
+				photoUrl = userData.photoUrl || ''; // 프로필 사진 URL 로드
 				gender = userData.gender || '';
 
 				// dateOfBirth 파싱 (YYYY-MM-DD 형식)
@@ -79,6 +88,146 @@
 			errorMessage = '프로필 정보를 불러오는데 실패했습니다.';
 		} finally {
 			loading = false;
+		}
+	}
+
+	/**
+	 * 파일 input 클릭 트리거
+	 */
+	function handlePhotoClick() {
+		fileInput?.click();
+	}
+
+	/**
+	 * 파일 선택 시 처리
+	 * - 파일 유효성 검증 (크기, 타입)
+	 * - 미리보기 생성
+	 * - Firebase Storage에 업로드
+	 */
+	async function handlePhotoChange(event: Event) {
+		const target = event.currentTarget as HTMLInputElement;
+		const file = target.files?.[0];
+
+		if (!file) return;
+
+		// 파일 타입 검증
+		if (!file.type.startsWith('image/')) {
+			errorMessage = '이미지 파일만 업로드할 수 있습니다.';
+			return;
+		}
+
+		// 파일 크기 검증 (5MB)
+		const maxSize = 5 * 1024 * 1024; // 5MB
+		if (file.size > maxSize) {
+			errorMessage = '파일 크기는 5MB 이하여야 합니다.';
+			return;
+		}
+
+		// 미리보기 생성
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			photoPreview = e.target?.result as string;
+		};
+		reader.readAsDataURL(file);
+
+		// Firebase Storage에 업로드
+		await uploadPhoto(file);
+
+		// 파일 input 초기화
+		if (target) {
+			target.value = '';
+		}
+	}
+
+	/**
+	 * Firebase Storage에 사진 업로드
+	 * - 파일명: profile_{uid}_{timestamp}.{extension}
+	 * - 경로: users/{uid}/profile/{filename}
+	 * - 업로드 후 download URL을 photoUrl에 저장
+	 */
+	async function uploadPhoto(file: File) {
+		if (!authStore.user?.uid || !storage) {
+			errorMessage = '로그인이 필요합니다.';
+			return;
+		}
+
+		isPhotoUploading = true;
+		errorMessage = '';
+		successMessage = '';
+
+		try {
+			// 파일 확장자 추출
+			const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+			const fileName = `profile_${authStore.user.uid}_${Date.now()}.${extension}`;
+
+			// Storage 참조 생성
+			const photoStorageRef = storageRef(storage, `users/${authStore.user.uid}/profile/${fileName}`);
+
+			// 파일 업로드
+			const snapshot = await uploadBytes(photoStorageRef, file);
+
+			// Download URL 가져오기
+			const downloadURL = await getDownloadURL(snapshot.ref);
+
+			// photoUrl 업데이트
+			photoUrl = downloadURL;
+
+			// RTDB에 즉시 저장
+			if (rtdb) {
+				const userRef = dbRef(rtdb, `users/${authStore.user.uid}`);
+				await update(userRef, { photoUrl: downloadURL });
+			}
+
+			successMessage = '프로필 사진이 업로드되었습니다.';
+
+			// 3초 후 성공 메시지 제거
+			setTimeout(() => {
+				successMessage = '';
+			}, 3000);
+		} catch (error) {
+			console.error('사진 업로드 실패:', error);
+			errorMessage = '사진 업로드에 실패했습니다. 다시 시도해주세요.';
+			photoPreview = null;
+		} finally {
+			isPhotoUploading = false;
+		}
+	}
+
+	/**
+	 * 프로필 사진 제거
+	 * - photoUrl과 photoPreview를 null로 설정
+	 * - RTDB에서 photoUrl 필드 제거
+	 */
+	async function handleRemovePhoto() {
+		if (!authStore.user?.uid || !rtdb) {
+			errorMessage = '로그인이 필요합니다.';
+			return;
+		}
+
+		isPhotoUploading = true;
+		errorMessage = '';
+		successMessage = '';
+
+		try {
+			// RTDB에서 photoUrl 제거
+			const userRef = dbRef(rtdb, `users/${authStore.user.uid}`);
+			await update(userRef, { photoUrl: null });
+
+			// 상태 초기화
+			photoUrl = '';
+			photoPreview = null;
+
+			successMessage = '프로필 사진이 제거되었습니다.';
+
+			// 3초 후 성공 메시지 제거
+			setTimeout(() => {
+				successMessage = '';
+			}, 3000);
+		} catch (error) {
+			console.error('사진 제거 실패:', error);
+			errorMessage = '사진 제거에 실패했습니다. 다시 시도해주세요.';
+		} finally {
+			isPhotoUploading = false;
 		}
 	}
 
@@ -132,8 +281,13 @@
 				}
 			}
 
+			// photoUrl이 있으면 저장
+			if (photoUrl) {
+				updateData.photoUrl = photoUrl;
+			}
+
 			// Firebase RTDB에 저장
-			const userRef = ref(rtdb, `users/${authStore.user.uid}`);
+			const userRef = dbRef(rtdb, `users/${authStore.user.uid}`);
 			await update(userRef, updateData);
 
 			successMessage = '프로필이 성공적으로 업데이트되었습니다.';
@@ -207,6 +361,94 @@
 							<Alert.Description>{errorMessage}</Alert.Description>
 						</Alert.Root>
 					{/if}
+
+					<!-- 프로필 사진 -->
+					<div class="space-y-2">
+						<div class="block text-sm font-medium text-gray-700">프로필 사진</div>
+						<div class="flex items-center justify-center">
+							<div class="relative">
+								<!-- 사진 미리보기 또는 기본 회색 원 -->
+								<button
+									type="button"
+									onclick={handlePhotoClick}
+									disabled={isPhotoUploading}
+									class="relative h-32 w-32 overflow-hidden rounded-full border-4 border-gray-200 bg-gray-100 transition-all hover:border-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
+								>
+									{#if authStore.user?.uid}
+										<Avatar uid={authStore.user.uid} size={128} class="pointer-events-none" />
+									{:else}
+										<div class="flex h-full w-full items-center justify-center">
+											<span class="text-4xl text-gray-400">👤</span>
+										</div>
+									{/if}
+
+									{#if photoPreview}
+										<img
+											src={photoPreview}
+											alt="업로드 미리보기"
+											class="absolute inset-0 h-full w-full object-cover pointer-events-none"
+											aria-live="polite"
+										/>
+									{/if}
+
+									<!-- 카메라 아이콘 배지 -->
+									<div
+										class="absolute bottom-0 right-0 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-blue-600 text-white shadow-lg"
+									>
+										{#if isPhotoUploading}
+											<!-- 업로드 중 표시 -->
+											<svg
+												class="h-5 w-5 animate-spin"
+												xmlns="http://www.w3.org/2000/svg"
+												fill="none"
+												viewBox="0 0 24 24"
+											>
+												<circle
+													class="opacity-25"
+													cx="12"
+													cy="12"
+													r="10"
+													stroke="currentColor"
+													stroke-width="4"
+												></circle>
+												<path
+													class="opacity-75"
+													fill="currentColor"
+													d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+												></path>
+											</svg>
+										{:else}
+											<Camera class="h-5 w-5" />
+										{/if}
+									</div>
+								</button>
+
+								<!-- 사진 제거 버튼 (사진이 있을 때만 표시) -->
+								{#if (photoUrl || photoPreview) && !isPhotoUploading}
+									<button
+										type="button"
+										onclick={handleRemovePhoto}
+										class="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-red-500 text-white shadow-lg transition-all hover:bg-red-600"
+										title="사진 제거"
+									>
+										<X class="h-4 w-4" />
+									</button>
+								{/if}
+
+								<!-- 숨겨진 파일 input -->
+								<input
+									type="file"
+									bind:this={fileInput}
+									onchange={handlePhotoChange}
+									accept="image/*"
+									class="hidden"
+								/>
+							</div>
+						</div>
+						<p class="text-center text-xs text-gray-500">
+							클릭하여 프로필 사진 업로드 (최대 5MB)
+						</p>
+					</div>
 
 					<!-- 닉네임 -->
 					<div class="space-y-2">

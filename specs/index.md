@@ -269,20 +269,39 @@ This document provides a detailed index of all specifications related to the son
 - **검증**:
   - 로그인 → 파일 업로드 → 목록/삭제 순으로 수동 테스트
 
-### Firebase Realtime Database Guide
-- **File**: [sonub-firebase-database.md](./sonub-firebase-database.md)
+### Firebase Realtime Database Structure
+- **File**: [sonub-firebase-database-structure.md](./sonub-firebase-database-structure.md)
 - **Title**: Firebase Realtime Database 구조 가이드
-- **Description**: 사용자 정보, user-props, 친구 관계 등 전체 RTDB 스키마와 클라이언트/백엔드 역할 분리를 정의
+- **Description**: `/users`, `user-props`, friends/followers/following 등 RTDB 전체 스키마와 역할 분리를 정의한 기준 문서
 - **Version**: 1.0.0
 - **Step**: (미정)
 - **Priority**: (미정)
 - **Dependencies**: 없음
-- **Tags**: firebase, realtime-database, data-model, architecture
+- **Tags**: firebase, realtime-database, schema, architecture
 - **주요 내용**:
-  - `/users/{uid}`, `/user-props/*`, friends/followers/following 구조 정의
-  - 클라이언트/서버 책임 구분 및 자동 동기화 원칙
-  - Flat Style, 속성 분리, Cloud Functions 연계 철학
-  - Firebase Auth vs RTDB 필드 차이 및 주의사항
+  - Flat 스타일 데이터 구조, 속성 분리, Cloud Functions 활용 원칙
+  - `/users/{uid}` 필드 정의, Firebase Auth와 RTDB 필드 차이 주의사항
+  - `user-props`, 친구 관계(friends/followers/following) 데이터 모델 및 책임 구분
+  - 관련 가이드와 참고 문서 링크, 검증 체크리스트
+
+### Firebase Realtime Database Utilities
+- **File**: [sonub-firebase-realtime-database.md](./sonub-firebase-realtime-database.md)
+- **Title**: Firebase Realtime Database 유틸리티 라이브러리
+- **Description**: Svelte 5 runes 기반 RTDB 읽기/쓰기/구독 헬퍼와 실시간 스토어 구현 명세
+- **Version**: 1.0.0
+- **Step**: 30
+- **Priority**: ***
+- **Dependencies**:
+  - sonub-setup-firebase.md
+  - sonub-firebase-database-structure.md
+- **Tags**: firebase, rtdb, svelte, store, utility
+- **Files**:
+  - `src/lib/stores/database.svelte.ts`
+- **제공 기능**:
+  - `readData`, `writeData`, `updateData`, `deleteData`, `pushData` 등 공용 API
+  - `createRealtimeStore`/`rtdbStore`로 실시간 구독 + 로딩/에러 상태 자동 관리
+  - `setupPresence`로 온라인 상태 트래킹, 중복 리스너 방지 구조
+  - TypeScript 제네릭 지원 및 Firebase Emulator 테스트 절차
 
 ### Firebase Cloud Functions Guide
 - **File**: [sonub-firebase-cloudfunctions.md](./sonub-firebase-cloudfunctions.md)
@@ -377,27 +396,25 @@ This document provides a detailed index of all specifications related to the son
   - Firebase Storage 및 Realtime Database 저장소 설계
   - 실시간 프로필 업데이트 기능
 
-### Sonub User Profile
-- **File**: [sonub-user-profile.md](./sonub-user-profile.md)
-- **Title**: 사용자 프로필 사진 업로드 및 관리 명세서
-- **Description**: 프로필 사진 저장소 구조, Firebase Storage 업로드, URL 관리 및 실시간 동기화 구현
+### Sonub User Profile Store
+- **File**: [sonub-user-profile-store.md](./sonub-user-profile-store.md)
+- **Title**: 사용자 프로필 중앙 캐시 스토어
+- **Description**: RTDB `/users/{uid}` 데이터를 단일 스토어로 관리해 Avatar·TopBar 등에서 일관된 프로필 정보를 제공하는 명세
 - **Version**: 1.0.0
-- **Step**: 45
+- **Step**: 44
 - **Priority**: **
 - **Dependencies**:
-  - sonub-user-overview.md
   - sonub-setup-firebase.md
-  - sonub-setup-shadcn.md
-- **Tags**: user-profile, firebase-storage, photo-upload, svelte5
+  - sonub-firebase-database-structure.md
+  - sonub-user-avatar.md
+- **Tags**: firebase, rtdb, store, cache, svelte5
 - **Files**:
-  - `src/lib/components/user-profile.svelte` - 프로필 관리 컴포넌트
-  - `src/lib/utils/profile-helpers.ts` - 프로필 관리 헬퍼 함수
-- **구현된 기능**:
-  - 프로필 사진 업로드 (JPEG, PNG, WebP 지원)
-  - 파일 유효성 검증 (크기, 형식)
-  - 다운로드 URL 생성 및 저장
-  - 미리보기 기능
-  - 사용자 정보 검증 (displayName, gender, dateOfBirth)
+  - `src/lib/stores/user-profile.svelte.ts`
+- **핵심 기능**:
+  - Map 기반 캐시와 단일 `onValue` 리스너로 중복 구독 제거 및 실시간 동기화
+  - `getProfile`, `isLoading`, `getError` API와 Svelte 5 runes 반응성 패턴
+  - Avatar/TopBar/RightSidebar/프로필 페이지와 연동된 photoUrl·displayName 공유
+  - 구독 해제, 오류 처리, QA 체크리스트 및 향후 확장 아이디어
 
 ### Sonub User Profile Sync
 - **File**: [sonub-user-profile-sync.md](./sonub-user-profile-sync.md)
@@ -408,7 +425,7 @@ This document provides a detailed index of all specifications related to the son
 - **Priority**: ***
 - **Dependencies**:
   - sonub-setup-firebase.md
-  - sonub-firebase-database.md
+  - sonub-firebase-database-structure.md
   - sonub-user-login.md
   - sonub-user-props.md
 - **Tags**: authentication, database, sync, firebase, rtdb
@@ -421,6 +438,28 @@ This document provides a detailed index of all specifications related to the son
 ### Sonub User Public Profile
 - **File**: [sonub-user-public-profile.md](./sonub-user-public-profile.md)
 - **Status**: ⚠️ 문서가 비어 있습니다. 공개 프로필 레이아웃/데이터 명세가 필요하면 개발자에게 추가 지침을 요청하세요.
+
+### Sonub My Profile
+- **File**: [sonub-my-profile.md](./sonub-my-profile.md)
+- **Title**: 사용자 프로필 수정 페이지
+- **Description**: `/my/profile`에서 프로필 사진 업로드, 닉네임·성별·생년월일을 수정하는 UI/데이터 명세
+- **Version**: 2.0.0
+- **Step**: 50
+- **Priority**: **
+- **Dependencies**:
+  - sonub-user-overview.md
+  - sonub-setup-firebase.md
+  - sonub-setup-shadcn.md
+  - sonub-firebase-security.md
+  - sonub-design-components.md
+- **Tags**: user-profile, firebase-storage, profile-edit, svelte5
+- **Files**:
+  - `src/routes/my/profile/+page.svelte`
+- **주요 기능**:
+  - Firebase Storage 업로드/삭제, RTDB `/users/{uid}` 업데이트
+  - 닉네임/성별/생년월일 검증 로직
+  - Alert/Card/Button 기반 Light Mode UI
+  - 로그인 사용자만 접근
 
 ### Sonub User Props
 - **File**: [sonub-user-props.md](./sonub-user-props.md)
@@ -465,7 +504,7 @@ This document provides a detailed index of all specifications related to the son
 - **Priority**: **
 - **Dependencies**:
   - sonub-setup-firebase.md
-  - sonub-firebase-database.md
+  - sonub-firebase-database-structure.md
   - sonub-user-login.md
   - sonub-design-workflow.md
   - sonub-setup-svelte.md
@@ -525,7 +564,7 @@ This document provides a detailed index of all specifications related to the son
 - **Step**: 20
 - **Priority**: ***
 - **Dependencies**:
-  - sonub-firebase-database.md
+  - sonub-firebase-database-structure.md
 - **Tags**: chat, messaging, board, realtime, firebase-rtdb
 - **주요 내용**:
   - 채팅방/서브채팅방 타입, owner/moderator/member 역할

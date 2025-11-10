@@ -158,7 +158,7 @@
 						aria-label="내 프로필"
 						title={authStore.user.displayName || authStore.user.email || '내 프로필'}
 					>
-						<Avatar uid={authStore.user.uid} size={40} />
+						<Avatar uid={authStore.user?.uid} size={40} />
 					</a>
 				{:else}
 					<!-- 비로그인 상태: 로그인 버튼 -->

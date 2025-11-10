@@ -8,6 +8,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { authStore } from '$lib/stores/auth.svelte';
+	import Avatar from '$lib/components/user/avatar.svelte';
 </script>
 
 <svelte:head>
@@ -41,12 +42,10 @@
 				</Card.Header>
 				<Card.Content>
 					<div class="flex items-center justify-center gap-4">
-						{#if authStore.user?.photoURL}
-							<img
-								src={authStore.user.photoURL}
-								alt={authStore.user.displayName || '사용자'}
-								class="h-16 w-16 rounded-full"
-							/>
+						{#if authStore.user?.uid}
+							<Avatar uid={authStore.user.uid} size={64} class="shadow-sm" />
+						{:else}
+							<div class="h-16 w-16 rounded-full bg-gray-200" aria-hidden="true"></div>
 						{/if}
 					</div>
 				</Card.Content>

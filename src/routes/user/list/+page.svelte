@@ -1,5 +1,6 @@
 <script lang="ts">
   import DatabaseListView from '$lib/components/DatabaseListView.svelte';
+  import Avatar from '$lib/components/user/avatar.svelte';
 
   /**
    * /user/list 페이지
@@ -44,13 +45,7 @@
     {#snippet item(itemData: { key: string; data: any })}
       <a class="user-card" href={`/user/profile/${itemData.key}`} aria-label="사용자 프로필 상세">
         <div class="user-avatar">
-          {#if itemData.data?.photoUrl}
-            <img src={itemData.data.photoUrl} alt={itemData.data?.displayName || '사용자'} />
-          {:else}
-            <div class="avatar-placeholder">
-              {itemData.data?.displayName?.charAt(0)?.toUpperCase() || '?'}
-            </div>
-          {/if}
+          <Avatar uid={itemData.key} size={60} class="shadow-sm" />
         </div>
 
         <div class="user-info">
@@ -194,26 +189,9 @@
     flex-shrink: 0;
     width: 60px;
     height: 60px;
-    border-radius: 50%;
-    overflow: hidden;
-  }
-
-  .user-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .avatar-placeholder {
-    width: 100%;
-    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    font-size: 1.5rem;
-    font-weight: bold;
   }
 
   /* 사용자 정보 */

@@ -3,18 +3,21 @@
 	 * 사용자 아바타 컴포넌트
 	 *
 	 * 사용자 프로필 사진을 표시하거나, 사진이 없을 경우 displayName의 첫 글자를 표시합니다.
-	 * RTDB의 /users/{uid}/photoUrl 값을 사용합니다.
+	 * UserProfileStore를 사용하여 RTDB의 /users/{uid} 노드를 실시간으로 구독합니다.
+	 *
+	 * 주요 개선 사항:
+	 * - onMount 제거, $effect로 uid 변경 감지
+	 * - RTDB 직접 호출 제거, userProfileStore 사용
+	 * - 중복 리스너 방지 (캐시 활용)
 	 */
 
-	import { onMount } from 'svelte';
-	import { rtdb } from '$lib/firebase';
-	import { ref, onValue, type Unsubscribe } from 'firebase/database';
+	import { userProfileStore } from '$lib/stores/user-profile.svelte';
 
 	// Props
 	interface Props {
 		/**
 		 * 사용자 UID (필수)
-		 * RTDB에서 photoUrl과 displayName을 자동으로 가져옵니다.
+		 * UserProfileStore를 통해 photoUrl과 displayName을 자동으로 가져옵니다.
 		 */
 		uid?: string;
 
@@ -36,12 +39,21 @@
 		class: className = ''
 	}: Props = $props();
 
-	// RTDB에서 가져온 데이터
-	let photoUrl = $state<string | null>(null);
-	let displayName = $state<string | null>(null);
-
 	// 이미지 로드 실패 추적
 	let imageLoadFailed = $state(false);
+
+	// uid 변경 시 구독 시작 ($effect에서 상태 변경 가능)
+	$effect(() => {
+		userProfileStore.ensureSubscribed(uid);
+	});
+
+	// UserProfileStore에서 프로필 데이터 가져오기 (순수 읽기)
+	// uid가 변경될 때마다 자동으로 업데이트됨 ($derived 사용)
+	const profile = $derived(userProfileStore.getCachedProfile(uid));
+
+	// 프로필에서 photoUrl과 displayName 추출
+	const photoUrl = $derived(profile?.photoUrl ?? null);
+	const displayName = $derived(profile?.displayName ?? null);
 
 	// displayName의 첫 글자 계산
 	const initial = $derived.by(() => {
@@ -57,73 +69,26 @@
 		!imageLoadFailed
 	);
 
-	// 디버깅 로그
+	// uid 변경 시 이미지 로드 실패 상태 초기화
 	$effect(() => {
-		console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-		console.log('[Avatar 상태]');
-		console.log('  uid:', uid);
-		console.log('  photoUrl:', photoUrl);
-		console.log('  displayName:', displayName);
-		console.log('  imageLoadFailed:', imageLoadFailed);
-		console.log('  shouldShowImage:', shouldShowImage);
-		console.log('  initial:', initial);
-		console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+		if (uid) {
+			imageLoadFailed = false;
+		}
 	});
 
-	// RTDB에서 데이터 가져오기
-	let unsubscribe: Unsubscribe | null = null;
-
-	onMount(() => {
-		console.log('[Avatar onMount] 시작, uid:', uid);
-
-		if (!uid) {
-			console.warn('[Avatar] uid가 제공되지 않았습니다.');
-			return;
-		}
-
-		if (!rtdb) {
-			console.error('[Avatar] Firebase RTDB가 초기화되지 않았습니다.');
-			return;
-		}
-
-		const userRef = ref(rtdb, `users/${uid}`);
-		console.log('[Avatar] RTDB 리스너 등록 시작:', `users/${uid}`);
-
-		unsubscribe = onValue(
-			userRef,
-			(snapshot) => {
-				const data = snapshot.val();
-				console.log('[Avatar] ✅ RTDB 데이터 수신:', data);
-
-				if (data) {
-					// 이미지 로드 실패 상태 초기화
-					imageLoadFailed = false;
-
-					// 데이터 설정
-					photoUrl = data.photoUrl || null;
-					displayName = data.displayName || null;
-
-					console.log('[Avatar] 데이터 설정 완료');
-					console.log('  - photoUrl:', photoUrl);
-					console.log('  - displayName:', displayName);
-				} else {
-					console.warn('[Avatar] ⚠️ RTDB에 사용자 데이터가 없습니다.');
-					photoUrl = null;
-					displayName = null;
-				}
-			},
-			(error) => {
-				console.error('[Avatar] ❌ RTDB 데이터 로드 실패:', error);
-			}
-		);
-
-		// 정리 함수
-		return () => {
-			console.log('[Avatar] 리스너 해제, uid:', uid);
-			if (unsubscribe) {
-				unsubscribe();
-			}
-		};
+	// 프로필 데이터 변경 추적 (디버깅용)
+	$effect(() => {
+		console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+		console.log('[Avatar 컴포넌트] 프로필 상태 변경');
+		console.log('  uid:', uid);
+		console.log('  profile:', profile);
+		console.log('  photoUrl:', photoUrl);
+		console.log('  displayName:', displayName);
+		console.log('  shouldShowImage:', shouldShowImage);
+		console.log('  initial:', initial);
+		console.log('  imageLoadFailed:', imageLoadFailed);
+		console.log('  size:', size);
+		console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 	});
 
 	/**
