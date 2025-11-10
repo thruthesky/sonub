@@ -6,10 +6,11 @@
 	 */
 
 	import UnderConstruction from '$lib/components/under-construction.svelte';
+	import { m } from '$lib/paraglide/messages-proxy';
 </script>
 
 <svelte:head>
-	<title>게시판 - Sonub</title>
+	<title>{m.page_title_board()}</title>
 </svelte:head>
 
-<UnderConstruction title="게시판" message="게시판 기능은 현재 개발 중입니다." />
+<UnderConstruction title={m.nav_board()} message={m.board_under_construction()} />

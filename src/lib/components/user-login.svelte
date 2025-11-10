@@ -13,6 +13,7 @@
 	import { signInWithGoogle, signInWithApple, getAuthErrorMessage } from '$lib/utils/auth-helpers';
 	import { goto } from '$app/navigation';
 	import type { HTMLAttributes } from 'svelte/elements';
+	import { m } from '$lib/paraglide/messages-proxy';
 
 	// Props: 컴포넌트의 추가 클래스명과 기타 HTML 속성
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
@@ -95,9 +96,9 @@
 <div class={cn('flex flex-col gap-6', className)} {...restProps}>
 	<Card.Root>
 		<Card.Header class="text-center">
-			<Card.Title class="text-xl">환영합니다</Card.Title>
+			<Card.Title class="text-xl">{m.auth_welcome()}</Card.Title>
 			<Card.Description>
-				Google 또는 Apple 계정으로 로그인하세요
+				{m.auth_sign_in_guide()}
 			</Card.Description>
 		</Card.Header>
 		<Card.Content>
@@ -105,7 +106,7 @@
 				<!-- 에러 메시지 표시 -->
 				{#if errorMessage}
 					<Alert.Root variant="destructive">
-						<Alert.Title>로그인 실패</Alert.Title>
+						<Alert.Title>{m.auth_sign_in_failed()}</Alert.Title>
 						<Alert.Description class="flex items-center justify-between">
 							<span>{errorMessage}</span>
 							<button
@@ -113,7 +114,7 @@
 								class="ml-2 text-sm underline hover:no-underline"
 								type="button"
 							>
-								닫기
+								{m.close()}
 							</button>
 						</Alert.Description>
 					</Alert.Root>
@@ -149,7 +150,7 @@
 								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
 							></path>
 						</svg>
-						로그인 중...
+						{m.auth_signing_in()}
 					{:else}
 						<!-- Google 아이콘 -->
 						<svg
@@ -162,7 +163,7 @@
 								fill="currentColor"
 							/>
 						</svg>
-						Google로 로그인
+						{m.auth_sign_in_with_google()}
 					{/if}
 				</Button>
 
@@ -196,7 +197,7 @@
 								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
 							></path>
 						</svg>
-						로그인 중...
+						{m.auth_signing_in()}
 					{:else}
 						<!-- Apple 아이콘 -->
 						<svg
@@ -209,7 +210,7 @@
 								fill="currentColor"
 							/>
 						</svg>
-						Apple로 로그인
+						{m.auth_sign_in_with_apple()}
 					{/if}
 				</Button>
 			</div>

@@ -133,7 +133,26 @@ This document provides a detailed index of all specifications related to the son
 
 ### Sonub Design Left Sidebar
 - **File**: [sonub-design-leftsidebar.md](./sonub-design-leftsidebar.md)
-- **Status**: ⚠️ 문서 내용이 아직 작성되지 않았습니다. 좌측 사이드바 세부 명세가 필요하면 개발자에게 요청하세요.
+- **Title**: Sonub 좌측 사이드바 명세서
+- **Description**: 좌측 사이드바 컴포넌트 구현 명세서 - 메뉴, 언어 선택, 빌드 버전 표시
+- **Version**: 1.0.0
+- **Step**: 25
+- **Priority**: **
+- **Dependencies**:
+  - sonub-design-layout.md
+  - sonub-i18n-paraglide.md
+  - sonub-setup-shadcn.md
+- **Tags**: sidebar, navigation, i18n, ui, svelte5
+- **Files**:
+  - `src/lib/components/left-sidebar.svelte` - 좌측 사이드바 컴포넌트
+- **구현된 기능**:
+  - 메뉴 네비게이션 (홈, 소개, 제품, 연락)
+  - 최근 활동 카드 (향후 확장 예정)
+  - 언어 선택 드롭다운 (en, ko, ja, zh)
+  - 빌드 버전 표시
+  - Sticky 포지셔닝
+  - Light Mode Only 스타일링
+  - 반응형 디자인 (데스크톱만)
 
 ### Sonub Design Right Sidebar
 - **File**: [sonub-design-rightsidebar.md](./sonub-design-rightsidebar.md)

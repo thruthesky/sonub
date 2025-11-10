@@ -6,10 +6,11 @@
 	 */
 
 	import UnderConstruction from '$lib/components/under-construction.svelte';
+	import { m } from '$lib/paraglide/messages-proxy';
 </script>
 
 <svelte:head>
-	<title>채팅 - Sonub</title>
+	<title>{m.page_title_chat()}</title>
 </svelte:head>
 
-<UnderConstruction title="채팅" message="채팅 기능은 현재 개발 중입니다." />
+<UnderConstruction title={m.chat()} message={m.chat_under_construction()} />

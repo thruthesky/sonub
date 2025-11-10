@@ -8,7 +8,8 @@
 
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { authStore } from '$lib/stores/auth.svelte';
-	import Avatar from '$lib/components/user/avatar.svelte';
+import Avatar from '$lib/components/user/avatar.svelte';
+import { m } from '$lib/paraglide/messages-proxy';
 </script>
 
 <aside class="hidden lg:block lg:w-64 xl:w-72">
@@ -16,7 +17,7 @@
 		{#if authStore.isAuthenticated}
 			<Card.Root>
 				<Card.Header>
-					<Card.Title class="text-base">내 프로필</Card.Title>
+					<Card.Title class="text-base">{m.sidebar_my_profile()}</Card.Title>
 				</Card.Header>
 				<Card.Content class="space-y-3">
 					<div class="flex justify-center">
@@ -24,7 +25,7 @@
 					</div>
 					<div class="text-center">
 						<p class="font-medium text-gray-900">
-							{authStore.user?.displayName || '사용자'}
+							{authStore.user?.displayName || m.user()}
 						</p>
 						<p class="text-sm text-gray-600">
 							{authStore.user?.email || ''}
@@ -36,29 +37,29 @@
 
 		<Card.Root>
 			<Card.Header>
-				<Card.Title class="text-base">알림</Card.Title>
+				<Card.Title class="text-base">{m.sidebar_notifications()}</Card.Title>
 			</Card.Header>
 			<Card.Content>
-				<p class="text-sm text-gray-600">새로운 알림이 없습니다.</p>
+				<p class="text-sm text-gray-600">{m.sidebar_no_notifications()}</p>
 			</Card.Content>
 		</Card.Root>
 
 		<Card.Root>
 			<Card.Header>
-				<Card.Title class="text-base">추천</Card.Title>
+				<Card.Title class="text-base">{m.sidebar_suggestions()}</Card.Title>
 			</Card.Header>
 			<Card.Content class="space-y-2">
 				<button
 					type="button"
 					class="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
 				>
-					인기 게시물
+					{m.sidebar_popular_posts()}
 				</button>
 				<button
 					type="button"
 					class="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
 				>
-					새로운 기능
+					{m.sidebar_new_features()}
 				</button>
 			</Card.Content>
 		</Card.Root>

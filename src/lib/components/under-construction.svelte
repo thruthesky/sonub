@@ -7,13 +7,14 @@
 
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
+	import { m } from '$lib/paraglide/messages-proxy';
 
 	interface Props {
 		title?: string;
 		message?: string;
 	}
 
-	let { title = '공사중', message = '이 페이지는 현재 개발 중입니다.' }: Props = $props();
+	let { title = m.under_construction(), message = m.under_construction_message() }: Props = $props();
 </script>
 
 <div class="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center py-8">
@@ -51,7 +52,7 @@
 						href="/"
 						class="w-full cursor-pointer bg-blue-600 py-6 text-lg font-semibold text-white hover:bg-blue-700"
 					>
-						홈으로 돌아가기
+						{m.under_construction_back_to_home()}
 					</Button>
 				</div>
 			</Card.Content>

@@ -8,6 +8,7 @@
 
 	import { page } from '$app/stores';
 	import { Button } from '$lib/components/ui/button';
+	import { m } from '$lib/paraglide/messages-proxy';
 
 	interface MenuItem {
 		label: string;
@@ -16,9 +17,9 @@
 
 	// 관리자 메뉴 항목들
 	const menuItems: MenuItem[] = [
-		{ label: '대시보드', href: '/admin/dashboard' },
-		{ label: '테스트', href: '/admin/test' },
-		{ label: '사용자목록', href: '/admin/users' }
+		{ label: m.admin_dashboard_menu(), href: '/admin/dashboard' },
+		{ label: m.admin_test_menu(), href: '/admin/test' },
+		{ label: m.admin_user_list_menu(), href: '/admin/users' }
 	];
 
 	/**

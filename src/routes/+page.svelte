@@ -9,19 +9,20 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import Avatar from '$lib/components/user/avatar.svelte';
+	import { m } from '$lib/paraglide/messages-proxy';
 </script>
 
 <svelte:head>
-	<title>Sonub - Welcome</title>
+	<title>{m.page_title_home()}</title>
 </svelte:head>
 
 <div class="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center">
 	<div class="mx-auto max-w-4xl space-y-8 text-center">
 		<!-- 메인 타이틀 -->
 		<div class="space-y-4">
-			<h1 class="text-4xl font-bold text-gray-900 md:text-6xl">Welcome to Sonub</h1>
+			<h1 class="text-4xl font-bold text-gray-900 md:text-6xl">{m.auth_welcome_message()}</h1>
 			<p class="text-lg text-gray-600 md:text-xl">
-				SedAi.Dev 에 Sonub spec 으로 커뮤니티 기능을 집어 넣는다.
+				{m.auth_intro()}
 			</p>
 		</div>
 
@@ -29,15 +30,15 @@
 		{#if authStore.loading}
 			<Card.Root class="mx-auto max-w-md">
 				<Card.Content class="pt-6">
-					<p class="text-center text-gray-600">로딩 중...</p>
+					<p class="text-center text-gray-600">{m.loading()}</p>
 				</Card.Content>
 			</Card.Root>
 		{:else if authStore.isAuthenticated}
 			<Card.Root class="mx-auto max-w-md">
 				<Card.Header>
-					<Card.Title>환영합니다!</Card.Title>
+					<Card.Title>{m.auth_welcome()}</Card.Title>
 					<Card.Description>
-						{authStore.user?.displayName || authStore.user?.email || '사용자'}님, 로그인하셨습니다.
+						{m.auth_welcome_user({ name: authStore.user?.displayName || authStore.user?.email || m.user() })}
 					</Card.Description>
 				</Card.Header>
 				<Card.Content>
@@ -53,11 +54,11 @@
 		{:else}
 			<Card.Root class="mx-auto max-w-md">
 				<Card.Header>
-					<Card.Title>시작하기</Card.Title>
-					<Card.Description>Google 또는 Apple 계정으로 로그인하여 시작하세요</Card.Description>
+					<Card.Title>{m.auth_get_started()}</Card.Title>
+					<Card.Description>{m.auth_sign_in_guide_start()}</Card.Description>
 				</Card.Header>
 				<Card.Content>
-					<Button class="w-full" href="/user/login">로그인하기</Button>
+					<Button class="w-full" href="/user/login">{m.auth_sign_in_action()}</Button>
 				</Card.Content>
 			</Card.Root>
 		{/if}
@@ -66,31 +67,31 @@
 		<div class="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
 			<Card.Root>
 				<Card.Header>
-					<Card.Title class="text-lg">SvelteKit 5</Card.Title>
+					<Card.Title class="text-lg">{m.feature_sveltekit5()}</Card.Title>
 				</Card.Header>
 				<Card.Content>
 					<p class="text-sm text-gray-600">
-						최신 Svelte 5 runes를 사용한 모던 프레임워크
+						{m.feature_sveltekit5_desc()}
 					</p>
 				</Card.Content>
 			</Card.Root>
 
 			<Card.Root>
 				<Card.Header>
-					<Card.Title class="text-lg">Firebase Auth</Card.Title>
+					<Card.Title class="text-lg">{m.feature_firebase_auth()}</Card.Title>
 				</Card.Header>
 				<Card.Content>
-					<p class="text-sm text-gray-600">Google 및 Apple 소셜 로그인 지원</p>
+					<p class="text-sm text-gray-600">{m.feature_firebase_auth_desc()}</p>
 				</Card.Content>
 			</Card.Root>
 
 			<Card.Root>
 				<Card.Header>
-					<Card.Title class="text-lg">TailwindCSS</Card.Title>
+					<Card.Title class="text-lg">{m.feature_tailwind_css()}</Card.Title>
 				</Card.Header>
 				<Card.Content>
 					<p class="text-sm text-gray-600">
-						shadcn-svelte와 함께하는 아름다운 UI
+						{m.feature_tailwind_css_desc()}
 					</p>
 				</Card.Content>
 			</Card.Root>
@@ -106,7 +107,7 @@
 				rel="noopener noreferrer"
 				class="hover:text-gray-900"
 			>
-				SvelteKit 문서
+				{m.link_svelte_kit_docs()}
 			</a>
 			<span class="hidden sm:inline">•</span>
 			<a
@@ -115,7 +116,7 @@
 				rel="noopener noreferrer"
 				class="hover:text-gray-900"
 			>
-				Firebase 문서
+				{m.link_firebase_docs()}
 			</a>
 			<span class="hidden sm:inline">•</span>
 			<a
@@ -124,7 +125,7 @@
 				rel="noopener noreferrer"
 				class="hover:text-gray-900"
 			>
-				shadcn-svelte
+				{m.link_shadcn_svelte()}
 			</a>
 		</div>
 	</div>

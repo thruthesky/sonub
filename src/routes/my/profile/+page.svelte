@@ -19,6 +19,7 @@
 	import * as Alert from '$lib/components/ui/alert/index.js';
 	import { Camera, X } from 'lucide-svelte';
 	import Avatar from '$lib/components/user/avatar.svelte';
+	import { m } from '$lib/paraglide/messages-proxy';
 
 	// 폼 데이터 상태
 	let displayName = $state('');
@@ -34,7 +35,7 @@
 	let successMessage = $state('');
 	let errorMessage = $state('');
 	let photoPreview = $state<string | null>(null); // 사진 미리보기 URL
-	let fileInput: HTMLInputElement | null = null; // 파일 input 참조
+	let fileInput = $state<HTMLInputElement | null>(null); // 파일 input 참조
 	let isPhotoUploading = $state(false); // 사진 업로드 중 상태
 
 	// 년도 옵션 생성 (현재년도-70 ~ 현재년도-18)
@@ -85,7 +86,7 @@
 			}
 		} catch (error) {
 			console.error('프로필 로드 실패:', error);
-			errorMessage = '프로필 정보를 불러오는데 실패했습니다.';
+			errorMessage = m.profile_load_failed();
 		} finally {
 			loading = false;
 		}
@@ -112,14 +113,14 @@
 
 		// 파일 타입 검증
 		if (!file.type.startsWith('image/')) {
-			errorMessage = '이미지 파일만 업로드할 수 있습니다.';
+			errorMessage = m.profile_photo_type_error();
 			return;
 		}
 
 		// 파일 크기 검증 (5MB)
 		const maxSize = 5 * 1024 * 1024; // 5MB
 		if (file.size > maxSize) {
-			errorMessage = '파일 크기는 5MB 이하여야 합니다.';
+			errorMessage = m.profile_photo_size_error();
 			return;
 		}
 
@@ -147,7 +148,7 @@
 	 */
 	async function uploadPhoto(file: File) {
 		if (!authStore.user?.uid || !storage) {
-			errorMessage = '로그인이 필요합니다.';
+			errorMessage = m.auth_sign_in_required();
 			return;
 		}
 
@@ -178,7 +179,7 @@
 				await update(userRef, { photoUrl: downloadURL });
 			}
 
-			successMessage = '프로필 사진이 업로드되었습니다.';
+			successMessage = m.profile_photo_upload_success();
 
 			// 3초 후 성공 메시지 제거
 			setTimeout(() => {
@@ -186,7 +187,7 @@
 			}, 3000);
 		} catch (error) {
 			console.error('사진 업로드 실패:', error);
-			errorMessage = '사진 업로드에 실패했습니다. 다시 시도해주세요.';
+			errorMessage = m.profile_photo_upload_failed();
 			photoPreview = null;
 		} finally {
 			isPhotoUploading = false;
@@ -200,7 +201,7 @@
 	 */
 	async function handleRemovePhoto() {
 		if (!authStore.user?.uid || !rtdb) {
-			errorMessage = '로그인이 필요합니다.';
+			errorMessage = m.auth_sign_in_required();
 			return;
 		}
 
@@ -217,7 +218,7 @@
 			photoUrl = '';
 			photoPreview = null;
 
-			successMessage = '프로필 사진이 제거되었습니다.';
+			successMessage = m.profile_photo_remove_success();
 
 			// 3초 후 성공 메시지 제거
 			setTimeout(() => {
@@ -225,7 +226,7 @@
 			}, 3000);
 		} catch (error) {
 			console.error('사진 제거 실패:', error);
-			errorMessage = '사진 제거에 실패했습니다. 다시 시도해주세요.';
+			errorMessage = m.profile_photo_remove_failed();
 		} finally {
 			isPhotoUploading = false;
 		}
@@ -236,18 +237,18 @@
 	 */
 	async function handleSave() {
 		if (!authStore.user?.uid || !rtdb) {
-			errorMessage = '로그인이 필요합니다.';
+			errorMessage = m.auth_sign_in_required();
 			return;
 		}
 
 		// 유효성 검증
 		if (!displayName.trim()) {
-			errorMessage = '닉네임을 입력해주세요.';
+			errorMessage = m.profile_nickname_required();
 			return;
 		}
 
 		if (displayName.length > 50) {
-			errorMessage = '닉네임은 50자 이하여야 합니다.';
+			errorMessage = m.profile_nickname_length_limit();
 			return;
 		}
 
@@ -275,7 +276,7 @@
 				// 미래 날짜 검증
 				const birthDate = new Date(birthYear, birthMonth - 1, birthDay);
 				if (birthDate > new Date()) {
-					errorMessage = '생년월일은 과거여야 합니다.';
+					errorMessage = m.profile_birthdate_future_error();
 					saving = false;
 					return;
 				}
@@ -290,7 +291,7 @@
 			const userRef = dbRef(rtdb, `users/${authStore.user.uid}`);
 			await update(userRef, updateData);
 
-			successMessage = '프로필이 성공적으로 업데이트되었습니다.';
+			successMessage = m.profile_save_success();
 
 			// 3초 후 성공 메시지 제거
 			setTimeout(() => {
@@ -298,7 +299,7 @@
 			}, 3000);
 		} catch (error) {
 			console.error('프로필 저장 실패:', error);
-			errorMessage = '프로필 저장에 실패했습니다. 다시 시도해주세요.';
+			errorMessage = m.profile_save_failed();
 		} finally {
 			saving = false;
 		}
@@ -320,36 +321,36 @@
 </script>
 
 <svelte:head>
-	<title>내 프로필 - Sonub</title>
+	<title>{m.page_title_my_profile()}</title>
 </svelte:head>
 
 <div class="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center py-8">
 	<div class="mx-auto w-full max-w-md space-y-6">
 		<!-- 페이지 헤더 -->
 		<div class="text-center">
-			<h1 class="text-2xl font-bold text-gray-900">내 프로필</h1>
-			<p class="mt-2 text-sm text-gray-600">회원 정보를 수정할 수 있습니다</p>
+			<h1 class="text-2xl font-bold text-gray-900">{m.my_profile()}</h1>
+			<p class="mt-2 text-sm text-gray-600">{m.profile_member_info_edit_guide()}</p>
 		</div>
 
 		<!-- 로딩 상태 -->
 		{#if loading}
 			<Card.Root>
 				<Card.Content class="pt-6">
-					<p class="text-center text-gray-600">프로필 정보를 불러오는 중...</p>
+					<p class="text-center text-gray-600">{m.profile_loading()}</p>
 				</Card.Content>
 			</Card.Root>
 		{:else}
 			<!-- 프로필 수정 폼 -->
 			<Card.Root>
 				<Card.Header>
-					<Card.Title>회원 정보</Card.Title>
-					<Card.Description>닉네임, 성별, 생년월일을 설정하세요</Card.Description>
+					<Card.Title>{m.profile_member_info()}</Card.Title>
+					<Card.Description>{m.profile_member_info_guide()}</Card.Description>
 				</Card.Header>
 				<Card.Content class="space-y-4">
 					<!-- 성공 메시지 -->
 					{#if successMessage}
 						<Alert.Root>
-							<Alert.Title>성공</Alert.Title>
+							<Alert.Title>{m.success()}</Alert.Title>
 							<Alert.Description>{successMessage}</Alert.Description>
 						</Alert.Root>
 					{/if}
@@ -357,14 +358,14 @@
 					<!-- 에러 메시지 -->
 					{#if errorMessage}
 						<Alert.Root variant="destructive">
-							<Alert.Title>오류</Alert.Title>
+							<Alert.Title>{m.error()}</Alert.Title>
 							<Alert.Description>{errorMessage}</Alert.Description>
 						</Alert.Root>
 					{/if}
 
 					<!-- 프로필 사진 -->
 					<div class="space-y-2">
-						<div class="block text-sm font-medium text-gray-700">프로필 사진</div>
+						<div class="block text-sm font-medium text-gray-700">{m.profile_photo()}</div>
 						<div class="flex items-center justify-center">
 							<div class="relative">
 								<!-- 사진 미리보기 또는 기본 회색 원 -->
@@ -385,7 +386,7 @@
 									{#if photoPreview}
 										<img
 											src={photoPreview}
-											alt="업로드 미리보기"
+											alt=m.profile_picture(
 											class="absolute inset-0 h-full w-full object-cover pointer-events-none"
 											aria-live="polite"
 										/>
@@ -429,7 +430,7 @@
 										type="button"
 										onclick={handleRemovePhoto}
 										class="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-red-500 text-white shadow-lg transition-all hover:bg-red-600"
-										title="사진 제거"
+										title={m.profile_photo_remove()}
 									>
 										<X class="h-4 w-4" />
 									</button>
@@ -446,46 +447,46 @@
 							</div>
 						</div>
 						<p class="text-center text-xs text-gray-500">
-							클릭하여 프로필 사진 업로드 (최대 5MB)
+							{m.profile_photo_upload_guide()}
 						</p>
 					</div>
 
 					<!-- 닉네임 -->
 					<div class="space-y-2">
 						<label for="displayName" class="block text-sm font-medium text-gray-700">
-							닉네임 <span class="text-red-500">*</span>
+							{m.profile_nickname()} <span class="text-red-500">*</span>
 						</label>
 						<input
 							type="text"
 							id="displayName"
 							bind:value={displayName}
-							placeholder="닉네임을 입력하세요"
+							placeholder={m.profile_nickname_input()}
 							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 							maxlength="50"
 						/>
-						<p class="text-xs text-gray-500">최대 50자</p>
+						<p class="text-xs text-gray-500">{m.profile_nickname_max_length()}</p>
 					</div>
 
 					<!-- 성별 -->
 					<div class="space-y-2">
 						<label for="gender" class="block text-sm font-medium text-gray-700">
-							성별
+							{m.profile_gender()}
 						</label>
 						<select
 							id="gender"
 							bind:value={gender}
 							class="w-full cursor-pointer rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 						>
-							<option value="">선택 안 함</option>
-							<option value="M">남성</option>
-							<option value="F">여성</option>
+							<option value="">{m.profile_gender_not_specified()}</option>
+							<option value="M">{m.profile_gender_male()}</option>
+							<option value="F">{m.profile_gender_female()}</option>
 						</select>
 					</div>
 
 					<!-- 생년월일 -->
 					<div class="space-y-2">
 						<label for="birthYear" class="block text-sm font-medium text-gray-700">
-							생년월일
+							{m.profile_birthdate()}
 						</label>
 						<div class="grid grid-cols-3 gap-2">
 							<!-- 연도 -->
@@ -495,9 +496,9 @@
 									bind:value={birthYear}
 									class="w-full cursor-pointer rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 								>
-									<option value={null}>년도</option>
+									<option value={null}>{m.profile_birthdate_year()}</option>
 									{#each yearOptions as year}
-										<option value={year}>{year}년</option>
+										<option value={year}>{m.profile_year_format({ year })}</option>
 									{/each}
 								</select>
 							</div>
@@ -508,9 +509,9 @@
 									bind:value={birthMonth}
 									class="w-full cursor-pointer rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 								>
-									<option value={null}>월</option>
+									<option value={null}>{m.profile_birthdate_month()}</option>
 									{#each monthOptions as month}
-										<option value={month}>{month}월</option>
+										<option value={month}>{m.profile_month_format({ month })}</option>
 									{/each}
 								</select>
 							</div>
@@ -521,15 +522,15 @@
 									bind:value={birthDay}
 									class="w-full cursor-pointer rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 								>
-									<option value={null}>일</option>
+									<option value={null}>{m.profile_birthdate_day()}</option>
 									{#each dayOptions as day}
-										<option value={day}>{day}일</option>
+										<option value={day}>{m.profile_day_format({ day })}</option>
 									{/each}
 								</select>
 							</div>
 						</div>
 						<p class="text-xs text-gray-500">
-							만 18세 이상만 가입할 수 있습니다 ({minYear}년 ~ {maxYear}년생)
+							{m.profile_birthdate_age_limit({ minYear, maxYear })}
 						</p>
 					</div>
 
@@ -540,7 +541,7 @@
 							onclick={handleSave}
 							disabled={saving}
 						>
-							{saving ? '저장 중...' : '프로필 저장'}
+							{saving ? m.profile_saving() : m.profile_save()}
 						</Button>
 					</div>
 				</Card.Content>

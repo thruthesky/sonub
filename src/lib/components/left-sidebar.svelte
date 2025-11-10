@@ -9,8 +9,8 @@
 
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { BUILD_VERSION } from '$lib/version';
-	import { getLocale, setLocale, locales } from '$lib/paraglide/runtime';
-	import * as m from '$lib/paraglide/messages.js';
+import { getLocale, setLocale, locales } from '$lib/paraglide/runtime';
+import { m } from '$lib/paraglide/messages-proxy';
 
 	// 언어 이름 매핑
 	const localeNames: Record<string, string> = {
@@ -48,32 +48,32 @@
 		<!-- 네비게이션 메뉴 -->
 		<Card.Root>
 			<Card.Header>
-				<Card.Title class="text-base">{m.msg_0144()}</Card.Title>
+				<Card.Title class="text-base">{m.sidebar_menu()}</Card.Title>
 			</Card.Header>
 			<Card.Content class="space-y-2">
 				<a
 					href="/"
 					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
 				>
-					{m.msg_0018()}
+					{m.home()}
 				</a>
 				<a
 					href="/about"
 					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
 				>
-					{m.msg_0019()}
+					{m.about()}
 				</a>
 				<a
 					href="/products"
 					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
 				>
-					{m.msg_0020()}
+					{m.products()}
 				</a>
 				<a
 					href="/contact"
 					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
 				>
-					{m.msg_0021()}
+					{m.contact()}
 				</a>
 			</Card.Content>
 		</Card.Root>
@@ -81,24 +81,24 @@
 		<!-- 정보 카드 -->
 		<Card.Root>
 			<Card.Header>
-				<Card.Title class="text-base">{m.msg_0145()}</Card.Title>
+				<Card.Title class="text-base">{m.sidebar_recent_activity()}</Card.Title>
 			</Card.Header>
 			<Card.Content>
-				<p class="text-sm text-gray-600">{m.msg_0146()}</p>
+				<p class="text-sm text-gray-600">{m.sidebar_no_recent_activity()}</p>
 			</Card.Content>
 		</Card.Root>
 
 		<!-- 언어 선택 드롭다운 -->
 		<Card.Root>
 			<Card.Header>
-				<Card.Title class="text-base">{m.msg_0147()}</Card.Title>
+				<Card.Title class="text-base">{m.sidebar_language()}</Card.Title>
 			</Card.Header>
 			<Card.Content>
 				<select
 					value={getLocale()}
 					onchange={handleLocaleChange}
 					class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 transition-colors hover:border-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-					aria-label={m.msg_0147()}
+					aria-label={m.sidebar_language()}
 				>
 					{#each locales as locale}
 						<option value={locale}>
@@ -112,7 +112,7 @@
 		<!-- 빌드 버전 정보 -->
 		<Card.Root>
 			<Card.Header>
-				<Card.Title class="text-base">{m.msg_0148()}</Card.Title>
+				<Card.Title class="text-base">{m.sidebar_build_version()}</Card.Title>
 			</Card.Header>
 			<Card.Content>
 				<p class="text-sm text-gray-600">{BUILD_VERSION}</p>

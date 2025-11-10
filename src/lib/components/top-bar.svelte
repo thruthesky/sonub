@@ -11,7 +11,8 @@
 	import { signOut } from 'firebase/auth';
 	import { auth } from '$lib/firebase';
 	import { goto } from '$app/navigation';
-	import Avatar from '$lib/components/user/avatar.svelte';
+import Avatar from '$lib/components/user/avatar.svelte';
+import { m } from '$lib/paraglide/messages-proxy';
 
 	// 로그아웃 처리 중 상태
 	let isSigningOut = $state(false);
@@ -51,19 +52,19 @@
 						href="/about"
 						class="text-gray-600 hover:text-gray-900"
 					>
-						소개
+						{m.about()}
 					</a>
 					<a
 						href="/products"
 						class="text-gray-600 hover:text-gray-900"
 					>
-						제품
+						{m.products()}
 					</a>
 					<a
 						href="/contact"
 						class="text-gray-600 hover:text-gray-900"
 					>
-						연락
+						{m.contact()}
 					</a>
 				</div>
 			</div>
@@ -75,8 +76,8 @@
 					href="/post/list"
 					variant="ghost"
 					size="icon"
-					aria-label="게시판"
-					title="게시판"
+					aria-label={m.board()}
+					title={m.board()}
 					class="cursor-pointer text-gray-600 hover:text-gray-900"
 				>
 					<svg
@@ -104,8 +105,8 @@
 					href="/chat/list"
 					variant="ghost"
 					size="icon"
-					aria-label="채팅"
-					title="채팅"
+					aria-label={m.chat()}
+					title={m.chat()}
 					class="cursor-pointer text-gray-600 hover:text-gray-900"
 				>
 					<svg
@@ -128,8 +129,8 @@
 					href="/user/list"
 					variant="ghost"
 					size="icon"
-					aria-label="사용자 찾기"
-					title="사용자 찾기"
+					aria-label={m.find_users()}
+					title={m.find_users()}
 					class="cursor-pointer text-gray-600 hover:text-gray-900"
 				>
 					<svg
@@ -155,15 +156,15 @@
 					<a
 						href="/my/profile"
 						class="cursor-pointer hover:opacity-80 transition-opacity"
-						aria-label="내 프로필"
-						title={authStore.user.displayName || authStore.user.email || '내 프로필'}
+						aria-label={m.my_profile()}
+						title={authStore.user.displayName || authStore.user.email || m.my_profile()}
 					>
 						<Avatar uid={authStore.user?.uid} size={40} />
 					</a>
 				{:else}
 					<!-- 비로그인 상태: 로그인 버튼 -->
 					<Button variant="ghost" size="sm" href="/user/login" class="cursor-pointer">
-						로그인
+						{m.sign_in()}
 					</Button>
 				{/if}
 
@@ -172,8 +173,8 @@
 					href="/menu"
 					variant="ghost"
 					size="icon"
-					aria-label="메뉴"
-					title="메뉴"
+					aria-label={m.menu()}
+					title={m.menu()}
 					class="cursor-pointer text-gray-600 hover:text-gray-900"
 				>
 					<svg

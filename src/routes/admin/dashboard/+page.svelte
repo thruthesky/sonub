@@ -8,37 +8,38 @@
 
 	import { Card } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
+	import { m } from '$lib/paraglide/messages-proxy';
 
 	// 대시보드 메뉴 항목들
 	interface DashboardItem {
-		title: string;
-		description: string;
+		title_key: () => string;
+		description_key: () => string;
 		href: string;
 		icon: string;
 	}
 
 	const dashboardItems: DashboardItem[] = [
 		{
-			title: '테스트 사용자 관리',
-			description: '임시 사용자 생성/목록/삭제를 한 페이지에서 관리합니다',
+			title_key: m.admin_test_user_management,
+			description_key: m.admin_test_user_management_desc,
 			href: '/admin/users',
 			icon: '👥'
 		},
 		{
-			title: '사용자 목록',
-			description: '생성된 테스트 사용자 목록을 확인합니다',
+			title_key: m.admin_user_list,
+			description_key: m.admin_user_list_desc,
 			href: '/admin/users',
 			icon: '📋'
 		},
 		{
-			title: '신고 목록',
-			description: '사용자 신고 내역을 확인하고 관리합니다',
+			title_key: m.admin_report_list,
+			description_key: m.admin_report_list_desc,
 			href: '/admin/reports',
 			icon: '⚠️'
 		},
 		{
-			title: '테스트',
-			description: '기타 테스트 기능들을 사용합니다',
+			title_key: m.admin_test,
+			description_key: m.admin_test_desc,
 			href: '/admin/test',
 			icon: '🧪'
 		}
@@ -48,22 +49,20 @@
 <div class="space-y-6">
 	<!-- 페이지 제목 -->
 	<div>
-		<h1 class="text-3xl font-bold text-gray-900">관리자 대시보드</h1>
-		<p class="mt-2 text-gray-600">관리 도구를 선택하여 작업을 시작하세요.</p>
+		<h1 class="text-3xl font-bold text-gray-900">{m.admin_dashboard()}</h1>
+		<p class="mt-2 text-gray-600">{m.admin_dashboard_guide()}</p>
 	</div>
 
 	<!-- 탭 내비게이션 -->
-	<nav class="dashboard-tabs" aria-label="관리자 대시보드 탭">
+	<nav class="dashboard-tabs" aria-label={m.admin_dashboard()}>
 		{#each dashboardItems as item (item.href)}
-			<Button
+			<a
 				href={item.href}
-				variant="ghost"
-				size="sm"
-				class="dashboard-tab cursor-pointer"
+				class="dashboard-tab"
 			>
 				<span class="tab-icon">{item.icon}</span>
-				<span class="tab-title">{item.title}</span>
-			</Button>
+				<span class="tab-title">{item.title_key()}</span>
+			</a>
 		{/each}
 	</nav>
 
@@ -75,8 +74,8 @@
 					<div class="flex items-start justify-between">
 						<div>
 							<p class="text-4xl">{item.icon}</p>
-							<h3 class="mt-4 text-lg font-semibold text-gray-900">{item.title}</h3>
-							<p class="mt-2 text-sm text-gray-600">{item.description}</p>
+							<h3 class="mt-4 text-lg font-semibold text-gray-900">{item.title_key()}</h3>
+							<p class="mt-2 text-sm text-gray-600">{item.description_key()}</p>
 						</div>
 					</div>
 					<div class="mt-6">
@@ -86,7 +85,7 @@
 							size="sm"
 							class="w-full cursor-pointer"
 						>
-							이동
+							{m.go()}
 						</Button>
 					</div>
 				</div>
@@ -97,11 +96,11 @@
 	<!-- 정보 섹션 -->
 	<Card>
 		<div class="p-6">
-			<h2 class="mb-4 text-xl font-semibold text-gray-900">정보</h2>
+			<h2 class="mb-4 text-xl font-semibold text-gray-900">{m.info()}</h2>
 			<div class="space-y-2 text-sm text-gray-600">
-				<p>• 현재 관리자 권한 검증은 구현되지 않았습니다.</p>
-				<p>• 테스트 사용자는 `isTemporary: true` 플래그로 표시됩니다.</p>
-				<p>• 테스트 데이터는 언제든지 삭제할 수 있습니다.</p>
+				<p>{m.admin_info_permission_not_implemented()}</p>
+				<p>{m.admin_info_test_flag()}</p>
+				<p>{m.admin_info_data_delete()}</p>
 			</div>
 		</div>
 	</Card>
