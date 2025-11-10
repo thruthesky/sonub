@@ -12,34 +12,34 @@
 
 	// 대시보드 메뉴 항목들
 	interface DashboardItem {
-		title_key: () => string;
-		description_key: () => string;
+		titleKey: () => string;
+		descriptionKey: () => string;
 		href: string;
 		icon: string;
 	}
 
 	const dashboardItems: DashboardItem[] = [
 		{
-			title_key: m.admin_test_user_management,
-			description_key: m.admin_test_user_management_desc,
+			titleKey: m.adminTestUserManagement,
+			descriptionKey: m.adminTestUserManagementDesc,
 			href: '/admin/users',
 			icon: '👥'
 		},
 		{
-			title_key: m.admin_user_list,
-			description_key: m.admin_user_list_desc,
+			titleKey: m.adminUserList,
+			descriptionKey: m.adminUserListDesc,
 			href: '/admin/users',
 			icon: '📋'
 		},
 		{
-			title_key: m.admin_report_list,
-			description_key: m.admin_report_list_desc,
+			titleKey: m.adminReportList,
+			descriptionKey: m.adminReportListDesc,
 			href: '/admin/reports',
 			icon: '⚠️'
 		},
 		{
-			title_key: m.admin_test,
-			description_key: m.admin_test_desc,
+			titleKey: m.adminTest,
+			descriptionKey: m.adminTestDesc,
 			href: '/admin/test',
 			icon: '🧪'
 		}
@@ -49,19 +49,19 @@
 <div class="space-y-6">
 	<!-- 페이지 제목 -->
 	<div>
-		<h1 class="text-3xl font-bold text-gray-900">{m.admin_dashboard()}</h1>
-		<p class="mt-2 text-gray-600">{m.admin_dashboard_guide()}</p>
+		<h1 class="text-3xl font-bold text-gray-900">{m.adminDashboard()}</h1>
+		<p class="mt-2 text-gray-600">{m.adminDashboardGuide()}</p>
 	</div>
 
 	<!-- 탭 내비게이션 -->
-	<nav class="dashboard-tabs" aria-label={m.admin_dashboard()}>
+	<nav class="dashboard-tabs" aria-label={m.adminDashboard()}>
 		{#each dashboardItems as item (item.href)}
 			<a
 				href={item.href}
 				class="dashboard-tab"
 			>
 				<span class="tab-icon">{item.icon}</span>
-				<span class="tab-title">{item.title_key()}</span>
+				<span class="tab-title">{item.titleKey()}</span>
 			</a>
 		{/each}
 	</nav>
@@ -74,8 +74,8 @@
 					<div class="flex items-start justify-between">
 						<div>
 							<p class="text-4xl">{item.icon}</p>
-							<h3 class="mt-4 text-lg font-semibold text-gray-900">{item.title_key()}</h3>
-							<p class="mt-2 text-sm text-gray-600">{item.description_key()}</p>
+							<h3 class="mt-4 text-lg font-semibold text-gray-900">{item.titleKey()}</h3>
+							<p class="mt-2 text-sm text-gray-600">{item.descriptionKey()}</p>
 						</div>
 					</div>
 					<div class="mt-6">
@@ -96,11 +96,11 @@
 	<!-- 정보 섹션 -->
 	<Card>
 		<div class="p-6">
-			<h2 class="mb-4 text-xl font-semibold text-gray-900">{m.info()}</h2>
+			<h2 class="mb-4 text-xl font-semibold text-gray-900">{m.commonInfo()}</h2>
 			<div class="space-y-2 text-sm text-gray-600">
-				<p>{m.admin_info_permission_not_implemented()}</p>
-				<p>{m.admin_info_test_flag()}</p>
-				<p>{m.admin_info_data_delete()}</p>
+				<p>{m.adminInfoPermissionNotImplemented()}</p>
+				<p>{m.adminInfoTestFlag()}</p>
+				<p>{m.adminInfoDataDelete()}</p>
 			</div>
 		</div>
 	</Card>
