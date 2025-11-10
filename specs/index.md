@@ -303,6 +303,26 @@ This document provides a detailed index of all specifications related to the son
   - `setupPresence`로 온라인 상태 트래킹, 중복 리스너 방지 구조
   - TypeScript 제네릭 지원 및 Firebase Emulator 테스트 절차
 
+### Database Store Specification
+- **File**: [sonub-store-database.md](./sonub-store-database.md)
+- **Title**: 데이터베이스 스토어 (Database Store)
+- **Description**: Firebase Realtime Database 유틸리티 스토어 - createRealtimeStore, CRUD 함수, 온라인 상태 관리
+- **Version**: 1.0.0
+- **Step**: 46
+- **Priority**: ***
+- **Dependencies**:
+  - sonub-setup-firebase.md
+  - sonub-firebase-database-structure.md
+- **Tags**: firebase, rtdb, realtime-database, svelte5, store, crud, utilities
+- **Files**:
+  - `src/lib/stores/database.svelte.ts`
+- **핵심 기능**:
+  - `createRealtimeStore<T>()` - 실시간 데이터 구독 스토어 생성 (alias: rtdbStore)
+  - CRUD 함수: `writeData`, `updateData`, `deleteData`, `pushData`, `readData`
+  - `setupPresence()` - 온라인/오프라인 상태 자동 관리
+  - TypeScript 제네릭 타입 지원 및 구조화된 결과 반환
+  - 전체 소스 코드 및 사용 예제 포함
+
 ### Firebase Cloud Functions Guide
 - **File**: [sonub-firebase-cloudfunctions.md](./sonub-firebase-cloudfunctions.md)
 - **Title**: Firebase Cloud Functions 개발 가이드
@@ -378,6 +398,29 @@ This document provides a detailed index of all specifications related to the son
   - clsx@2.1.0
   - tailwind-merge@2.2.1
 
+### Auth Store Specification
+- **File**: [sonub-store-auth.md](./sonub-store-auth.md)
+- **Title**: 인증 스토어 (AuthStore)
+- **Description**: Firebase Authentication 상태 관리 스토어 - onAuthStateChanged 리스너, 프로필 동기화, 관리자 권한 관리
+- **Version**: 1.0.0
+- **Step**: 45
+- **Priority**: ***
+- **Dependencies**:
+  - sonub-setup-firebase.md
+  - sonub-firebase-auth.md
+  - sonub-firebase-realtime-database.md
+  - sonub-firebase-database-structure.md
+- **Tags**: firebase, authentication, auth, svelte5, store, state-management, rtdb, admin, profile-sync
+- **Files**:
+  - `src/lib/stores/auth.svelte.ts`
+- **핵심 기능**:
+  - `onAuthStateChanged` 리스너로 자동 세션 관리
+  - `syncUserProfile()` - Firebase Auth → RTDB 프로필 자동 동기화
+  - `loadAdminList()` - `/system/settings/admins` 경로에서 관리자 목록 로드
+  - `isAdmin` getter - 관리자 권한 확인
+  - AuthState 타입 정의 (user, loading, initialized, adminList)
+  - 전체 소스 코드 및 사용 예제 포함
+
 ## User Management
 
 ### Sonub User Overview
@@ -397,7 +440,7 @@ This document provides a detailed index of all specifications related to the son
   - 실시간 프로필 업데이트 기능
 
 ### Sonub User Profile Store
-- **File**: [sonub-user-profile-store.md](./sonub-user-profile-store.md)
+- **File**: [sonub-store-user-profile.md](./sonub-store-user-profile.md)
 - **Title**: 사용자 프로필 중앙 캐시 스토어
 - **Description**: RTDB `/users/{uid}` 데이터를 단일 스토어로 관리해 Avatar·TopBar 등에서 일관된 프로필 정보를 제공하는 명세
 - **Version**: 1.0.0

@@ -311,136 +311,49 @@ import { ref, get, update } from 'firebase/database';
 
 #### 3.3.3 syncUserProfile() 메서드 구현
 
+**상세 내용:**
+
+`syncUserProfile()` 메서드의 전체 구현, 동작 원리, 사용 예제는 [sonub-store-auth.md](./sonub-store-auth.md)를 참조하세요.
+
+**동기화 규칙 (간략):**
+- **photoUrl**: RTDB에 값이 없거나 null이거나 공백일 때만 Auth의 photoURL 저장
+- **displayName**: RTDB에 값이 없을 때만 Auth의 displayName 저장
+- **덮어쓰기 방지**: 사용자가 수정한 프로필은 절대 덮어쓰지 않음
+- **병합 업데이트**: `update()` 사용 (전체 교체 금지)
+
+**핵심 로직:**
 ```typescript
-/**
- * Firebase Auth 사용자 프로필을 RTDB에 동기화
- *
- * 동기화 규칙:
- * - photoUrl: RTDB에 값이 없거나 null이거나 공백일 때만 Auth의 photoURL 저장
- * - displayName: RTDB에 값이 없을 때만 Auth의 displayName 저장
- * - email, phoneNumber는 동기화하지 않음
- * - createdAt, updatedAt은 Cloud Functions가 자동 처리
- *
- * @param user - Firebase Auth User 객체
- */
-private async syncUserProfile(user: User) {
-	if (!rtdb) {
-		console.warn('Firebase Realtime Database가 초기화되지 않았습니다.');
-		return;
-	}
+// 기존 데이터 조회
+const userRef = ref(rtdb, `users/${user.uid}`);
+const snapshot = await get(userRef);
+const existingData = snapshot.val() || {};
 
-	try {
-		// RTDB에서 현재 사용자 데이터 확인
-		const userRef = ref(rtdb, `users/${user.uid}`);
-		const snapshot = await get(userRef);
-		const existingData = snapshot.val() || {};
+// 조건부 업데이트
+const updates: Record<string, any> = {};
+if (!existingData.photoUrl?.trim() && user.photoURL) {
+	updates.photoUrl = user.photoURL;
+}
+if (!existingData.displayName && user.displayName) {
+	updates.displayName = user.displayName;
+}
 
-		// 동기화할 데이터 준비
-		const updates: Record<string, any> = {};
-
-		// photoUrl: 없거나 null이거나 공백일 때만 동기화
-		// trim() 전에 undefined 체크를 위해 옵셔널 체이닝 사용
-		if (!existingData.photoUrl?.trim() && user.photoURL) {
-			updates.photoUrl = user.photoURL;
-			console.log('photoUrl 동기화:', user.photoURL);
-		}
-
-		// displayName: 없을 때만 동기화
-		if (!existingData.displayName && user.displayName) {
-			updates.displayName = user.displayName;
-			console.log('displayName 동기화:', user.displayName);
-		}
-
-		// 업데이트할 항목이 있으면 RTDB에 저장
-		if (Object.keys(updates).length > 0) {
-			await update(userRef, updates);
-			console.log('사용자 프로필 동기화 완료:', updates);
-		} else {
-			console.log('동기화할 프로필 정보 없음');
-		}
-	} catch (error) {
-		console.error('사용자 프로필 동기화 실패:', error);
-	}
+// 병합 업데이트
+if (Object.keys(updates).length > 0) {
+	await update(userRef, updates);
 }
 ```
 
-**로직 상세 설명:**
+#### 3.3.4 onAuthStateChanged 리스너 통합
 
-1. **RTDB 초기화 확인**
-   ```typescript
-   if (!rtdb) {
-       console.warn('Firebase Realtime Database가 초기화되지 않았습니다.');
-       return;
-   }
-   ```
-   - 서버 사이드 렌더링(SSR) 환경에서 rtdb가 null일 수 있음
-   - 브라우저 환경에서만 동기화 수행
-
-2. **기존 데이터 조회**
-   ```typescript
-   const userRef = ref(rtdb, `users/${user.uid}`);
-   const snapshot = await get(userRef);
-   const existingData = snapshot.val() || {};
-   ```
-   - `ref()`: `/users/{uid}` 경로 참조 생성
-   - `get()`: 현재 저장된 데이터 1회 조회 (리스너 아님)
-   - `snapshot.val()`: 데이터 추출, 없으면 `null` 반환 → `{}` 기본값 사용
-
-3. **photoUrl 조건 검사**
-   ```typescript
-   if (!existingData.photoUrl?.trim() && user.photoURL) {
-       updates.photoUrl = user.photoURL;
-   }
-   ```
-   - **조건 1**: `!existingData.photoUrl?.trim()`
-     - `existingData.photoUrl`가 `undefined` → `true`
-     - `existingData.photoUrl`가 `null` → `true`
-     - `existingData.photoUrl`가 `""` (빈 문자열) → `true`
-     - `existingData.photoUrl`가 `"   "` (공백만) → `true`
-     - `existingData.photoUrl`가 `"https://..."` → `false` (저장 안 함)
-   - **조건 2**: `user.photoURL`
-     - Auth에 photoURL이 있어야 저장
-   - **결과**: 두 조건 모두 충족 시에만 `updates` 객체에 추가
-
-4. **displayName 조건 검사**
-   ```typescript
-   if (!existingData.displayName && user.displayName) {
-       updates.displayName = user.displayName;
-   }
-   ```
-   - **조건 1**: `!existingData.displayName`
-     - `undefined`, `null`, `""` 모두 `true`
-     - **주의**: photoUrl과 달리 `trim()` 없음 (빈 문자열도 "값 없음"으로 간주)
-   - **조건 2**: `user.displayName`
-     - Auth에 displayName이 있어야 저장
-
-5. **RTDB 업데이트**
-   ```typescript
-   if (Object.keys(updates).length > 0) {
-       await update(userRef, updates);
-   }
-   ```
-   - `update()` 사용: 기존 필드 보존하며 병합
-   - `set()` 사용 시 기존 필드가 모두 삭제되므로 **절대 사용 금지**
-
-#### 3.3.4 onAuthStateChanged 리스너 수정
+AuthStore에서 `onAuthStateChanged` 리스너가 자동으로 `syncUserProfile()`을 호출합니다:
 
 ```typescript
 onAuthStateChanged(auth, async (user) => {
 	this._state.user = user;
 
-	// 사용자 로그인 시 프로필 동기화 및 관리자 목록 로드
 	if (user) {
-		console.log('사용자 로그인됨:', user.uid);
-
-		// Firebase Auth의 photoURL, displayName을 RTDB에 동기화
 		await this.syncUserProfile(user);
-
-		// 관리자 목록 로드
 		await this.loadAdminList();
-	} else {
-		console.log('사용자 로그아웃됨');
-		this._state.adminList = [];
 	}
 
 	this._state.loading = false;
@@ -448,17 +361,7 @@ onAuthStateChanged(auth, async (user) => {
 });
 ```
 
-**실행 순서:**
-1. `user` 상태 업데이트
-2. 사용자가 로그인한 경우:
-   - **먼저** `syncUserProfile()` 실행 (프로필 동기화)
-   - **그 다음** `loadAdminList()` 실행 (관리자 목록 로드)
-3. 로그아웃한 경우: 관리자 목록 초기화
-4. 로딩 완료 표시
-
-**순서가 중요한 이유:**
-- `syncUserProfile()`이 실패해도 `loadAdminList()`는 실행되어야 함
-- 하지만 프로필 동기화를 먼저 수행하여 사용자 정보를 최신 상태로 유지
+**자세한 내용은 [sonub-store-auth.md](./sonub-store-auth.md)를 참조하세요.**
 
 ### 3.4 동작 시나리오
 

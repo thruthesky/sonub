@@ -253,7 +253,15 @@ interface Props {
 - ✅ **유지**: `uid`, `size`, `class`
 - ✅ **목적**: 컴포넌트 단순화 및 RTDB를 단일 데이터 소스로 사용
 
-### 3.3 전체 구현 코드
+### 3.3 전체 구현 코드 (v3.0.0 - UserProfileStore 사용)
+
+**변경 사항:**
+- ❌ **제거**: `onMount` 패턴
+- ❌ **제거**: 직접 RTDB `onValue` 호출
+- ❌ **제거**: 로컬 `photoUrl`, `displayName` $state
+- ✅ **추가**: `UserProfileStore` 사용
+- ✅ **추가**: `$effect`로 구독 시작
+- ✅ **추가**: `$derived`로 데이터 읽기
 
 ```typescript
 <script lang="ts">
@@ -261,18 +269,21 @@ interface Props {
 	 * 사용자 아바타 컴포넌트
 	 *
 	 * 사용자 프로필 사진을 표시하거나, 사진이 없을 경우 displayName의 첫 글자를 표시합니다.
-	 * RTDB의 /users/{uid}/photoUrl 값을 사용합니다.
+	 * UserProfileStore를 사용하여 RTDB의 /users/{uid} 노드를 실시간으로 구독합니다.
+	 *
+	 * 주요 개선 사항:
+	 * - onMount 제거, $effect로 uid 변경 감지
+	 * - RTDB 직접 호출 제거, userProfileStore 사용
+	 * - 중복 리스너 방지 (캐시 활용)
 	 */
 
-	import { onMount } from 'svelte';
-	import { rtdb } from '$lib/firebase';
-	import { ref, onValue, type Unsubscribe } from 'firebase/database';
+	import { userProfileStore } from '$lib/stores/user-profile.svelte';
 
 	// Props
 	interface Props {
 		/**
 		 * 사용자 UID (필수)
-		 * RTDB에서 photoUrl과 displayName을 자동으로 가져옵니다.
+		 * UserProfileStore를 통해 photoUrl과 displayName을 자동으로 가져옵니다.
 		 */
 		uid?: string;
 
@@ -294,12 +305,21 @@ interface Props {
 		class: className = ''
 	}: Props = $props();
 
-	// RTDB에서 가져온 데이터
-	let photoUrl = $state<string | null>(null);
-	let displayName = $state<string | null>(null);
-
 	// 이미지 로드 실패 추적
 	let imageLoadFailed = $state(false);
+
+	// uid 변경 시 구독 시작 ($effect에서 상태 변경 가능)
+	$effect(() => {
+		userProfileStore.ensureSubscribed(uid);
+	});
+
+	// UserProfileStore에서 프로필 데이터 가져오기 (순수 읽기)
+	// uid가 변경될 때마다 자동으로 업데이트됨 ($derived 사용)
+	const profile = $derived(userProfileStore.getCachedProfile(uid));
+
+	// 프로필에서 photoUrl과 displayName 추출
+	const photoUrl = $derived(profile?.photoUrl ?? null);
+	const displayName = $derived(profile?.displayName ?? null);
 
 	// displayName의 첫 글자 계산
 	const initial = $derived.by(() => {
@@ -315,73 +335,26 @@ interface Props {
 		!imageLoadFailed
 	);
 
-	// 디버깅 로그
+	// uid 변경 시 이미지 로드 실패 상태 초기화
 	$effect(() => {
-		console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-		console.log('[Avatar 상태]');
-		console.log('  uid:', uid);
-		console.log('  photoUrl:', photoUrl);
-		console.log('  displayName:', displayName);
-		console.log('  imageLoadFailed:', imageLoadFailed);
-		console.log('  shouldShowImage:', shouldShowImage);
-		console.log('  initial:', initial);
-		console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+		if (uid) {
+			imageLoadFailed = false;
+		}
 	});
 
-	// RTDB에서 데이터 가져오기
-	let unsubscribe: Unsubscribe | null = null;
-
-	onMount(() => {
-		console.log('[Avatar onMount] 시작, uid:', uid);
-
-		if (!uid) {
-			console.warn('[Avatar] uid가 제공되지 않았습니다.');
-			return;
-		}
-
-		if (!rtdb) {
-			console.error('[Avatar] Firebase RTDB가 초기화되지 않았습니다.');
-			return;
-		}
-
-		const userRef = ref(rtdb, `users/${uid}`);
-		console.log('[Avatar] RTDB 리스너 등록 시작:', `users/${uid}`);
-
-		unsubscribe = onValue(
-			userRef,
-			(snapshot) => {
-				const data = snapshot.val();
-				console.log('[Avatar] ✅ RTDB 데이터 수신:', data);
-
-				if (data) {
-					// 이미지 로드 실패 상태 초기화
-					imageLoadFailed = false;
-
-					// 데이터 설정
-					photoUrl = data.photoUrl || null;
-					displayName = data.displayName || null;
-
-					console.log('[Avatar] 데이터 설정 완료');
-					console.log('  - photoUrl:', photoUrl);
-					console.log('  - displayName:', displayName);
-				} else {
-					console.warn('[Avatar] ⚠️ RTDB에 사용자 데이터가 없습니다.');
-					photoUrl = null;
-					displayName = null;
-				}
-			},
-			(error) => {
-				console.error('[Avatar] ❌ RTDB 데이터 로드 실패:', error);
-			}
-		);
-
-		// 정리 함수
-		return () => {
-			console.log('[Avatar] 리스너 해제, uid:', uid);
-			if (unsubscribe) {
-				unsubscribe();
-			}
-		};
+	// 프로필 데이터 변경 추적 (디버깅용)
+	$effect(() => {
+		console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+		console.log('[Avatar 컴포넌트] 프로필 상태 변경');
+		console.log('  uid:', uid);
+		console.log('  profile:', profile);
+		console.log('  photoUrl:', photoUrl);
+		console.log('  displayName:', displayName);
+		console.log('  shouldShowImage:', shouldShowImage);
+		console.log('  initial:', initial);
+		console.log('  imageLoadFailed:', imageLoadFailed);
+		console.log('  size:', size);
+		console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 	});
 
 	/**
@@ -417,6 +390,29 @@ interface Props {
 		</span>
 	{/if}
 </div>
+```
+
+**핵심 변경점 요약:**
+
+| 항목 | v2.0.0 (이전) | v3.0.0 (현재) |
+|------|---------------|---------------|
+| **데이터 소스** | 직접 RTDB onValue | UserProfileStore |
+| **구독 시작** | onMount | $effect |
+| **데이터 읽기** | 로컬 $state | $derived(getCachedProfile) |
+| **리스너 관리** | 컴포넌트마다 개별 | 전역 캐시 공유 |
+| **중복 리스너** | 발생 가능 | 자동 방지 |
+| **코드 라인 수** | ~160 lines | ~130 lines |
+
+**성능 개선:**
+
+```
+이전 (v2.0.0):
+  - Avatar 컴포넌트 3개 → RTDB 리스너 3개 (동일 uid)
+
+현재 (v3.0.0):
+  - Avatar 컴포넌트 3개 → RTDB 리스너 1개 (캐시 공유!)
+  - 메모리 사용량 감소
+  - 네트워크 요청 감소
 ```
 
 ### 3.4 핵심 로직 설명
@@ -1184,6 +1180,7 @@ const optimizedPhotoUrl = photoUrl?.replace(/=s\d+/, `=s${size * 2}`);
 | 1.0.0 | 2025-11-09 | 초기 구현: Avatar 컴포넌트 생성, top-bar 및 menu 적용 |
 | 2.0.0 | 2025-11-09 | 주요 개선: imageLoadFailed 상태 추적, CORS/Referrer 문제 해결 (`referrerpolicy="no-referrer"`, `crossorigin="anonymous"` 추가), Props 단순화 (photoUrl/displayName props 제거), 상세한 디버깅 로그 추가 |
 | 3.0.0 | 2025-11-10 | **중요 개선: UserProfileStore 도입 및 Svelte 5 반응성 이슈 수정**<br/>- `user-profile.svelte.ts` 생성: 중복 RTDB 리스너 제거 (중앙 캐시)<br/>- Avatar 컴포넌트 리팩토링: onMount 제거, `$derived`로 자동 반응성 구현<br/>- **Svelte 5 Map 반응성 이슈 수정**: Map 객체 불변성 패턴 적용 (`this.cache = new Map(this.cache).set(...)`)<br/>- 디버깅 로그 강화: UserProfileStore 데이터 수신 추적, Avatar 상태 변경 추적<br/>- top-bar.svelte: optional chaining 추가 (`authStore.user?.uid`) |
+| 3.1.0 | 2025-11-10 | **스펙 문서 대폭 업데이트:**<br/>- 섹션 3.3 업데이트: 최신 구현 코드 반영 (UserProfileStore 패턴)<br/>- onMount 패턴 제거, $effect + $derived 패턴으로 교체<br/>- 핵심 변경점 요약 테이블 추가<br/>- 성능 개선 수치 명시<br/>- 소스 코드와 스펙 문서의 일치성 확보 |
 
 ## 12. 트러블슈팅
 

@@ -1,5 +1,5 @@
 ---
-name: sonub-user-profile-store
+name: sonub-store-user-profile
 version: 1.1.0
 description: 사용자 프로필 중앙 캐시 스토어 구현 - 중복 RTDB 리스너 제거 및 Svelte 5 반응성 이슈 해결 (state_unsafe_mutation 에러 수정)
 author: Claude Code
@@ -86,6 +86,74 @@ at avatar.svelte:47 → $derived(userProfileStore.getProfile(uid))
 2. RTDB 리스너 중복 제거
 3. Svelte 5 runes 기반 반응성
 4. 에러 및 로딩 상태 관리
+
+### 1.3 🌟 범용(Universal) 스토어 특성
+
+**핵심 개념: UserProfileStore는 로그인한 사용자만을 위한 것이 아닙니다!**
+
+UserProfileStore는 **어떤 사용자(any user)의 uid만 전달하면** 그 사용자의 프로필 정보를 자동으로 로드하고 캐싱하는 **범용 스토어**입니다.
+
+**사용 범위:**
+
+| 사용 케이스 | uid 소스 | 예시 |
+|------------|---------|------|
+| **로그인한 사용자** | `authStore.user.uid` | 상단바, 프로필 페이지 |
+| **다른 사용자** | 게시글/댓글의 `authorUid` | 게시글 작성자 아바타 |
+| **사용자 리스트** | 리스트 아이템의 `uid` | 채팅 참여자, 친구 목록 |
+| **채팅 메시지** | 메시지의 `senderUid` | 채팅방 메시지 작성자 |
+| **검색 결과** | 검색된 사용자의 `uid` | 사용자 검색 결과 |
+
+**설계 철학:**
+
+```typescript
+// ✅ 로그인한 사용자
+<Avatar uid={authStore.user.uid} />
+
+// ✅ 게시글 작성자
+<Avatar uid={post.authorUid} />
+
+// ✅ 채팅 메시지 발신자
+<Avatar uid={message.senderUid} />
+
+// ✅ 사용자 리스트
+{#each users as user}
+  <Avatar uid={user.uid} />
+{/each}
+
+// 모두 동일한 UserProfileStore를 사용!
+// uid가 같으면 캐시를 공유하고, 다르면 각각 구독합니다.
+```
+
+**중복 리스너 방지 예시:**
+
+```
+채팅방 화면:
+  - 메시지 1 (uid: "user123") → UserProfileStore.ensureSubscribed("user123")
+  - 메시지 2 (uid: "user123") → 이미 구독 중 → 무시
+  - 메시지 3 (uid: "user456") → UserProfileStore.ensureSubscribed("user456")
+  - 메시지 4 (uid: "user123") → 이미 구독 중 → 무시
+
+결과:
+  - "user123"에 대한 RTDB 리스너: 1개
+  - "user456"에 대한 RTDB 리스너: 1개
+  - 총 2개의 리스너로 모든 아바타 표시 가능!
+```
+
+**실제 사용 위치 (코드베이스):**
+
+| 파일 | 라인 | 사용 목적 |
+|------|------|----------|
+| `src/lib/components/top-bar.svelte` | 14, 161 | 로그인한 사용자 아바타 (상단바) |
+| `src/lib/components/right-sidebar.svelte` | 11, 23 | 사이드바 사용자 정보 |
+| `src/routes/user/list/+page.svelte` | 3, 47 | 사용자 목록 (무한 스크롤) |
+| `src/routes/+page.svelte` | 11, 45 | 메인 페이지 환영 메시지 |
+| `src/routes/my/profile/+page.svelte` | 371-392 | 프로필 수정 페이지 |
+
+**핵심 포인트:**
+- 🎯 **단일 캐시**: 모든 uid의 프로필을 `Map<uid, ProfileCacheItem>`에 저장
+- 🎯 **자동 구독 관리**: `ensureSubscribed(uid)`는 캐시에 없을 때만 새 리스너 생성
+- 🎯 **실시간 동기화**: RTDB 데이터 변경 시 모든 관련 컴포넌트 자동 업데이트
+- 🎯 **메모리 효율**: 동일 uid는 캐시 공유, 중복 리스너 없음
 
 ## 2. 기술 구조
 
@@ -270,9 +338,311 @@ export const userProfileStore = new UserProfileStore();
 └─────────────────────────────────────────────┘
 ```
 
-## 3. 구현 상세
+## 3. 실시간 업데이트 메커니즘 상세
 
-### 3.1 ensureSubscribed() 메서드 (상태 변경 가능)
+### 3.1 전체 흐름 다이어그램
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 1. Avatar 컴포넌트 마운트 (uid: "user123")                              │
+└─────────────────────────────────────────────────────────────────────────┘
+                             ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 2. $effect 실행 (avatar.svelte:46-48)                                   │
+│    userProfileStore.ensureSubscribed("user123")                         │
+└─────────────────────────────────────────────────────────────────────────┘
+                             ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 3. UserProfileStore.ensureSubscribed() (user-profile.svelte.ts:92-112)  │
+│    - cache.has("user123")? → NO                                         │
+│    - subscribeToProfile("user123") 호출                                 │
+└─────────────────────────────────────────────────────────────────────────┘
+                             ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 4. UserProfileStore.subscribeToProfile() (lines 181-257)                │
+│    - 초기 캐시 항목 생성: { data: null, loading: true, error: null }   │
+│    - RTDB 리스너 등록: onValue(ref(rtdb, 'users/user123'))             │
+└─────────────────────────────────────────────────────────────────────────┘
+                             ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 5. RTDB onValue 콜백 실행 (lines 198-244)                              │
+│    - snapshot.val() 호출                                                │
+│    - data = { photoUrl: "...", displayName: "..." }                    │
+│    - 🔥 중요: 새 객체 생성 (불변성)                                    │
+│      const newCacheItem = {                                             │
+│        data: data,                                                      │
+│        loading: false,                                                  │
+│        error: null,                                                     │
+│        unsubscribe: unsubscribe                                         │
+│      }                                                                  │
+│    - 🔥 중요: Map 재할당으로 반응성 트리거 (line 221)                  │
+│      this.cache = new Map(this.cache).set("user123", newCacheItem)     │
+└─────────────────────────────────────────────────────────────────────────┘
+                             ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 6. Svelte 5 반응성 트리거                                               │
+│    - this.cache가 새 Map 객체로 재할당됨                                │
+│    - Svelte 5가 변경 감지                                               │
+│    - 모든 $derived 재계산                                               │
+└─────────────────────────────────────────────────────────────────────────┘
+                             ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 7. Avatar 컴포넌트 $derived 재계산 (avatar.svelte:52-56)               │
+│    const profile = $derived(                                            │
+│      userProfileStore.getCachedProfile("user123")                       │
+│    )                                                                    │
+│    const photoUrl = $derived(profile?.photoUrl)                         │
+│    const displayName = $derived(profile?.displayName)                   │
+└─────────────────────────────────────────────────────────────────────────┘
+                             ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│ 8. Avatar 컴포넌트 자동 re-render                                       │
+│    - photoUrl과 displayName이 업데이트됨                                │
+│    - 템플릿이 새 데이터로 렌더링됨                                      │
+│    - 사용자에게 프로필 사진과 이름 표시                                 │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 3.2 onValue 리스너 등록 상세
+
+**소스 코드 위치:** `src/lib/stores/user-profile.svelte.ts:181-257`
+
+**핵심 코드 (lines 196-244):**
+
+```typescript
+// RTDB 리스너 등록
+const userRef = ref(rtdb!, `users/${uid}`);
+
+const unsubscribe = onValue(
+	userRef,
+	(snapshot) => {
+		// 데이터 로드 성공
+		const data = snapshot.val() as UserProfile | null;
+
+		console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+		console.log(`[UserProfileStore] 📥 프로필 데이터 수신: ${uid}`);
+		console.log('  수신 시간:', new Date().toISOString());
+		console.log('  데이터:', data);
+		console.log('  photoUrl:', data?.photoUrl);
+		console.log('  displayName:', data?.displayName);
+		console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+		// 🔥 중요: 반응성 트리거를 위해 새로운 객체 생성
+		const newCacheItem: ProfileCacheItem = {
+			data: data,
+			loading: false,
+			error: null,
+			unsubscribe: unsubscribe
+		};
+
+		// Map 자체를 재할당하여 반응성 트리거 (line 221)
+		this.cache = new Map(this.cache).set(uid, newCacheItem);
+
+		console.log(`[UserProfileStore] ✨ 캐시 업데이트 완료: ${uid}`);
+		console.log(`[UserProfileStore] 📊 현재 캐시 크기: ${this.cache.size}`);
+	},
+	(error) => {
+		// 데이터 로드 실패
+		console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+		console.error(`[UserProfileStore] ❌ 프로필 로드 실패: ${uid}`);
+		console.error('  에러:', error);
+		console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+		// 🔥 중요: 반응성 트리거를 위해 새로운 객체 생성
+		const newCacheItem: ProfileCacheItem = {
+			data: null,
+			loading: false,
+			error: error as Error,
+			unsubscribe: unsubscribe
+		};
+
+		// Map 자체를 재할당하여 반응성 트리거
+		this.cache = new Map(this.cache).set(uid, newCacheItem);
+	}
+);
+```
+
+**동작 방식:**
+
+1. **리스너 등록**: `onValue(ref(rtdb, 'users/${uid}'), callback)`
+2. **초기 데이터 수신**: 등록 즉시 현재 데이터 1회 수신
+3. **실시간 업데이트**: RTDB에서 데이터 변경될 때마다 자동 콜백 호출
+4. **캐시 업데이트**: 새 데이터 수신 시 `this.cache` 업데이트
+5. **반응성 트리거**: Map 재할당으로 Svelte 5 반응성 활성화
+
+### 3.3 Map 불변성 패턴 (핵심!)
+
+**소스 코드 위치:** `src/lib/stores/user-profile.svelte.ts:221`
+
+**핵심 코드:**
+
+```typescript
+// ❌ WRONG - 반응성 없음
+const item = this.cache.get(uid);
+if (item) {
+    item.data = data;           // 기존 객체 수정
+    item.loading = false;
+    this.cache.set(uid, item);  // 동일한 참조
+}
+
+// ✅ CORRECT - 반응성 트리거
+const newCacheItem: ProfileCacheItem = {
+    data: data,                 // 새 객체 생성
+    loading: false,
+    error: null,
+    unsubscribe: unsubscribe
+};
+
+// Map 자체를 재할당 (line 221)
+this.cache = new Map(this.cache).set(uid, newCacheItem);
+```
+
+**왜 이 패턴이 필요한가?**
+
+Svelte 5는 **shallow reactivity**를 사용합니다:
+- `this.cache.set()`: Map 내부만 변경 → Svelte가 감지 못 함
+- `this.cache = new Map(...)`: Map 자체가 재할당 → Svelte가 감지함
+
+**다른 자료구조에도 동일하게 적용:**
+
+```typescript
+// Array
+arr = [...arr, newItem];  // ✅
+arr.push(newItem);        // ❌
+
+// Set
+set = new Set(set).add(value);  // ✅
+set.add(value);                 // ❌
+
+// Object
+obj = { ...obj, key: value };  // ✅
+obj.key = value;               // ❌
+```
+
+### 3.4 Avatar 컴포넌트 소비 패턴
+
+**소스 코드 위치:** `src/lib/components/user/avatar.svelte:45-70`
+
+**핵심 코드:**
+
+```typescript
+// uid 변경 시 구독 시작 ($effect에서 상태 변경 가능)
+$effect(() => {
+	userProfileStore.ensureSubscribed(uid);  // line 47
+});
+
+// UserProfileStore에서 프로필 데이터 가져오기 (순수 읽기)
+// uid가 변경될 때마다 자동으로 업데이트됨 ($derived 사용)
+const profile = $derived(userProfileStore.getCachedProfile(uid));  // line 52
+
+// 프로필에서 photoUrl과 displayName 추출
+const photoUrl = $derived(profile?.photoUrl ?? null);     // line 55
+const displayName = $derived(profile?.displayName ?? null);  // line 56
+
+// displayName의 첫 글자 계산 (lines 58-63)
+const initial = $derived.by(() => {
+	const name = displayName;
+	if (!name || name.trim() === '') return 'U';
+	return name.charAt(0).toUpperCase();
+});
+
+// 이미지를 표시할지 여부 결정 (lines 65-70)
+const shouldShowImage = $derived(
+	photoUrl &&
+	photoUrl.trim() !== '' &&
+	!imageLoadFailed
+);
+```
+
+**패턴 설명:**
+
+1. **$effect**: 구독 시작 (side effect 허용)
+   - uid가 변경되면 자동 실행
+   - `ensureSubscribed(uid)` 호출
+   - 상태 변경 가능
+
+2. **$derived**: 데이터 읽기 (순수 계산만)
+   - `getCachedProfile(uid)` 호출
+   - 캐시 데이터만 반환
+   - 상태 변경 금지
+
+3. **자동 반응성**: 데이터 흐름
+   ```
+   RTDB 변경
+     ↓
+   UserProfileStore.cache 업데이트
+     ↓
+   getCachedProfile() 반환값 변경
+     ↓
+   $derived 재계산
+     ↓
+   Avatar 자동 re-render
+   ```
+
+### 3.5 실시간 업데이트 시나리오 예시
+
+**시나리오 1: 프로필 사진 변경**
+
+```
+1. 초기 상태:
+   - 사용자 "user123"의 photoUrl: "https://old-photo.jpg"
+   - Avatar 컴포넌트 3개가 "user123" 표시 중
+   - UserProfileStore의 cache에 캐시됨
+
+2. 사용자가 프로필 페이지에서 사진 변경:
+   - 프로필 페이지에서 새 사진 업로드
+   - Firebase Storage에 업로드 완료
+   - RTDB /users/user123/photoUrl 업데이트
+   - 새 값: "https://new-photo.jpg"
+
+3. RTDB 변경 감지:
+   - onValue 리스너가 자동 호출됨 (line 198)
+   - snapshot.val()이 새 데이터 반환
+   - data.photoUrl = "https://new-photo.jpg"
+
+4. UserProfileStore 캐시 업데이트:
+   - 새 ProfileCacheItem 객체 생성 (lines 213-217)
+   - Map 재할당 (line 221)
+   - this.cache = new Map(this.cache).set("user123", newCacheItem)
+
+5. Svelte 5 반응성 트리거:
+   - this.cache 변경 감지
+   - 모든 $derived 재계산
+
+6. Avatar 컴포넌트 3개 모두 자동 업데이트:
+   - top-bar의 Avatar: 새 사진 표시
+   - sidebar의 Avatar: 새 사진 표시
+   - 프로필 페이지의 Avatar: 새 사진 표시
+
+✅ 결과: 페이지 새로고침 없이 모든 아바타가 자동으로 새 사진으로 변경!
+```
+
+**시나리오 2: 채팅방에서 여러 사용자**
+
+```
+채팅방 메시지:
+  - 메시지 1: "user123" → ensureSubscribed("user123") → 새 리스너 생성
+  - 메시지 2: "user456" → ensureSubscribed("user456") → 새 리스너 생성
+  - 메시지 3: "user123" → ensureSubscribed("user123") → 이미 있음, 무시
+  - 메시지 4: "user789" → ensureSubscribed("user789") → 새 리스너 생성
+  - 메시지 5: "user123" → ensureSubscribed("user123") → 이미 있음, 무시
+
+RTDB 리스너:
+  - /users/user123: 1개 리스너 (메시지 1, 3, 5 공유)
+  - /users/user456: 1개 리스너 (메시지 2만)
+  - /users/user789: 1개 리스너 (메시지 4만)
+
+"user123"이 displayName 변경:
+  - onValue 리스너 자동 호출
+  - cache 업데이트
+  - 메시지 1, 3, 5의 Avatar 모두 자동 업데이트
+
+✅ 결과: 5개 메시지에 3개 리스너만 사용, 효율적인 메모리 관리!
+```
+
+## 4. 구현 상세
+
+### 4.1 ensureSubscribed() 메서드 (상태 변경 가능)
 
 **목적**: uid에 대한 구독을 시작합니다. 이미 구독 중이면 아무것도 하지 않습니다.
 
@@ -771,7 +1141,7 @@ const shouldShowImage = $derived(
 
 ## 7. 사용 예제
 
-### 7.1 기본 사용법
+### 7.1 기본 사용법 (단일 사용자)
 
 ```svelte
 <script lang="ts">
@@ -805,7 +1175,7 @@ const shouldShowImage = $derived(
 {/if}
 ```
 
-### 7.2 여러 곳에서 동일한 프로필 사용
+### 7.2 여러 곳에서 동일한 프로필 사용 (로그인한 사용자)
 
 ```svelte
 <!-- TopBar.svelte -->
@@ -840,6 +1210,237 @@ const shouldShowImage = $derived(
 - 세 컴포넌트가 동일한 RTDB 리스너 공유
 - 프로필 업데이트 시 세 곳 모두 자동으로 업데이트
 - Svelte 5 반응성 규칙 준수
+
+### 7.3 🌟 리스트에서 사용 (채팅 메시지)
+
+**시나리오:** 채팅 앱에서 메시지마다 발신자의 아바타와 이름을 표시
+
+```svelte
+<script lang="ts">
+	import { userProfileStore } from '$lib/stores/user-profile.svelte';
+	import Avatar from '$lib/components/user/avatar.svelte';
+
+	interface Message {
+		id: string;
+		senderUid: string;
+		text: string;
+		timestamp: number;
+	}
+
+	let messages: Message[] = $state([
+		{ id: '1', senderUid: 'user123', text: '안녕하세요!', timestamp: 1699000000 },
+		{ id: '2', senderUid: 'user456', text: '반갑습니다!', timestamp: 1699000100 },
+		{ id: '3', senderUid: 'user123', text: '잘 지내시죠?', timestamp: 1699000200 },
+		{ id: '4', senderUid: 'user789', text: '저도 참여할게요!', timestamp: 1699000300 },
+	]);
+</script>
+
+<div class="chat-container">
+	{#each messages as message (message.id)}
+		<div class="message-item">
+			<!-- Avatar 컴포넌트가 자동으로 ensureSubscribed 호출 -->
+			<Avatar uid={message.senderUid} size={40} />
+
+			<div class="message-content">
+				<!-- UserProfileStore에서 displayName 가져오기 -->
+				{#if userProfileStore.getCachedProfile(message.senderUid)}
+					<p class="sender-name">
+						{userProfileStore.getCachedProfile(message.senderUid)?.displayName || '알 수 없음'}
+					</p>
+				{/if}
+				<p class="message-text">{message.text}</p>
+			</div>
+		</div>
+	{/each}
+</div>
+```
+
+**리스너 효율성 분석:**
+
+```
+메시지 리스트:
+  - 메시지 1: senderUid="user123" → 새 리스너 생성 (총 1개)
+  - 메시지 2: senderUid="user456" → 새 리스너 생성 (총 2개)
+  - 메시지 3: senderUid="user123" → 캐시 히트! (총 2개 유지)
+  - 메시지 4: senderUid="user789" → 새 리스너 생성 (총 3개)
+
+✅ 결과: 4개 메시지에 3개 리스너만 사용 (동일 사용자 캐시 공유)
+```
+
+### 7.4 🌟 리스트에서 사용 (게시글 목록)
+
+**시나리오:** 블로그 앱에서 게시글마다 작성자 정보 표시
+
+```svelte
+<script lang="ts">
+	import Avatar from '$lib/components/user/avatar.svelte';
+
+	interface Post {
+		id: string;
+		title: string;
+		authorUid: string;
+		content: string;
+		createdAt: number;
+	}
+
+	let posts: Post[] = $state([
+		{ id: '1', title: '첫 글', authorUid: 'user123', content: '...', createdAt: 1699000000 },
+		{ id: '2', title: '두 번째', authorUid: 'user456', content: '...', createdAt: 1699000100 },
+		{ id: '3', title: '세 번째', authorUid: 'user123', content: '...', createdAt: 1699000200 },
+	]);
+</script>
+
+<div class="posts-grid">
+	{#each posts as post (post.id)}
+		<article class="post-card">
+			<header class="post-header">
+				<!-- Avatar 컴포넌트가 UserProfileStore 자동 사용 -->
+				<Avatar uid={post.authorUid} size={48} />
+				<div class="post-meta">
+					<h3>{post.title}</h3>
+					<!-- 작성자 이름도 UserProfileStore에서 가져옴 -->
+					<p class="author">
+						작성자: {userProfileStore.getCachedProfile(post.authorUid)?.displayName || '로딩 중...'}
+					</p>
+				</div>
+			</header>
+			<div class="post-content">
+				{post.content}
+			</div>
+		</article>
+	{/each}
+</div>
+```
+
+**실시간 업데이트 시나리오:**
+
+```
+1. 초기 렌더링:
+   - post 1 (authorUid: "user123") → RTDB 리스너 생성
+   - post 2 (authorUid: "user456") → RTDB 리스너 생성
+   - post 3 (authorUid: "user123") → 캐시 재사용
+
+2. "user123"이 프로필 사진 변경:
+   - RTDB /users/user123/photoUrl 업데이트
+   - UserProfileStore의 onValue 리스너 자동 호출
+   - this.cache = new Map(this.cache).set("user123", newData)
+   - Svelte 5 반응성 트리거
+
+3. 자동 re-render:
+   - post 1의 Avatar 자동 업데이트
+   - post 3의 Avatar 자동 업데이트
+   - post 2는 영향 없음 (다른 uid)
+
+✅ 결과: 페이지 새로고침 없이 모든 "user123" 아바타 자동 업데이트!
+```
+
+### 7.5 🌟 리스트에서 사용 (사용자 검색 결과)
+
+**시나리오:** 사용자 검색 결과 페이지
+
+```svelte
+<script lang="ts">
+	import Avatar from '$lib/components/user/avatar.svelte';
+
+	interface SearchResult {
+		uid: string;
+		score: number;
+	}
+
+	let searchResults: SearchResult[] = $state([
+		{ uid: 'user123', score: 0.95 },
+		{ uid: 'user456', score: 0.87 },
+		{ uid: 'user789', score: 0.72 },
+	]);
+</script>
+
+<div class="search-results">
+	<h2>검색 결과</h2>
+	{#each searchResults as result (result.uid)}
+		<div class="user-card">
+			<!-- Avatar 컴포넌트가 uid로 자동 프로필 로드 -->
+			<Avatar uid={result.uid} size={64} />
+
+			<div class="user-info">
+				{#if userProfileStore.getCachedProfile(result.uid)}
+					{@const profile = userProfileStore.getCachedProfile(result.uid)}
+					<h3>{profile?.displayName || '알 수 없음'}</h3>
+					<p>{profile?.bio || ''}</p>
+				{:else if userProfileStore.isLoading(result.uid)}
+					<p>로딩 중...</p>
+				{/if}
+			</div>
+
+			<button>팔로우</button>
+		</div>
+	{/each}
+</div>
+```
+
+### 7.6 🌟 리스트에서 사용 (무한 스크롤)
+
+**실제 사용 예시:** `src/routes/user/list/+page.svelte`
+
+```svelte
+<script lang="ts">
+	import Avatar from '$lib/components/user/avatar.svelte';
+	import { userProfileStore } from '$lib/stores/user-profile.svelte';
+
+	interface UserItem {
+		key: string; // uid
+		data: {
+			displayName: string;
+			createdAt: number;
+		};
+	}
+
+	let users: UserItem[] = $state([]);
+	let loadMore = $state(true);
+
+	// 무한 스크롤로 사용자 로드
+	async function handleLoadMore() {
+		// Firebase에서 다음 10명의 사용자 로드
+		const nextUsers = await fetchNextUsers();
+		users = [...users, ...nextUsers];
+	}
+</script>
+
+<div class="user-list">
+	{#each users as user (user.key)}
+		<div class="user-card">
+			<!-- Avatar가 자동으로 UserProfileStore 사용 -->
+			<!-- 동일한 uid가 여러 번 나와도 리스너는 1개만! -->
+			<Avatar uid={user.key} size={60} />
+
+			<div class="user-details">
+				<!-- UserProfileStore에서 실시간 데이터 가져오기 -->
+				{@const profile = userProfileStore.getCachedProfile(user.key)}
+				<h3>{profile?.displayName || user.data.displayName}</h3>
+				<p>{profile?.bio || ''}</p>
+			</div>
+		</div>
+	{/each}
+
+	{#if loadMore}
+		<button onclick={handleLoadMore}>더 보기</button>
+	{/if}
+</div>
+```
+
+**무한 스크롤 시 메모리 최적화:**
+
+```
+사용자 목록이 100명으로 증가:
+  - 리스너 수: 최대 100개 (각 사용자당 1개)
+  - 캐시 항목: 100개 (Map<uid, ProfileCacheItem>)
+  - 중복 제거: 동일한 uid가 여러 번 나와도 리스너 1개만 유지
+
+성능 고려사항:
+  ✅ UserProfileStore가 자동으로 캐시 관리
+  ✅ 동일 uid는 리스너 재사용
+  ⚠️ 사용자 수가 많으면 (1000+) 메모리 사용량 증가
+  💡 향후 개선: LRU 캐시, 구독 해제 정책 등
+```
 
 ## 8. 성능 최적화
 
@@ -1145,6 +1746,7 @@ ensureSubscribed(uid: string): void {
 |------|------|-----------|
 | 1.0.0 | 2025-11-10 | 초기 구현: UserProfileStore 생성, Svelte 5 Map 반응성 이슈 수정, Avatar 컴포넌트 통합, 디버깅 로그 추가 |
 | 1.1.0 | 2025-11-10 | **중요 수정**: Svelte 5 `state_unsafe_mutation` 에러 해결 - `getProfile()` 메서드를 `ensureSubscribed()`와 `getCachedProfile()`로 분리, `$effect`와 `$derived`의 명확한 분리 |
+| 1.2.0 | 2025-11-10 | **대폭 강화**: <br/>- 섹션 1.3 추가: 범용(Universal) 스토어 특성 명확화<br/>- 실제 사용 위치 테이블 추가 (코드베이스 참조)<br/>- 섹션 3 추가: 실시간 업데이트 메커니즘 상세 설명<br/>- onValue 리스너 등록부터 Svelte 반응성까지 전체 흐름 다이어그램<br/>- Avatar 컴포넌트 소비 패턴 상세 설명 (소스 코드 라인 참조)<br/>- Map 불변성 패턴 심화 설명<br/>- 섹션 7 대폭 확장: 리스트 사용 예시 추가 (채팅 메시지, 게시글, 검색, 무한 스크롤)<br/>- 실시간 업데이트 시나리오 2가지 추가<br/>- SED 방법론에 따라 스펙만으로 완벽한 재구현 가능하도록 상세화 |
 
 ## 17. 결론
 

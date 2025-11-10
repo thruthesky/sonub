@@ -31,26 +31,37 @@ tags:
 
 이 문서는 Sonub 프로젝트에서 Firebase Realtime Database(RTDB)를 쉽게 사용할 수 있도록 제공하는 유틸리티 라이브러리를 설명합니다. 이 라이브러리는 Svelte 5 runes를 사용하여 RTDB와의 상호작용을 간소화하고, 실시간 데이터 구독을 편리하게 만듭니다.
 
-### 1.2 주요 기능
+### 1.2 문서 구성
 
-- RTDB 읽기/쓰기/업데이트/삭제 간편 API 제공
-- 실시간 데이터 구독을 위한 Svelte 스토어 생성
-- 실시간 데이터 구독 시 로딩/에러 상태 자동 관리
-- 중복 RTDB 리스너 방지를 위한 구조 제공
-- 온라인 상태 관리 기능
+이 문서는 Firebase Realtime Database 사용법의 개요를 제공합니다.
 
-### 1.3 파일 위치
+**상세 구현 문서:**
+- **Database Store 유틸리티**: [sonub-store-database.md](./sonub-store-database.md)를 참조하세요
+  - createRealtimeStore, CRUD 함수 (writeData, updateData, deleteData, pushData, readData)
+  - setupPresence (온라인 상태 관리)
+  - 전체 타입 정의 및 사용 예제
+
+### 1.3 주요 기능
+
+- ✅ **실시간 데이터 구독**: `createRealtimeStore()` - 로딩/에러 상태 자동 관리
+- ✅ **CRUD 함수**: writeData, updateData, deleteData, pushData, readData
+- ✅ **온라인 상태 관리**: setupPresence()
+- ✅ **TypeScript 제네릭 지원**: 타입 안전성 보장
+- ✅ **에러 처리**: 일관된 에러 처리 패턴
+
+### 1.4 파일 위치
 
 - **파일**: `src/lib/stores/database.svelte.ts`
 - **타입 정의**: 모든 타입은 동일 파일 내에 정의
 - **환경**: Svelte 5, Firebase JS SDK 11.0.0+
+- **상세 문서**: [sonub-store-database.md](./sonub-store-database.md)
 
-### 1.4 사전 요구사항
+### 1.5 사전 요구사항
 
-- ✅ Firebase JS SDK 설치 완료 (sonub-setup-firebase.md 참조)
+- ✅ Firebase JS SDK 설치 완료 ([sonub-setup-firebase.md](./sonub-setup-firebase.md))
 - ✅ SvelteKit 5 프로젝트 설정 완료
 - ✅ Svelte 5 runes 이해 ($state, $derived, $effect)
-- ✅ Firebase Realtime Database 기본 구조 이해 (sonub-firebase-database-structure.md 참조)
+- ✅ Firebase Realtime Database 기본 구조 이해 ([sonub-firebase-database-structure.md](./sonub-firebase-database-structure.md))
 
 ## 2. 요구사항
 
@@ -1025,7 +1036,7 @@ export function createFilteredStore<T>(
 
 - [sonub-setup-firebase.md](./sonub-setup-firebase.md): Firebase 설정
 - [sonub-firebase-database-structure.md](./sonub-firebase-database-structure.md): RTDB 구조
-- [sonub-user-profile-store.md](./sonub-user-profile-store.md): UserProfileStore 구현
+- [sonub-store-user-profile.md](./sonub-store-user-profile.md): UserProfileStore 구현
 - [Firebase RTDB 문서](https://firebase.google.com/docs/database): 공식 문서
 
 ## 12. 변경 이력
