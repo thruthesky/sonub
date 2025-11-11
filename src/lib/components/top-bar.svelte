@@ -12,7 +12,7 @@
 	import { auth } from '$lib/firebase';
 	import { goto } from '$app/navigation';
 import Avatar from '$lib/components/user/avatar.svelte';
-import { m } from '$lib/paraglide/messages-proxy';
+import { m } from '$lib/paraglide/messages';
 
 	// 로그아웃 처리 중 상태
 	let isSigningOut = $state(false);
@@ -52,19 +52,19 @@ import { m } from '$lib/paraglide/messages-proxy';
 						href="/about"
 						class="text-gray-600 hover:text-gray-900"
 					>
-						{m.about()}
+						{m.navAbout()}
 					</a>
 					<a
 						href="/products"
 						class="text-gray-600 hover:text-gray-900"
 					>
-						{m.products()}
+						{m.navProducts()}
 					</a>
 					<a
 						href="/contact"
 						class="text-gray-600 hover:text-gray-900"
 					>
-						{m.contact()}
+						{m.navContact()}
 					</a>
 				</div>
 			</div>
@@ -76,8 +76,8 @@ import { m } from '$lib/paraglide/messages-proxy';
 					href="/post/list"
 					variant="ghost"
 					size="icon"
-					aria-label={m.board()}
-					title={m.board()}
+					aria-label={m.navBoard()}
+					title={m.navBoard()}
 					class="cursor-pointer text-gray-600 hover:text-gray-900"
 				>
 					<svg
@@ -105,8 +105,8 @@ import { m } from '$lib/paraglide/messages-proxy';
 					href="/chat/list"
 					variant="ghost"
 					size="icon"
-					aria-label={m.chat()}
-					title={m.chat()}
+					aria-label={m.navChat()}
+					title={m.navChat()}
 					class="cursor-pointer text-gray-600 hover:text-gray-900"
 				>
 					<svg
@@ -129,8 +129,8 @@ import { m } from '$lib/paraglide/messages-proxy';
 					href="/user/list"
 					variant="ghost"
 					size="icon"
-					aria-label={m.find_users()}
-					title={m.find_users()}
+					aria-label={m.navFindUsers()}
+					title={m.navFindUsers()}
 					class="cursor-pointer text-gray-600 hover:text-gray-900"
 				>
 					<svg
@@ -156,15 +156,15 @@ import { m } from '$lib/paraglide/messages-proxy';
 					<a
 						href="/my/profile"
 						class="cursor-pointer hover:opacity-80 transition-opacity"
-						aria-label={m.my_profile()}
-						title={authStore.user.displayName || authStore.user.email || m.my_profile()}
+						aria-label={m.navMyProfile()}
+						title={authStore.user.displayName || authStore.user.email || m.navMyProfile()}
 					>
 						<Avatar uid={authStore.user?.uid} size={40} />
 					</a>
 				{:else}
 					<!-- 비로그인 상태: 로그인 버튼 -->
 					<Button variant="ghost" size="sm" href="/user/login" class="cursor-pointer">
-						{m.sign_in()}
+						{m.navLogin()}
 					</Button>
 				{/if}
 
@@ -173,8 +173,8 @@ import { m } from '$lib/paraglide/messages-proxy';
 					href="/menu"
 					variant="ghost"
 					size="icon"
-					aria-label={m.menu()}
-					title={m.menu()}
+					aria-label={m.navMenu()}
+					title={m.navMenu()}
 					class="cursor-pointer text-gray-600 hover:text-gray-900"
 				>
 					<svg

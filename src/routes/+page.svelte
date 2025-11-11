@@ -9,20 +9,20 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import Avatar from '$lib/components/user/avatar.svelte';
-	import { m } from '$lib/paraglide/messages-proxy';
+	import { m } from '$lib/paraglide/messages';
 </script>
 
 <svelte:head>
-	<title>{m.page_title_home()}</title>
+	<title>{m.pageTitleHome()}</title>
 </svelte:head>
 
 <div class="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center">
 	<div class="mx-auto max-w-4xl space-y-8 text-center">
 		<!-- 메인 타이틀 -->
 		<div class="space-y-4">
-			<h1 class="text-4xl font-bold text-gray-900 md:text-6xl">{m.auth_welcome_message()}</h1>
+			<h1 class="text-4xl font-bold text-gray-900 md:text-6xl">{m.authWelcomeMessage()}</h1>
 			<p class="text-lg text-gray-600 md:text-xl">
-				{m.auth_intro()}
+				{m.authIntro()}
 			</p>
 		</div>
 
@@ -30,15 +30,15 @@
 		{#if authStore.loading}
 			<Card.Root class="mx-auto max-w-md">
 				<Card.Content class="pt-6">
-					<p class="text-center text-gray-600">{m.loading()}</p>
+					<p class="text-center text-gray-600">{m.commonLoading()}</p>
 				</Card.Content>
 			</Card.Root>
 		{:else if authStore.isAuthenticated}
 			<Card.Root class="mx-auto max-w-md">
 				<Card.Header>
-					<Card.Title>{m.auth_welcome()}</Card.Title>
+					<Card.Title>{m.authWelcome()}</Card.Title>
 					<Card.Description>
-						{m.auth_welcome_user({ name: authStore.user?.displayName || authStore.user?.email || m.user() })}
+						{m.authWelcomeUser({ name: authStore.user?.displayName || authStore.user?.email || m.commonUser() })}
 					</Card.Description>
 				</Card.Header>
 				<Card.Content>
@@ -54,11 +54,11 @@
 		{:else}
 			<Card.Root class="mx-auto max-w-md">
 				<Card.Header>
-					<Card.Title>{m.auth_get_started()}</Card.Title>
-					<Card.Description>{m.auth_sign_in_guide_start()}</Card.Description>
+					<Card.Title>{m.authGetStarted()}</Card.Title>
+					<Card.Description>{m.authSignInGuideStart()}</Card.Description>
 				</Card.Header>
 				<Card.Content>
-					<Button class="w-full" href="/user/login">{m.auth_sign_in_action()}</Button>
+					<Button class="w-full" href="/user/login">{m.authSignInAction()}</Button>
 				</Card.Content>
 			</Card.Root>
 		{/if}
@@ -67,31 +67,31 @@
 		<div class="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
 			<Card.Root>
 				<Card.Header>
-					<Card.Title class="text-lg">{m.feature_sveltekit5()}</Card.Title>
+					<Card.Title class="text-lg">{m.featureSveltekit5()}</Card.Title>
 				</Card.Header>
 				<Card.Content>
 					<p class="text-sm text-gray-600">
-						{m.feature_sveltekit5_desc()}
+						{m.featureSveltekit5Desc()}
 					</p>
 				</Card.Content>
 			</Card.Root>
 
 			<Card.Root>
 				<Card.Header>
-					<Card.Title class="text-lg">{m.feature_firebase_auth()}</Card.Title>
+					<Card.Title class="text-lg">{m.featureFirebaseAuth()}</Card.Title>
 				</Card.Header>
 				<Card.Content>
-					<p class="text-sm text-gray-600">{m.feature_firebase_auth_desc()}</p>
+					<p class="text-sm text-gray-600">{m.featureFirebaseAuthDesc()}</p>
 				</Card.Content>
 			</Card.Root>
 
 			<Card.Root>
 				<Card.Header>
-					<Card.Title class="text-lg">{m.feature_tailwind_css()}</Card.Title>
+					<Card.Title class="text-lg">{m.featureTailwindCss()}</Card.Title>
 				</Card.Header>
 				<Card.Content>
 					<p class="text-sm text-gray-600">
-						{m.feature_tailwind_css_desc()}
+						{m.featureTailwindCssDesc()}
 					</p>
 				</Card.Content>
 			</Card.Root>
@@ -107,7 +107,7 @@
 				rel="noopener noreferrer"
 				class="hover:text-gray-900"
 			>
-				{m.link_svelte_kit_docs()}
+				{m.linkSvelteKitDocs()}
 			</a>
 			<span class="hidden sm:inline">•</span>
 			<a
@@ -116,7 +116,7 @@
 				rel="noopener noreferrer"
 				class="hover:text-gray-900"
 			>
-				{m.link_firebase_docs()}
+				{m.linkFirebaseDocs()}
 			</a>
 			<span class="hidden sm:inline">•</span>
 			<a
@@ -125,7 +125,7 @@
 				rel="noopener noreferrer"
 				class="hover:text-gray-900"
 			>
-				{m.link_shadcn_svelte()}
+				{m.linkShadcnSvelte()}
 			</a>
 		</div>
 	</div>

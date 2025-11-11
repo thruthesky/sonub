@@ -6,11 +6,11 @@
 	 */
 
 	import UnderConstruction from '$lib/components/under-construction.svelte';
-	import { m } from '$lib/paraglide/messages-proxy';
+	import { m } from '$lib/paraglide/messages';
 </script>
 
 <svelte:head>
-	<title>{m.page_title_chat()}</title>
+	<title>{m.pageTitleChat()}</title>
 </svelte:head>
 
-<UnderConstruction title={m.chat()} message={m.chat_under_construction()} />
+<UnderConstruction title={m.navChat()} message={m.chatConstruction()} />

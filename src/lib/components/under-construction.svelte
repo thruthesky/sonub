@@ -7,14 +7,14 @@
 
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { m } from '$lib/paraglide/messages-proxy';
+	import { m } from '$lib/paraglide/messages';
 
 	interface Props {
 		title?: string;
 		message?: string;
 	}
 
-	let { title = m.under_construction(), message = m.under_construction_message() }: Props = $props();
+	let { title = m.constructionTitle(), message = m.constructionMessage() }: Props = $props();
 </script>
 
 <div class="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center py-8">
@@ -52,7 +52,7 @@
 						href="/"
 						class="w-full cursor-pointer bg-blue-600 py-6 text-lg font-semibold text-white hover:bg-blue-700"
 					>
-						{m.under_construction_back_to_home()}
+						{m.constructionBackToHome()}
 					</Button>
 				</div>
 			</Card.Content>

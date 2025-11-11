@@ -1,29 +1,23 @@
 <script lang="ts">
+  /**
+   * 사용자 목록 페이지
+   *
+   * Firebase Realtime Database의 /users 경로에서 사용자 목록을 불러와 표시합니다.
+   * DatabaseListView 컴포넌트를 사용하여 페이지네이션과 무한 스크롤을 지원합니다.
+   */
+
   import DatabaseListView from '$lib/components/DatabaseListView.svelte';
   import Avatar from '$lib/components/user/avatar.svelte';
   import { getLocale } from '$lib/paraglide/runtime.js';
+  import { m } from '$lib/paraglide/messages.js';
 
-  // 다국어 메시지를 전체 import 후 개별 변수로 할당
-  import * as messages from '$lib/paraglide/messages.js';
-
-  const 페이지_타이틀_사용자목록 = (messages as any)['페이지_타이틀_사용자목록'];
-  const 사용자_목록 = (messages as any)['사용자_목록'];
-  const 사용자_목록_안내 = (messages as any)['사용자_목록_안내'];
-  const 사용자_프로필_상세 = (messages as any)['사용자_프로필_상세'];
-  const 사용자_이름없음 = (messages as any)['사용자_이름없음'];
-  const 사용자_가입일 = (messages as any)['사용자_가입일'];
-  const 사용자_마지막로그인 = (messages as any)['사용자_마지막로그인'];
-  const 사용자_로딩중 = (messages as any)['사용자_로딩중'];
-  const 사용자_등록없음 = (messages as any)['사용자_등록없음'];
-  const 사용자_가입없음 = (messages as any)['사용자_가입없음'];
-  const 사용자_로드실패 = (messages as any)['사용자_로드실패'];
-  const 사용자_알수없는오류 = (messages as any)['사용자_알수없는오류'];
-  const 공통_다시시도 = (messages as any)['공통_다시시도'];
-  const 사용자_더로딩중 = (messages as any)['사용자_더로딩중'];
-  const 사용자_모두로드 = (messages as any)['사용자_모두로드'];
-  const 네비_채팅 = (messages as any)['네비_채팅'];
-
-  function formatDate(timestamp: number) {
+  /**
+   * 타임스탬프를 로케일에 맞는 날짜 문자열로 변환
+   *
+   * @param timestamp - Unix 타임스탬프 (밀리초)
+   * @returns 로케일에 맞게 포맷된 날짜 문자열
+   */
+  function formatDate(timestamp: number): string {
     if (!timestamp) return '';
     const date = new Date(timestamp);
     const currentLocale = getLocale();
@@ -47,13 +41,13 @@
 </script>
 
 <svelte:head>
-  <title>{페이지_타이틀_사용자목록()}</title>
+  <title>{m.pageTitleUserList()}</title>
 </svelte:head>
 
 <div class="user-list-page">
   <div class="page-header">
-    <h1>{사용자_목록()}</h1>
-    <p class="subtitle">{사용자_목록_안내()}</p>
+    <h1>{m.userList()}</h1>
+    <p class="subtitle">{m.userListGuide()}</p>
   </div>
 
   <DatabaseListView path="users" pageSize={15} orderBy="createdAt" threshold={300} reverse={false}>
@@ -62,23 +56,23 @@
         <a
           class="user-card-main"
           href={`/user/profile/${itemData.key}`}
-          aria-label={사용자_프로필_상세()}
+          aria-label={m.userProfileDetail()}
         >
           <div class="user-avatar">
             <Avatar uid={itemData.key} size={60} class="shadow-sm" />
           </div>
 
           <div class="user-info">
-            <h3 class="user-name">{itemData.data?.displayName || 사용자_이름없음()}</h3>
+            <h3 class="user-name">{itemData.data?.displayName || m.userNoName()}</h3>
             <p class="user-email">{itemData.data?.email || 'email@example.com'}</p>
             <div class="user-meta">
               <span class="meta-item">
-                <span class="meta-label">{사용자_가입일()}</span>
+                <span class="meta-label">{m.userJoinDate()}</span>
                 <span class="meta-value">{formatDate(itemData.data?.createdAt)}</span>
               </span>
               {#if itemData.data?.lastLoginAt}
                 <span class="meta-item">
-                  <span class="meta-label">{사용자_마지막로그인()}</span>
+                  <span class="meta-label">{m.userLastLogin()}</span>
                   <span class="meta-value">{formatDate(itemData.data.lastLoginAt)}</span>
                 </span>
               {/if}
@@ -104,7 +98,7 @@
 
         <div class="user-card-chips">
           <a class="chip chip-primary cursor-pointer" href={`/chat/room?uid=${itemData.key}`}>
-            {네비_채팅()}
+            {m.navChat()}
           </a>
         </div>
       </article>
@@ -113,25 +107,25 @@
     {#snippet loading()}
       <div class="loading-state">
         <div class="spinner"></div>
-        <p>{사용자_로딩중()}</p>
+        <p>{m.userLoading()}</p>
       </div>
     {/snippet}
 
     {#snippet empty()}
       <div class="empty-state">
         <div class="empty-icon">👥</div>
-        <h3>{사용자_등록없음()}</h3>
-        <p>{사용자_가입없음()}</p>
+        <h3>{m.userNotRegistered()}</h3>
+        <p>{m.userNotJoined()}</p>
       </div>
     {/snippet}
 
     {#snippet error(errorMessage: string | null)}
       <div class="error-state">
         <div class="error-icon">⚠️</div>
-        <h3>{사용자_로드실패()}</h3>
-        <p class="error-message">{errorMessage ?? 사용자_알수없는오류()}</p>
+        <h3>{m.userLoadFailed()}</h3>
+        <p class="error-message">{errorMessage ?? m.userUnknownError()}</p>
         <button class="retry-button" onclick={() => window.location.reload()}>
-          {공통_다시시도()}
+          {m.commonRetry()}
         </button>
       </div>
     {/snippet}
@@ -139,13 +133,13 @@
     {#snippet loadingMore()}
       <div class="loading-more-state">
         <div class="spinner small"></div>
-        <p>{사용자_더로딩중()}</p>
+        <p>{m.userLoadingMore()}</p>
       </div>
     {/snippet}
 
     {#snippet noMore()}
       <div class="no-more-state">
-        <p>{사용자_모두로드()}</p>
+        <p>{m.userAllLoaded()}</p>
       </div>
     {/snippet}
   </DatabaseListView>

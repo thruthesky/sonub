@@ -13,7 +13,7 @@
 	import { signInWithGoogle, signInWithApple, getAuthErrorMessage } from '$lib/utils/auth-helpers';
 	import { goto } from '$app/navigation';
 	import type { HTMLAttributes } from 'svelte/elements';
-	import { m } from '$lib/paraglide/messages-proxy';
+	import { m } from '$lib/paraglide/messages';
 
 	// Props: 컴포넌트의 추가 클래스명과 기타 HTML 속성
 	let { class: className, ...restProps }: HTMLAttributes<HTMLDivElement> = $props();
@@ -96,9 +96,9 @@
 <div class={cn('flex flex-col gap-6', className)} {...restProps}>
 	<Card.Root>
 		<Card.Header class="text-center">
-			<Card.Title class="text-xl">{m.auth_welcome()}</Card.Title>
+			<Card.Title class="text-xl">{m.authWelcome()}</Card.Title>
 			<Card.Description>
-				{m.auth_sign_in_guide()}
+				{m.authSignInGuide()}
 			</Card.Description>
 		</Card.Header>
 		<Card.Content>
@@ -106,7 +106,7 @@
 				<!-- 에러 메시지 표시 -->
 				{#if errorMessage}
 					<Alert.Root variant="destructive">
-						<Alert.Title>{m.auth_sign_in_failed()}</Alert.Title>
+						<Alert.Title>{m.authSignInFailed()}</Alert.Title>
 						<Alert.Description class="flex items-center justify-between">
 							<span>{errorMessage}</span>
 							<button
@@ -114,7 +114,7 @@
 								class="ml-2 text-sm underline hover:no-underline"
 								type="button"
 							>
-								{m.close()}
+								{m.commonClose()}
 							</button>
 						</Alert.Description>
 					</Alert.Root>
@@ -150,7 +150,7 @@
 								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
 							></path>
 						</svg>
-						{m.auth_signing_in()}
+						{m.authSigningIn()}
 					{:else}
 						<!-- Google 아이콘 -->
 						<svg
@@ -163,7 +163,7 @@
 								fill="currentColor"
 							/>
 						</svg>
-						{m.auth_sign_in_with_google()}
+						{m.authSignInWithGoogle()}
 					{/if}
 				</Button>
 
@@ -197,7 +197,7 @@
 								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
 							></path>
 						</svg>
-						{m.auth_signing_in()}
+						{m.authSigningIn()}
 					{:else}
 						<!-- Apple 아이콘 -->
 						<svg
@@ -210,7 +210,7 @@
 								fill="currentColor"
 							/>
 						</svg>
-						{m.auth_sign_in_with_apple()}
+						{m.authSignInWithApple()}
 					{/if}
 				</Button>
 			</div>

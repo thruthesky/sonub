@@ -9,7 +9,7 @@
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { authStore } from '$lib/stores/auth.svelte';
 import Avatar from '$lib/components/user/avatar.svelte';
-import { m } from '$lib/paraglide/messages-proxy';
+import { m } from '$lib/paraglide/messages';
 </script>
 
 <aside class="hidden lg:block lg:w-64 xl:w-72">
@@ -17,7 +17,7 @@ import { m } from '$lib/paraglide/messages-proxy';
 		{#if authStore.isAuthenticated}
 			<Card.Root>
 				<Card.Header>
-					<Card.Title class="text-base">{m.sidebar_my_profile()}</Card.Title>
+					<Card.Title class="text-base">{m.sidebarMyProfile()}</Card.Title>
 				</Card.Header>
 				<Card.Content class="space-y-3">
 					<div class="flex justify-center">
@@ -25,7 +25,7 @@ import { m } from '$lib/paraglide/messages-proxy';
 					</div>
 					<div class="text-center">
 						<p class="font-medium text-gray-900">
-							{authStore.user?.displayName || m.user()}
+							{authStore.user?.displayName || m.commonUser()}
 						</p>
 						<p class="text-sm text-gray-600">
 							{authStore.user?.email || ''}
@@ -37,29 +37,29 @@ import { m } from '$lib/paraglide/messages-proxy';
 
 		<Card.Root>
 			<Card.Header>
-				<Card.Title class="text-base">{m.sidebar_notifications()}</Card.Title>
+				<Card.Title class="text-base">{m.sidebarNotifications()}</Card.Title>
 			</Card.Header>
 			<Card.Content>
-				<p class="text-sm text-gray-600">{m.sidebar_no_notifications()}</p>
+				<p class="text-sm text-gray-600">{m.sidebarNoNotifications()}</p>
 			</Card.Content>
 		</Card.Root>
 
 		<Card.Root>
 			<Card.Header>
-				<Card.Title class="text-base">{m.sidebar_suggestions()}</Card.Title>
+				<Card.Title class="text-base">{m.sidebarSuggestions()}</Card.Title>
 			</Card.Header>
 			<Card.Content class="space-y-2">
 				<button
 					type="button"
 					class="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
 				>
-					{m.sidebar_popular_posts()}
+					{m.sidebarPopularPosts()}
 				</button>
 				<button
 					type="button"
 					class="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
 				>
-					{m.sidebar_new_features()}
+					{m.sidebarNewFeatures()}
 				</button>
 			</Card.Content>
 		</Card.Root>

@@ -8,11 +8,7 @@ const config = {
 	// for more information about preprocessors
 	preprocess: [vitePreprocess(), mdsvex()],
 	kit: {
-		adapter: adapter(),
-		// Paraglide i18n 모듈이 src/paraglide에 생성되므로 alias를 설정
-		alias: {
-			'$lib/paraglide': './src/paraglide'
-		}
+		adapter: adapter()
 	},
 	extensions: ['.svelte', '.svx']
 };

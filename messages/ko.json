@@ -104,7 +104,7 @@
 	"adminTestUserManagementDesc": "임시 사용자 생성/목록/삭제를 한 페이지에서 관리합니다",
 	"adminUserList": "사용자 목록",
 	"adminUserListDesc": "생성된 테스트 사용자 목록을 확인합니다",
-	"adminReportList": "신고 목록",
+	"adminReportList": "관리자 신고 목록",
 	"adminReportListDesc": "사용자 신고 내역을 확인하고 관리합니다",
 	"adminTest": "테스트",
 	"adminTestDesc": "기타 테스트 기능들을 사용합니다",
@@ -184,5 +184,17 @@
 	"testUserGenderMale": "남성",
 	"testUserGenderFemale": "여성",
 	"testUserGenderOther": "기타",
-	"testUserCreateCount": "100"
+	"testUserCreateCount": "100",
+	"reportReasonAbuse": "욕설 및 비방",
+	"reportReasonFakeNews": "허위 정보",
+	"reportReasonSpam": "스팸",
+	"reportReasonInappropriate": "부적절한 콘텐츠",
+	"reportReasonOther": "기타",
+	"commonPost": "게시글",
+	"commonComment": "댓글",
+	"reportCancelConfirm": "신고를 취소하시겠습니까?",
+	"authLoginRequired": "로그인이 필요합니다",
+	"reportMyList": "내 신고 목록",
+	"reportMyListGuide": "내가 작성한 신고를 확인할 수 있습니다",
+	"pageTitleMyReports": "내 신고 목록 - Sonub"
 }

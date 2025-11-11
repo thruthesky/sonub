@@ -10,7 +10,7 @@
 	import { goto } from '$app/navigation';
 	import UserLogin from '$lib/components/user-login.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
-	import { m } from '$lib/paraglide/messages-proxy';
+	import { m } from '$lib/paraglide/messages';
 
 	/**
 	 * 컴포넌트 마운트 시 인증 상태 확인
@@ -35,8 +35,8 @@
 </script>
 
 <svelte:head>
-	<title>{m.page_title_sign_in()}</title>
-	<meta name="description" content={m.page_meta_sign_in()} />
+	<title>{m.pageTitleLogin()}</title>
+	<meta name="description" content={m.pageMetaLogin()} />
 </svelte:head>
 
 <div class="container flex min-h-screen items-center justify-center px-4 py-8">
@@ -63,7 +63,7 @@
 					d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
 				></path>
 			</svg>
-			<p class="text-muted-foreground">{m.loading()}</p>
+			<p class="text-muted-foreground">{m.commonLoading()}</p>
 		</div>
 	{:else}
 		<!-- 로그인 컴포넌트 표시 -->

@@ -13,7 +13,7 @@
 	import { userProfileStore } from '$lib/stores/user-profile.svelte';
 	import { pushData } from '$lib/stores/database.svelte';
 	import { getLocale } from '$lib/paraglide/runtime.js';
-	import { m } from '$lib/paraglide/messages-proxy';
+	import { m } from '$lib/paraglide/messages';
 
 	// GET 파라미터 추출
 	const uidParam = $derived.by(() => $page.url.searchParams.get('uid') ?? '');
@@ -56,7 +56,7 @@
 	const targetDisplayName = $derived.by(() => {
 		if (targetProfile?.displayName) return targetProfile.displayName;
 		if (uidParam) return `@${uidParam.slice(0, 6)}`;
-		return 'Chat Partner';
+		return m.chatPartner();
 	});
 
 	// 작성 중인 메시지
@@ -87,11 +87,11 @@
 		if (isSending) return;
 		if (!composerText.trim()) return;
 		if (!authStore.user?.uid) {
-			sendError = 'Please sign in to send messages.';
+			sendError = m.chatSignInToSend();
 			return;
 		}
 		if (!activeRoomId) {
-			sendError = 'Chat room is not ready.';
+			sendError = m.chatRoomNotReady();
 			return;
 		}
 
@@ -117,7 +117,7 @@
 		const result = await pushData(messagePath, payload);
 
 		if (!result.success) {
-			sendError = result.error ?? 'Failed to send message.';
+			sendError = result.error ?? m.chatSendFailed();
 		} else {
 			composerText = '';
 		}
@@ -130,45 +130,45 @@
 
 	// 발신자 라벨
 	function resolveSenderLabel(senderUid?: string | null) {
-		if (!senderUid) return 'Unknown user';
-		if (senderUid === authStore.user?.uid) return 'You';
+		if (!senderUid) return m.chatUnknownUser();
+		if (senderUid === authStore.user?.uid) return m.chatYou();
 		if (senderUid === uidParam && targetDisplayName) return targetDisplayName;
 		return senderUid.slice(0, 10);
 	}
 </script>
 
 <svelte:head>
-	<title>{m.page_title_chat()}</title>
+	<title>{m.pageTitleChat()}</title>
 </svelte:head>
 
 <div class="chat-room-page">
 	<header class="chat-room-header">
 		<div>
-			<p class="chat-room-label">{isDirectChat ? 'Direct Chat' : 'Chat Room'}</p>
+			<p class="chat-room-label">{isDirectChat ? m.chatDirectChat() : m.chatChatRoom()}</p>
 			<h1 class="chat-room-title">
 				{#if isDirectChat && uidParam}
 					{targetDisplayName}
 				{:else if roomIdParam}
-					Room: {roomIdParam}
+					{m.chatRoom()} {roomIdParam}
 				{:else}
-					Chat Overview
+					{m.chatOverview()}
 				{/if}
 			</h1>
 			<p class="chat-room-subtitle">
 				{#if !authStore.isAuthenticated}
-					Please sign in to start chatting.
+					{m.chatSignInRequired()}
 				{:else if isDirectChat && !uidParam}
-					Provide a uid query parameter to open a direct chat.
+					{m.chatProvideUid()}
 				{:else if targetProfileLoading}
-					Loading the participant profile...
+					{m.chatLoadingProfile()}
 				{:else if targetProfileError}
-					Failed to load participant profile.
+					{m.chatLoadProfileFailed()}
 				{:else if isDirectChat}
-					You are chatting with {targetDisplayName}.
+					{m.chatChattingWith({ name: targetDisplayName })}
 				{:else if roomIdParam}
-					Room ID {roomIdParam} is ready.
+					{m.chatRoomReady({ roomId: roomIdParam })}
 				{:else}
-					Select a conversation to begin.
+					{m.chatSelectConversation()}
 				{/if}
 			</p>
 		</div>
@@ -185,9 +185,9 @@
 
 	{#if !activeRoomId}
 		<section class="chat-room-empty">
-			<p class="empty-title">Chat room is not ready.</p>
+			<p class="empty-title">{m.chatRoomNotReady()}</p>
 			<p class="empty-subtitle">
-				Add ?uid=TARGET_UID or ?roomId=ROOM_KEY to the URL to open a conversation.
+				{m.chatAddUidOrRoomId()}
 			</p>
 		</section>
 	{:else}
@@ -223,31 +223,31 @@
 							{/snippet}
 
 							{#snippet loading()}
-								<div class="message-placeholder">Loading messages...</div>
+								<div class="message-placeholder">{m.chatLoadingMessages()}</div>
 							{/snippet}
 
 							{#snippet empty()}
-								<div class="message-placeholder">No messages yet. Say hello!</div>
+								<div class="message-placeholder">{m.chatNoMessages()}</div>
 							{/snippet}
 
 							{#snippet error(errorMessage: string | null)}
 								<div class="message-error">
-									<p>Failed to load messages.</p>
-									<p>{errorMessage ?? 'Unknown error.'}</p>
+									<p>{m.chatLoadMessagesFailed()}</p>
+									<p>{errorMessage ?? m.chatUnknownError()}</p>
 								</div>
 							{/snippet}
 
 							{#snippet loadingMore()}
-								<div class="message-placeholder subtle">Loading more...</div>
+								<div class="message-placeholder subtle">{m.chatLoadingMore()}</div>
 							{/snippet}
 
 							{#snippet noMore()}
-								<div class="message-placeholder subtle">You are up to date.</div>
+								<div class="message-placeholder subtle">{m.chatUpToDate()}</div>
 							{/snippet}
 						</DatabaseListView>
 					{/key}
 				{:else}
-					<div class="message-placeholder">Preparing the message stream...</div>
+					<div class="message-placeholder">{m.chatPreparingStream()}</div>
 				{/if}
 			</div>
 
@@ -255,7 +255,7 @@
 				<input
 					type="text"
 					class="composer-input"
-					placeholder="Write a message..."
+					placeholder={m.chatWriteMessage()}
 					bind:value={composerText}
 					disabled={composerDisabled || isSending}
 				/>
@@ -264,7 +264,7 @@
 					class="composer-button cursor-pointer"
 					disabled={composerDisabled || isSending || !composerText.trim()}
 				>
-					{isSending ? 'Sending...' : 'Send'}
+					{isSending ? m.chatSending() : m.chatSend()}
 				</button>
 			</form>
 

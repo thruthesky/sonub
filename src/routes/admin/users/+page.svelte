@@ -17,7 +17,7 @@
 		saveTestUsersToFirebase
 	} from '$lib/utils/admin-service';
 	import { generateTestUsers, type TestUser } from '$lib/utils/test-user-generator';
-	import { m } from '$lib/paraglide/messages-proxy';
+	import { m } from '$lib/paraglide/messages';
 
 	// 상태 관리
 	let users: Record<string, TestUser> = $state({});
@@ -42,7 +42,7 @@
 			users = await getTemporaryUsers();
 		} catch (err) {
 			console.error('테스트 사용자 목록 로드 중 오류:', err);
-			error = err instanceof Error ? err.message : m.user_unknown_error();
+			error = err instanceof Error ? err.message : m.userUnknownError();
 		} finally {
 			isLoading = false;
 		}
@@ -128,7 +128,7 @@
 			await loadUsers();
 		} catch (err) {
 			console.error('테스트 사용자 생성 중 오류:', err);
-			creationError = err instanceof Error ? err.message : m.user_unknown_error();
+			creationError = err instanceof Error ? err.message : m.userUnknownError();
 		} finally {
 			isCreating = false;
 		}
@@ -138,7 +138,7 @@
 	 * 생년월일을 포맷팅합니다.
 	 */
 	function formatBirthYear(year: number): string {
-		return m.profile_year_format({ year });
+		return m.profileYearValue({ year });
 	}
 
 	/**
@@ -177,28 +177,28 @@
 <div class="space-y-6">
 	<!-- 페이지 제목 -->
 	<div>
-		<h1 class="text-3xl font-bold text-gray-900">{m.test_user_list()}</h1>
-		<p class="mt-2 text-gray-600">{m.test_user_guide()}</p>
+		<h1 class="text-3xl font-bold text-gray-900">{m.testUserList()}</h1>
+		<p class="mt-2 text-gray-600">{m.testUserGuide()}</p>
 	</div>
 
 	<!-- 통계 정보 -->
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 		<Card>
 			<div class="p-6">
-				<p class="text-sm text-gray-600">{m.test_user_count()}</p>
+				<p class="text-sm text-gray-600">{m.testUserCount()}</p>
 				<p class="mt-2 text-3xl font-bold text-gray-900">{userCount}</p>
 			</div>
 		</Card>
 		<Card>
 			<div class="p-6">
-				<p class="text-sm text-gray-600">{m.status()}</p>
+				<p class="text-sm text-gray-600">{m.commonStatus()}</p>
 				<p class="mt-2 text-lg font-semibold text-gray-900">
 					{#if isLoading}
-						{m.loading()}
+						{m.commonLoading()}
 					{:else if userCount > 0}
-						<span class="text-green-600">✓ {m.test_user_created({ count: userCount })}</span>
+						<span class="text-green-600">✓ {m.testUserCreated({ count: userCount })}</span>
 					{:else}
-						<span class="text-gray-600">{m.test_user_not_created()}</span>
+						<span class="text-gray-600">{m.testUserNotCreated()}</span>
 					{/if}
 				</p>
 			</div>
@@ -210,9 +210,9 @@
 		<div class="space-y-6 p-6">
 			<div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 				<div>
-					<h2 class="text-xl font-semibold text-gray-900">{m.test_user_create()}</h2>
+					<h2 class="text-xl font-semibold text-gray-900">{m.testUserCreate()}</h2>
 					<p class="text-sm text-gray-600">
-						{m.test_user_create_guide()}
+						{m.testUserCreateGuide()}
 					</p>
 				</div>
 				<Button
@@ -222,11 +222,11 @@
 					class="min-w-48 bg-blue-600 text-white hover:bg-blue-700"
 				>
 					{#if isCreating}
-						{m.test_user_creating()}
+						{m.testUserCreating()}
 					{:else if isCreationCompleted}
-						{m.test_user_create_complete()}
+						{m.testUserCreateComplete()}
 					{:else}
-						{m.test_user_create_icon()}
+						{m.testUserCreateIcon()}
 					{/if}
 				</Button>
 			</div>
@@ -234,7 +234,7 @@
 			{#if isCreating || creationProgress > 0}
 				<div class="space-y-2">
 					<div class="flex justify-between text-sm">
-						<span class="text-gray-700">{m.progress()}</span>
+						<span class="text-gray-700">{m.commonProgress()}</span>
 						<span class="font-semibold text-gray-900">
 							{creationProgress} / {creationTotal} ({creationPercentage}%)
 						</span>
@@ -250,24 +250,24 @@
 
 			{#if isCreationCompleted}
 				<div class="rounded-lg bg-green-50 p-4 text-sm text-green-800">
-					{m.test_user_create_complete_message({ count: creationProgress })}
+					{m.testUserCreateCompleteMessage({ count: creationProgress })}
 				</div>
 			{/if}
 
 			{#if creationError}
 				<div class="rounded-lg bg-red-50 p-4 text-sm text-red-800">
-					<strong>✗ {m.error()}:</strong>
+					<strong>✗ {m.commonError()}:</strong>
 					{creationError}
 				</div>
 			{/if}
 
 			<div class="grid gap-4 md:grid-cols-2">
 				<div class="rounded-lg bg-gray-50 p-4">
-					<p class="text-sm text-gray-600">{m.test_user_create_batch_count()}</p>
+					<p class="text-sm text-gray-600">{m.testUserCreateAtOnce()}</p>
 					<p class="mt-1 text-2xl font-bold text-gray-900">100</p>
 				</div>
 				<div class="rounded-lg bg-gray-50 p-4">
-					<p class="text-sm text-gray-600">{m.test_user_current_create_count()}</p>
+					<p class="text-sm text-gray-600">{m.testUserCurrentCreated()}</p>
 					<p class="mt-1 text-2xl font-bold text-gray-900">{creationProgress}</p>
 				</div>
 			</div>
@@ -280,7 +280,7 @@
 			<div class="p-6">
 				<div class="space-y-4">
 					<div class="flex justify-between text-sm">
-						<span class="text-gray-700">{m.test_user_deleting_in_progress()}</span>
+						<span class="text-gray-700">{m.testUserDeletingInProgress()}</span>
 						<span class="font-semibold text-gray-900">
 							{deleteProgress} / {deleteTotal} ({deletePercentage}%)
 						</span>
@@ -300,7 +300,7 @@
 	{#if error}
 		<Alert>
 			<p class="text-sm text-red-800">
-				<strong>✗ {m.error()}:</strong>
+				<strong>✗ {m.commonError()}:</strong>
 				{error}
 			</p>
 		</Alert>
@@ -310,13 +310,13 @@
 	{#if !isLoading && userCount > 0}
 		<div class="flex gap-2">
 			<Button onclick={() => loadUsers()} variant="outline" disabled={isDeleting}>
-				{m.refresh()}
+				{m.commonRefresh()}
 			</Button>
 			<Button onclick={handleDeleteAllUsers} variant="destructive" disabled={isDeleting}>
 				{#if isDeleting}
-					{m.test_user_deleting()}
+					{m.testUserDeleting()}
 				{:else}
-					{m.test_user_delete_all()}
+					{m.testUserDeleteAll()}
 				{/if}
 			</Button>
 		</div>
@@ -326,14 +326,14 @@
 	{#if isLoading}
 		<Card>
 			<div class="p-6">
-				<p class="text-center text-gray-600">{m.loading()}</p>
+				<p class="text-center text-gray-600">{m.commonLoading()}</p>
 			</div>
 		</Card>
 	{:else if userCount === 0}
 		<Card>
 			<div class="p-6">
 				<p class="text-center text-gray-600">
-					{@html m.test_user_none_guide()}
+					{@html m.testUserNotCreatedGuide()}
 				</p>
 			</div>
 		</Card>
@@ -350,26 +350,26 @@
 								<!-- 사용자 정보 -->
 								<div class="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
 									<div>
-										<p class="text-xs text-gray-500">{m.test_user_gender()}</p>
+										<p class="text-xs text-gray-500">{m.testUserGender()}</p>
 										<p class="mt-1 text-sm font-medium text-gray-900">
 											{formatGender(user.gender)}
 										</p>
 									</div>
 									<div>
-										<p class="text-xs text-gray-500">{m.test_user_birth_year()}</p>
+										<p class="text-xs text-gray-500">{m.testUserBirthYear()}</p>
 										<p class="mt-1 text-sm font-medium text-gray-900">
 											{formatBirthYear(user.birthYear)}
 										</p>
 									</div>
 									<div>
-										<p class="text-xs text-gray-500">{m.test_user_created_date()}</p>
+										<p class="text-xs text-gray-500">{m.testUserCreatedDate()}</p>
 										<p class="mt-1 text-sm font-medium text-gray-900">
 											{formatDate(user.createdAt)}
 										</p>
 									</div>
 									<div>
-										<p class="text-xs text-gray-500">{m.status()}</p>
-										<p class="mt-1 text-sm font-medium text-orange-600">{m.test_user_status()}</p>
+										<p class="text-xs text-gray-500">{m.commonStatus()}</p>
+										<p class="mt-1 text-sm font-medium text-orange-600">{m.testUserStatus()}</p>
 									</div>
 								</div>
 							</div>
@@ -382,7 +382,7 @@
 								disabled={isDeleting}
 								class="ml-4 flex-shrink-0"
 							>
-								{m.delete()}
+								{m.commonDelete()}
 							</Button>
 						</div>
 					</div>
@@ -394,11 +394,11 @@
 	<!-- 안내 메시지 -->
 	<Card>
 		<div class="p-6">
-			<h2 class="mb-4 text-xl font-semibold text-gray-900">{m.info()}</h2>
+			<h2 class="mb-4 text-xl font-semibold text-gray-900">{m.commonInfo()}</h2>
 			<div class="space-y-2 text-sm text-gray-600">
-				<p>{m.test_user_info_display()}</p>
-				<p>{m.test_user_info_delete()}</p>
-				<p>{m.test_user_info_unrecoverable()}</p>
+				<p>{m.testUserInfoDisplay()}</p>
+				<p>{m.testUserInfoDelete()}</p>
+				<p>{m.testUserInfoNoRecover()}</p>
 			</div>
 		</div>
 	</Card>

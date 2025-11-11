@@ -8,7 +8,7 @@
 
 	import { Card } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
-	import { m } from '$lib/paraglide/messages-proxy';
+	import { m } from '$lib/paraglide/messages';
 
 	// 대시보드 메뉴 항목들
 	interface DashboardItem {

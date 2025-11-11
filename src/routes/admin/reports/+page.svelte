@@ -7,6 +7,7 @@
 	 */
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
+	import { m } from '$lib/paraglide/messages.js';
 	// import DatabaseListView from "$lib/components/DatabaseListView.svelte";
 	// import type { ReportWithId } from "$lib/types/report";
 
@@ -14,44 +15,36 @@
 	// 향후 구현: admin role 확인 후 접근 제어
 
 	/**
-	 * 간단한 번역 함수 (i18n 미구현 시 임시 사용)
-	 *
-	 * @param key - 번역 키
-	 * @returns 번역된 문자열
-	 */
-	function t(key: string): string {
-		const translations: Record<string, string> = {
-			'신고사유_abuse': '욕설 및 비방',
-			'신고사유_fake-news': '허위 정보',
-			'신고사유_spam': '스팸',
-			'신고사유_inappropriate': '부적절한 콘텐츠',
-			'신고사유_other': '기타',
-			'게시글': '게시글',
-			'댓글': '댓글',
-			'관리자_신고_목록': '관리자 신고 목록',
-			'모든_사용자의_신고를_확인할_수_있습니다': '모든 사용자의 신고를 확인할 수 있습니다'
-		};
-		return translations[key] || key;
-	}
-
-	/**
-	 * 신고 사유를 한글로 변환하는 함수
+	 * 신고 사유를 현재 언어로 변환하는 함수
 	 *
 	 * @param reason - 신고 사유 (abuse, fake-news, spam, inappropriate, other)
-	 * @returns 한글 신고 사유
+	 * @returns 번역된 신고 사유
 	 */
 	function getReasonText(reason: string): string {
-		return t(`신고사유_${reason}`);
+		switch (reason) {
+			case 'abuse':
+				return m.reportReasonAbuse();
+			case 'fake-news':
+				return m.reportReasonFakeNews();
+			case 'spam':
+				return m.reportReasonSpam();
+			case 'inappropriate':
+				return m.reportReasonInappropriate();
+			case 'other':
+				return m.reportReasonOther();
+			default:
+				return reason;
+		}
 	}
 
 	/**
-	 * 신고 타입을 한글로 변환하는 함수
+	 * 신고 타입을 현재 언어로 변환하는 함수
 	 *
 	 * @param type - 신고 타입 (post, comment)
-	 * @returns 한글 신고 타입
+	 * @returns 번역된 신고 타입
 	 */
 	function getTypeText(type: string): string {
-		return type === 'post' ? t('게시글') : t('댓글');
+		return type === 'post' ? m.commonPost() : m.commonComment();
 	}
 
 	/**
@@ -72,14 +65,14 @@
 </script>
 
 <svelte:head>
-	<title>관리자 신고 목록 - Sonub</title>
+	<title>{m.pageTitleAdminReports()}</title>
 </svelte:head>
 
 <div class="admin-report-list-page">
 	<!-- 페이지 헤더 -->
 	<div class="page-header">
-		<h1 class="page-title">{t('관리자_신고_목록')}</h1>
-		<p class="page-description">{t('모든_사용자의_신고를_확인할_수_있습니다')}</p>
+		<h1 class="page-title">{m.adminReportList()}</h1>
+		<p class="page-description">{m.adminReportListGuide()}</p>
 	</div>
 
 	<!-- 신고 목록 -->
