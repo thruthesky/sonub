@@ -3,6 +3,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { rtdb } from '$lib/firebase';
 	import { ref, push } from 'firebase/database';
+	import { formatLongDate } from '$lib/functions/date.functions';
 
 	type CategoryField = 'qnaCreatedAt' | 'newsCreatedAt' | 'reminderCreatedAt';
 
@@ -96,14 +97,6 @@
 		return null;
 	}
 
-	function formatTimestamp(value: unknown): string {
-		if (typeof value === 'number' && Number.isFinite(value)) {
-			return new Date(value).toLocaleString('ko-KR');
-		}
-
-		return 'N/A';
-	}
-
 	function formatCategoryTimestamp(data: ItemPayload): string {
 		const category = getCategory(data);
 
@@ -111,7 +104,11 @@
 			return '카테고리 타임스탬프 없음';
 		}
 
-		return `${category.label} · ${formatTimestamp(data[category.field])}`;
+		const formatted = formatLongDate(
+			typeof data[category.field] === 'number' ? (data[category.field] as number) : null
+		);
+
+		return `${category.label} · ${formatted || 'N/A'}`;
 	}
 
 	/**
@@ -388,7 +385,9 @@
 
 						<div class="mt-4 space-y-1">
 							<p class="text-lg font-semibold text-gray-900">{displayTitle}</p>
-							<p class="text-sm text-gray-500">생성 시각: {formatTimestamp(itemData.data?.createdAt)}</p>
+							<p class="text-sm text-gray-500">
+								생성 시각: {formatLongDate(itemData.data?.createdAt)}
+							</p>
 							<p class="text-sm text-gray-500">{formatCategoryTimestamp(itemData.data)}</p>
 						</div>
 

@@ -45,9 +45,11 @@
     startAt,
     startAfter,
     endAt,
-    endBefore
+    endBefore,
+    equalTo
   } from 'firebase/database';
   import type { Snippet } from 'svelte';
+  import { tick } from 'svelte';
   import { rtdb as database } from '$lib/firebase';
 
   /**
@@ -72,8 +74,17 @@
    * - pageSize: 한 번에 가져올 아이템 개수 (기본값: 10)
    * - orderBy: 정렬 기준 필드 (기본값: "createdAt")
    * - orderPrefix: 정렬 필드의 prefix 값 (예: "community-")으로 필터링 (선택 사항)
+   * - equalToValue: orderBy 필드가 특정 값과 정확히 일치하는 데이터만 조회 (선택 사항)
    * - threshold: 스크롤 threshold (px) - 바닥에서 이 값만큼 떨어지면 다음 페이지 로드 (기본값: 300)
    * - reverse: 역순 정렬 여부 (기본값: false)
+   * - scrollTrigger: 스크롤 트리거 위치 (기본값: "bottom")
+   *   - "bottom": 아래로 스크롤하면 다음 페이지 로드 (일반 목록)
+   *   - "top": 위로 스크롤하면 이전 페이지 로드 (채팅방 스타일)
+   * - autoScrollToEnd: 초기 로드 후 자동으로 스크롤을 맨 아래로 이동 (기본값: false)
+   *   - scrollTrigger="top"과 함께 사용하면 채팅방 스타일 동작
+   * - autoScrollOnNewData: 새 데이터 추가 시 자동 스크롤 여부 (기본값: false)
+   *   - true이면 새 노드가 추가될 때 스크롤 위치가 threshold 이내면 자동으로 맨 아래로 스크롤
+   *   - 채팅 메시지 목록에 유용 (사용자가 조금만 스크롤업 한 경우 새 메시지를 보여주기 위해 자동 스크롤)
    * - item: 아이템 렌더링 snippet
    * - loading: 로딩 상태 snippet
    * - empty: 빈 상태 snippet
@@ -86,8 +97,12 @@
     pageSize?: number;
     orderBy?: string;
     orderPrefix?: string;
+    equalToValue?: string | number | boolean | null;
     threshold?: number;
     reverse?: boolean;
+    scrollTrigger?: 'bottom' | 'top';
+    autoScrollToEnd?: boolean;
+    autoScrollOnNewData?: boolean;
     item: ItemSnippet;
     loading?: StatusSnippet;
     empty?: StatusSnippet;
@@ -101,8 +116,12 @@
     pageSize = 10,
     orderBy = 'createdAt',
     orderPrefix = '',
+    equalToValue = undefined,
     threshold = 300,
     reverse = false,
+    scrollTrigger = 'bottom',
+    autoScrollToEnd = false,
+    autoScrollOnNewData = false,
     item,
     loading: loadingSnippet = undefined,
     empty = undefined,
@@ -163,11 +182,6 @@
   let error = $state<string | null>(null);
 
   /**
-   * 스크롤 컨테이너 DOM 참조
-   */
-  let scrollContainer = $state<HTMLDivElement | null>(null);
-
-  /**
    * onValue 구독 해제 함수들을 관리하는 맵
    * 각 페이지의 데이터 변경을 실시간으로 리스닝
    */
@@ -197,6 +211,34 @@
    */
   let childRemovedUnsubscribe: (() => void) | null = null;
 
+  /**
+   * equalToValue 가 문자열일 경우 트림된 값을 사용한다.
+   * undefined/null 또는 빈 문자열이면 null로 간주한다.
+   */
+  const resolvedEqualValue = $derived.by(() => {
+    if (equalToValue === undefined || equalToValue === null) return null;
+    if (typeof equalToValue === 'string') {
+      const trimmed = equalToValue.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    }
+    return equalToValue;
+  });
+
+  const hasEqualFilter = $derived.by(() => resolvedEqualValue !== null);
+
+  /**
+   * 스크롤 컨테이너 DOM 요소 참조
+   * autoScrollToEnd 기능을 위해 사용
+   * HTMLElement로 타입 지정 (부모 요소가 div가 아닐 수도 있음)
+   */
+  let scrollContainerRef: HTMLElement | null = null;
+
+  /**
+   * loadMore 작업 중 플래그
+   * 스크롤 위치 보존을 위해 사용
+   */
+  let isLoadingMore = $state<boolean>(false);
+
   // ============================================================================
   // Lifecycle (생명주기)
   // ============================================================================
@@ -206,7 +248,18 @@
    * 컴포넌트 언마운트 시 모든 리스너 해제
    */
   $effect(() => {
-    if (path && database) {
+    // props 변경 시에도 항상 최신 조건으로 다시 로드
+    const deps = {
+      path,
+      orderBy,
+      orderPrefix,
+      pageSize,
+      reverse,
+      scrollTrigger,
+      resolvedEqualValue
+    };
+
+    if (deps.path && database) {
       loadInitialData();
     }
 
@@ -237,22 +290,57 @@
   });
 
   /**
-   * 스크롤 이벤트 리스너 등록
-   * 컨테이너 스크롤과 window 스크롤을 모두 감지합니다.
+   * 스크롤 리스너 설정 action
+   * DOM 요소가 마운트될 때 스크롤 이벤트 리스너를 등록합니다.
+   * use:action 디렉티브를 사용하여 타이밍 문제를 해결합니다.
    */
-  $effect(() => {
-    if (scrollContainer) {
-      // 컨테이너 자체 스크롤 감지
-      scrollContainer.addEventListener('scroll', handleScroll);
-      // window 스크롤 감지 (body 스크롤)
-      window.addEventListener('scroll', handleWindowScroll);
+  function setupScrollListener(node: HTMLDivElement) {
+    console.log('DatabaseListView: Setting up scroll listeners on mounted node');
 
-      return () => {
-        scrollContainer?.removeEventListener('scroll', handleScroll);
-        window.removeEventListener('scroll', handleWindowScroll);
-      };
+    // 스크롤 컨테이너 찾기
+    // 부모 요소 중 overflow-auto 또는 overflow-scroll을 가진 요소를 찾습니다
+    let actualScrollContainer: HTMLElement = node;
+    let parent = node.parentElement;
+
+    while (parent) {
+      const overflowY = window.getComputedStyle(parent).overflowY;
+      if (overflowY === 'auto' || overflowY === 'scroll') {
+        actualScrollContainer = parent;
+        console.log('DatabaseListView: Found scroll container (parent with overflow)', {
+          tagName: parent.tagName,
+          className: parent.className,
+          overflowY
+        });
+        break;
+      }
+      parent = parent.parentElement;
     }
-  });
+
+    // 스크롤 컨테이너 참조 저장 (autoScrollToEnd 기능을 위해)
+    scrollContainerRef = actualScrollContainer;
+
+    console.log('DatabaseListView: Registering scroll listener on', {
+      isParent: actualScrollContainer !== node,
+      tagName: actualScrollContainer.tagName,
+      className: actualScrollContainer.className
+    });
+
+    // 실제 스크롤 컨테이너에 리스너 등록
+    actualScrollContainer.addEventListener('scroll', handleScroll);
+    // window 스크롤 감지 (body 스크롤)
+    window.addEventListener('scroll', handleWindowScroll);
+
+    console.log('DatabaseListView: Scroll listeners registered successfully');
+
+    return {
+      destroy() {
+        console.log('DatabaseListView: Removing scroll listeners');
+        actualScrollContainer.removeEventListener('scroll', handleScroll);
+        window.removeEventListener('scroll', handleWindowScroll);
+        scrollContainerRef = null;
+      }
+    };
+  }
 
   // ============================================================================
   // Methods (메서드)
@@ -367,10 +455,14 @@
 
     const baseRef = dbRef(database, path);
 
+    // equalToValue가 있으면 정확히 일치하는 값만 필터링
     // orderPrefix가 있으면 범위 쿼리 추가
-    // orderPrefix가 없으면 startAt(false)로 null/undefined 값 제외
+    // 아무 것도 없으면 startAt(false)로 null/undefined 값 제외
     let dataQuery;
-    if (orderPrefix) {
+    if (hasEqualFilter) {
+      dataQuery = query(baseRef, orderByChild(orderBy), equalTo(resolvedEqualValue));
+      console.log('DatabaseListView: child_added listener with equalTo filter:', resolvedEqualValue);
+    } else if (orderPrefix) {
       dataQuery = query(
         baseRef,
         orderByChild(orderBy),
@@ -440,6 +532,35 @@
         // 새 아이템에 onValue 리스너 설정
         setupItemListener(newItemKey, newIndex);
       }
+
+      // autoScrollOnNewData가 활성화된 경우, 스크롤 위치 체크 후 자동 스크롤
+      // 사용자가 맨 아래 근처(threshold 이내)에 있으면 새 메시지를 보여주기 위해 자동으로 맨 아래로 스크롤
+      if (autoScrollOnNewData && scrollContainerRef) {
+        // 현재 스크롤 위치가 맨 아래에서 threshold 이내인지 확인
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef;
+        const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+
+        console.log('DatabaseListView: Auto-scroll check', {
+          distanceFromBottom,
+          threshold,
+          willAutoScroll: distanceFromBottom <= threshold
+        });
+
+        if (distanceFromBottom <= threshold) {
+          // DOM 업데이트 완료 대기 후 스크롤
+          tick().then(() => {
+            if (scrollContainerRef) {
+              scrollContainerRef.scrollTop = scrollContainerRef.scrollHeight;
+              console.log('DatabaseListView: Auto-scrolled to bottom on new data', {
+                scrollHeight: scrollContainerRef.scrollHeight,
+                scrollTop: scrollContainerRef.scrollTop
+              });
+            }
+          });
+        } else {
+          console.log('DatabaseListView: User scrolled up beyond threshold, skipping auto-scroll');
+        }
+      }
     }, (error) => {
       console.error('DatabaseListView: Error in child_added listener', error);
     });
@@ -476,10 +597,14 @@
 
     const baseRef = dbRef(database, path);
 
+    // equalToValue가 있으면 정확히 일치하는 값만 필터링
     // orderPrefix가 있으면 범위 쿼리 추가
     // child_added 리스너와 동일한 쿼리 사용
     let dataQuery;
-    if (orderPrefix) {
+    if (hasEqualFilter) {
+      dataQuery = query(baseRef, orderByChild(orderBy), equalTo(resolvedEqualValue));
+      console.log('DatabaseListView: child_removed listener with equalTo filter:', resolvedEqualValue);
+    } else if (orderPrefix) {
       dataQuery = query(
         baseRef,
         orderByChild(orderBy),
@@ -582,13 +707,18 @@
       const baseRef = dbRef(database, path);
 
       // Firebase 쿼리 생성
+      // scrollTrigger='top'이면 채팅방 스타일이므로 limitToLast 사용 (최신 메시지 가져오기)
       // reverse가 true면 limitToLast를 사용하여 가장 최근 데이터부터 가져옵니다
       // pageSize + 1개를 가져와서 hasMore를 판단합니다
+      // equalToValue가 있으면 정확히 일치하는 값만 조회합니다.
       // orderPrefix가 있으면 startAt과 endAt으로 범위 필터링
       // orderPrefix가 없으면 startAt(false)로 null/undefined 값 제외
       let dataQuery;
-      if (reverse) {
-        // 역순 정렬: limitToLast 사용
+      if (hasEqualFilter) {
+        dataQuery = query(baseRef, orderByChild(orderBy), equalTo(resolvedEqualValue));
+        console.log('DatabaseListView: Using equalTo filter for initial load:', resolvedEqualValue);
+      } else if (scrollTrigger === 'top' || reverse) {
+        // 채팅방 스타일 또는 역순 정렬: limitToLast 사용
         if (orderPrefix) {
           // orderPrefix가 있으면 범위 쿼리 추가
           dataQuery = query(
@@ -598,7 +728,7 @@
             endAt(orderPrefix + '\uf8ff'),
             limitToLast(pageSize + 1)
           );
-          console.log('DatabaseListView: Using limitToLast with orderPrefix:', orderPrefix);
+          console.log('DatabaseListView: Using limitToLast with orderPrefix:', orderPrefix, '(scrollTrigger:', scrollTrigger, ')');
         } else {
           // orderPrefix가 없으면 startAt(false) 사용
           // 이렇게 하면 orderBy 필드가 null 또는 undefined인 항목은 제외됩니다
@@ -609,7 +739,7 @@
             startAt(false),
             limitToLast(pageSize + 1)
           );
-          console.log('DatabaseListView: Using limitToLast with startAt(false) to filter null/undefined');
+          console.log('DatabaseListView: Using limitToLast with startAt(false) to filter null/undefined (scrollTrigger:', scrollTrigger, ')');
         }
       } else {
         // 정순 정렬: limitToFirst 사용
@@ -700,7 +830,9 @@
 
         // limitToLast를 사용하면 Firebase가 오름차순으로 반환하므로
         // reverse가 true일 때는 배열을 뒤집어야 합니다 (최신 글이 먼저 오도록)
-        if (reverse) {
+        // 단, scrollTrigger='top'일 때는 채팅방 스타일이므로 reverse하지 않습니다
+        // (오래된 메시지가 위에, 최신 메시지가 아래에 있어야 함)
+        if (reverse && scrollTrigger !== 'top') {
           console.log(
             `%c[DatabaseListView] Before reverse:`,
             'color: #ec4899;',
@@ -720,31 +852,99 @@
               title: item.data.title
             }))
           );
+        } else if (scrollTrigger === 'top') {
+          console.log(
+            `%c[DatabaseListView] Chat style - NOT reversing (oldest first, newest last):`,
+            'color: #10b981;',
+            loadedItems.map((item, idx) => ({
+              index: idx,
+              [orderBy]: item.data[orderBy],
+              title: item.data.title
+            }))
+          );
         }
 
-        // pageSize보다 많으면 hasMore = true, 마지막 아이템은 표시하지 않음
-        if (loadedItems.length > pageSize) {
-          hasMore = true;
-          items = loadedItems.slice(0, pageSize);
-          // 마지막 항목에서 페이지 커서 값 추출
-          const cursor = getLastItemCursor(items, orderBy);
-          if (cursor) {
-            lastLoadedValue = cursor.value;
-            lastLoadedKey = cursor.key;
-            console.log('DatabaseListView: Next page cursor set:', { lastLoadedValue, lastLoadedKey });
-          } else {
-            hasMore = false;
-          }
-        } else {
+        // equalToValue가 있으면 한 번의 로드로 모든 결과를 표시하고 페이징을 중단한다.
+        if (hasEqualFilter) {
           hasMore = false;
           items = loadedItems;
-          if (items.length > 0) {
-            // 마지막 항목에서 페이지 커서 값 추출
+          lastLoadedValue = null;
+          lastLoadedKey = null;
+          console.log('DatabaseListView: equalTo filter active - pagination disabled after initial load.');
+        }
+        // pageSize보다 많으면 hasMore = true
+        // 채팅방 스타일(scrollTrigger='top')에서는 첫 번째 아이템을 버리고 나머지 사용 (가장 최신 메시지 보존)
+        // 일반 목록에서는 마지막 아이템을 버림
+        else if (loadedItems.length > pageSize) {
+          hasMore = true;
+
+          if (scrollTrigger === 'top') {
+            // 채팅방 스타일: 첫 번째 아이템을 버리고 나머지 pageSize개 사용
+            // Firebase limitToLast는 [오래된, ..., 최신] 순서로 반환하므로
+            // 첫 번째를 버리면 [더 최신, ..., 가장 최신]이 됩니다
+            items = loadedItems.slice(1);
+            console.log(
+              `%c[DatabaseListView] Chat style - keeping newest ${items.length} items (removed oldest)`,
+              'color: #f59e0b;',
+              {
+                total: loadedItems.length,
+                kept: items.length,
+                firstKept: items[0]?.data[orderBy],
+                lastKept: items[items.length - 1]?.data[orderBy]
+              }
+            );
+
+            // 커서는 첫 번째 아이템에서 추출 (스크롤 업 시 더 오래된 메시지 로드)
+            const cursor = items.length > 0 ? {
+              value: items[0].data[orderBy],
+              key: items[0].key
+            } : null;
+
+            if (cursor && cursor.value != null) {
+              lastLoadedValue = cursor.value;
+              lastLoadedKey = cursor.key;
+              console.log('DatabaseListView: Chat style cursor (first item):', { lastLoadedValue, lastLoadedKey });
+            } else {
+              hasMore = false;
+            }
+          } else {
+            // 일반 목록: 마지막 아이템을 버리고 앞부분 pageSize개 사용
+            items = loadedItems.slice(0, pageSize);
+
+            // 커서는 마지막 아이템에서 추출
             const cursor = getLastItemCursor(items, orderBy);
             if (cursor) {
               lastLoadedValue = cursor.value;
               lastLoadedKey = cursor.key;
-              console.log('DatabaseListView: Last cursor set:', { lastLoadedValue, lastLoadedKey });
+              console.log('DatabaseListView: Next page cursor set:', { lastLoadedValue, lastLoadedKey });
+            } else {
+              hasMore = false;
+            }
+          }
+        } else {
+          hasMore = false;
+          items = loadedItems;
+
+          if (items.length > 0) {
+            if (scrollTrigger === 'top') {
+              // 채팅방 스타일: 첫 번째 아이템을 커서로 사용
+              const cursor = {
+                value: items[0].data[orderBy],
+                key: items[0].key
+              };
+              if (cursor.value != null) {
+                lastLoadedValue = cursor.value;
+                lastLoadedKey = cursor.key;
+                console.log('DatabaseListView: Chat style cursor (first item, last page):', { lastLoadedValue, lastLoadedKey });
+              }
+            } else {
+              // 일반 목록: 마지막 항목에서 페이지 커서 값 추출
+              const cursor = getLastItemCursor(items, orderBy);
+              if (cursor) {
+                lastLoadedValue = cursor.value;
+                lastLoadedKey = cursor.key;
+                console.log('DatabaseListView: Last cursor set:', { lastLoadedValue, lastLoadedKey });
+              }
             }
           }
         }
@@ -789,6 +989,21 @@
       // 초기 로드 완료 후 child_removed 리스너 설정
       // 노드가 삭제되면 실시간으로 화면에서 제거
       setupChildRemovedListener();
+
+      // autoScrollToEnd가 true이면 스크롤을 맨 아래로 이동 (채팅방 스타일)
+      // 약간의 지연을 두어 DOM 렌더링이 완료된 후 스크롤 이동
+      // scrollContainerRef는 이미 실제 스크롤 컨테이너를 가리키고 있습니다
+      if (autoScrollToEnd && scrollContainerRef) {
+        setTimeout(() => {
+          if (scrollContainerRef) {
+            scrollContainerRef.scrollTop = scrollContainerRef.scrollHeight;
+            console.log('DatabaseListView: Auto-scrolled to bottom', {
+              scrollHeight: scrollContainerRef.scrollHeight,
+              scrollTop: scrollContainerRef.scrollTop
+            });
+          }
+        }, 100);
+      }
     }
   }
 
@@ -813,11 +1028,18 @@
       return;
     }
 
+    if (hasEqualFilter) {
+      console.log('DatabaseListView: equalTo filter active - pagination skipped.');
+      hasMore = false;
+      return;
+    }
+
     currentPage++;
-    console.log(`DatabaseListView: Loading more data (server-side pagination) - Page ${currentPage}`);
-    console.log(`DatabaseListView: Current cursor - lastLoadedValue:`, lastLoadedValue, 'lastLoadedKey:', lastLoadedKey);
     loading = true;
+    isLoadingMore = true;
     error = null;
+
+    console.log(`[loadMore] Page ${currentPage} 시작, cursor:`, lastLoadedValue);
 
     try {
       // lastLoadedValue가 null 또는 undefined이면 더 이상 로드할 수 없음
@@ -832,12 +1054,12 @@
       const baseRef = dbRef(database, path);
 
       // Firebase 쿼리 생성
-      // reverse 여부에 따라 다른 쿼리 사용
+      // scrollTrigger='top' 또는 reverse=true일 때 endBefore + limitToLast 사용
       // orderPrefix가 있으면 범위 쿼리도 함께 적용 (서버 측 필터링)
       // orderPrefix가 없으면 startAt(false)로 null/undefined 값 제외
       let dataQuery;
-      if (reverse) {
-        // 역순 정렬: endBefore + limitToLast 사용
+      if (scrollTrigger === 'top' || reverse) {
+        // 채팅방 스타일 또는 역순 정렬: endBefore + limitToLast 사용
         // limitToLast를 사용하면 마지막 N개를 가져오는데,
         // endBefore로 현재 커서 이전 데이터를 가져옵니다
         //
@@ -851,7 +1073,7 @@
             endBefore(lastLoadedValue),
             limitToLast(pageSize + 1)
           );
-          console.log('DatabaseListView: Using startAt + endBefore + limitToLast for reverse pagination with orderPrefix:', orderPrefix);
+          console.log('DatabaseListView: Using startAt + endBefore + limitToLast for chat/reverse pagination with orderPrefix:', orderPrefix, '(scrollTrigger:', scrollTrigger, ')');
         } else {
           // orderPrefix가 없으면 endBefore()만 사용
           // 초기 로드에서 이미 null/undefined 값을 제외했으므로,
@@ -862,7 +1084,7 @@
             endBefore(lastLoadedValue),
             limitToLast(pageSize + 1)
           );
-          console.log('DatabaseListView: Using endBefore + limitToLast for reverse pagination');
+          console.log('DatabaseListView: Using endBefore + limitToLast for chat/reverse pagination (scrollTrigger:', scrollTrigger, ')');
         }
       } else {
         // 정순 정렬: startAfter + limitToFirst 사용
@@ -897,205 +1119,259 @@
       if (snapshot.exists()) {
         const newItems: ItemData[] = [];
 
-        // 🔥 중요: snapshot.forEach()를 사용하여 Firebase의 정렬 순서를 유지합니다
         snapshot.forEach((childSnapshot) => {
           const key = childSnapshot.key;
           const data = childSnapshot.val();
           if (key) {
-            newItems.push({
-              key,
-              data
-            });
+            newItems.push({ key, data });
           }
         });
 
-        // 🔍 디버깅: loadMore 쿼리 결과
-        console.log(
-          `%c[DatabaseListView] Load More - Page ${currentPage}`,
-          'color: #3b82f6; font-weight: bold;',
-          { cursor: lastLoadedValue, cursorKey: lastLoadedKey }
-        );
-        console.log(
-          `%c[DatabaseListView] Load More - Firebase returned ${newItems.length} items`,
-          'color: #3b82f6;',
-          newItems.map((item, idx) => ({
-            index: idx,
-            key: item.key,
-            [orderBy]: item.data[orderBy],
-            title: item.data.title
-          }))
-        );
+        console.log(`[loadMore] Firebase 반환: ${newItems.length}개`);
 
-        // reverse가 true이고 limitToLast를 사용했으면 배열을 뒤집어야 합니다
-        // (Firebase는 오름차순으로 반환하므로, 최신 글이 먼저 오도록 뒤집기)
-        if (reverse) {
-          console.log(
-            `%c[DatabaseListView] Before reverse:`,
-            'color: #ec4899;',
-            newItems.map((item, idx) => ({
-              index: idx,
-              [orderBy]: item.data[orderBy]
-            }))
-          );
+        // reverse 처리
+        if (reverse && scrollTrigger !== 'top') {
           newItems.reverse();
-          console.log(
-            `%c[DatabaseListView] After reverse:`,
-            'color: #10b981;',
-            newItems.map((item, idx) => ({
-              index: idx,
-              [orderBy]: item.data[orderBy]
-            }))
-          );
         }
 
-        // 중복 제거: 이미 로드된 아이템들을 제외
+        // 중복 제거
         const existingKeys = new Set(items.map(item => item.key));
         let uniqueItems = newItems.filter((item) => !existingKeys.has(item.key));
 
-        console.log(
-          `%c[DatabaseListView] After duplicate filtering: ${newItems.length} → ${uniqueItems.length} items`,
-          'color: #8b5cf6;'
-        );
-
-        // orderBy 필드가 있는 항목만 필터링
-        const beforeFieldFilter = uniqueItems.length;
-        const validItems = uniqueItems.filter((item) => {
-          const hasOrderByField = item.data[orderBy] != null && item.data[orderBy] !== '';
-          if (!hasOrderByField) {
-            console.warn(
-              `%c[DatabaseListView] Filtering out item without '${orderBy}' field:`,
-              'color: #f59e0b;',
-              { key: item.key, data: item.data }
-            );
-          }
-          return hasOrderByField;
+        // orderBy 필드 검증
+        uniqueItems = uniqueItems.filter((item) => {
+          return item.data[orderBy] != null && item.data[orderBy] !== '';
         });
 
-        if (beforeFieldFilter !== validItems.length) {
-          console.log(
-            `%c[DatabaseListView] After field filtering: ${beforeFieldFilter} → ${validItems.length} items`,
-            'color: #8b5cf6;'
-          );
-        }
-
-        // validItems를 uniqueItems로 대체
-        uniqueItems = validItems;
+        console.log(`[loadMore] 중복 제거 후: ${uniqueItems.length}개`);
 
         if (uniqueItems.length === 0) {
-          console.log('DatabaseListView: No more unique items after filtering');
           hasMore = false;
           loading = false;
+          isLoadingMore = false;
           return;
         }
 
-        // hasMore 판단은 중복 제거 전 newItems 길이로 결정
-        // Firebase에서 pageSize + 1개를 가져왔다면 더 많은 데이터가 있다는 의미
+        // scrollTrigger='top'일 때 스크롤 위치 보존을 위한 준비
+        let scrollRestoreInfo: { scrollTop: number; scrollHeight: number } | null = null;
+        if (scrollTrigger === 'top' && scrollContainerRef) {
+          scrollRestoreInfo = {
+            scrollTop: scrollContainerRef.scrollTop,
+            scrollHeight: scrollContainerRef.scrollHeight
+          };
+          console.log('[loadMore] 스크롤 위치 저장:', scrollRestoreInfo);
+        }
+
+        // hasMore 판단 및 items 배열 업데이트
         if (newItems.length > pageSize) {
           hasMore = true;
-          // 중복 제거 후 실제로 표시할 아이템은 pageSize만큼만 추가
-          const itemsToAdd = uniqueItems.slice(0, pageSize);
-          items = [...items, ...itemsToAdd];
-          // 마지막 항목에서 페이지 커서 값 추출
-          const cursor = getLastItemCursor(itemsToAdd, orderBy);
+
+          let itemsToAdd: Array<{ key: string; data: any }>;
+
+          if (scrollTrigger === 'top') {
+            itemsToAdd = uniqueItems.slice(1);
+          } else {
+            itemsToAdd = uniqueItems.slice(0, pageSize);
+          }
+
+          // items 배열 업데이트
+          if (scrollTrigger === 'top') {
+            items = [...itemsToAdd, ...items];
+          } else {
+            items = [...items, ...itemsToAdd];
+          }
+
+          // 커서 업데이트
+          let cursor: { value: any; key: string } | null;
+
+          if (scrollTrigger === 'top') {
+            if (itemsToAdd.length > 0 && itemsToAdd[0].data[orderBy] != null) {
+              cursor = {
+                value: itemsToAdd[0].data[orderBy],
+                key: itemsToAdd[0].key
+              };
+            } else {
+              cursor = null;
+            }
+          } else {
+            cursor = getLastItemCursor(itemsToAdd, orderBy);
+          }
+
           if (cursor) {
             lastLoadedValue = cursor.value;
             lastLoadedKey = cursor.key;
-            console.log('DatabaseListView: Updated cursor for next page:', { lastLoadedValue, lastLoadedKey });
           } else {
             hasMore = false;
-            console.log('DatabaseListView: No valid cursor, hasMore set to false');
           }
         } else {
-          // Firebase에서 pageSize 이하로 가져왔다면 마지막 페이지
           hasMore = false;
-          items = [...items, ...uniqueItems];
+
+          // items 배열 업데이트
+          if (scrollTrigger === 'top') {
+            items = [...uniqueItems, ...items];
+          } else {
+            items = [...items, ...uniqueItems];
+          }
+
+          // 커서 업데이트
           if (uniqueItems.length > 0) {
-            // 마지막 항목에서 페이지 커서 값 추출
-            const cursor = getLastItemCursor(uniqueItems, orderBy);
+            let cursor: { value: any; key: string } | null;
+
+            if (scrollTrigger === 'top') {
+              if (uniqueItems[0].data[orderBy] != null) {
+                cursor = {
+                  value: uniqueItems[0].data[orderBy],
+                  key: uniqueItems[0].key
+                };
+              } else {
+                cursor = null;
+              }
+            } else {
+              cursor = getLastItemCursor(uniqueItems, orderBy);
+            }
+
             if (cursor) {
               lastLoadedValue = cursor.value;
               lastLoadedKey = cursor.key;
-              console.log('DatabaseListView: Updated cursor (last page):', { lastLoadedValue, lastLoadedKey });
             }
           }
-          console.log('DatabaseListView: Loaded all remaining items, hasMore set to false');
         }
 
-        // 새로 추가된 아이템들에 onValue 리스너 설정
-        const startIndex = items.length - (uniqueItems.length > pageSize ? pageSize : uniqueItems.length);
-        items.slice(startIndex).forEach((item, relativeIndex) => {
-          setupItemListener(item.key, startIndex + relativeIndex);
-        });
+        // scrollTrigger='top'일 때 스크롤 위치 복원
+        if (scrollTrigger === 'top' && scrollRestoreInfo && scrollContainerRef) {
+          // 1. Svelte의 모든 반응형 업데이트 완료 대기
+          await tick();
 
-        console.log(
-          `%c[DatabaseListView] ✅ Load More Complete - Page ${currentPage}`,
-          'color: #10b981; font-weight: bold; font-size: 14px;',
-          {
-            addedItems: uniqueItems.length,
-            totalItems: items.length,
-            hasMore,
-            finalOrder: items.slice(-10).map((item, idx) => ({
-              globalIndex: items.length - 10 + idx,
-              [orderBy]: item.data[orderBy],
-              title: item.data.title
-            }))
+          // 2. 브라우저의 다음 repaint 대기 (DOM 렌더링 완료)
+          await new Promise(resolve => requestAnimationFrame(resolve));
+
+          // 3. 스크롤 위치 복원
+          if (scrollContainerRef) {
+            const newScrollHeight = scrollContainerRef.scrollHeight;
+            const heightDifference = newScrollHeight - scrollRestoreInfo.scrollHeight;
+            const newScrollTop = scrollRestoreInfo.scrollTop + heightDifference;
+
+            scrollContainerRef.scrollTop = newScrollTop;
+
+            console.log('[loadMore] 스크롤 복원 완료:', {
+              이전높이: scrollRestoreInfo.scrollHeight,
+              새높이: newScrollHeight,
+              높이차이: heightDifference,
+              이전스크롤: scrollRestoreInfo.scrollTop,
+              새스크롤: newScrollTop
+            });
           }
-        );
+        }
+
+        // 4. 새로 추가된 아이템들에 onValue 리스너 설정 (스크롤 복원 후)
+        if (scrollTrigger === 'top') {
+          const addedCount = uniqueItems.length > pageSize ? pageSize : uniqueItems.length;
+          items.slice(0, addedCount).forEach((item, index) => {
+            setupItemListener(item.key, index);
+          });
+        } else {
+          const startIndex = items.length - (uniqueItems.length > pageSize ? pageSize : uniqueItems.length);
+          items.slice(startIndex).forEach((item, relativeIndex) => {
+            setupItemListener(item.key, startIndex + relativeIndex);
+          });
+        }
+
+        console.log(`[loadMore] 완료 - 추가: ${uniqueItems.length}, 전체: ${items.length}, hasMore: ${hasMore}`);
       } else {
         console.log('DatabaseListView: Query returned no data, hasMore set to false');
         hasMore = false;
       }
     } catch (err) {
-      if (err instanceof Error) {
-        console.error('DatabaseListView: Load more error', {
-          name: err.name,
-          message: err.message,
-          toString: err.toString()
-        });
-        error = err.message || 'Unknown error';
-      } else {
-        console.error('DatabaseListView: Load more error', err);
-        error = String(err);
-      }
+      console.error('[loadMore] 에러:', err);
+      error = err instanceof Error ? err.message : String(err);
     } finally {
       loading = false;
+      isLoadingMore = false;
     }
   }
 
   /**
    * 컨테이너 스크롤 이벤트 핸들러
-   * 스크롤이 threshold 이내로 내려가면 다음 페이지 로드
+   * scrollTrigger 설정에 따라 top 또는 bottom 스크롤을 감지하여 다음 페이지 로드
+   * - scrollTrigger='bottom': 아래로 스크롤하면 다음 페이지 로드 (일반 목록)
+   * - scrollTrigger='top': 위로 스크롤하면 이전 페이지 로드 (채팅방 스타일)
    */
-  function handleScroll() {
-    if (!scrollContainer || loading || !hasMore) return;
+  function handleScroll(event: Event) {
+    if (loading || !hasMore) return;
 
-    const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
-    const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+    const target = event.currentTarget as HTMLDivElement;
+    if (!target) return;
 
-    // 바닥에서 threshold px 이내면 다음 페이지 로드
-    if (distanceFromBottom < threshold) {
-      console.log('DatabaseListView: Near bottom (container scroll), loading more...');
-      loadMore();
+    const { scrollTop, scrollHeight, clientHeight } = target;
+
+    if (scrollTrigger === 'top') {
+      // 채팅방 스타일: 위로 스크롤하여 천장에 가까워지면 이전 페이지 로드
+      if (scrollTop < threshold) {
+        console.log('DatabaseListView: Near top (container scroll), loading more...', {
+          scrollTop,
+          scrollHeight,
+          clientHeight,
+          threshold
+        });
+        loadMore();
+      }
+    } else {
+      // 일반 목록: 아래로 스크롤하여 바닥에 가까워지면 다음 페이지 로드
+      const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+      if (distanceFromBottom < threshold) {
+        console.log('DatabaseListView: Near bottom (container scroll), loading more...', {
+          scrollTop,
+          scrollHeight,
+          clientHeight,
+          distanceFromBottom,
+          threshold
+        });
+        loadMore();
+      }
     }
   }
 
   /**
    * Window 스크롤 이벤트 핸들러
-   * body 스크롤이 threshold 이내로 내려가면 다음 페이지 로드
+   * scrollTrigger 설정에 따라 top 또는 bottom 스크롤을 감지하여 다음 페이지 로드
+   * - scrollTrigger='bottom': 아래로 스크롤하면 다음 페이지 로드 (일반 목록)
+   * - scrollTrigger='top': 위로 스크롤하면 이전 페이지 로드 (채팅방 스타일)
    */
   function handleWindowScroll() {
-    if (loading || !hasMore) return;
+    if (loading || !hasMore) {
+      // console.log('DatabaseListView: Window scroll - skip (loading:', loading, 'hasMore:', hasMore, ')');
+      return;
+    }
 
     // document의 전체 높이와 현재 스크롤 위치를 확인
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const scrollHeight = document.documentElement.scrollHeight;
     const clientHeight = window.innerHeight;
-    const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
 
-    // 바닥에서 threshold px 이내면 다음 페이지 로드
-    if (distanceFromBottom < threshold) {
-      console.log('DatabaseListView: Near bottom (window scroll), loading more...');
-      loadMore();
+    if (scrollTrigger === 'top') {
+      // 채팅방 스타일: 위로 스크롤하여 천장에 가까워지면 이전 페이지 로드
+      if (scrollTop < threshold) {
+        console.log('DatabaseListView: Near top (window scroll), loading more...', {
+          scrollTop,
+          scrollHeight,
+          clientHeight,
+          threshold
+        });
+        loadMore();
+      }
+    } else {
+      // 일반 목록: 아래로 스크롤하여 바닥에 가까워지면 다음 페이지 로드
+      const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+      if (distanceFromBottom < threshold) {
+        console.log('DatabaseListView: Near bottom (window scroll), loading more...', {
+          scrollTop,
+          scrollHeight,
+          clientHeight,
+          distanceFromBottom,
+          threshold
+        });
+        loadMore();
+      }
     }
   }
 
@@ -1106,13 +1382,42 @@
     console.log('DatabaseListView: Refreshing...');
     loadInitialData();
   }
+
+  /**
+   * 스크롤을 맨 위로 이동
+   * 부모 컴포넌트에서 호출 가능
+   */
+  export function scrollToTop() {
+    if (scrollContainerRef) {
+      scrollContainerRef.scrollTop = 0;
+      console.log('DatabaseListView: Scrolled to top');
+    } else {
+      console.warn('DatabaseListView: Cannot scroll to top - scrollContainerRef is null');
+    }
+  }
+
+  /**
+   * 스크롤을 맨 아래로 이동
+   * 부모 컴포넌트에서 호출 가능
+   */
+  export function scrollToBottom() {
+    if (scrollContainerRef) {
+      scrollContainerRef.scrollTop = scrollContainerRef.scrollHeight;
+      console.log('DatabaseListView: Scrolled to bottom', {
+        scrollHeight: scrollContainerRef.scrollHeight,
+        scrollTop: scrollContainerRef.scrollTop
+      });
+    } else {
+      console.warn('DatabaseListView: Cannot scroll to bottom - scrollContainerRef is null');
+    }
+  }
 </script>
 
 <!-- ============================================================================
      Template (템플릿)
      ============================================================================ -->
 
-<div class="database-list-view" bind:this={scrollContainer}>
+<div class="database-list-view" use:setupScrollListener>
   <!-- 초기 로딩 상태 -->
   {#if initialLoading}
     <div class="loading-container">

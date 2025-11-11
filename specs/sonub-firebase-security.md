@@ -8,7 +8,7 @@ step: 35
 priority: '**'
 dependencies:
   - sonub-setup-firebase.md
-  - sonub-firebase-database.md
+  - sonub-firebase-database-structure.md
 tags:
   - security
   - firebase

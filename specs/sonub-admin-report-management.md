@@ -11,7 +11,7 @@ step: 40
 priority: "**"
 dependencies:
   - sonub-setup-firebase.md
-  - sonub-firebase-database.md
+  - sonub-firebase-database-structure.md
   - sonub-user-login.md
   - sonub-design-workflow.md
   - sonub-setup-svelte.md

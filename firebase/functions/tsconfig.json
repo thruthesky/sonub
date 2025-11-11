@@ -6,13 +6,25 @@
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "outDir": "lib",
+    "baseUrl": "../..",
+    "paths": {
+      "@functions/*": ["src/lib/functions/*"]
+    },
+    "rootDirs": [
+      "./src",
+      "../src/lib/functions"
+    ],
     "sourceMap": true,
     "strict": true,
-    "target": "es2017"
+    "target": "es2017",
+    "typeRoots": [
+      "./node_modules/@types"
+    ]
   },
   "compileOnSave": true,
   "include": [
     "src",
-    "scripts"
+    "scripts",
+    "../src/lib/functions/**/*.ts"
   ]
 }

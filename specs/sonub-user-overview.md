@@ -12,6 +12,7 @@ priority: "**"
 dependencies:
   - sonub-user-login.md
   - sonub-setup-firebase.md
+  - sonub-firebase-database-structure.md
 tags:
   - user-management
   - profile
@@ -60,6 +61,15 @@ SNS 웹 프로젝트에서 사용자의 프로필 정보는 다음과 같이 구
 - **Firebase Realtime Database**: 프로필 데이터 실시간 저장소
 - **Firebase Cloud Storage**: 프로필 사진 파일 저장소
 - **Svelte 5 Runes**: 반응형 상태 관리
+
+## 사용자 목록 검색 UX (2025-11-11 갱신)
+
+- `/user/list` 상단에 **"사용자 검색"** 버튼을 추가하고, 버튼은 `svelte-shadcn`의 `Button` 컴포넌트로 구현한다.
+- 버튼 클릭 시 `Dialog`(shadcn-svelte) + Tailwind CSS 조합으로 만든 모달이 열리며, 입력 필드는 `displayNameLowerCase` 값을 그대로 받을 수 있도록 소문자 안내 문구를 포함한다.
+- 검색어는 소문자로 정규화되어 `DatabaseListView`의 `equalToValue` Prop으로 전달된다. `orderBy="displayNameLowerCase"`와 함께 사용하여 **정확히 일치하는 사용자만** 서버 쿼리에서 가져온다.
+- 검색 중에는 DatabaseListView를 `{#key users-search-${keyword}}`로 래핑해 컴포넌트를 재구독하며, 결과 배지는 "검색 결과" 문구와 초기화 버튼을 함께 제공한다.
+- 모달 하단에는 `검색 초기화` 버튼을 두어 입력값과 활성 검색 상태를 동시에 초기화한다. 이 버튼 또한 shadcn-svelte `Button` 컴포넌트를 사용한다.
+- 검색이 비활성화되면 기본 목록(정렬 기준: `createdAt`)으로 자동 복귀하며, 실시간 listener는 기존과 동일하게 유지된다.
 
 ---
 

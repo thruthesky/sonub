@@ -9,6 +9,7 @@ priority: '*'
 dependencies:
   - sonub-firebase-auth.md
   - sonub-setup-firebase.md
+  - sonub-firebase-database-structure.md
 tags:
   - component
   - avatar

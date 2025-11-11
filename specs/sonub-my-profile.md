@@ -11,6 +11,7 @@ dependencies:
   - sonub-setup-firebase.md
   - sonub-setup-shadcn.md
   - sonub-firebase-security.md
+  - sonub-firebase-database-structure.md
   - sonub-design-components.md
 tags:
   - user-profile

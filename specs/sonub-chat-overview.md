@@ -8,7 +8,7 @@ email: thruthesky@gmail.com
 homepage: https://github.com/thruthesky/
 license: GPL-3.0
 dependencies:
-  - sonub-firebase-database.md
+  - sonub-firebase-database-structure.md
 tags:
   - chat
   - messaging

@@ -9,6 +9,7 @@ priority: '*'
 dependencies:
   - sonub-setup-firebase.md
   - sonub-user-login.md
+  - sonub-firebase-database-structure.md
 tags:
   - firebase
   - authentication

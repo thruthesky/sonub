@@ -195,7 +195,10 @@ class UserProfileStore {
 		// RTDB 리스너 등록
 		const userRef = ref(rtdb!, `users/${uid}`);
 
-		const unsubscribe = onValue(
+		// unsubscribe 변수를 먼저 선언 (초기화 전 접근 문제 해결)
+		let unsubscribe: Unsubscribe;
+
+		unsubscribe = onValue(
 			userRef,
 			(snapshot) => {
 				// 데이터 로드 성공

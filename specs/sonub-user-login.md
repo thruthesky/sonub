@@ -9,7 +9,10 @@ created: 2025-01-09
 updated: 2025-01-09
 step: 30
 priority: "**"
-dependencies: ["sonub-setup-firebase.md", "sonub-setup-shadcn.md"]
+dependencies:
+  - sonub-setup-firebase.md
+  - sonub-setup-shadcn.md
+  - sonub-firebase-database-structure.md
 tags: ["firebase", "authentication", "google-login", "apple-login", "oauth", "svelte5"]
 ---
 

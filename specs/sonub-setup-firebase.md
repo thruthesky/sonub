@@ -9,7 +9,9 @@ created: 2025-01-08
 updated: 2025-01-09
 step: 20
 priority: "**"
-dependencies: ["sonub-setup-svelte.md"]
+dependencies:
+  - sonub-setup-svelte.md
+  - sonub-firebase-database-structure.md
 tags: ["firebase", "backend", "database", "authentication", "storage", "설정", "SSR"]
 ---
 

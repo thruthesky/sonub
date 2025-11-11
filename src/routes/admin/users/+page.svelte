@@ -13,10 +13,9 @@
 		getTemporaryUsers,
 		deleteUserByUid,
 		deleteAllTemporaryUsers,
-		getTemporaryUserCount,
-		saveTestUsersToFirebase
+		getTemporaryUserCount
 	} from '$lib/utils/admin-service';
-	import { generateTestUsers, type TestUser } from '$lib/utils/test-user-generator';
+	import type { TestUser } from '$lib/utils/test-user-generator';
 	import { m } from '$lib/paraglide/messages';
 
 	// 상태 관리
@@ -26,11 +25,6 @@
 	let isDeleting = $state(false);
 	let deleteProgress = $state(0);
 	let deleteTotal = $state(0);
-	let isCreating = $state(false);
-	let isCreationCompleted = $state(false);
-	let creationError: string | null = $state(null);
-	let creationProgress = $state(0);
-	let creationTotal = $state(0);
 
 	/**
 	 * 사용자 목록을 로드합니다.
@@ -105,36 +99,6 @@
 	}
 
 	/**
-	 * 테스트 사용자 100명을 생성하고 저장합니다.
-	 */
-	async function handleCreateUsers() {
-		if (isCreating) return;
-
-		isCreating = true;
-		isCreationCompleted = false;
-		creationError = null;
-		creationProgress = 0;
-
-		try {
-			const testUsers = generateTestUsers();
-			creationTotal = testUsers.length;
-
-			await saveTestUsersToFirebase(testUsers, (index, total) => {
-				creationProgress = index;
-				creationTotal = total;
-			});
-
-			isCreationCompleted = true;
-			await loadUsers();
-		} catch (err) {
-			console.error('테스트 사용자 생성 중 오류:', err);
-			creationError = err instanceof Error ? err.message : m.userUnknownError();
-		} finally {
-			isCreating = false;
-		}
-	}
-
-	/**
 	 * 생년월일을 포맷팅합니다.
 	 */
 	function formatBirthYear(year: number): string {
@@ -169,9 +133,6 @@
 	const deletePercentage = $derived(
 		deleteTotal > 0 ? Math.round((deleteProgress / deleteTotal) * 100) : 0
 	);
-	const creationPercentage = $derived(
-		creationTotal > 0 ? Math.round((creationProgress / creationTotal) * 100) : 0
-	);
 </script>
 
 <div class="space-y-6">
@@ -204,75 +165,6 @@
 			</div>
 		</Card>
 	</div>
-
-	<!-- 테스트 사용자 생성 영역 -->
-	<Card>
-		<div class="space-y-6 p-6">
-			<div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-				<div>
-					<h2 class="text-xl font-semibold text-gray-900">{m.testUserCreate()}</h2>
-					<p class="text-sm text-gray-600">
-						{m.testUserCreateGuide()}
-					</p>
-				</div>
-				<Button
-					onclick={handleCreateUsers}
-					disabled={isCreating}
-					size="lg"
-					class="min-w-48 bg-blue-600 text-white hover:bg-blue-700"
-				>
-					{#if isCreating}
-						{m.testUserCreating()}
-					{:else if isCreationCompleted}
-						{m.testUserCreateComplete()}
-					{:else}
-						{m.testUserCreateIcon()}
-					{/if}
-				</Button>
-			</div>
-
-			{#if isCreating || creationProgress > 0}
-				<div class="space-y-2">
-					<div class="flex justify-between text-sm">
-						<span class="text-gray-700">{m.commonProgress()}</span>
-						<span class="font-semibold text-gray-900">
-							{creationProgress} / {creationTotal} ({creationPercentage}%)
-						</span>
-					</div>
-					<div class="h-3 w-full overflow-hidden rounded-full bg-gray-200">
-						<div
-							class="h-full bg-blue-500 transition-all duration-300"
-							style="width: {creationPercentage}%"
-						></div>
-					</div>
-				</div>
-			{/if}
-
-			{#if isCreationCompleted}
-				<div class="rounded-lg bg-green-50 p-4 text-sm text-green-800">
-					{m.testUserCreateCompleteMessage({ count: creationProgress })}
-				</div>
-			{/if}
-
-			{#if creationError}
-				<div class="rounded-lg bg-red-50 p-4 text-sm text-red-800">
-					<strong>✗ {m.commonError()}:</strong>
-					{creationError}
-				</div>
-			{/if}
-
-			<div class="grid gap-4 md:grid-cols-2">
-				<div class="rounded-lg bg-gray-50 p-4">
-					<p class="text-sm text-gray-600">{m.testUserCreateAtOnce()}</p>
-					<p class="mt-1 text-2xl font-bold text-gray-900">100</p>
-				</div>
-				<div class="rounded-lg bg-gray-50 p-4">
-					<p class="text-sm text-gray-600">{m.testUserCurrentCreated()}</p>
-					<p class="mt-1 text-2xl font-bold text-gray-900">{creationProgress}</p>
-				</div>
-			</div>
-		</div>
-	</Card>
 
 	<!-- 삭제 진행 상황 -->
 	{#if isDeleting}

@@ -7,7 +7,7 @@ email: noreply@openai.com
 step: 65
 priority: '*'
 dependencies:
-  - sonub-firebase-database.md
+  - sonub-firebase-database-structure.md
   - sonub-firebase-database-list-view.md
   - sonub-firebase-security.md
 tags:

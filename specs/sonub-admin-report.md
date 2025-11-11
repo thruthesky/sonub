@@ -13,6 +13,8 @@ dependencies:
   - sonub-user-overview.md
   - sonub-setup-firebase.md
   - sonub-setup-shadcn.md
+  - sonub-firebase-database-structure.md
+  - sonub-firebase-database-structure.md
 tags:
   - admin
   - report

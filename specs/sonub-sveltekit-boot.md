@@ -11,6 +11,7 @@ dependencies:
   - sonub-setup-tailwind.md
   - sonub-setup-shadcn.md
   - sonub-setup-firebase.md
+  - sonub-firebase-database-structure.md
 tags:
   - sveltekit
   - boot-sequence

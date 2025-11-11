@@ -7,7 +7,8 @@ email: thruthesky@gmail.com
 homepage: https://github.com/thruthesky/
 funding: ""
 license: GPL-3.0
-dependencies: []
+dependencies:
+  - sonub-firebase-database-structure.md
 ---
 
 ## Overview
@@ -178,6 +179,441 @@ firebase/
 | `utils/` | **순수 함수** | Firebase 의존성 없는 순수 함수 (parseLikeId 등) |
 | `test/unit/` | **Unit Tests** | 순수 함수 및 비즈니스 로직 테스트 (Emulator 불필요) |
 | `test/integration/` | **Integration Tests** | firebase-functions-test로 이벤트 핸들러 테스트 |
+
+---
+
+### 4.1 클라이언트-서버 코드 공유 전략 (@functions Path Alias)
+
+#### 4.1.1 개요
+
+Sonub 프로젝트는 **Svelte 5 클라이언트**와 **Firebase Cloud Functions 백엔드**가 동일한 순수 함수(Pure Functions)를 공유하여 코드 중복을 제거하고 일관성을 유지합니다.
+
+**공유 코드 위치**: `/src/lib/functions/`
+
+#### 4.1.2 왜 코드를 공유하는가?
+
+##### 문제점 (코드 공유 이전)
+
+```
+클라이언트 (Svelte)                  서버 (Cloud Functions)
+├── isSingleChat()                  ├── isSingleChat()           ❌ 중복
+├── buildSingleRoomId()             ├── buildSingleRoomId()      ❌ 중복
+├── extractUidsFromSingleRoomId()   ├── extractUidsFromSingleRoomId()  ❌ 중복
+└── parseLikeId()                   └── parseLikeId()            ❌ 중복
+```
+
+**문제점**:
+- ❌ 코드 중복 (DRY 원칙 위반)
+- ❌ 수정 시 양쪽 모두 변경 필요
+- ❌ 불일치 가능성 (한쪽만 수정하는 경우)
+- ❌ 유지보수 비용 증가
+
+##### 해결책 (코드 공유 후)
+
+```
+공유 코드 (/src/lib/functions/)
+├── chat.functions.ts
+│   ├── isSingleChat()                    ✅ 한 곳에만 정의
+│   ├── buildSingleRoomId()               ✅ 한 곳에만 정의
+│   └── extractUidsFromSingleRoomId()     ✅ 한 곳에만 정의
+└── like.functions.ts
+    └── parseLikeId()                     ✅ 한 곳에만 정의
+
+↓ import
+
+클라이언트 (Svelte)              서버 (Cloud Functions)
+├── import from "$lib/functions"  ├── import from "@functions"
+└── 동일한 코드 사용 ✅           └── 동일한 코드 사용 ✅
+```
+
+**장점**:
+- ✅ 코드 중복 제거 (Single Source of Truth)
+- ✅ 수정 시 한 곳만 변경
+- ✅ 클라이언트와 서버 간 로직 일관성 보장
+- ✅ 유지보수 용이
+- ✅ 테스트 한 번만 작성
+
+#### 4.1.3 공유 가능한 코드 vs 공유 불가능한 코드
+
+| 구분 | 공유 가능 여부 | 예시 | 저장 위치 |
+|------|--------------|------|----------|
+| **순수 함수** | ✅ 공유 가능 | `isSingleChat()`, `buildSingleRoomId()`, `parseLikeId()` | `/src/lib/functions/` |
+| **타입 정의** | ✅ 공유 가능 | `ChatMessage`, `UserData`, `PostData` | `/firebase/functions/src/types/` |
+| **Firebase Admin 로직** | ❌ 공유 불가 | `admin.database().ref()`, `admin.auth()` | `/firebase/functions/src/handlers/` |
+| **Svelte 컴포넌트** | ❌ 공유 불가 | `.svelte` 파일 | `/src/lib/components/` |
+| **상수 (Constants)** | ✅ 공유 가능 | `FORUM_CATEGORIES`, `MAX_UPLOAD_SIZE` | `/src/lib/constants/` |
+
+**공유 가능한 코드의 조건**:
+1. Firebase 의존성 없음 (Admin SDK, Client SDK 모두 사용하지 않음)
+2. Node.js 환경과 브라우저 환경 모두에서 실행 가능
+3. 순수 함수 (입력 → 출력 변환만 수행, 부작용 없음)
+
+#### 4.1.4 디렉토리 구조
+
+```
+프로젝트 루트/
+├── src/
+│   └── lib/
+│       └── functions/              # 📦 공유 코드 저장소
+│           ├── chat.functions.ts   # 채팅 관련 순수 함수
+│           ├── like.functions.ts   # 좋아요 관련 순수 함수
+│           ├── date.functions.ts   # 날짜 관련 순수 함수
+│           └── user.functions.ts   # 사용자 관련 순수 함수
+│
+└── firebase/
+    └── functions/
+        ├── src/
+        │   ├── handlers/           # 백엔드 비즈니스 로직 (firebase-admin 사용)
+        │   │   ├── chat.handler.ts
+        │   │   └── user.handler.ts
+        │   └── index.ts            # Cloud Functions 진입점
+        └── tsconfig.json           # TypeScript 설정 (Path Alias 포함)
+```
+
+#### 4.1.5 TypeScript 설정 (tsconfig.json)
+
+**파일 위치**: `/firebase/functions/tsconfig.json`
+
+```json
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
+    "outDir": "lib",
+
+    // ✅ Path Alias 설정
+    "baseUrl": "../..",
+    "paths": {
+      "@functions/*": ["src/lib/functions/*"]
+    },
+
+    // ✅ 공유 코드 포함
+    "rootDirs": [
+      "./src",
+      "../src/lib/functions"
+    ]
+  },
+  "include": [
+    "src",
+    "scripts",
+    "../src/lib/functions/**/*.ts"  // ✅ 공유 코드 포함
+  ]
+}
+```
+
+**설정 설명**:
+
+| 옵션 | 값 | 설명 |
+|------|-----|------|
+| `baseUrl` | `"../.."` | 프로젝트 루트를 가리킴 (`/firebase/functions/`에서 두 단계 위) |
+| `paths` | `{"@functions/*": ["src/lib/functions/*"]}` | `@functions` alias를 `/src/lib/functions/`로 매핑 |
+| `rootDirs` | `["./src", "../src/lib/functions"]` | 여러 폴더를 하나의 루트처럼 취급 |
+| `include` | `"../src/lib/functions/**/*.ts"` | 공유 코드를 TypeScript 컴파일 대상에 포함 |
+
+#### 4.1.6 tsc-alias를 사용한 빌드 프로세스
+
+TypeScript의 `paths` 설정은 **컴파일 타임**에만 작동하고, 빌드된 JavaScript 파일에는 반영되지 않습니다. 따라서 `tsc-alias`를 사용하여 빌드 후 path alias를 실제 상대 경로로 변환합니다.
+
+##### 설치
+
+```bash
+cd firebase/functions
+npm install --save-dev tsc-alias
+```
+
+##### package.json 설정
+
+**파일 위치**: `/firebase/functions/package.json`
+
+```json
+{
+  "scripts": {
+    "build": "tsc && tsc-alias",
+    "deploy": "npm run lint:fix && firebase deploy --only functions"
+  }
+}
+```
+
+**빌드 과정**:
+
+```
+1. tsc 실행
+   ├── TypeScript 컴파일
+   ├── src/**/*.ts → lib/src/**/*.js
+   └── @functions/chat.functions.js (path alias 그대로 유지)
+
+2. tsc-alias 실행
+   ├── lib/**/*.js 파일 스캔
+   ├── @functions/chat.functions.js 탐지
+   └── 실제 상대 경로로 변환: ../lib/functions/chat.functions.js
+
+3. 결과
+   ✅ 빌드된 파일에서 런타임에 정상 작동
+```
+
+#### 4.1.7 사용 예제
+
+##### 4.1.7.1 공유 함수 정의
+
+**파일**: `/src/lib/functions/chat.functions.ts`
+
+```typescript
+/**
+ * 채팅 관련 순수 함수 모음
+ * ✅ 클라이언트와 서버 모두에서 사용 가능
+ * ✅ Firebase 의존성 없음
+ */
+
+/**
+ * roomId가 1:1 채팅방인지 확인한다.
+ *
+ * @param roomId - 확인할 채팅방 ID
+ * @returns 1:1 채팅방이면 true, 아니면 false
+ */
+export function isSingleChat(roomId: string): boolean {
+  return roomId.startsWith('single-');
+}
+
+/**
+ * 1:1 채팅방 roomId에서 두 사용자의 UID를 추출한다.
+ *
+ * @param roomId - 1:1 채팅방 ID (형식: "single-uid1-uid2")
+ * @returns 두 UID를 포함하는 배열 [uid1, uid2], 형식이 올바르지 않으면 null
+ */
+export function extractUidsFromSingleRoomId(roomId: string): [string, string] | null {
+  const parts = roomId.split('-');
+  if (parts.length !== 3 || parts[0] !== 'single') {
+    return null;
+  }
+  return [parts[1], parts[2]];
+}
+
+/**
+ * 1:1 채팅방의 roomId를 UID 두 개로부터 고정적으로 생성한다.
+ *
+ * @param uid1 - 첫 번째 사용자 UID
+ * @param uid2 - 두 번째 사용자 UID
+ * @returns 알파벳 순으로 정렬된 roomId (예: "single-alice-bob")
+ */
+export function buildSingleRoomId(uid1: string, uid2: string): string {
+  return `single-${[uid1, uid2].sort().join('-')}`;
+}
+```
+
+##### 4.1.7.2 서버에서 사용 (Cloud Functions)
+
+**파일**: `/firebase/functions/src/handlers/chat.handler.ts`
+
+```typescript
+import * as logger from "firebase-functions/logger";
+import * as admin from "firebase-admin";
+import {ChatMessage} from "../types";
+
+// ✅ @functions path alias로 공유 함수 import
+// NodeNext 모듈 시스템에서는 .js 확장자 필수
+import {
+  isSingleChat,
+  extractUidsFromSingleRoomId,
+} from "@functions/chat.functions.js";
+
+/**
+ * 채팅 메시지 생성 시 비즈니스 로직 처리
+ */
+export async function handleChatMessageCreate(
+  messageId: string,
+  messageData: ChatMessage
+): Promise<void> {
+  const roomId = messageData.roomId;
+
+  // ✅ 공유 함수 사용: 1:1 채팅인지 확인
+  if (!isSingleChat(roomId)) {
+    logger.info("1:1 채팅이 아니므로 건너뜀", { messageId, roomId });
+    return;
+  }
+
+  // ✅ 공유 함수 사용: roomId에서 UID 추출
+  const uids = extractUidsFromSingleRoomId(roomId);
+  if (!uids) {
+    logger.error("잘못된 roomId 형식", { messageId, roomId });
+    return;
+  }
+
+  const [uid1, uid2] = uids;
+  logger.info("1:1 채팅 메시지 처리", { uid1, uid2 });
+
+  // Firebase Admin SDK를 사용한 데이터 업데이트
+  // (이 부분은 서버에서만 실행 가능)
+  await admin.database().ref(`/chat-joins/${uid1}/${roomId}`).update({
+    lastMessageText: messageData.text,
+    lastMessageAt: Date.now(),
+  });
+}
+```
+
+##### 4.1.7.3 클라이언트에서 사용 (Svelte)
+
+**파일**: `/src/routes/chat/room/+page.svelte`
+
+```svelte
+<script lang="ts">
+  import { ref, push, update } from 'firebase/database';
+  import { database } from '$lib/firebase';
+
+  // ✅ $lib alias로 공유 함수 import
+  import {
+    isSingleChat,
+    buildSingleRoomId
+  } from '$lib/functions/chat.functions';
+
+  let myUid = 'user-A';
+  let partnerUid = 'user-B';
+
+  // ✅ 공유 함수 사용: roomId 생성
+  const roomId = buildSingleRoomId(myUid, partnerUid);
+  // 결과: "single-user-A-user-B" (알파벳 순 정렬)
+
+  // ✅ 공유 함수 사용: 1:1 채팅 여부 확인
+  if (isSingleChat(roomId)) {
+    console.log('1:1 채팅방입니다');
+  }
+
+  async function sendMessage(text: string) {
+    const messageRef = push(ref(database, 'chat-messages'));
+    await update(messageRef, {
+      roomId,
+      text,
+      senderUid: myUid,
+      createdAt: Date.now(),
+    });
+  }
+</script>
+```
+
+#### 4.1.8 빌드 결과 확인
+
+##### 빌드 전 (TypeScript)
+
+**파일**: `/firebase/functions/src/handlers/chat.handler.ts`
+
+```typescript
+import {
+  isSingleChat,
+  extractUidsFromSingleRoomId,
+} from "@functions/chat.functions.js";
+```
+
+##### 빌드 후 (JavaScript)
+
+**파일**: `/firebase/functions/lib/src/handlers/chat.handler.js`
+
+```javascript
+// ✅ tsc-alias가 @functions를 실제 상대 경로로 변환
+const chat_functions_1 = require("../lib/functions/chat.functions");
+
+// 사용 예시
+if (chat_functions_1.isSingleChat(roomId)) {
+  // ...
+}
+```
+
+**확인 방법**:
+
+```bash
+cd firebase/functions
+npm run build
+
+# 빌드된 파일 확인
+cat lib/src/handlers/chat.handler.js | grep "require.*chat.functions"
+# 출력: const chat_functions_1 = require("../lib/functions/chat.functions");
+```
+
+#### 4.1.9 주의사항
+
+##### 1. NodeNext 모듈 시스템에서는 .js 확장자 필수
+
+```typescript
+// ✅ 올바른 import (NodeNext)
+import { isSingleChat } from "@functions/chat.functions.js";
+
+// ❌ 잘못된 import (컴파일 에러)
+import { isSingleChat } from "@functions/chat.functions";
+```
+
+**이유**: NodeNext 모듈 해상도는 ESM(ES Modules) 규칙을 따르며, import 시 확장자를 명시해야 합니다.
+
+##### 2. 공유 함수는 순수 함수로 작성
+
+```typescript
+// ✅ 올바른 공유 함수 (순수 함수)
+export function buildSingleRoomId(uid1: string, uid2: string): string {
+  return `single-${[uid1, uid2].sort().join('-')}`;
+}
+
+// ❌ 잘못된 공유 함수 (Firebase 의존성 포함)
+export async function getUserProfile(uid: string) {
+  // firebase-admin을 사용하면 클라이언트에서 실행 불가!
+  return await admin.database().ref(`/users/${uid}`).once('value');
+}
+```
+
+##### 3. tsc-alias 없이는 런타임 에러 발생
+
+```bash
+# tsc-alias 없이 빌드
+cd firebase/functions
+tsc  # ❌ path alias가 그대로 남음
+
+# 배포 시도
+firebase deploy --only functions
+# ❌ 런타임 에러: Cannot find module '@functions/chat.functions.js'
+
+# 해결책: tsc-alias 실행
+npm run build  # tsc && tsc-alias ✅
+```
+
+##### 4. baseUrl은 프로젝트 루트를 가리켜야 함
+
+```json
+// ✅ 올바른 설정 (firebase/functions/tsconfig.json)
+{
+  "compilerOptions": {
+    "baseUrl": "../..",  // 프로젝트 루트 (/firebase/functions에서 두 단계 위)
+    "paths": {
+      "@functions/*": ["src/lib/functions/*"]  // 프로젝트 루트 기준
+    }
+  }
+}
+
+// ❌ 잘못된 설정
+{
+  "compilerOptions": {
+    "baseUrl": ".",  // firebase/functions 폴더를 가리킴
+    "paths": {
+      "@functions/*": ["../../src/lib/functions/*"]  // 상대 경로 사용 불가
+    }
+  }
+}
+```
+
+#### 4.1.10 요약
+
+| 항목 | 설명 |
+|------|------|
+| **공유 코드 위치** | `/src/lib/functions/` |
+| **공유 가능 조건** | Firebase 의존성 없는 순수 함수 |
+| **클라이언트 import** | `import { fn } from '$lib/functions/파일명'` |
+| **서버 import** | `import { fn } from '@functions/파일명.js'` |
+| **TypeScript 설정** | `baseUrl: "../.."`, `paths: {"@functions/*": ["src/lib/functions/*"]}` |
+| **빌드 도구** | `tsc` + `tsc-alias` |
+| **빌드 명령어** | `npm run build` (= `tsc && tsc-alias`) |
+| **주의사항** | NodeNext에서는 `.js` 확장자 필수 |
+
+**핵심 요약**:
+- ✅ **DRY 원칙**: 코드 중복 제거
+- ✅ **일관성**: 클라이언트와 서버가 동일한 로직 사용
+- ✅ **유지보수성**: 한 곳만 수정하면 양쪽 모두 반영
+- ✅ **테스트 용이성**: 순수 함수로 Unit Test 작성 용이
+- ✅ **Type Safety**: TypeScript로 타입 안전성 보장
 
 ---
 

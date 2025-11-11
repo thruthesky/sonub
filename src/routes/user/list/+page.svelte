@@ -8,36 +8,55 @@
 
   import DatabaseListView from '$lib/components/DatabaseListView.svelte';
   import Avatar from '$lib/components/user/avatar.svelte';
-  import { getLocale } from '$lib/paraglide/runtime.js';
+  import { Button } from '$lib/components/ui/button/index.js';
+  import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle
+  } from 'shadcn-svelte';
+  import { formatLongDate } from '$lib/functions/date.functions';
   import { m } from '$lib/paraglide/messages.js';
 
-  /**
-   * 타임스탬프를 로케일에 맞는 날짜 문자열로 변환
-   *
-   * @param timestamp - Unix 타임스탬프 (밀리초)
-   * @returns 로케일에 맞게 포맷된 날짜 문자열
-   */
-  function formatDate(timestamp: number): string {
-    if (!timestamp) return '';
-    const date = new Date(timestamp);
-    const currentLocale = getLocale();
-    const locale =
-      currentLocale === 'ko'
-        ? 'ko-KR'
-        : currentLocale === 'ja'
-        ? 'ja-JP'
-        : currentLocale === 'zh'
-        ? 'zh-CN'
-        : 'en-US';
+  const DEFAULT_PAGE_SIZE = 15;
 
-    return date.toLocaleDateString(locale, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  let searchDialogOpen = $state(false);
+  let searchInput = $state('');
+  let activeSearch = $state('');
+
+  const normalizedSearch = $derived.by(() => activeSearch.trim());
+  const isSearching = $derived.by(() => normalizedSearch.length > 0);
+  const listKey = $derived.by(() =>
+    isSearching ? `users-search-${normalizedSearch}` : 'users-default'
+  );
+  const listOrderBy = $derived.by(() => (isSearching ? 'displayNameLowerCase' : 'createdAt'));
+  const listPageSize = $derived.by(() => (isSearching ? 50 : DEFAULT_PAGE_SIZE));
+
+  function openSearchDialog() {
+    searchInput = activeSearch;
+    searchDialogOpen = true;
   }
+
+  function handleSearchSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    const trimmed = searchInput.trim().toLowerCase();
+    activeSearch = trimmed;
+    searchDialogOpen = false;
+  }
+
+  function clearSearch() {
+    searchInput = '';
+    activeSearch = '';
+    searchDialogOpen = false;
+  }
+
+  $effect(() => {
+    if (searchDialogOpen) {
+      searchInput = activeSearch;
+    }
+  });
 </script>
 
 <svelte:head>
@@ -50,7 +69,60 @@
     <p class="subtitle">{m.userListGuide()}</p>
   </div>
 
-  <DatabaseListView path="users" pageSize={15} orderBy="createdAt" threshold={300} reverse={false}>
+  <div class="search-toolbar">
+    <Button type="button" variant="secondary" class="search-button" on:click={openSearchDialog}>
+      사용자 검색
+    </Button>
+    {#if isSearching}
+      <div class="search-chip">
+        <span>"{normalizedSearch}" 검색 결과</span>
+        <button type="button" on:click={clearSearch}>초기화</button>
+      </div>
+    {/if}
+  </div>
+
+  <Dialog bind:open={searchDialogOpen}>
+    <DialogContent class="search-dialog">
+      <DialogHeader>
+        <DialogTitle>사용자 검색</DialogTitle>
+        <DialogDescription>
+          displayNameLowerCase 필드가 정확히 일치하는 사용자를 찾습니다. 입력값은 자동으로 소문자로 변환됩니다.
+        </DialogDescription>
+      </DialogHeader>
+
+      <form class="search-form" on:submit={handleSearchSubmit}>
+        <label class="search-label">
+          검색할 사용자 이름 (소문자 기준)
+          <input
+            type="text"
+            placeholder="예: sonub"
+            bind:value={searchInput}
+            class="search-input"
+            minlength="2"
+            required
+          />
+        </label>
+        <p class="search-hint">
+          Firebase RTDB 의 `displayNameLowerCase` 필드와 일치해야 하므로 공백/대소문자를 제거한 형태로 입력해주세요.
+        </p>
+
+        <DialogFooter class="search-dialog-footer">
+          <Button type="button" variant="ghost" on:click={clearSearch}>검색 초기화</Button>
+          <Button type="submit">검색하기</Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
+  </Dialog>
+
+  {#key listKey}
+    <DatabaseListView
+      path="users"
+      pageSize={listPageSize}
+      orderBy={listOrderBy}
+      threshold={300}
+      reverse={false}
+      equalToValue={isSearching ? normalizedSearch : undefined}
+    >
     {#snippet item(itemData: { key: string; data: any })}
       <article class="user-card">
         <a
@@ -68,12 +140,12 @@
             <div class="user-meta">
               <span class="meta-item">
                 <span class="meta-label">{m.userJoinDate()}</span>
-                <span class="meta-value">{formatDate(itemData.data?.createdAt)}</span>
+                <span class="meta-value">{formatLongDate(itemData.data?.createdAt)}</span>
               </span>
               {#if itemData.data?.lastLoginAt}
                 <span class="meta-item">
                   <span class="meta-label">{m.userLastLogin()}</span>
-                  <span class="meta-value">{formatDate(itemData.data.lastLoginAt)}</span>
+                  <span class="meta-value">{formatLongDate(itemData.data.lastLoginAt)}</span>
                 </span>
               {/if}
             </div>
@@ -142,7 +214,8 @@
         <p>{m.userAllLoaded()}</p>
       </div>
     {/snippet}
-  </DatabaseListView>
+    </DatabaseListView>
+  {/key}
 </div>
 
 <style>
@@ -150,6 +223,96 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 2rem 1rem;
+  }
+
+  .search-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .search-toolbar {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+  }
+
+  .search-button {
+    width: 100%;
+  }
+
+  @media (min-width: 640px) {
+    .search-button {
+      width: auto;
+    }
+  }
+
+  .search-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background-color: #111827;
+    color: #f9fafb;
+    font-size: 0.875rem;
+  }
+
+  .search-chip button {
+    background: transparent;
+    border: none;
+    color: #fbbf24;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  .search-dialog {
+    max-width: 28rem;
+  }
+
+  .search-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .search-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    color: #374151;
+    font-weight: 600;
+  }
+
+  .search-input {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    padding: 0.65rem 0.85rem;
+    font-size: 1rem;
+  }
+
+  .search-input:focus {
+    outline: 2px solid #111827;
+    border-color: #111827;
+  }
+
+  .search-hint {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #6b7280;
+  }
+
+  .search-dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
   }
 
   .page-header {

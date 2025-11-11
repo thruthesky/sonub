@@ -20,6 +20,9 @@ export interface TestUser {
 /**
  * 테스트 사용자 100명의 데이터를 생성합니다.
  *
+ * 각 사용자는 1초 단위로 createdAt 시간 차이를 가지며,
+ * displayName에 사용자 번호가 포함됩니다.
+ *
  * @returns 테스트 사용자 데이터 배열
  */
 export function generateTestUsers(): TestUser[] {
@@ -30,22 +33,19 @@ export function generateTestUsers(): TestUser[] {
 		const paddedNumber = String(i).padStart(3, '0');
 		const uid = generateTestUserId(i);
 		const genders: Array<'male' | 'female' | 'other'> = ['male', 'female', 'other'];
-		const timestamp = now + i * 1000; // 초 단위(1000ms) 오프셋으로 createdAt 중복 방지
-		const date = new Date(timestamp);
-		const month = String(date.getMonth() + 1).padStart(2, '0');
-		const day = String(date.getDate()).padStart(2, '0');
-		const hours = String(date.getHours()).padStart(2, '0');
-		const minutes = String(date.getMinutes()).padStart(2, '0');
-		const nicknameSuffix = `${month}-${day} ${hours}:${minutes}`;
+
+		// 각 사용자마다 1초(1000ms)씩 시간 차이를 두어 생성 시간을 초 단위로 저장
+		const timestamp = now + i * 1000;
 
 		users.push({
 			uid,
-			displayName: `테스트 사용자 ${paddedNumber} (${nicknameSuffix})`,
+			// displayName에 사용자 생성 번호 포함
+			displayName: `테스트 사용자 #${paddedNumber}`,
 			email: `test.user.${paddedNumber}@example.com`,
 			photoUrl: null, // 필요시 아바타 URL 생성 가능
 			gender: genders[Math.floor(Math.random() * genders.length)],
 			birthYear: generateRandomBirthYear(), // 1950~2010년 랜덤
-			createdAt: timestamp,
+			createdAt: timestamp, // 초 단위로 저장 (각 사용자마다 1초씩 차이)
 			updatedAt: timestamp,
 			isTemporary: true
 		});

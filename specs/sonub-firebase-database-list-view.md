@@ -1,3 +1,11 @@
+---
+name: sonub-firebase-database-list-view
+version: 1.0.0
+description: DatabaseListView 컴포넌트 무한 스크롤 가이드
+dependencies:
+  - sonub-firebase-database-structure.md
+---
+
 
 ## DatabaseListView 컴포넌트
 
@@ -1717,6 +1725,7 @@ interface Props {
   pageSize?: number;       // 한 번에 가져올 아이템 개수 (기본: 10)
   orderBy?: string;        // 정렬 기준 필드 (기본: "createdAt")
   orderPrefix?: string;    // 정렬 필드 prefix 필터 (선택사항)
+  equalToValue?: string | number | boolean | null; // orderBy 필드가 특정 값과 정확히 일치해야 할 때
   threshold?: number;      // 스크롤 threshold (px, 기본: 300)
   reverse?: boolean;       // 역순 정렬 여부 (기본: false)
   item: ItemSnippet;       // 아이템 렌더링 snippet (필수)
@@ -3071,28 +3080,1547 @@ DatabaseListView 컴포넌트를 다른 프로젝트에 재사용하려면:
 
 ---
 
-## 21. 참고 자료
+## 21. DatabaseListView 완전 가이드: Props 및 옵션
 
-### 21.1. 관련 파일
+### 21.1. 개요
+
+**DatabaseListView는 Firebase Realtime Database의 모든 데이터 목록 표시에 사용할 수 있는 만능 ListView 컴포넌트입니다.**
+
+✅ **핵심 특징**:
+- 🔥 **범용성**: 모든 RTDB 노드 목록 표시에 사용 가능
+- 🚀 **무한 스크롤**: 자동 페이지네이션으로 대용량 데이터 처리
+- ⚡ **실시간 동기화**: onValue, onChildAdded, onChildRemoved 리스너로 실시간 업데이트
+- 🎯 **양방향 스크롤**: 위로/아래로 스크롤 모두 지원 (채팅, 일반 목록)
+- 🔧 **고도로 커스터마이징 가능**: 다양한 옵션과 snippet으로 모든 UI 커스터마이징
+- 📱 **반응형**: Body 스크롤 + Container 스크롤 모두 지원
+
+### 21.2. 전체 Props 레퍼런스
+
+#### 필수 Props
+
+| Prop | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `path` | `string` | **(필수)** | Firebase RTDB 경로 (예: `"users"`, `"posts"`, `"chat-messages"`) |
+| `item` | `Snippet` | **(필수)** | 각 아이템을 렌더링하는 snippet 함수 |
+
+#### 선택적 Props - 데이터 제어
+
+| Prop | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `pageSize` | `number` | `10` | 한 번에 가져올 아이템 개수 (권장: 10~30) |
+| `orderBy` | `string` | `"createdAt"` | 정렬 기준 필드명 |
+| `orderPrefix` | `string` | `""` | orderBy 필드 값의 prefix로 필터링 (예: `"community-"`) |
+| `equalToValue` | `string \| number \| boolean \| null` | `undefined` | orderBy 필드가 특정 값과 정확히 일치하는 데이터만 조회 (검색 UI에 사용) |
+| `reverse` | `boolean` | `false` | 역순 정렬 여부 (`true`면 최신 데이터부터 표시) |
+
+#### 선택적 Props - 스크롤 동작
+
+| Prop | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `scrollTrigger` | `'top' \| 'bottom'` | `'bottom'` | 스크롤 트리거 방향<br>- `'bottom'`: 아래로 스크롤하여 다음 페이지 로드 (일반 목록)<br>- `'top'`: 위로 스크롤하여 이전 페이지 로드 (채팅 메시지) |
+| `autoScrollToEnd` | `boolean` | `false` | 초기 로드 완료 후 자동으로 끝으로 스크롤<br>- `scrollTrigger='bottom'`일 때: 맨 아래로<br>- `scrollTrigger='top'`일 때: 맨 위로 |
+| `autoScrollOnNewData` | `boolean` | `false` | **⭐ 채팅 메시지 필수 기능**<br>새 데이터 추가 시 자동 스크롤 여부<br>- 새 노드가 추가될 때 스크롤 위치가 `threshold` 이내면 자동으로 맨 아래로 스크롤<br>- 사용자가 `threshold`보다 많이 스크롤업 한 경우 자동 스크롤하지 않음<br>- **채팅 메시지 목록**과 같은 실시간 피드에 최적화 |
+| `threshold` | `number` | `300` | 스크롤 임계값 (픽셀)<br>끝에서 이 거리만큼 떨어지면 다음 페이지 로드<br>- `autoScrollOnNewData`와 함께 사용하여 자동 스크롤 범위 제어 가능 |
+
+#### 선택적 Props - UI Snippets
+
+| Prop | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `loading` | `Snippet` | 기본 UI | 초기 로딩 상태 UI |
+| `empty` | `Snippet` | 기본 UI | 데이터 없음 상태 UI |
+| `error` | `Snippet<[string \| null]>` | 기본 UI | 에러 상태 UI (에러 메시지 전달) |
+| `loadingMore` | `Snippet` | 기본 UI | 추가 로딩 중 UI (무한 스크롤 로딩) |
+| `noMore` | `Snippet` | 기본 UI | 더 이상 데이터 없음 UI |
+
+### 21.3. Props 상세 설명
+
+#### 21.3.1. reverse (역순 정렬)
+
+**사용 사례**: 최신 데이터를 먼저 표시하고 싶을 때
+
+```svelte
+<!-- ❌ reverse=false (기본값): 오래된 데이터부터 표시 -->
+<DatabaseListView
+  path="posts"
+  orderBy="createdAt"
+  reverse={false}
+  pageSize={20}
+>
+  {#snippet item(itemData)}
+    <div>{itemData.data.title}</div>
+  {/snippet}
+</DatabaseListView>
+
+<!-- 결과: 가장 오래된 게시글 → 최신 게시글 순서 -->
+```
+
+```svelte
+<!-- ✅ reverse=true: 최신 데이터부터 표시 -->
+<DatabaseListView
+  path="posts"
+  orderBy="createdAt"
+  reverse={true}
+  pageSize={20}
+>
+  {#snippet item(itemData)}
+    <div>{itemData.data.title}</div>
+  {/snippet}
+</DatabaseListView>
+
+<!-- 결과: 최신 게시글 → 오래된 게시글 순서 -->
+```
+
+**내부 동작**:
+- `reverse=false`: `limitToFirst(pageSize)` 사용
+- `reverse=true`: `limitToLast(pageSize)` + 배열 reverse 사용
+
+**주의사항**:
+- ⚠️ reverse 모드에서는 Firebase가 내부적으로 역순 정렬하므로 추가 처리 필요
+- ⚠️ 페이지네이션 커서도 역방향으로 동작
+
+#### 21.3.2. equalToValue (정확 일치 필터)
+
+`equalToValue`는 `orderBy` 필드가 특정 값과 **정확히 일치**하는 레코드만 가져올 때 사용합니다. `orderPrefix`보다 우선하며, 서버 쿼리에서 `equalTo()`를 사용하므로 불필요한 데이터를 내려받지 않습니다.
+
+**특징**
+- 검색어가 변경되면 컴포넌트가 즉시 재구독해 해당 값만 실시간으로 추적합니다.
+- 정확 일치 조건에서는 한 번의 쿼리로 모든 결과를 가져오며 `loadMore()`가 자동으로 비활성화됩니다.
+- 채팅/사용자 검색처럼 결과 건수가 작지만 정확성이 필요한 화면에 최적화되어 있습니다.
+
+**예시: `displayNameLowerCase` 기반 사용자 검색**
+
+```svelte
+<DatabaseListView
+  path="users"
+  pageSize={50}
+  orderBy="displayNameLowerCase"
+  equalToValue={searchKeyword}   // 이미 소문자로 정규화된 값
+>
+  {#snippet item(itemData)}
+    <UserRow data={itemData.data} />
+  {/snippet}
+</DatabaseListView>
+```
+
+> 📌 이 옵션은 `/user/list` 페이지의 검색 모달에서 사용됩니다. 사용자가 입력한 닉네임을 소문자로 변환해 `equalToValue`로 전달하면 RTDB에서 해당 이름과 완전히 일치하는 사용자만 즉시 표시할 수 있습니다.
+
+#### 21.3.3. scrollTrigger (스크롤 방향)
+
+**사용 사례별 선택 가이드**:
+
+| UI 타입 | `scrollTrigger` | `autoScrollToEnd` | 설명 |
+|---------|-----------------|-------------------|------|
+| 일반 목록 (블로그, 게시판) | `'bottom'` | `false` | 아래로 스크롤하여 다음 페이지 로드 |
+| 채팅 메시지 (역순) | `'top'` | `true` | 위로 스크롤하여 이전 메시지 로드<br>초기 로드 시 맨 아래로 |
+| 타임라인 (역순) | `'bottom'` | `false` | 최신 데이터부터 표시, 아래로 스크롤하여 이전 데이터 로드 |
+| 알림 목록 | `'bottom'` | `true` | 최신 알림부터 표시, 로드 완료 시 맨 아래로 |
+
+**예시 1: 일반 게시판 (아래로 스크롤)**
+
+```svelte
+<DatabaseListView
+  path="posts"
+  orderBy="createdAt"
+  reverse={false}
+  scrollTrigger="bottom"
+  autoScrollToEnd={false}
+  pageSize={20}
+>
+  {#snippet item(itemData)}
+    <div class="post-card">{itemData.data.title}</div>
+  {/snippet}
+</DatabaseListView>
+```
+
+**동작**:
+1. 오래된 게시글부터 표시 (createdAt 오름차순)
+2. 사용자가 아래로 스크롤
+3. 바닥에서 300px 이내 → 다음 페이지 로드
+4. 새로운 게시글이 하단에 추가
+
+**예시 2: 채팅 메시지 (위로 스크롤)**
+
+```svelte
+<DatabaseListView
+  path="chat-messages"
+  orderBy="roomOrder"
+  orderPrefix={`-${roomId}-`}
+  reverse={false}
+  scrollTrigger="top"
+  autoScrollToEnd={true}
+  pageSize={15}
+>
+  {#snippet item(itemData)}
+    <div class="message-bubble">{itemData.data.text}</div>
+  {/snippet}
+</DatabaseListView>
+```
+
+**동작**:
+1. 최신 메시지가 하단에 표시
+2. 초기 로드 완료 후 자동으로 맨 아래로 스크롤 (`autoScrollToEnd=true`)
+3. 사용자가 위로 스크롤
+4. 천장에서 300px 이내 → 이전 페이지 로드
+5. 오래된 메시지가 상단에 추가 (스크롤 위치 자동 보존)
+
+#### 21.3.4. autoScrollToEnd (자동 스크롤)
+
+**사용 사례**: 초기 로드 완료 후 특정 위치로 자동 스크롤
+
+```svelte
+<!-- 채팅 메시지: 항상 최신 메시지가 보이도록 -->
+<DatabaseListView
+  path="chat-messages"
+  scrollTrigger="top"
+  autoScrollToEnd={true}
+>
+  <!-- 초기 로드 완료 → 자동으로 맨 아래로 스크롤 -->
+</DatabaseListView>
+```
+
+```svelte
+<!-- 알림 목록: 최신 알림을 먼저 보여주기 -->
+<DatabaseListView
+  path="notifications"
+  orderBy="createdAt"
+  reverse={true}
+  scrollTrigger="bottom"
+  autoScrollToEnd={true}
+>
+  <!-- 초기 로드 완료 → 자동으로 맨 아래로 스크롤 (최신 알림) -->
+</DatabaseListView>
+```
+
+**동작 시점**:
+- 초기 데이터 로드 완료 후 **1회만** 실행
+- 이후 페이지네이션 로드 시에는 실행 안 됨
+
+**내부 구현**:
+```typescript
+if (autoScrollToEnd && initialLoadCompleted && scrollContainerRef) {
+  await tick();
+  if (scrollTrigger === 'top') {
+    scrollContainerRef.scrollTop = 0; // 맨 위로
+  } else {
+    scrollContainerRef.scrollTop = scrollContainerRef.scrollHeight; // 맨 아래로
+  }
+}
+```
+
+#### 21.3.5. autoScrollOnNewData (새 데이터 추가 시 자동 스크롤) ⭐
+
+**⭐ 채팅 메시지 필수 기능**
+
+**사용 사례**: 실시간으로 새 데이터가 추가될 때 사용자 위치에 따라 자동 스크롤
+
+```svelte
+<!-- 채팅 메시지: 새 메시지가 추가될 때 스마트 자동 스크롤 -->
+<DatabaseListView
+  path={`chat-messages`}
+  orderBy="createdAt"
+  scrollTrigger="top"
+  autoScrollToEnd={true}
+  autoScrollOnNewData={true}
+  threshold={300}
+>
+  {#snippet item(itemData)}
+    <div class="message-bubble">{itemData.data.text}</div>
+  {/snippet}
+</DatabaseListView>
+```
+
+**동작 원리**:
+
+1. **새 노드가 Firebase에 추가됨** (`onChildAdded` 이벤트 발생)
+2. **현재 스크롤 위치 확인**:
+   ```typescript
+   const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+   ```
+3. **자동 스크롤 여부 판단**:
+   - `distanceFromBottom <= threshold` → ✅ 자동으로 맨 아래로 스크롤
+   - `distanceFromBottom > threshold` → ❌ 자동 스크롤하지 않음 (사용자가 이전 메시지를 읽는 중)
+
+**사용 시나리오**:
+
+| 시나리오 | 스크롤 위치 | distanceFromBottom | 동작 |
+|---------|------------|-------------------|------|
+| 사용자가 최신 메시지를 보는 중 | 맨 아래 근처 | 50px | ✅ 자동 스크롤 (새 메시지 즉시 표시) |
+| 사용자가 조금 스크롤업 | 맨 아래에서 200px | 200px | ✅ 자동 스크롤 (threshold=300 이내) |
+| 사용자가 이전 메시지 읽는 중 | 맨 아래에서 500px | 500px | ❌ 스크롤하지 않음 (읽기 방해 안 함) |
+
+**주요 특징**:
+
+1. **비침해적**: 사용자가 이전 메시지를 읽는 중이면 방해하지 않음
+2. **실시간**: 새 메시지가 도착하는 즉시 반응
+3. **스마트**: `threshold` 값으로 민감도 조절 가능
+4. **채팅 최적화**: 채팅방, 댓글, 알림 등 실시간 피드에 필수
+
+**내부 구현**:
+```typescript
+// setupChildAddedListener 함수 내부
+if (autoScrollOnNewData && scrollContainerRef) {
+  const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef;
+  const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+
+  if (distanceFromBottom <= threshold) {
+    // 사용자가 맨 아래 근처에 있으면 자동 스크롤
+    tick().then(() => {
+      if (scrollContainerRef) {
+        scrollContainerRef.scrollTop = scrollContainerRef.scrollHeight;
+      }
+    });
+  }
+}
+```
+
+**`autoScrollToEnd`와의 차이점**:
+
+| Feature | `autoScrollToEnd` | `autoScrollOnNewData` |
+|---------|-------------------|----------------------|
+| 실행 시점 | 초기 로드 완료 후 **1회만** | **새 데이터가 추가될 때마다** |
+| 조건부 실행 | 없음 (항상 스크롤) | 있음 (threshold 이내일 때만) |
+| 사용 목적 | 초기 화면 위치 설정 | 실시간 업데이트 대응 |
+| 채팅 사용 예시 | 채팅방 진입 시 최신 메시지 표시 | 대화 중 새 메시지 도착 시 |
+
+**권장 조합**:
+
+```svelte
+<!-- 채팅 메시지 완벽한 설정 -->
+<DatabaseListView
+  path={`chat-messages`}
+  orderBy="createdAt"
+  scrollTrigger="top"           <!-- 위로 스크롤하여 이전 메시지 로드 -->
+  autoScrollToEnd={true}        <!-- 처음 진입 시 최신 메시지로 -->
+  autoScrollOnNewData={true}    <!-- 새 메시지 도착 시 스마트 스크롤 -->
+  threshold={300}               <!-- 300px 이내면 자동 스크롤 -->
+  pageSize={20}
+>
+  {#snippet item(itemData)}
+    <div class="message">{itemData.data.text}</div>
+  {/snippet}
+</DatabaseListView>
+```
+
+#### 21.3.6. threshold (스크롤 임계값)
+
+**최적화 가이드**:
+
+| 디바이스 | 권장 threshold | 이유 |
+|----------|----------------|------|
+| 모바일 | 200~300px | 작은 화면, 빠른 스크롤 |
+| 태블릿 | 300~400px | 중간 화면 크기 |
+| 데스크톱 | 400~600px | 큰 화면, 마우스 휠 스크롤 |
+
+```svelte
+<!-- 모바일 우선 설정 -->
+<DatabaseListView threshold={250} ... />
+
+<!-- 데스크톱 설정 -->
+<DatabaseListView threshold={500} ... />
+```
+
+**주의사항**:
+- ⚠️ threshold가 너무 작으면: 사용자가 바닥에 완전히 닿아야 로드 (사용자 경험 저하)
+- ⚠️ threshold가 너무 크면: 너무 일찍 로드되어 불필요한 데이터 전송
+
+#### 21.3.7. orderPrefix (범위 필터링)
+
+**사용 사례**: 특정 카테고리나 룸의 데이터만 표시
+
+```svelte
+<!-- 커뮤니티 카테고리의 게시글만 표시 -->
+<DatabaseListView
+  path="posts"
+  orderBy="categoryOrder"
+  orderPrefix="community-"
+  pageSize={20}
+>
+  {#snippet item(itemData)}
+    <div>{itemData.data.title}</div>
+  {/snippet}
+</DatabaseListView>
+```
+
+**Firebase 쿼리**:
+```javascript
+query(
+  ref(db, 'posts'),
+  orderByChild('categoryOrder'),
+  startAt('community-'),
+  endAt('community-\uf8ff'),
+  limitToFirst(20)
+)
+```
+
+**결과**:
+- ✅ `categoryOrder`가 `"community-1234567890"`인 게시글 → 표시됨
+- ✅ `categoryOrder`가 `"community-9999999999"`인 게시글 → 표시됨
+- ❌ `categoryOrder`가 `"qna-1234567890"`인 게시글 → 표시 안 됨
+- ❌ `categoryOrder`가 `"news-1234567890"`인 게시글 → 표시 안 됨
+
+**채팅방 메시지 예시**:
+```svelte
+<DatabaseListView
+  path="chat-messages"
+  orderBy="roomOrder"
+  orderPrefix={`-${roomId}-`}
+  scrollTrigger="top"
+  autoScrollToEnd={true}
+  pageSize={15}
+>
+  {#snippet item(itemData)}
+    <div>{itemData.data.text}</div>
+  {/snippet}
+</DatabaseListView>
+```
+
+**동작**:
+- roomId가 `"single-abc-xyz"`일 때
+- `roomOrder` 필드가 `"-single-abc-xyz-1234567890"`인 메시지만 로드
+- 다른 채팅방 메시지는 완전히 필터링됨 (서버 측 필터링)
+
+### 21.4. Snippets 상세 가이드
+
+#### 21.4.1. item snippet (필수)
+
+**시그니처**:
+```typescript
+item: (itemData: { key: string; data: any }, index: number) => any
+```
+
+**매개변수**:
+- `itemData.key`: Firebase 노드 키 (예: `"-ABC123"`)
+- `itemData.data`: Firebase 노드 데이터 객체
+- `index`: 배열 내 실제 인덱스 (0부터 시작)
+
+**예시**:
+```svelte
+<DatabaseListView path="users" pageSize={10}>
+  {#snippet item(itemData, index)}
+    <div class="user-card">
+      <span class="index">#{index + 1}</span>
+      <h3>{itemData.data.displayName}</h3>
+      <p>UID: {itemData.key}</p>
+      <p>Email: {itemData.data.email}</p>
+    </div>
+  {/snippet}
+</DatabaseListView>
+```
+
+#### 21.4.2. loading snippet (선택)
+
+**사용 시기**: 초기 데이터 로드 중
+
+```svelte
+<DatabaseListView path="users" pageSize={10}>
+  {#snippet loading()}
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p>사용자 목록을 불러오는 중...</p>
+    </div>
+  {/snippet}
+
+  {#snippet item(itemData)}
+    <!-- 아이템 UI -->
+  {/snippet}
+</DatabaseListView>
+```
+
+#### 21.4.3. empty snippet (선택)
+
+**사용 시기**: 데이터가 하나도 없을 때
+
+```svelte
+<DatabaseListView path="users" pageSize={10}>
+  {#snippet empty()}
+    <div class="empty-state">
+      <img src="/icons/empty-box.svg" alt="Empty" />
+      <h3>사용자가 없습니다</h3>
+      <p>첫 번째 사용자를 등록해보세요!</p>
+      <button>사용자 추가</button>
+    </div>
+  {/snippet}
+
+  {#snippet item(itemData)}
+    <!-- 아이템 UI -->
+  {/snippet}
+</DatabaseListView>
+```
+
+#### 21.4.4. error snippet (선택)
+
+**시그니처**:
+```typescript
+error: (errorMessage: string | null) => any
+```
+
+**사용 시기**: 데이터 로드 중 에러 발생
+
+```svelte
+<DatabaseListView path="users" pageSize={10}>
+  {#snippet error(errorMessage)}
+    <div class="error-state">
+      <img src="/icons/error.svg" alt="Error" />
+      <h3>데이터 로드 실패</h3>
+      <p class="error-message">{errorMessage ?? '알 수 없는 오류'}</p>
+      <button onclick={() => location.reload()}>
+        다시 시도
+      </button>
+    </div>
+  {/snippet}
+
+  {#snippet item(itemData)}
+    <!-- 아이템 UI -->
+  {/snippet}
+</DatabaseListView>
+```
+
+#### 21.4.5. loadingMore snippet (선택)
+
+**사용 시기**: 무한 스크롤로 추가 페이지 로드 중
+
+```svelte
+<DatabaseListView path="users" pageSize={10}>
+  {#snippet loadingMore()}
+    <div class="loading-more">
+      <div class="spinner-small"></div>
+      <span>더 불러오는 중...</span>
+    </div>
+  {/snippet}
+
+  {#snippet item(itemData)}
+    <!-- 아이템 UI -->
+  {/snippet}
+</DatabaseListView>
+```
+
+**표시 위치**:
+- `scrollTrigger='bottom'`: 리스트 하단에 표시
+- `scrollTrigger='top'`: 리스트 상단에 표시
+
+#### 21.4.6. noMore snippet (선택)
+
+**사용 시기**: 모든 데이터를 다 로드했을 때 (`hasMore = false`)
+
+```svelte
+<DatabaseListView path="users" pageSize={10}>
+  {#snippet noMore()}
+    <div class="no-more">
+      <p>✓ 모든 사용자를 불러왔습니다</p>
+    </div>
+  {/snippet}
+
+  {#snippet item(itemData)}
+    <!-- 아이템 UI -->
+  {/snippet}
+</DatabaseListView>
+```
+
+### 21.5. 사용 사례별 구성 예시
+
+#### 사례 1: 일반 블로그 게시글 목록
+
+```svelte
+<DatabaseListView
+  path="posts"
+  orderBy="createdAt"
+  reverse={true}           <!-- 최신 글부터 -->
+  scrollTrigger="bottom"   <!-- 아래로 스크롤 -->
+  autoScrollToEnd={false}  <!-- 맨 위에서 시작 -->
+  pageSize={20}
+  threshold={400}
+>
+  {#snippet item(itemData)}
+    <article class="post">
+      <h2>{itemData.data.title}</h2>
+      <p>{itemData.data.excerpt}</p>
+      <time>{new Date(itemData.data.createdAt).toLocaleDateString()}</time>
+    </article>
+  {/snippet}
+</DatabaseListView>
+```
+
+#### 사례 2: 채팅 메시지
+
+```svelte
+<DatabaseListView
+  path="chat-messages"
+  orderBy="roomOrder"
+  orderPrefix={`-${roomId}-`}  <!-- 특정 룸만 -->
+  reverse={false}              <!-- 오래된 메시지부터 로드 -->
+  scrollTrigger="top"          <!-- 위로 스크롤하여 이전 메시지 로드 -->
+  autoScrollToEnd={true}       <!-- 초기 로드 시 맨 아래로 -->
+  pageSize={15}
+  threshold={280}
+>
+  {#snippet item(itemData)}
+    <div class="message">
+      <span class="sender">{itemData.data.senderName}</span>
+      <p>{itemData.data.text}</p>
+    </div>
+  {/snippet}
+
+  {#snippet loadingMore()}
+    <div class="loading-older">이전 메시지 불러오는 중...</div>
+  {/snippet}
+
+  {#snippet noMore()}
+    <div class="conversation-start">대화의 시작입니다</div>
+  {/snippet}
+</DatabaseListView>
+```
+
+#### 사례 3: 사용자 목록 (검색 가능)
+
+```svelte
+<script>
+  let searchQuery = $state('');
+  const searchPath = $derived(searchQuery ? `users-search/${searchQuery}` : 'users');
+</script>
+
+<input type="text" bind:value={searchQuery} placeholder="사용자 검색..." />
+
+{#key searchPath}
+  <DatabaseListView
+    path={searchPath}
+    orderBy="displayNameLowerCase"
+    reverse={false}
+    scrollTrigger="bottom"
+    autoScrollToEnd={false}
+    pageSize={15}
+    threshold={300}
+  >
+    {#snippet item(itemData)}
+      <div class="user-item">
+        <img src={itemData.data.photoUrl} alt="Avatar" />
+        <div>
+          <h3>{itemData.data.displayName}</h3>
+          <p>{itemData.data.email}</p>
+        </div>
+      </div>
+    {/snippet}
+
+    {#snippet empty()}
+      <div class="no-results">
+        <p>"{searchQuery}" 검색 결과가 없습니다</p>
+      </div>
+    {/snippet}
+  </DatabaseListView>
+{/key}
+```
+
+#### 사례 4: 알림 목록
+
+```svelte
+<DatabaseListView
+  path="notifications"
+  orderBy="createdAt"
+  reverse={true}           <!-- 최신 알림부터 -->
+  scrollTrigger="bottom"
+  autoScrollToEnd={false}
+  pageSize={20}
+  threshold={300}
+>
+  {#snippet item(itemData)}
+    {@const isRead = itemData.data.readAt !== null}
+    <div class="notification" class:unread={!isRead}>
+      <div class="icon">{itemData.data.icon}</div>
+      <div class="content">
+        <p>{itemData.data.message}</p>
+        <time>{formatRelativeTime(itemData.data.createdAt)}</time>
+      </div>
+      {#if !isRead}
+        <span class="badge">New</span>
+      {/if}
+    </div>
+  {/snippet}
+</DatabaseListView>
+```
+
+---
+
+## 22. Controller API 및 공개 메서드
+
+### 22.1. 개요
+
+DatabaseListView는 부모 컴포넌트에서 제어할 수 있는 **3개의 공개 메서드**를 제공합니다.
+
+```svelte
+<script>
+  let listView;
+
+  function handleRefresh() {
+    listView?.refresh();
+  }
+
+  function handleScrollToTop() {
+    listView?.scrollToTop();
+  }
+
+  function handleScrollToBottom() {
+    listView?.scrollToBottom();
+  }
+</script>
+
+<DatabaseListView
+  bind:this={listView}
+  path="posts"
+  pageSize={20}
+>
+  <!-- ... -->
+</DatabaseListView>
+
+<div class="controls">
+  <button onclick={handleRefresh}>새로고침</button>
+  <button onclick={handleScrollToTop}>맨 위로</button>
+  <button onclick={handleScrollToBottom}>맨 아래로</button>
+</div>
+```
+
+### 22.2. refresh()
+
+**설명**: 데이터를 처음부터 다시 로드합니다.
+
+**동작**:
+1. 기존 모든 리스너 해제 (onValue, onChildAdded, onChildRemoved)
+2. items 배열 초기화
+3. currentPage를 1로 리셋
+4. lastLoadedValue 초기화
+5. loadInitialData() 재실행
+
+**사용 사례**:
+- 사용자가 "새로고침" 버튼 클릭
+- 필터나 정렬 옵션 변경 후 리스트 갱신
+- 데이터 생성/수정 후 최신 상태 반영
+
+**예시 1: 새로고침 버튼**
+
+```svelte
+<script>
+  import DatabaseListView from '$lib/components/DatabaseListView.svelte';
+
+  let listView;
+
+  function handleRefresh() {
+    listView?.refresh();
+  }
+</script>
+
+<div class="page-header">
+  <h1>게시글 목록</h1>
+  <button onclick={handleRefresh}>
+    <icon>🔄</icon> 새로고침
+  </button>
+</div>
+
+<DatabaseListView
+  bind:this={listView}
+  path="posts"
+  pageSize={20}
+>
+  {#snippet item(itemData)}
+    <div>{itemData.data.title}</div>
+  {/snippet}
+</DatabaseListView>
+```
+
+**예시 2: 게시글 작성 후 자동 새로고침**
+
+```svelte
+<script>
+  let listView;
+
+  async function handleCreatePost(data) {
+    const result = await createPost(data);
+
+    if (result.success) {
+      // 새 게시글이 추가되었으므로 리스트 새로고침
+      listView?.refresh();
+
+      alert('게시글이 작성되었습니다!');
+    }
+  }
+</script>
+
+<CreatePostForm onsubmit={handleCreatePost} />
+
+<DatabaseListView
+  bind:this={listView}
+  path="posts"
+  pageSize={20}
+>
+  <!-- ... -->
+</DatabaseListView>
+```
+
+**주의사항**:
+- ⚠️ refresh()는 **모든 데이터를 처음부터 다시 로드**합니다
+- ⚠️ 스크롤 위치도 맨 위/맨 아래로 리셋됩니다
+- ⚠️ 사용자가 많은 페이지를 로드한 상태에서 refresh()를 호출하면 모든 진행 상황이 사라집니다
+
+### 22.3. scrollToTop()
+
+**설명**: 스크롤을 즉시 맨 위로 이동합니다.
+
+**동작**:
+```typescript
+scrollContainerRef.scrollTop = 0;
+```
+
+**사용 사례**:
+- "맨 위로" 버튼 클릭
+- 검색 쿼리 변경 후 리스트 상단으로 이동
+- 새로운 필터 적용 후 첫 번째 항목 보여주기
+
+**예시 1: 맨 위로 버튼 (Floating Action Button)**
+
+```svelte
+<script>
+  import { onMount } from 'svelte';
+
+  let listView;
+  let showScrollToTop = $state(false);
+
+  // 스크롤 위치에 따라 버튼 표시/숨김
+  onMount(() => {
+    const container = document.querySelector('.list-container');
+    container?.addEventListener('scroll', (e) => {
+      showScrollToTop = e.target.scrollTop > 500;
+    });
+  });
+
+  function handleScrollToTop() {
+    listView?.scrollToTop();
+  }
+</script>
+
+<div class="list-container">
+  <DatabaseListView
+    bind:this={listView}
+    path="posts"
+    pageSize={20}
+  >
+    <!-- ... -->
+  </DatabaseListView>
+</div>
+
+{#if showScrollToTop}
+  <button class="floating-button" onclick={handleScrollToTop}>
+    ↑ 맨 위로
+  </button>
+{/if}
+
+<style>
+  .floating-button {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    padding: 1rem;
+    border-radius: 50%;
+    background: #1f2937;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+</style>
+```
+
+**예시 2: 검색 후 상단으로 이동**
+
+```svelte
+<script>
+  let listView;
+  let searchQuery = $state('');
+
+  async function handleSearch() {
+    listView?.refresh(); // 검색 결과 로드
+    await tick();
+    listView?.scrollToTop(); // 검색 결과 맨 위로
+  }
+</script>
+
+<form onsubmit={handleSearch}>
+  <input type="text" bind:value={searchQuery} placeholder="검색..." />
+  <button type="submit">검색</button>
+</form>
+
+<DatabaseListView
+  bind:this={listView}
+  path="posts"
+  pageSize={20}
+>
+  <!-- ... -->
+</DatabaseListView>
+```
+
+### 22.4. scrollToBottom()
+
+**설명**: 스크롤을 즉시 맨 아래로 이동합니다.
+
+**동작**:
+```typescript
+scrollContainerRef.scrollTop = scrollContainerRef.scrollHeight;
+```
+
+**사용 사례**:
+- "맨 아래로" 버튼 클릭
+- 채팅 메시지 전송 후 최신 메시지로 이동
+- 새로운 알림 도착 후 최신 알림 표시
+
+**예시 1: 채팅 메시지 전송 후 맨 아래로**
+
+```svelte
+<script>
+  let listView;
+  let messageText = $state('');
+
+  async function handleSendMessage() {
+    const result = await sendMessage({
+      roomId,
+      text: messageText,
+      senderUid: authStore.user.uid
+    });
+
+    if (result.success) {
+      messageText = '';
+
+      // 새 메시지가 추가되었으므로 맨 아래로 스크롤
+      await tick();
+      listView?.scrollToBottom();
+    }
+  }
+</script>
+
+<DatabaseListView
+  bind:this={listView}
+  path="chat-messages"
+  orderBy="roomOrder"
+  orderPrefix={`-${roomId}-`}
+  scrollTrigger="top"
+  autoScrollToEnd={true}
+  pageSize={15}
+>
+  {#snippet item(itemData)}
+    <div class="message">{itemData.data.text}</div>
+  {/snippet}
+</DatabaseListView>
+
+<form onsubmit={handleSendMessage}>
+  <input type="text" bind:value={messageText} placeholder="메시지 입력..." />
+  <button type="submit">전송</button>
+</form>
+```
+
+**예시 2: 스크롤 컨트롤 버튼**
+
+```svelte
+<script>
+  let listView;
+</script>
+
+<div class="list-wrapper">
+  <DatabaseListView
+    bind:this={listView}
+    path="posts"
+    pageSize={20}
+  >
+    <!-- ... -->
+  </DatabaseListView>
+
+  <!-- 스크롤 컨트롤 버튼 -->
+  <div class="scroll-controls">
+    <button onclick={() => listView?.scrollToTop()}>↑</button>
+    <button onclick={() => listView?.scrollToBottom()}>↓</button>
+  </div>
+</div>
+
+<style>
+  .list-wrapper {
+    position: relative;
+  }
+
+  .scroll-controls {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .scroll-controls button {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background: #1f2937;
+    color: white;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .scroll-controls button:hover {
+    background: #374151;
+  }
+</style>
+```
+
+### 22.5. 공개 메서드 사용 시 주의사항
+
+#### ⚠️ 컴포넌트 마운트 확인
+
+```svelte
+<script>
+  let listView;
+
+  function handleAction() {
+    // ❌ 잘못된 코드: bind:this가 null일 수 있음
+    listView.refresh();
+
+    // ✅ 올바른 코드: 옵셔널 체이닝 사용
+    listView?.refresh();
+  }
+</script>
+```
+
+#### ⚠️ 비동기 처리
+
+```svelte
+<script>
+  let listView;
+
+  async function handleAction() {
+    // refresh() 후 DOM 업데이트 대기
+    listView?.refresh();
+    await tick();
+
+    // 이제 스크롤 가능
+    listView?.scrollToBottom();
+  }
+</script>
+```
+
+#### ⚠️ Container 스크롤 vs Body 스크롤
+
+```svelte
+<!-- Container 스크롤 (정상 작동) -->
+<div class="list-container" style="height: 600px; overflow-y: auto;">
+  <DatabaseListView bind:this={listView} ... />
+</div>
+
+<!-- Body 스크롤 (scrollToTop/Bottom이 작동 안 함!) -->
+<DatabaseListView bind:this={listView} ... />
+```
+
+**이유**:
+- `scrollToTop()`과 `scrollToBottom()`은 `scrollContainerRef`를 제어합니다
+- Body 스크롤 모드에서는 `scrollContainerRef`가 `null`입니다
+- 따라서 Container 스크롤 모드에서만 이 메서드들이 작동합니다
+
+**해결책**:
+```svelte
+<script>
+  function handleScrollToTop() {
+    // Body 스크롤 모드에서는 window를 제어
+    if (listView?.scrollToTop) {
+      listView.scrollToTop(); // Container 스크롤
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' }); // Body 스크롤
+    }
+  }
+</script>
+```
+
+---
+
+## 23. DatabaseListView 활용: 모든 RTDB 목록 표시의 표준
+
+### 23.1. 핵심 원칙
+
+**🔥 DatabaseListView는 Sonub 프로젝트의 모든 Firebase Realtime Database 데이터 목록 표시에 사용해야 하는 표준 컴포넌트입니다.**
+
+#### ✅ DatabaseListView를 사용해야 하는 모든 경우
+
+| 데이터 타입 | 경로 예시 | 사용 이유 |
+|-------------|-----------|-----------|
+| 사용자 목록 | `/users` | 무한 스크롤, 실시간 업데이트, 정렬 |
+| 게시글 목록 | `/posts` | 카테고리별 필터링, 페이지네이션 |
+| 댓글 목록 | `/comments` | 실시간 댓글 추가/삭제 감지 |
+| 채팅 메시지 | `/chat-messages` | 양방향 스크롤, 실시간 메시지 동기화 |
+| 채팅방 목록 | `/chat-joins/{uid}` | 최근 대화 정렬, 읽지 않은 메시지 표시 |
+| 알림 목록 | `/notifications/{uid}` | 최신 알림부터 표시, 실시간 알림 |
+| 좋아요 목록 | `/likes/{postId}` | 누가 좋아요 눌렀는지 목록 |
+| 팔로워 목록 | `/followers/{uid}` | 팔로워 실시간 추가/제거 |
+| 검색 결과 | `/search-results/{query}` | 검색 결과 무한 스크롤 |
+| 활동 로그 | `/activity-logs/{uid}` | 사용자 활동 히스토리 |
+
+#### ❌ DatabaseListView를 사용하지 말아야 하는 경우
+
+| 상황 | 이유 | 대안 |
+|------|------|------|
+| 단일 노드 조회 | 목록이 아닌 하나의 데이터 | `onValue(ref(db, path))` 직접 사용 |
+| 고정된 적은 데이터 (< 10개) | 무한 스크롤 불필요 | `onValue()` + `$state` 배열 |
+| Firestore 데이터 | RTDB 전용 컴포넌트 | Firestore 전용 ListView 필요 |
+| 서버 API 데이터 | Firebase가 아님 | 일반 fetch + 페이지네이션 |
+
+### 23.2. 프로젝트 전반의 일관성 확보
+
+**목적**: 모든 개발자가 동일한 패턴으로 목록 UI를 구현하여 코드 일관성과 유지보수성을 확보합니다.
+
+#### 일관된 패턴의 장점
+
+1. **코드 재사용성**
+   ```svelte
+   <!-- 사용자 목록 -->
+   <DatabaseListView path="users" ... />
+
+   <!-- 게시글 목록 -->
+   <DatabaseListView path="posts" ... />
+
+   <!-- 댓글 목록 -->
+   <DatabaseListView path="comments" ... />
+   ```
+   → 동일한 컴포넌트로 모든 목록 구현
+
+2. **실시간 동기화 자동 처리**
+   - onValue, onChildAdded, onChildRemoved 리스너 자동 관리
+   - 메모리 누수 방지 (자동 cleanup)
+   - 다른 사용자의 변경사항 즉시 반영
+
+3. **성능 최적화**
+   - 자동 페이지네이션
+   - 서버 측 필터링 (orderPrefix)
+   - 효율적인 쿼리 (startAt, limitToFirst/Last)
+
+4. **개발 속도 향상**
+   - 무한 스크롤 구현 불필요
+   - 리스너 관리 불필요
+   - UI 상태 관리 자동화
+
+### 23.3. 프로젝트별 구현 예시
+
+#### 예시 1: 사용자 목록 페이지
+
+**파일**: `src/routes/user/list/+page.svelte`
+
+```svelte
+<script>
+  import DatabaseListView from '$lib/components/DatabaseListView.svelte';
+  import Avatar from '$lib/components/user/avatar.svelte';
+  import { goto } from '$app/navigation';
+
+  function goToProfile(uid) {
+    goto(`/user/profile/${uid}`);
+  }
+
+  function goToChat(uid) {
+    goto(`/chat/room?uid=${uid}`);
+  }
+</script>
+
+<svelte:head>
+  <title>사용자 목록</title>
+</svelte:head>
+
+<div class="page-container">
+  <h1>전체 사용자</h1>
+
+  <DatabaseListView
+    path="users"
+    orderBy="createdAt"
+    reverse={true}
+    scrollTrigger="bottom"
+    pageSize={15}
+    threshold={300}
+  >
+    {#snippet item(itemData)}
+      {@const user = itemData.data}
+      <div class="user-card">
+        <Avatar uid={itemData.key} size={64} />
+        <div class="user-info">
+          <h3>{user.displayName || '익명'}</h3>
+          <p>{user.email || 'No email'}</p>
+        </div>
+        <div class="actions">
+          <button onclick={() => goToProfile(itemData.key)}>
+            프로필
+          </button>
+          <button onclick={() => goToChat(itemData.key)}>
+            채팅
+          </button>
+        </div>
+      </div>
+    {/snippet}
+
+    {#snippet loading()}
+      <div class="loading">사용자 목록을 불러오는 중...</div>
+    {/snippet}
+
+    {#snippet empty()}
+      <div class="empty">아직 등록된 사용자가 없습니다.</div>
+    {/snippet}
+
+    {#snippet error(errorMessage)}
+      <div class="error">
+        <p>오류 발생: {errorMessage}</p>
+        <button onclick={() => location.reload()}>다시 시도</button>
+      </div>
+    {/snippet}
+  </DatabaseListView>
+</div>
+```
+
+#### 예시 2: 채팅방 목록 (chat-joins)
+
+**파일**: `src/routes/chat/list/+page.svelte`
+
+```svelte
+<script>
+  import { authStore } from '$lib/stores/auth.svelte';
+  import DatabaseListView from '$lib/components/DatabaseListView.svelte';
+  import Avatar from '$lib/components/user/avatar.svelte';
+  import { goto } from '$app/navigation';
+  import { formatLongDate } from '$lib/functions/date.functions';
+
+  const myUid = $derived(authStore.user?.uid ?? '');
+
+  function openChatRoom(roomId) {
+    goto(`/chat/room?roomId=${roomId}`);
+  }
+</script>
+
+<svelte:head>
+  <title>채팅 목록</title>
+</svelte:head>
+
+<div class="page-container">
+  <h1>내 채팅방</h1>
+
+  <DatabaseListView
+    path={`chat-joins/${myUid}`}
+    orderBy="listOrder"
+    reverse={false}
+    scrollTrigger="bottom"
+    pageSize={20}
+    threshold={300}
+  >
+    {#snippet item(itemData)}
+      {@const room = itemData.data}
+      {@const isUnread = room.listOrder?.startsWith('200')}
+      <div
+        class="chat-room-card"
+        class:unread={isUnread}
+        onclick={() => openChatRoom(room.roomId)}
+      >
+        <Avatar uid={room.partnerUid} size={56} />
+        <div class="room-info">
+          <div class="room-header">
+            <h3>{room.partnerUid || '알 수 없음'}</h3>
+            {#if isUnread}
+              <span class="badge">{room.newMessageCount || 0}</span>
+            {/if}
+          </div>
+          <p class="last-message">{room.lastMessageText || ''}</p>
+          <time>{formatLongDate(room.lastMessageAt)}</time>
+        </div>
+      </div>
+    {/snippet}
+
+    {#snippet loading()}
+      <div class="loading">채팅방 목록을 불러오는 중...</div>
+    {/snippet}
+
+    {#snippet empty()}
+      <div class="empty">
+        <p>아직 채팅방이 없습니다.</p>
+        <a href="/user/list">사용자 목록에서 대화를 시작하세요</a>
+      </div>
+    {/snippet}
+  </DatabaseListView>
+</div>
+```
+
+#### 예시 3: 게시글 목록 (카테고리별 필터링)
+
+**파일**: `src/routes/forum/[category]/+page.svelte`
+
+```svelte
+<script>
+  import { page } from '$app/stores';
+  import DatabaseListView from '$lib/components/DatabaseListView.svelte';
+  import { goto } from '$app/navigation';
+
+  const category = $derived($page.params.category ?? 'all');
+  const categoryPrefix = $derived(category === 'all' ? '' : `${category}-`);
+
+  function goToPost(postId) {
+    goto(`/forum/post/${postId}`);
+  }
+</script>
+
+<svelte:head>
+  <title>{category} 게시판</title>
+</svelte:head>
+
+<div class="page-container">
+  <h1>{category} 게시판</h1>
+
+  {#key categoryPrefix}
+    <DatabaseListView
+      path="posts"
+      orderBy="categoryOrder"
+      orderPrefix={categoryPrefix}
+      reverse={true}
+      scrollTrigger="bottom"
+      pageSize={20}
+      threshold={400}
+    >
+      {#snippet item(itemData)}
+        {@const post = itemData.data}
+        <article
+          class="post-card"
+          onclick={() => goToPost(itemData.key)}
+        >
+          <h2>{post.title}</h2>
+          <p class="excerpt">{post.excerpt || ''}</p>
+          <div class="meta">
+            <span class="author">{post.authorName}</span>
+            <span class="date">
+              {new Date(post.createdAt).toLocaleDateString()}
+            </span>
+            <span class="views">조회 {post.views || 0}</span>
+          </div>
+        </article>
+      {/snippet}
+
+      {#snippet loading()}
+        <div class="loading">게시글을 불러오는 중...</div>
+      {/snippet}
+
+      {#snippet empty()}
+        <div class="empty">
+          <p>아직 게시글이 없습니다.</p>
+          <button onclick={() => goto('/forum/new')}>
+            첫 게시글 작성하기
+          </button>
+        </div>
+      {/snippet}
+
+      {#snippet loadingMore()}
+        <div class="loading-more">더 불러오는 중...</div>
+      {/snippet}
+
+      {#snippet noMore()}
+        <div class="no-more">모든 게시글을 불러왔습니다</div>
+      {/snippet}
+    </DatabaseListView>
+  {/key}
+</div>
+```
+
+### 23.4. 개발 가이드라인
+
+#### 체크리스트: DatabaseListView 사용 전 확인사항
+
+- [ ] **Firebase RTDB 데이터인가?** (Firestore가 아닌지 확인)
+- [ ] **목록 형태의 데이터인가?** (단일 노드가 아닌지 확인)
+- [ ] **10개 이상의 아이템이 예상되는가?** (무한 스크롤이 필요한지 확인)
+- [ ] **orderBy 필드가 모든 노드에 존재하는가?** (정렬 기준 필드 확인)
+- [ ] **실시간 동기화가 필요한가?** (다른 사용자의 변경사항 반영 필요 여부)
+
+#### 구현 단계
+
+1. **데이터 구조 확인**
+   ```
+   /users
+     /-ABC123
+       displayName: "홍길동"
+       email: "hong@example.com"
+       createdAt: 1234567890 ← orderBy 필드 필수!
+     /-ABC124
+       ...
+   ```
+
+2. **컴포넌트 임포트**
+   ```svelte
+   <script>
+     import DatabaseListView from '$lib/components/DatabaseListView.svelte';
+   </script>
+   ```
+
+3. **Props 설정**
+   - path: Firebase RTDB 경로
+   - orderBy: 정렬 기준 필드
+   - reverse: 최신 데이터부터 표시할지 여부
+   - scrollTrigger: 'top' (채팅) vs 'bottom' (일반 목록)
+   - orderPrefix: 카테고리 필터링 필요 시
+   - pageSize: 10~30 권장
+
+4. **item snippet 작성**
+   ```svelte
+   {#snippet item(itemData, index)}
+     <div class="item">
+       <!-- UI 구현 -->
+     </div>
+   {/snippet}
+   ```
+
+5. **선택적 snippets 추가**
+   - loading: 로딩 UI
+   - empty: 빈 상태 UI
+   - error: 에러 UI
+
+### 23.5. 일반적인 실수와 해결책
+
+#### 실수 1: orderBy 필드가 없는 노드
+
+```javascript
+// ❌ 잘못된 데이터 구조
+{
+  "users": {
+    "-ABC123": {
+      "displayName": "홍길동"
+      // createdAt 없음!
+    }
+  }
+}
+
+// ✅ 올바른 데이터 구조
+{
+  "users": {
+    "-ABC123": {
+      "displayName": "홍길동",
+      "createdAt": 1234567890
+    }
+  }
+}
+```
+
+**해결책**: Firebase Cloud Functions로 자동 생성
+```typescript
+// firebase/functions/src/handlers/user.handler.ts
+export async function handleUserCreate(uid: string, userData: UserData) {
+  if (!userData.createdAt) {
+    await update(ref(db, `users/${uid}`), {
+      createdAt: Date.now()
+    });
+  }
+}
+```
+
+#### 실수 2: reverse 모드 오해
+
+```svelte
+<!-- ❌ 잘못된 이해: reverse=true면 limitToFirst 사용? -->
+<DatabaseListView
+  orderBy="createdAt"
+  reverse={true}
+  <!-- 내부적으로 limitToLast + 배열 reverse 사용함! -->
+/>
+```
+
+**올바른 이해**: reverse는 내부적으로 Firebase 쿼리 방향을 자동 전환합니다.
+
+#### 실수 3: Container 높이 미설정
+
+```svelte
+<!-- ❌ 스크롤 안 됨 -->
+<div class="list-container">
+  <DatabaseListView path="users" ... />
+</div>
+
+<style>
+  .list-container {
+    overflow-y: auto; /* 높이가 없어서 스크롤 안 됨! */
+  }
+</style>
+
+<!-- ✅ 올바른 코드 -->
+<div class="list-container">
+  <DatabaseListView path="users" ... />
+</div>
+
+<style>
+  .list-container {
+    height: calc(100vh - 4rem); /* 높이 필수! */
+    overflow-y: auto;
+  }
+</style>
+```
+
+#### 실수 4: orderPrefix 타입 불일치
+
+```javascript
+// orderBy 필드 예시
+{
+  "posts": {
+    "-ABC123": {
+      "order": "community-1234567890" // 문자열 타입
+    }
+  }
+}
+```
+
+```svelte
+<!-- ❌ orderPrefix에 숫자 전달 -->
+<DatabaseListView
+  orderBy="order"
+  orderPrefix={1234567890}
+/>
+
+<!-- ✅ 문자열로 전달 -->
+<DatabaseListView
+  orderBy="order"
+  orderPrefix="community-"
+/>
+```
+
+### 23.6. 요약
+
+**DatabaseListView는 Sonub 프로젝트의 모든 Firebase Realtime Database 목록 표시의 표준입니다.**
+
+✅ **사용해야 하는 모든 경우**:
+- 사용자 목록, 게시글 목록, 댓글 목록
+- 채팅 메시지, 채팅방 목록, 알림 목록
+- 좋아요 목록, 팔로워 목록, 검색 결과
+- 활동 로그, 히스토리 등 모든 RTDB 목록
+
+✅ **장점**:
+- 무한 스크롤 자동 처리
+- 실시간 동기화 자동 처리 (onValue, onChildAdded, onChildRemoved)
+- 메모리 누수 방지 (자동 cleanup)
+- 코드 일관성 및 재사용성 극대화
+- 개발 속도 향상
+
+✅ **필수 확인사항**:
+- orderBy 필드가 모든 노드에 존재
+- 컨테이너 스크롤 사용 시 명시적 높이 설정
+- pageSize는 10~30 권장
+
+---
+
+## 24. 참고 자료
+
+### 24.1. 관련 파일
 
 - **컴포넌트**: [src/lib/components/DatabaseListView.svelte](../src/lib/components/DatabaseListView.svelte)
 - **사용자 목록**: [src/routes/user/list/+page.svelte](../src/routes/user/list/+page.svelte)
 - **테스트 페이지**: [src/routes/dev/test/database-list-view/+page.svelte](../src/routes/dev/test/database-list-view/+page.svelte)
 - **테스트 사양**: [sonub-test-database-list-view.md](./sonub-test-database-list-view.md)
 
-### 21.2. Firebase 공식 문서
+### 24.2. Firebase 공식 문서
 
 - [Firebase Realtime Database - Query Data](https://firebase.google.com/docs/database/web/lists-of-data)
 - [Firebase Realtime Database - Sorting and Filtering](https://firebase.google.com/docs/database/web/lists-of-data#sorting_and_filtering_data)
 - [Firebase Realtime Database - Pagination](https://firebase.google.com/docs/database/web/lists-of-data#filtering_data)
 
-### 21.3. Svelte 공식 문서
+### 24.3. Svelte 공식 문서
 
 - [Svelte 5 - Runes](https://svelte.dev/docs/svelte/$state)
 - [Svelte 5 - $effect](https://svelte.dev/docs/svelte/$effect)
 - [Svelte 5 - Snippets](https://svelte.dev/docs/svelte/snippet)
 
-### 21.4. 버전 히스토리
+### 24.4. 버전 히스토리
 
 | 날짜 | 버전 | 변경사항 |
 |------|------|----------|
@@ -3102,6 +4630,8 @@ DatabaseListView 컴포넌트를 다른 프로젝트에 재사용하려면:
 | 2025-11-09 | 1.3.0 | 색상별 디버깅 로그 시스템 추가 |
 | 2025-11-09 | 1.4.0 | 실제 인덱스 전달 기능 추가 (snippet에 index 파라미터) |
 | 2025-11-09 | 2.0.0 | 종합 문서화 완료 (SED 형식) |
+| 2025-11-11 | 3.0.0 | 전체 Props, Controller API, 범용 사용 가이드 추가 |
+| 2025-11-11 | 3.1.0 | `equalToValue` 기반 정확 일치 필터와 사용자 검색 예시 추가 |
 
 ## 작업 이력 (SED Log)
 
@@ -3109,9 +4639,11 @@ DatabaseListView 컴포넌트를 다른 프로젝트에 재사용하려면:
 | ---- | ------ | ---- |
 | 2025-11-10 | Codex Agent | `/user/list` 페이지의 Paraglide 메시지 호출을 `msg_####` 키 기반으로 정비하여 런타임 오류(`fn is not a function`)를 해결하고 DatabaseListView 사용자 목록 데모가 정상 동작하도록 고정함. |
 | 2025-11-10 | Codex Agent | 사용자 목록 타일 하단에 `채팅`/`공개 프로필` 칩을 추가하여 `/chat/room?uid=...`로 바로 이동하도록 UX 개선, DatabaseListView 예제가 채팅 흐름과 연결되도록 업데이트함. |
+| 2025-11-11 | Claude Code | DatabaseListView 컴포넌트의 전체 Props 레퍼런스 (reverse, scrollTrigger, autoScrollToEnd, threshold 등), Controller API (refresh, scrollToTop, scrollToBottom), 그리고 범용 활용 가이드 추가. 모든 RTDB 데이터 목록 표시에 DatabaseListView 사용 필수 명시. |
+| 2025-11-11 | Codex Agent | `equalToValue` 정확 일치 필터와 `/user/list` 검색 모달 사례를 문서화하여 displayNameLowerCase 기반 사용자 검색 흐름을 정식 지원. |
 
 ---
 
-**문서 마지막 업데이트**: 2025-11-09
+**문서 마지막 업데이트**: 2025-11-11
 **작성자**: Claude Code
-**문서 버전**: 2.0.0
+**문서 버전**: 3.1.0

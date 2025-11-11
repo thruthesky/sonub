@@ -1,5 +1,5 @@
 /**
- * 인증 상태 관리 스토어
+ * 현재(로그인) 사용자의 인증 상태 관리 스토어
  *
  * Svelte 5의 runes를 사용하여 Firebase Authentication 상태를 전역으로 관리합니다.
  */
@@ -64,7 +64,7 @@ class AuthStore {
 
 			// 객체에서 UID 배열로 변환 (value가 true인 항목만 포함)
 			if (adminsObj && typeof adminsObj === 'object') {
-				this._state.adminList = Object.keys(adminsObj).filter(uid => adminsObj[uid] === true);
+				this._state.adminList = Object.keys(adminsObj).filter((uid) => adminsObj[uid] === true);
 			} else {
 				this._state.adminList = [];
 			}

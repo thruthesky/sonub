@@ -22,7 +22,7 @@
 		{
 			titleKey: m.adminTestUserManagement,
 			descriptionKey: m.adminTestUserManagementDesc,
-			href: '/admin/users',
+			href: '/admin/test/create-test-data',
 			icon: '👥'
 		},
 		{

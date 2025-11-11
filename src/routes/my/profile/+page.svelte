@@ -71,9 +71,23 @@
 				photoUrl = userData.photoUrl || ''; // 프로필 사진 URL 로드
 				gender = userData.gender || '';
 
-				// dateOfBirth 파싱 (YYYY-MM-DD 형식)
-				if (userData.dateOfBirth) {
-					const parts = userData.dateOfBirth.split('-');
+				// 생년월일 로드 (Cloud Functions가 생성한 파생 필드 사용)
+				if (userData.birthYear !== undefined && userData.birthYear !== null) {
+					birthYear = userData.birthYear;
+				}
+				if (userData.birthMonth !== undefined && userData.birthMonth !== null) {
+					birthMonth = userData.birthMonth;
+				}
+				if (userData.birthDay !== undefined && userData.birthDay !== null) {
+					birthDay = userData.birthDay;
+				}
+
+				// 하위 호환성: birthYearMonthDay 필드가 있으면 파싱 (파생 필드가 없는 경우)
+				if (
+					(birthYear === null || birthMonth === null || birthDay === null) &&
+					userData.birthYearMonthDay
+				) {
+					const parts = userData.birthYearMonthDay.split('-');
 					if (parts.length === 3) {
 						birthYear = parseInt(parts[0]);
 						birthMonth = parseInt(parts[1]);
@@ -271,7 +285,7 @@
 				// YYYY-MM-DD 형식으로 변환
 				const month = birthMonth.toString().padStart(2, '0');
 				const day = birthDay.toString().padStart(2, '0');
-				updateData.dateOfBirth = `${birthYear}-${month}-${day}`;
+				updateData.birthYearMonthDay = `${birthYear}-${month}-${day}`;
 
 				// 미래 날짜 검증
 				const birthDate = new Date(birthYear, birthMonth - 1, birthDay);

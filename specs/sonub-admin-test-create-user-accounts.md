@@ -1,7 +1,7 @@
 ---
 name: sonub-admin-test-create-user-accounts
-version: 2.0.0
-description: 관리자 사용자 목록 페이지에서 테스트 사용자 생성·목록·삭제를 통합 관리하는 SED 명세
+version: 2.1.0
+description: 관리자 사용자 목록과 테스트 데이터 생성 페이지 간의 테스트 사용자 관리 분리 명세
 author: Codex Agent
 email: noreply@openai.com
 license: GPL-3.0
@@ -12,6 +12,7 @@ dependencies:
   - sonub-setup-firebase.md
   - sonub-setup-shadcn.md
   - sonub-design-layout.md
+  - sonub-firebase-database-structure.md
 tags:
   - admin
   - test-user
@@ -24,44 +25,46 @@ tags:
 
 ## 1. 개요
 
-- 테스트 사용자 생성 페이지(`/admin/test/create-users`)를 **사용자 목록 페이지(`/admin/users`)**와 통합한다.
-- 앞으로 관리자 페이지에서는 `/admin/users` 한 곳에서 임시 사용자 **생성 → 조회 → 삭제**를 모두 수행한다.
-- 본 명세서는 통합 UI/UX 요구사항과 Firebase 연동 로직을 정의한다.
+- 테스트 사용자 생성 기능을 **`/admin/test/create-test-data`** 페이지로 이동하여 테스트 데이터 생성 도구와 한 곳에서 관리한다.
+- `/admin/users` 페이지는 테스트 사용자 **조회·상태 확인·개별/일괄 삭제**에 집중한다.
+- 본 명세서는 분리된 두 페이지의 역할과 UI/UX 요구사항, Firebase 연동 로직을 정의한다.
 
 ## 2. 기능 요구사항
 
 1. **페이지 경로**
-   - `/admin/users`
+   - `/admin/users` : 테스트 사용자 목록·상태 확인·개별/일괄 삭제
+   - `/admin/test/create-test-data` : 테스트 데이터 + 테스트 사용자 생성
    - 상단 관리자 탭(대시보드/테스트/사용자목록/신고목록)은 `/admin/+layout.svelte`에서 제공
-2. **섹션 구성**
+2. **`/admin/users` 섹션 구성**
    1. 제목 & 설명
-   2. 통계 카드 (테스트 사용자 수, 상태)
-   3. “테스트 사용자 생성” 카드
-      - 100명 일괄 생성 버튼
-      - 진행률(숫자 + progress bar)
-      - 완료/에러 메시지
-      - 생성되는 사용자 스펙 안내
-   4. 삭제 진행 상태 (일괄 삭제 시)
-   5. 사용자 목록 카드 리스트 (개별 삭제 버튼)
-   6. 정보 카드 (주의사항)
-3. **생성 로직**
+   2. 통계 카드 (테스트 사용자 수, 상태 요약)
+   3. 삭제 진행 상태 카드 (일괄 삭제 시 노출)
+   4. 사용자 목록 카드 리스트 (개별 삭제 버튼 포함)
+   5. 정보 카드 (주의사항)
+   6. “테스트 사용자가 없습니다” 메시지 → `/admin/test/create-test-data` 링크 안내
+3. **`/admin/test/create-test-data` 추가 섹션**
+   - 기존 테스트 데이터 생성 카드 유지
+   - 동일 페이지 상단에 “테스트 사용자 생성” 카드 추가
+     - 100명 일괄 생성 버튼
+     - 진행률(숫자 + progress bar)
+     - 완료/에러 메시지
+     - 생성되는 사용자 스펙 안내 (한 번에 100명)
+4. **생성 로직**
    - `generateTestUsers()`로 100명 데이터 생성
    - `saveTestUsersToFirebase()` 호출 시 `onProgress(index,total)` 콜백으로 진행률 업데이트
-   - 완료 후 `loadUsers()` 재호출
+   - 생성이 완료되어도 `/admin/users`로 자동 이동하지 않음 (관리자가 직접 페이지 이동)
    - 상태 변수:
-     - `isCreating`, `isCreationCompleted`, `creationError`
-     - `creationProgress`, `creationTotal`, `creationPercentage`
-4. **삭제 로직**
-   - 기존 `deleteUserByUid`, `deleteAllTemporaryUsers` 사용
+     - `isCreatingTestUsers`, `userCreationCompleted`, `userCreationError`
+     - `userCreationProgress`, `userCreationTotal`, `userCreationPercentage`
+5. **삭제 로직**
+   - `/admin/users`에서 기존 `deleteUserByUid`, `deleteAllTemporaryUsers` 사용
    - 일괄 삭제 진행률 UI는 기존과 동일
-5. **빈 상태 메시지**
-   - 사용자 수 0일 때 “테스트 사용자 생성” 버튼으로 안내 (별도 페이지 링크 제거)
 6. **권한**
    - 현재는 별도 권한 검증 없음 (향후 확장 대비)
 
 ## 3. UI 상세
 
-### 3.1 생성 카드
+### 3.1 `/admin/test/create-test-data` 내 생성 카드
 - 버튼 텍스트:
   - 기본: `🚀 테스트 사용자 생성`
   - 생성 중: `⏳ 생성 중...`
@@ -71,11 +74,13 @@ tags:
   - “한 번에 생성되는 수” → 100
   - “현재 생성된 수” → 진행 값
 - 에러 발생 시 카드 내부에 붉은 경고 블록 표시
+- 테스트 데이터 생성 카드와 동일한 페이지 내에 배치되며, 페이지 상단에서 테스트 사용자 영역이 먼저 노출된다.
 
-### 3.2 사용자 목록
+### 3.2 `/admin/users` 사용자 목록
 - 기존 UI 유지 (Card 리스트, 성별/생년/생성일 등)
 - 개별 삭제, 일괄 삭제 버튼을 페이지 내에서 제공
 - `isTemporary: true` 사용자만 노출
+- 사용자 수가 0일 때는 `/admin/test/create-test-data` 링크를 포함한 안내 메시지를 표시한다.
 
 ## 4. 데이터 흐름
 
@@ -94,11 +99,10 @@ Button 클릭
 
 | 파일 | 설명 |
 | --- | --- |
-| `src/routes/admin/users/+page.svelte` | 사용자 목록 + 생성/삭제 UI 통합 페이지 |
+| `src/routes/admin/users/+page.svelte` | 테스트 사용자 목록 및 삭제 전용 페이지 |
+| `src/routes/admin/test/create-test-data/+page.svelte` | 테스트 데이터 + 테스트 사용자 생성 페이지 |
 | `src/lib/utils/test-user-generator.ts` | 테스트 사용자 100명 데이터 생성기 |
 | `src/lib/utils/admin-service.ts` | Firebase 저장/삭제 유틸리티 |
-
-> `src/routes/admin/test/create-users/+page.svelte` 파일은 삭제한다.
 
 ### 5.1 `src/lib/utils/test-user-generator.ts` 상세
 
@@ -173,10 +177,9 @@ return {
     getTemporaryUsers,
     deleteUserByUid,
     deleteAllTemporaryUsers,
-    getTemporaryUserCount,
-    saveTestUsersToFirebase
+    getTemporaryUserCount
   } from '$lib/utils/admin-service';
-  import { generateTestUsers, type TestUser } from '$lib/utils/test-user-generator';
+  import type { TestUser } from '$lib/utils/test-user-generator';
 
   let users = $state<Record<string, TestUser>>({});
   let isLoading = $state(true);
@@ -184,13 +187,16 @@ return {
   let isDeleting = $state(false);
   let deleteProgress = $state(0);
   let deleteTotal = $state(0);
-  let isCreating = $state(false);
-  let isCreationCompleted = $state(false);
-  let creationError: string | null = $state(null);
-  let creationProgress = $state(0);
-  let creationTotal = $state(0);
 </script>
 ```
+
+### 5.3 `src/routes/admin/test/create-test-data/+page.svelte` 보강
+
+- 기존 테스트 데이터 생성 로직을 유지하면서, 동일 파일 상단에 다음 상태를 추가한다:
+  - `isCreatingTestUsers`, `userCreationCompleted`, `userCreationError`
+  - `userCreationProgress`, `userCreationTotal`, `userCreationPercentage`
+- `handleCreateTestUsers()`에서 `generateTestUsers()` + `saveTestUsersToFirebase()` 조합으로 100명 생성 및 진행률 업데이트.
+- UI는 `m.testUserCreate*` 번역 문자열을 사용해 `/admin/users`와 동일한 진행률/완료/에러 표시를 제공한다.
 
 #### 데이터 로딩
 ```ts
@@ -329,3 +335,4 @@ async function handleCreateUsers() {
 | 날짜 | 작업자 | 내용 |
 | ---- | ------ | ---- |
 | 2025-11-09 | Codex Agent | `/admin/users` 페이지에 테스트 사용자 생성 UI를 통합하고 `/admin/test/create-users` 경로를 제거. 관리자 대시보드/테스트 페이지, 관련 메뉴 및 문서를 모두 `/admin/users`로 업데이트. |
+| 2025-11-11 | Codex Agent | 테스트 사용자 생성 기능을 `/admin/test/create-test-data` 페이지로 이동하고, `/admin/users`는 목록/삭제 전용 페이지로 단순화. 문서 및 번역 안내 문구를 해당 구조에 맞게 수정. |

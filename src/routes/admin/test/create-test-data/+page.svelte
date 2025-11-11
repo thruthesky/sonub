@@ -4,6 +4,9 @@
 	import { Alert } from '$lib/components/ui/alert';
 	import { rtdb } from '$lib/firebase';
 	import { ref, push, set } from 'firebase/database';
+	import { saveTestUsersToFirebase } from '$lib/utils/admin-service';
+	import { generateTestUsers } from '$lib/utils/test-user-generator';
+	import { m } from '$lib/paraglide/messages';
 
 	const categories = ['qna', 'news', 'reminder'] as const;
 
@@ -14,6 +17,11 @@
 	let recentKeys = $state<string[]>([]);
 	let lastCategory = $state<string | null>(null);
 	let lastTimestamp = $state<number | null>(null);
+	let isCreatingTestUsers = $state(false);
+	let userCreationProgress = $state(0);
+	let userCreationTotal = $state(0);
+	let userCreationCompleted = $state(false);
+	let userCreationError = $state<string | null>(null);
 
 	function clampCount(value: number): number {
 		if (Number.isNaN(value) || value < 1) {
@@ -33,6 +41,36 @@
 		}
 
 		return new Date(value).toLocaleString('ko-KR');
+	}
+
+	const userCreationPercentage = $derived(
+		userCreationTotal > 0 ? Math.round((userCreationProgress / userCreationTotal) * 100) : 0
+	);
+
+	async function handleCreateTestUsers() {
+		if (isCreatingTestUsers) return;
+
+		isCreatingTestUsers = true;
+		userCreationCompleted = false;
+		userCreationError = null;
+		userCreationProgress = 0;
+
+		try {
+			const testUsers = generateTestUsers();
+			userCreationTotal = testUsers.length;
+
+			await saveTestUsersToFirebase(testUsers, (index, total) => {
+				userCreationProgress = index;
+				userCreationTotal = total;
+			});
+
+			userCreationCompleted = true;
+		} catch (error) {
+			console.error('테스트 사용자 생성 실패:', error);
+			userCreationError = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
+		} finally {
+			isCreatingTestUsers = false;
+		}
 	}
 
 	async function handleGenerate(): Promise<void> {
@@ -97,6 +135,72 @@
 			`/test/data` 노드에 무한 스크롤 확인용 가짜 데이터를 대량으로 생성합니다.
 		</p>
 	</div>
+
+	<Card>
+		<div class="space-y-6 p-6">
+			<div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+				<div>
+					<h2 class="text-xl font-semibold text-gray-900">{m.testUserCreate()}</h2>
+					<p class="text-sm text-gray-600">{m.testUserCreateGuide()}</p>
+				</div>
+				<Button
+					onclick={handleCreateTestUsers}
+					disabled={isCreatingTestUsers}
+					size="lg"
+					class="min-w-48 bg-blue-600 text-white hover:bg-blue-700"
+				>
+					{#if isCreatingTestUsers}
+						{m.testUserCreating()}
+					{:else if userCreationCompleted}
+						{m.testUserCreateComplete()}
+					{:else}
+						{m.testUserCreateIcon()}
+					{/if}
+				</Button>
+			</div>
+
+			{#if isCreatingTestUsers || userCreationProgress > 0}
+				<div class="space-y-2">
+					<div class="flex justify-between text-sm">
+						<span class="text-gray-700">{m.commonProgress()}</span>
+						<span class="font-semibold text-gray-900">
+							{userCreationProgress} / {userCreationTotal} ({userCreationPercentage}%)
+						</span>
+					</div>
+					<div class="h-3 w-full overflow-hidden rounded-full bg-gray-200">
+						<div
+							class="h-full bg-blue-500 transition-all duration-300"
+							style="width: {userCreationPercentage}%"
+						></div>
+					</div>
+				</div>
+			{/if}
+
+			{#if userCreationCompleted}
+				<div class="rounded-lg bg-green-50 p-4 text-sm text-green-800">
+					{m.testUserCreateCompleteMessage({ count: userCreationProgress })}
+				</div>
+			{/if}
+
+			{#if userCreationError}
+				<div class="rounded-lg bg-red-50 p-4 text-sm text-red-800">
+					<strong>✗ {m.commonError()}:</strong>
+					{userCreationError}
+				</div>
+			{/if}
+
+			<div class="grid gap-4 md:grid-cols-2">
+				<div class="rounded-lg bg-gray-50 p-4">
+					<p class="text-sm text-gray-600">{m.testUserCreateAtOnce()}</p>
+					<p class="mt-1 text-2xl font-bold text-gray-900">100</p>
+				</div>
+				<div class="rounded-lg bg-gray-50 p-4">
+					<p class="text-sm text-gray-600">{m.testUserCurrentCreated()}</p>
+					<p class="mt-1 text-2xl font-bold text-gray-900">{userCreationProgress}</p>
+				</div>
+			</div>
+		</div>
+	</Card>
 
 	<Alert>
 		<div class="space-y-2 text-sm text-gray-700">

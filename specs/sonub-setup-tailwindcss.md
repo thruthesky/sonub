@@ -1,35 +1,41 @@
 ---
 name: sonub-tailwind-setup
-version: 1.0.0
-description: SvelteKit 프로젝트에 Tailwind CSS 설정 명세서 (Light 모드 전용)
+version: 1.2.0
+description: SvelteKit 프로젝트에 Tailwind CSS 설치 및 설정 명세서 (Light 모드 전용)
 author: JaeHo Song
 email: thruthesky@gmail.com
 license: GPL-3.0
 created: 2025-01-08
-updated: 2025-01-08
+updated: 2025-01-11
 step: 15
 priority: "**"
 dependencies: ["sonub-setup-svelte.md"]
-tags: ["tailwindcss", "styling", "css", "설정", "light-mode"]
+related: ["sonub-design-tailwindcss.md"]
+tags: ["tailwindcss", "styling", "css", "설정", "light-mode", "installation"]
 ---
 
-# SvelteKit 프로젝트 Tailwind CSS 설정 명세서
+# SvelteKit 프로젝트 Tailwind CSS 설치 및 설정 명세서
 
 ## 1. 개요
 
 ### 1.1. 목적
-본 명세서는 SvelteKit 5 프로젝트에서 Tailwind CSS 4.x를 설정하고 사용하는 방법을 정의합니다. Light 모드 전용 설정을 포함하여 다크 모드 없이 일관된 사용자 경험을 제공합니다.
+본 명세서는 SvelteKit 5 프로젝트에서 Tailwind CSS 4.x를 설치하고 설정하는 방법을 정의합니다. Light 모드 전용 설정을 포함하며, 설치 및 검증 절차를 상세히 안내합니다.
 
 ### 1.2. 범위
 - Tailwind CSS 설치 및 설정
 - Vite 플러그인 구성
 - Light 모드 전용 설정
-- 기본 사용법
+- Prettier 플러그인 설정
 - 검증 및 문제 해결
+
+**사용법 및 디자인 가이드는 `sonub-design-tailwindcss.md`를 참조하세요.**
 
 ### 1.3. 전제 조건
 본 명세서는 다음 문서가 완료된 후 실행되어야 합니다:
 - `sonub-setup-svelte.md`: SvelteKit 프로젝트 초기 설정 완료
+
+### 1.4. 관련 문서
+- **sonub-design-tailwindcss.md**: Tailwind CSS 사용법 및 디자인 가이드
 
 ---
 
@@ -418,197 +424,15 @@ npm install -D prettier-plugin-tailwindcss
 
 ---
 
-## 7. 사용 방법
-
-### 7.1. 기본 유틸리티 클래스 사용
-
-Svelte 컴포넌트에서 Tailwind 유틸리티 클래스를 사용합니다.
-
-**예시:** `src/routes/+page.svelte`
-
-```svelte
-<section class="p-8 space-y-4">
-	<h1 class="text-3xl font-bold underline">
-		Hello from Tailwind CSS!
-	</h1>
-
-	<p class="text-slate-700">
-		시스템이 다크 모드여도 Tailwind는 class 전략이고 HTML에 dark가 없어 다크가 적용되지 않습니다.
-	</p>
-
-	<div class="rounded-lg border border-gray-300 p-4 bg-white shadow-sm">
-		<p class="text-gray-800">이 박스는 라이트 톤에서만 스타일링됩니다.</p>
-	</div>
-</section>
-```
-
-### 7.2. PostCSS와 함께 사용
-
-Svelte 컴포넌트의 `<style>` 태그에서 Tailwind를 참조할 수 있습니다.
-
-**예시:**
-
-```svelte
-<h1 class="text-3xl font-bold underline">
-	Hello world!
-</h1>
-
-<style lang="postcss">
-	@reference "tailwindcss";
-
-	:global(html) {
-		background-color: theme(--color-gray-100);
-	}
-</style>
-```
-
-**설명:**
-- `@reference "tailwindcss"`: Tailwind CSS 참조
-- `theme()`: Tailwind 테마 값 사용
-
-### 7.3. 반응형 디자인
-
-Tailwind의 반응형 유틸리티를 사용합니다.
-
-**예시:**
-
-```svelte
-<div class="w-full md:w-1/2 lg:w-1/3 xl:w-1/4">
-	<p class="text-sm md:text-base lg:text-lg">
-		화면 크기에 따라 너비와 폰트 크기가 변경됩니다.
-	</p>
-</div>
-```
-
-**브레이크포인트:**
-- `sm`: 640px 이상
-- `md`: 768px 이상
-- `lg`: 1024px 이상
-- `xl`: 1280px 이상
-- `2xl`: 1536px 이상
-
-### 7.4. 커스텀 스타일 확장
-
-`tailwind.config.ts`에서 커스텀 스타일을 정의합니다.
-
-**예시:**
-
-```typescript
-import type { Config } from 'tailwindcss';
-
-export default {
-	darkMode: ['class'],
-	content: ['./src/**/*.{html,js,svelte,ts}'],
-	theme: {
-		extend: {
-			colors: {
-				primary: {
-					50: '#f0f9ff',
-					100: '#e0f2fe',
-					500: '#0ea5e9',
-					900: '#0c4a6e'
-				}
-			},
-			fontFamily: {
-				sans: ['Inter', 'sans-serif']
-			},
-			spacing: {
-				'128': '32rem',
-				'144': '36rem'
-			}
-		}
-	},
-	plugins: []
-} satisfies Config;
-```
-
-**사용 예시:**
-
-```svelte
-<button class="bg-primary-500 text-white font-sans px-4 py-2 rounded">
-	커스텀 버튼
-</button>
-```
-
-### 7.5. 플러그인 사용
-
-#### 7.5.1. Typography 플러그인
-
-마크다운 콘텐츠 스타일링에 유용합니다.
-
-**사용 예시:**
-
-```svelte
-<article class="prose lg:prose-xl">
-	<h1>Tailwind Typography</h1>
-	<p>아름답게 스타일링된 마크다운 콘텐츠입니다.</p>
-	<ul>
-		<li>항목 1</li>
-		<li>항목 2</li>
-	</ul>
-</article>
-```
-
-**Tailwind 설정에 플러그인 추가:**
-
-```typescript
-import typography from '@tailwindcss/typography';
-
-export default {
-	// ...
-	plugins: [typography]
-} satisfies Config;
-```
-
-#### 7.5.2. Forms 플러그인
-
-폼 요소의 기본 스타일을 개선합니다.
-
-**사용 예시:**
-
-```svelte
-<form class="space-y-4">
-	<input
-		type="email"
-		class="form-input rounded-md border-gray-300"
-		placeholder="이메일을 입력하세요"
-	/>
-
-	<select class="form-select rounded-md border-gray-300">
-		<option>옵션 1</option>
-		<option>옵션 2</option>
-	</select>
-
-	<textarea
-		class="form-textarea rounded-md border-gray-300"
-		rows="4"
-		placeholder="메시지를 입력하세요"
-	></textarea>
-</form>
-```
-
-**Tailwind 설정에 플러그인 추가:**
-
-```typescript
-import forms from '@tailwindcss/forms';
-
-export default {
-	// ...
-	plugins: [forms]
-} satisfies Config;
-```
-
----
-
-## 8. shadcn-svelte와 함께 사용 (선택 사항)
+## 7. shadcn-svelte와 함께 사용 (선택 사항)
 
 shadcn-svelte 컴포넌트 라이브러리를 사용하는 경우에도 Light 모드만 지원 가능합니다.
 
-### 8.1. 설정 방법
+### 7.1. 설정 방법
 
 shadcn-svelte 컴포넌트가 `dark:` 변형을 포함하더라도, HTML에 `dark` 클래스가 없으면 다크 스타일은 적용되지 않습니다.
 
-### 8.2. 컴포넌트 색상 토큰
+### 7.2. 컴포넌트 색상 토큰
 
 `components.json`의 색상 토큰을 Light 기준으로만 유지합니다.
 
@@ -631,9 +455,9 @@ shadcn-svelte 컴포넌트가 `dark:` 변형을 포함하더라도, HTML에 `dar
 
 ---
 
-## 9. 검증 방법
+## 8. 검증 방법
 
-### 9.1. 설치 검증 체크리스트
+### 8.1. 설치 검증 체크리스트
 
 다음 항목을 확인하여 Tailwind CSS가 올바르게 설정되었는지 검증합니다:
 
@@ -747,7 +571,7 @@ vite v7.1.10 building for production...
 ✓ built in 2.34s
 ```
 
-### 9.2. 동작 확인 예시
+### 8.2. 동작 확인 예시
 
 간단한 테스트 페이지를 생성하여 Tailwind 동작을 확인합니다.
 
@@ -800,9 +624,9 @@ vite v7.1.10 building for production...
 
 ---
 
-## 10. 문제 해결
+## 9. 문제 해결
 
-### 10.1. 스타일이 적용되지 않음
+### 9.1. 스타일이 적용되지 않음
 
 **증상:**
 - Tailwind 클래스를 사용했지만 스타일이 적용되지 않습니다.
@@ -849,7 +673,7 @@ npm run dev
 </script>
 ```
 
-### 10.2. 다크 모드가 자동으로 적용됨
+### 9.2. 다크 모드가 자동으로 적용됨
 
 **증상:**
 - Light 모드만 사용하려고 했지만 시스템 다크 모드에 따라 스타일이 변경됩니다.
@@ -884,7 +708,7 @@ export default {
 document.documentElement.classList.add('dark');
 ```
 
-### 10.3. Prettier가 Tailwind 클래스를 정렬하지 않음
+### 9.3. Prettier가 Tailwind 클래스를 정렬하지 않음
 
 **증상:**
 - Prettier를 실행해도 Tailwind 클래스가 정렬되지 않습니다.
@@ -918,7 +742,7 @@ npm install -D prettier-plugin-tailwindcss
 
 VSCode를 재시작하여 Prettier 설정을 다시 로드합니다.
 
-### 10.4. 빌드 시 Tailwind 클래스가 제거됨
+### 9.4. 빌드 시 Tailwind 클래스가 제거됨
 
 **증상:**
 - 개발 환경에서는 정상 작동하지만 프로덕션 빌드 후 일부 클래스가 적용되지 않습니다.
@@ -971,7 +795,7 @@ export default {
 } satisfies Config;
 ```
 
-### 10.5. VSCode IntelliSense가 작동하지 않음
+### 9.5. VSCode IntelliSense가 작동하지 않음
 
 **증상:**
 - VSCode에서 Tailwind 클래스 자동완성이 표시되지 않습니다.
@@ -1010,7 +834,7 @@ VSCode Extensions에서 "Tailwind CSS IntelliSense" 설치:
 
 ---
 
-## 11. 다음 단계
+## 10. 다음 단계
 
 Tailwind CSS 설정 완료 후 다음 작업을 진행합니다:
 
@@ -1035,26 +859,27 @@ Tailwind CSS 설정 완료 후 다음 작업을 진행합니다:
 
 ---
 
-## 12. 참고 자료
+## 11. 참고 자료
 
-### 12.1. 공식 문서
+### 11.1. 공식 문서
 
 - **Svelte CLI - Tailwind CSS**: https://svelte.dev/docs/cli/tailwind
 - **Tailwind CSS - SvelteKit 설치 가이드**: https://tailwindcss.com/docs/installation/framework-guides/sveltekit
 - **Tailwind CSS 공식 문서**: https://tailwindcss.com/docs
 - **SvelteKit 공식 문서**: https://svelte.dev/docs/kit
 
-### 12.2. 플러그인 문서
+### 11.2. 플러그인 문서
 
 - **@tailwindcss/typography**: https://github.com/tailwindlabs/tailwindcss-typography
 - **@tailwindcss/forms**: https://github.com/tailwindlabs/tailwindcss-forms
 - **prettier-plugin-tailwindcss**: https://github.com/tailwindlabs/prettier-plugin-tailwindcss
 
-### 12.3. 관련 명세서
+### 11.3. 관련 명세서
 
-- `sonub-setup-svelte.md`: SvelteKit 프로젝트 초기 설정
+- **sonub-setup-svelte.md**: SvelteKit 프로젝트 초기 설정
+- **sonub-design-tailwindcss.md**: Tailwind CSS 사용법 및 디자인 가이드
 
-### 12.4. 추가 리소스
+### 11.4. 추가 리소스
 
 - **Tailwind UI**: https://tailwindui.com/ (유료 컴포넌트)
 - **Headless UI**: https://headlessui.com/ (무료 컴포넌트)
@@ -1062,11 +887,11 @@ Tailwind CSS 설정 완료 후 다음 작업을 진행합니다:
 
 ---
 
-## 13. 승인 기준
+## 12. 승인 기준
 
 본 명세서에 따른 Tailwind CSS 설정이 완료되었다고 판단하는 기준:
 
-### 13.1. 필수 요구사항
+### 12.1. 필수 요구사항
 
 - ✅ `tailwindcss` 및 `@tailwindcss/vite` 패키지 설치 완료
 - ✅ `vite.config.ts`에 Tailwind Vite 플러그인 추가
@@ -1076,14 +901,14 @@ Tailwind CSS 설정 완료 후 다음 작업을 진행합니다:
 - ✅ `npm run dev` 실행 시 Tailwind 클래스 정상 적용
 - ✅ `npm run build` 실행 시 프로덕션 빌드 성공
 
-### 13.2. 선택 요구사항
+### 12.2. 선택 요구사항
 
 - ✅ `@tailwindcss/typography` 플러그인 설치 (선택)
 - ✅ `@tailwindcss/forms` 플러그인 설치 (선택)
 - ✅ `prettier-plugin-tailwindcss` 설치 및 설정 (권장)
 - ✅ VSCode Tailwind CSS IntelliSense 확장 프로그램 설치 (권장)
 
-### 13.3. 동작 검증
+### 12.3. 동작 검증
 
 - ✅ 테스트 페이지에서 색상, 타이포그래피, 레이아웃 클래스 정상 작동
 - ✅ 반응형 유틸리티 클래스가 브라우저 크기에 따라 정상 동작
@@ -1092,7 +917,36 @@ Tailwind CSS 설정 완료 후 다음 작업을 진행합니다:
 
 ---
 
-## 14. 변경 이력
+## 13. 변경 이력
+
+### v1.2.0 (2025-01-11)
+- **문서 재구성**: 설치/설정 문서와 사용법/디자인 가이드 분리
+  - Section 7, 8 제거: 사용법 및 베스트 프랙티스를 sonub-design-tailwindcss.md로 이동
+  - Section 9-15를 Section 7-13으로 재번호
+  - YAML 헤더에 `related` 필드 추가: sonub-design-tailwindcss.md 참조
+  - 개요 섹션에 관련 문서 링크 추가
+  - 참고 자료에 sonub-design-tailwindcss.md 교차 참조 추가
+- **문서 범위 명확화**: 설치 및 설정에만 집중
+- **베스트 프랙티스 관련 내용 제거**: 사용법, cn 함수, cva/tv, @layer 등은 디자인 가이드로 이전
+- **승인 기준 간소화**: 설치/설정 관련 항목만 유지
+
+### v1.1.0 (2025-01-11)
+- **섹션 8 추가**: 실무 베스트 프랙티스
+  - 코드 가독성 향상 (Prettier, 클래스 그룹화)
+  - Svelte `class:` 디렉티브 사용법
+  - `cn()` 헬퍼 함수 (clsx + tailwind-merge)
+  - Variant 패턴 (cva, tailwind-variants)
+  - `@layer components` + `@apply` 사용법
+  - `data-*` 속성 활용
+  - 프로젝트 구조 권장사항
+  - eslint-plugin-tailwindcss 설정
+  - 본 프로젝트의 CSS 스타일링 규칙 (Layout vs Style 분리, Light 모드 전용)
+  - 빠른 체크리스트
+- **참고 자료 추가**: clsx, tailwind-merge, cva, tailwind-variants 링크
+- **승인 기준 추가**: 유틸리티 라이브러리 설치 항목
+- **섹션 번호 재정렬**: 기존 8-14 → 9-15
+- **svelte.config.js 업데이트**: css-unused-selector 경고 무시 설정 추가
+- **`@import 'tailwindcss' reference` 규칙 명시**: Tailwind v4에서 `@apply` 사용 시 필수
 
 ### v1.0.0 (2025-01-08)
 - 초기 명세서 작성
@@ -1103,3 +957,6 @@ Tailwind CSS 설정 완료 후 다음 작업을 진행합니다:
 - 공식 문서 참조 추가 (svelte.dev, tailwindcss.com)
 - 검증 방법 및 문제 해결 가이드 추가
 - 승인 기준 정의
+
+
+

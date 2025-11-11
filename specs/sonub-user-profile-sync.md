@@ -11,7 +11,7 @@ step: 15
 priority: "***"
 dependencies:
   - sonub-setup-firebase.md
-  - sonub-firebase-database.md
+  - sonub-firebase-database-structure.md
   - sonub-user-login.md
   - sonub-user-props.md
 tags: ["authentication", "database", "sync", "firebase", "rtdb"]

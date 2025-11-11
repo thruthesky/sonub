@@ -45,32 +45,14 @@ Paraglide-JS는 SvelteKit 프로젝트를 위한 현대적인 다국어 지원 �
 
 ## 요구사항 (Requirements)
 
-### 설치된 패키지
+Paraglide의 설치 및 최소 설정 절차는 [`sonub-setup-paraglide.md`](./sonub-setup-paraglide.md)에 정의되어 있습니다.  
+본 문서는 다음 전제 위에서 동작합니다.
 
-```bash
-@inlang/paraglide-sveltekit: ^0.16.1
-```
+- `@inlang/paraglide-js` · `@inlang/paraglide-sveltekit` 패키지가 설치되어 있음.
+- `project.inlang/settings.json`과 `vite.config.ts`가 최소 설정 가이드와 동일함.
+- `messages/en|ko|ja|zh.json` 이 모두 존재하며 동일한 키 집합을 유지함.
 
-### 설정 파일
-
-**`project.inlang/settings.json`**
-```json
-{
-  "baseLocale": "en",
-  "locales": ["en", "ko", "ja", "zh"],
-  "plugin.inlang.messageFormat": {
-    "pathPattern": "./messages/{locale}.json"
-  }
-}
-```
-
-### 번역 파일
-
-**`messages/{locale}.json`**
-- `messages/en.json` - 영어 (기본)
-- `messages/ko.json` - 한국어
-- `messages/ja.json` - 일본어
-- `messages/zh.json` - 중국어
+설정 파일 편집, Vite 플러그인 구성, 서버 훅 연결 등은 모두 setup 문서를 참조하세요.
 
 ---
 
@@ -117,26 +99,12 @@ const currentLocale = getLocale(); // 'en', 'ko', 'ja', 'zh' 중 하나
 
 ## 파일 구조 (File Structure)
 
-```
-프로젝트/
-├── messages/                      # 번역 파일 (수정 가능)
-│   ├── en.json                   #   영어 (기본)
-│   ├── ko.json                   #   한국어
-│   ├── ja.json                   #   일본어
-│   └── zh.json                   #   중국어
-│
-├── project.inlang/               # Paraglide 설정
-│   └── settings.json             #   로케일 및 경로 설정
-│
-└── src/
-    ├── hooks.server.ts           # 서버 훅 (로케일 자동 감지)
-    └── lib/paraglide/            # 자동 생성 파일 (수정 금지!)
-        ├── messages.js           #   타입 안전 메시지 함수
-        ├── runtime.js            #   런타임 유틸리티
-        └── server.js             #   서버 미들웨어
-```
+세부 디렉터리 구성은 [`sonub-setup-paraglide.md`](./sonub-setup-paraglide.md#3-최소-파일-구성)에서 관리합니다.  
+이 문서에서는 **편집 가능 영역**만 요약합니다.
 
-**⚠️ 중요**: `src/lib/paraglide/` 폴더의 파일들은 Paraglide가 자동으로 생성하므로 절대 수정하지 마세요.
+- `messages/*.json`: 번역 키와 값을 직접 수정하는 유일한 소스입니다.
+- `src/lib/paraglide/*`: 플러그인이 자동 생성하므로 수동 편집 금지.
+- `project.inlang/settings.json`, `vite.config.ts`, `src/hooks.server.ts`, `src/app.html`: 설정 문서를 통해서만 수정.
 
 ---
 
@@ -495,3 +463,11 @@ m.authWelcomeUser({ name: '홍길동' }); // "환영합니다, 홍길동님!"
 - [Paraglide 설정 가이드](../docs/paraglide-setup.md)
 - [Paraglide 간단 가이드](../docs/paraglide-simple-guide.md)
 
+---
+
+## 작업 이력 (SED Log)
+
+| 날짜 | 작업자 | 변경 내용 |
+| ---- | ------ | -------- |
+| 2025-11-11 | Codex Agent | Paraglide 설정을 최소 구성으로 정리: message matcher 모듈 제거, 클라이언트 reroute 훅 삭제, Vite 플러그인에 `outputStructure: 'locale-modules'` 적용 및 수동 타입 선언 파일을 정리하여 런타임이 자체 제공하는 타입만 사용하도록 조정. |
+| 2025-11-11 | Codex Agent | 설정/구성 설명을 `sonub-setup-paraglide.md`로 이동하고 본 문서는 번역 작성·사용 지침 중심으로 재구성, 교차 링크 추가. |

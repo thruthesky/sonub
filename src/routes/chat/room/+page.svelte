@@ -12,25 +12,22 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { userProfileStore } from '$lib/stores/user-profile.svelte';
 	import { pushData } from '$lib/stores/database.svelte';
-	import { getLocale } from '$lib/paraglide/runtime.js';
 	import { m } from '$lib/paraglide/messages';
+	import { buildSingleRoomId } from '$lib/functions/chat.functions';
+	import { formatLongDate } from '$lib/functions/date.functions';
+	import { tick } from 'svelte';
 
 	// GET 파라미터 추출
 	const uidParam = $derived.by(() => $page.url.searchParams.get('uid') ?? '');
 	const roomIdParam = $derived.by(() => $page.url.searchParams.get('roomId') ?? '');
 
 	// 1:1 채팅 여부
-	const isDirectChat = $derived.by(() => Boolean(uidParam));
-
-	// 채팅에 사용할 roomId 계산 (1:1이면 두 UID를 정렬해서 고정 키 생성)
-	function buildDirectRoomId(a: string, b: string) {
-		return `direct-${[a, b].sort().join('-')}`;
-	}
+	const isSingleChat = $derived.by(() => Boolean(uidParam));
 
 	const activeRoomId = $derived.by(() => {
 		if (roomIdParam) return roomIdParam;
-		if (isDirectChat && authStore.user?.uid && uidParam) {
-			return buildDirectRoomId(authStore.user.uid, uidParam);
+		if (isSingleChat && authStore.user?.uid && uidParam) {
+			return buildSingleRoomId(authStore.user.uid, uidParam);
 		}
 		return '';
 	});
@@ -64,22 +61,8 @@
 	let isSending = $state(false);
 	let sendError = $state<string | null>(null);
 
-	// 타임스탬프 포맷터
-	function formatTimestamp(value?: number | null) {
-		if (!value) return '';
-		const currentLocale = getLocale();
-		const locale = currentLocale === 'ko' ? 'ko-KR'
-			: currentLocale === 'ja' ? 'ja-JP'
-			: currentLocale === 'zh' ? 'zh-CN'
-			: 'en-US';
-		return new Date(value).toLocaleString(locale, {
-			year: 'numeric',
-			month: 'short',
-			day: '2-digit',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
-	}
+	// 채팅 입력 창(input) 직접 참조
+	let composerInputRef: HTMLInputElement | null = $state(null);
 
 	// 메시지 전송 처리
 	async function handleSendMessage(event: SubmitEvent) {
@@ -118,15 +101,31 @@
 
 		if (!result.success) {
 			sendError = result.error ?? m.chatSendFailed();
+			isSending = false;
 		} else {
+			// 메시지 전송 성공 시
 			composerText = '';
-		}
+			sendError = null;
+			isSending = false;
 
-		isSending = false;
+			// DOM 업데이트 완료 후 포커스 추가
+			await tick();
+
+			// 브라우저 렌더링 완료를 확실히 기다린 후 포커스
+			requestAnimationFrame(() => {
+				if (composerInputRef) {
+					composerInputRef.focus();
+					console.log('✅ 채팅 입력 창에 포커스 추가됨');
+				}
+			});
+		}
 	}
 
 	// 메시지 작성 가능 여부
 	const composerDisabled = $derived.by(() => !authStore.isAuthenticated || !activeRoomId);
+
+	// DatabaseListView 컴포넌트 참조 (스크롤 제어용)
+	let databaseListView: any = $state(null);
 
 	// 발신자 라벨
 	function resolveSenderLabel(senderUid?: string | null) {
@@ -135,18 +134,30 @@
 		if (senderUid === uidParam && targetDisplayName) return targetDisplayName;
 		return senderUid.slice(0, 10);
 	}
+
+	// 스크롤을 맨 위로 이동
+	function handleScrollToTop() {
+		databaseListView?.scrollToTop();
+	}
+
+	// 스크롤을 맨 아래로 이동
+	function handleScrollToBottom() {
+		databaseListView?.scrollToBottom();
+	}
 </script>
 
 <svelte:head>
 	<title>{m.pageTitleChat()}</title>
 </svelte:head>
 
-<div class="chat-room-page">
-	<header class="chat-room-header">
+<div class="mx-auto flex max-w-[960px] flex-col gap-6 px-4 py-8 pb-16">
+	<header
+		class="chat-room-header flex items-center justify-between gap-4 p-6 sm:flex-col sm:items-start"
+	>
 		<div>
-			<p class="chat-room-label">{isDirectChat ? m.chatDirectChat() : m.chatChatRoom()}</p>
+			<p class="chat-room-label">{isSingleChat ? m.chatSingleChat() : m.chatChatRoom()}</p>
 			<h1 class="chat-room-title">
-				{#if isDirectChat && uidParam}
+				{#if isSingleChat && uidParam}
 					{targetDisplayName}
 				{:else if roomIdParam}
 					{m.chatRoom()} {roomIdParam}
@@ -154,16 +165,16 @@
 					{m.chatOverview()}
 				{/if}
 			</h1>
-			<p class="chat-room-subtitle">
+			<p class="chat-room-subtitle mt-1.5">
 				{#if !authStore.isAuthenticated}
 					{m.chatSignInRequired()}
-				{:else if isDirectChat && !uidParam}
+				{:else if isSingleChat && !uidParam}
 					{m.chatProvideUid()}
 				{:else if targetProfileLoading}
 					{m.chatLoadingProfile()}
 				{:else if targetProfileError}
 					{m.chatLoadProfileFailed()}
-				{:else if isDirectChat}
+				{:else if isSingleChat}
 					{m.chatChattingWith({ name: targetDisplayName })}
 				{:else if roomIdParam}
 					{m.chatRoomReady({ roomId: roomIdParam })}
@@ -173,7 +184,7 @@
 			</p>
 		</div>
 		{#if uidParam}
-			<div class="chat-room-partner">
+			<div class="chat-room-partner flex items-center gap-3 px-4 py-3 sm:w-full sm:justify-center">
 				<Avatar uid={uidParam} size={64} class="shadow-sm" />
 				<div>
 					<p class="partner-name">{targetDisplayName}</p>
@@ -184,84 +195,116 @@
 	</header>
 
 	{#if !activeRoomId}
-		<section class="chat-room-empty">
+		<section class="chat-room-empty p-8">
 			<p class="empty-title">{m.chatRoomNotReady()}</p>
 			<p class="empty-subtitle">
 				{m.chatAddUidOrRoomId()}
 			</p>
 		</section>
 	{:else}
-		<section class="chat-room-content">
-			<div class="message-list-section">
+		<section class="flex flex-col gap-4">
+			<div class="message-list-section relative max-h-[60vh] min-h-80 overflow-auto p-4">
 				{#if canRenderMessages}
 					{#key roomOrderPrefix}
 						<DatabaseListView
+							bind:this={databaseListView}
 							path={messagePath}
-							pageSize={25}
+							pageSize={20}
 							orderBy={roomOrderField}
 							orderPrefix={roomOrderPrefix}
-							threshold={280}
-							reverse={true}
+							threshold={300}
+							reverse={false}
+							scrollTrigger="top"
+							autoScrollToEnd={true}
+							autoScrollOnNewData={true}
 						>
 							{#snippet item(itemData: { key: string; data: any })}
 								{@const message = itemData.data ?? {}}
 								{@const mine = message.senderUid === authStore.user?.uid}
-								<article class={`message-item ${mine ? 'mine' : ''}`}>
-									<div class="message-avatar">
-										<Avatar uid={message.senderUid} size={40} class="shadow-sm" />
-									</div>
-									<div class="message-body">
-										<div class="message-meta">
-											<span class="message-sender">{resolveSenderLabel(message.senderUid)}</span>
-											<span class="message-time">{formatTimestamp(message.createdAt)}</span>
+								<article
+									class={`message-row ${mine ? 'message-row--mine' : 'message-row--theirs'}`}
+								>
+									{#if !mine}
+										<Avatar uid={message.senderUid} size={36} class="message-avatar" />
+									{/if}
+									<div class={`message-bubble-wrap ${mine ? 'items-end text-right' : ''}`}>
+										{#if !mine}
+											<span class="message-sender-label"
+												>{resolveSenderLabel(message.senderUid)}</span
+											>
+										{/if}
+										<div class={`message-bubble ${mine ? 'bubble-mine' : 'bubble-theirs'}`}>
+											<p class="message-text m-0">{message.text || ''}</p>
 										</div>
-										<p class="message-text">
-											{message.text || ''}
-										</p>
+										<span class="message-timestamp">{formatLongDate(message.createdAt)}</span>
 									</div>
 								</article>
 							{/snippet}
 
 							{#snippet loading()}
-								<div class="message-placeholder">{m.chatLoadingMessages()}</div>
+								<div class="message-placeholder py-6">{m.chatLoadingMessages()}</div>
 							{/snippet}
 
 							{#snippet empty()}
-								<div class="message-placeholder">{m.chatNoMessages()}</div>
+								<div class="message-placeholder py-6">{m.chatNoMessages()}</div>
 							{/snippet}
 
 							{#snippet error(errorMessage: string | null)}
-								<div class="message-error">
+								<div class="message-error py-4">
 									<p>{m.chatLoadMessagesFailed()}</p>
 									<p>{errorMessage ?? m.chatUnknownError()}</p>
 								</div>
 							{/snippet}
 
 							{#snippet loadingMore()}
-								<div class="message-placeholder subtle">{m.chatLoadingMore()}</div>
+								<div class="message-placeholder subtle py-6">{m.chatLoadingMore()}</div>
 							{/snippet}
 
 							{#snippet noMore()}
-								<div class="message-placeholder subtle">{m.chatUpToDate()}</div>
+								<div class="message-placeholder subtle py-6">{m.chatUpToDate()}</div>
 							{/snippet}
 						</DatabaseListView>
 					{/key}
 				{:else}
-					<div class="message-placeholder">{m.chatPreparingStream()}</div>
+					<div class="message-placeholder py-6">{m.chatPreparingStream()}</div>
+				{/if}
+
+				<!-- 스크롤 컨트롤 버튼 -->
+				{#if canRenderMessages}
+					<div class="scroll-controls">
+						<button
+							type="button"
+							class="scroll-button scroll-to-top"
+							onclick={handleScrollToTop}
+							title="맨 위로 이동"
+						>
+							↑
+						</button>
+						<button
+							type="button"
+							class="scroll-button scroll-to-bottom"
+							onclick={handleScrollToBottom}
+							title="맨 아래로 이동"
+						>
+							↓
+						</button>
+					</div>
 				{/if}
 			</div>
 
-			<form class="message-composer" onsubmit={handleSendMessage}>
+			<form class="flex items-center gap-3" onsubmit={handleSendMessage}>
 				<input
+					bind:this={composerInputRef}
 					type="text"
-					class="composer-input"
+					name="composer"
+					class="composer-input flex-1 px-4 py-3.5"
 					placeholder={m.chatWriteMessage()}
 					bind:value={composerText}
 					disabled={composerDisabled || isSending}
 				/>
 				<button
 					type="submit"
-					class="composer-button cursor-pointer"
+					class="composer-button cursor-pointer px-8 py-3.5"
 					disabled={composerDisabled || isSending || !composerText.trim()}
 				>
 					{isSending ? m.chatSending() : m.chatSend()}
@@ -269,249 +312,154 @@
 			</form>
 
 			{#if sendError}
-				<p class="composer-error">{sendError}</p>
+				<p class="composer-error m-0">{sendError}</p>
 			{/if}
 		</section>
 	{/if}
 </div>
 
 <style>
-	.chat-room-page {
-		max-width: 960px;
-		margin: 0 auto;
-		padding: 2rem 1rem 4rem;
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-	}
+	@import 'tailwindcss' reference;
 
+	/* 채팅방 헤더 스타일 */
 	.chat-room-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: 1rem;
-		border: 1px solid #e5e7eb;
-		border-radius: 1rem;
-		padding: 1.5rem;
-		background: #ffffff;
-		box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+		@apply rounded-2xl border border-gray-200 bg-white shadow-[0_10px_25px_rgba(15,23,42,0.06)];
 	}
 
 	.chat-room-label {
-		font-size: 0.9rem;
-		font-weight: 600;
-		color: #6366f1;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		margin-bottom: 0.2rem;
+		@apply mb-0.5 text-sm font-semibold tracking-wider text-indigo-500 uppercase;
 	}
 
 	.chat-room-title {
-		font-size: 1.8rem;
-		font-weight: 700;
-		color: #111827;
-		margin: 0;
+		@apply m-0 text-[1.8rem] font-bold text-gray-900;
 	}
 
 	.chat-room-subtitle {
-		margin-top: 0.35rem;
-		color: #6b7280;
-		font-size: 0.95rem;
+		@apply text-[0.95rem] text-gray-500;
 	}
 
 	.chat-room-partner {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		padding: 0.75rem 1rem;
-		border-radius: 999px;
-		background: #f9fafb;
+		@apply rounded-full bg-gray-50;
 	}
 
 	.partner-name {
-		font-weight: 600;
-		color: #111827;
-		margin: 0;
+		@apply m-0 font-semibold text-gray-900;
 	}
 
 	.partner-uid {
-		font-size: 0.85rem;
-		color: #6b7280;
-		margin: 0;
-		word-break: break-all;
+		@apply m-0 text-sm break-all text-gray-500;
 	}
 
+	/* 빈 채팅방 스타일 */
 	.chat-room-empty {
-		border: 1px dashed #d1d5db;
-		border-radius: 1rem;
-		padding: 2rem;
-		text-align: center;
-		background: #fdfdfd;
+		@apply rounded-2xl border border-dashed border-gray-300 bg-[#fdfdfd] text-center;
 	}
 
 	.empty-title {
-		font-size: 1.25rem;
-		font-weight: 600;
-		color: #111827;
-		margin-bottom: 0.5rem;
+		@apply mb-2 text-xl font-semibold text-gray-900;
 	}
 
 	.empty-subtitle {
-		color: #6b7280;
+		@apply text-gray-500;
 	}
 
-	.chat-room-content {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
+	/* 메시지 목록 스타일 */
 	.message-list-section {
-		border: 1px solid #e5e7eb;
-		border-radius: 1rem;
-		background: #ffffff;
-		padding: 1rem;
-		min-height: 320px;
-		max-height: 60vh;
-		overflow: auto;
+		@apply rounded-2xl border border-gray-200 bg-white;
 	}
 
-	.message-item {
-		display: flex;
-		gap: 0.75rem;
-		padding: 0.75rem 0.5rem;
-		border-bottom: 1px solid rgba(229, 231, 235, 0.6);
+	.message-row {
+		@apply flex gap-3 px-2 py-3;
 	}
 
-	.message-item:last-child {
-		border-bottom: none;
+	.message-row--mine {
+		@apply justify-end;
 	}
 
-	.message-item.mine .message-body {
-		background: #eef2ff;
+	.message-row--theirs {
+		@apply justify-start;
 	}
 
 	.message-avatar {
-		flex-shrink: 0;
+		@apply mr-2 rounded-full bg-gray-100 shadow-sm;
 	}
 
-	.message-body {
-		flex: 1;
-		background: #f9fafb;
-		padding: 0.75rem;
-		border-radius: 0.75rem;
-		box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.04);
+	.message-bubble-wrap {
+		@apply flex max-w-[75%] flex-col gap-1;
 	}
 
-	.message-meta {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 0.25rem;
+	.message-bubble {
+		@apply rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm;
 	}
 
-	.message-sender {
-		font-weight: 600;
-		color: #111827;
+	.bubble-mine {
+		@apply bg-amber-300 text-gray-900 shadow-inner;
 	}
 
-	.message-time {
-		font-size: 0.8rem;
-		color: #9ca3af;
+	.bubble-theirs {
+		@apply border border-gray-200 bg-white text-gray-900;
+	}
+
+	.message-sender-label {
+		@apply text-xs text-gray-400;
 	}
 
 	.message-text {
-		margin: 0;
-		font-size: 0.95rem;
-		color: #1f2937;
-		white-space: pre-wrap;
-		word-break: break-word;
+		@apply text-[0.95rem] break-words whitespace-pre-wrap text-gray-900;
 	}
 
+	.message-timestamp {
+		@apply text-[11px] text-gray-400;
+	}
+
+	/* 메시지 플레이스홀더 스타일 */
 	.message-placeholder {
-		text-align: center;
-		color: #6b7280;
-		padding: 1.5rem 0;
+		@apply text-center text-gray-500;
 	}
 
 	.message-placeholder.subtle {
-		color: #9ca3af;
-		font-size: 0.85rem;
+		@apply text-sm text-gray-400;
 	}
 
 	.message-error {
-		text-align: center;
-		color: #dc2626;
-		padding: 1rem 0;
+		@apply text-center text-red-600;
 	}
 
-	.message-composer {
-		display: flex;
-		gap: 0.75rem;
-	}
-
+	/* 메시지 입력 스타일 */
 	.composer-input {
-		flex: 1;
-		padding: 0.85rem 1rem;
-		border-radius: 999px;
-		border: 1px solid #d1d5db;
-		font-size: 1rem;
-		background: #ffffff;
+		@apply rounded-full border border-gray-300 bg-white text-base;
 	}
 
 	.composer-input:disabled {
-		background: #f3f4f6;
+		@apply bg-gray-100;
 	}
 
 	.composer-button {
-		border: none;
-		padding: 0 1.5rem;
-		border-radius: 999px;
-		background: #111827;
-		color: #ffffff;
-		font-weight: 600;
-		transition: background 0.2s;
+		@apply rounded-full border-0 bg-gray-900 font-semibold text-white transition-colors duration-200;
 	}
 
 	.composer-button:disabled {
-		background: #9ca3af;
-		cursor: not-allowed;
+		@apply cursor-not-allowed bg-gray-400;
 	}
 
 	.composer-error {
-		color: #dc2626;
-		font-size: 0.9rem;
-		margin: 0;
+		@apply text-sm text-red-600;
 	}
 
-	@media (max-width: 640px) {
-		.chat-room-header {
-			flex-direction: column;
-			align-items: flex-start;
-		}
+	/* 스크롤 컨트롤 버튼 스타일 */
+	.scroll-controls {
+		@apply absolute right-4 bottom-4 flex flex-col gap-2;
+	}
 
-		.chat-room-partner {
-			width: 100%;
-			justify-content: center;
-		}
+	.scroll-button {
+		@apply flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-0 bg-gray-900 text-lg font-bold text-white shadow-lg transition-all duration-200;
+	}
 
-		.message-item {
-			flex-direction: column;
-		}
+	.scroll-button:hover {
+		@apply scale-110 bg-gray-700;
+	}
 
-		.message-meta {
-			flex-direction: column;
-			align-items: flex-start;
-			gap: 0.2rem;
-		}
-
-		.message-composer {
-			flex-direction: column;
-		}
-
-		.composer-button {
-			width: 100%;
-			padding: 0.9rem;
-		}
+	.scroll-button:active {
+		@apply scale-95 bg-gray-950;
 	}
 </style>

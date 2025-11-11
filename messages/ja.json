@@ -129,7 +129,7 @@
 	"testUserDeletingInProgress": "削除進行中",
 	"testUserDeleting": "削除中...",
 	"testUserDeleteAll": "すべてのテストユーザーを削除",
-	"testUserNotCreatedGuide": "作成されたテストユーザーがいません。上記の<strong>テストユーザー作成</strong>機能を使用して100人を作成できます。",
+	"testUserNotCreatedGuide": "テストユーザーはまだありません。<strong><a class=\"text-blue-600\" href=\"/admin/test/create-test-data\">テストデータ作成</a></strong>ページで100人のテストユーザーを作成してください。",
 	"testUserGender": "性別",
 	"testUserBirthYear": "生年",
 	"testUserCreatedDate": "作成日",

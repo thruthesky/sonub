@@ -67,6 +67,11 @@ step: 20
        - 예: `/user/profile/${uid}` (다른 사용자 프로필 조회)
        - 읽기 전용 또는 제한된 권한으로 다른 사용자 정보를 조회
 
+### UI/UX 개발 공통 규칙
+- 모든 UI/UX 구현은 **Tailwind CSS 유틸리티 + svelte-shadcn** 컴포넌트 조합으로 작성한다. (출처: `CLAUDE.md`)
+- 버튼, 다이얼로그, 카드 등 상호작용 요소는 `shadcn-svelte` 컴포넌트를 우선 사용하고, 커스텀 스타일은 Tailwind로 오버레이한다.
+- 디자인 시스템 계층을 우회하는 CSS/HTML 구현은 금지되며, 새 컴포넌트가 필요하면 shadcn-svelte 생성기를 통해 추가한 뒤 재사용한다.
+
 ---
 
 # Specifications Index
@@ -82,7 +87,7 @@ This document provides a detailed index of all specifications related to the son
 - **Step**: 10
 - **Priority**: *
 - **Dependencies**:
-  - sonub-setup-tailwind.md
+  - sonub-setup-tailwindcss.md
   - sonub-setup-shadcn.md
 - **Tags**: design, tailwindcss, shadcn, ui, styling
 
@@ -95,7 +100,7 @@ This document provides a detailed index of all specifications related to the son
 - **Priority**: *
 - **Dependencies**:
   - sonub-design-workflow.md
-  - sonub-setup-tailwind.md
+  - sonub-setup-tailwindcss.md
 - **Tags**: design, ui, theme, interaction, cursor
 - **핵심 정책**:
   - 시스템 설정과 상관없이 Light Mode만 지원 (`color-scheme: light`)
@@ -194,13 +199,30 @@ This document provides a detailed index of all specifications related to the son
   - sonub-design-workflow.md
   - sonub-design-guideline.md
   - sonub-setup-shadcn.md
-  - sonub-setup-tailwind.md
+  - sonub-setup-tailwindcss.md
 - **Tags**: ui-components, shadcn-svelte, tailwindcss, light-mode, svelte5
 - **주요 내용**:
   - `src/lib/components/ui/button`, `card`, `alert` 구조 설명
   - Svelte 5 runes, `cn()` 헬퍼, Light Mode-only 정책을 반영한 구현 패턴
   - 버튼의 variant/size, disabled 링크 접근성, 아이콘 사이즈 자동화 규칙
   - Card/Alert 조합 예시 및 관리자 페이지 적용 사례
+
+### Tailwind CSS Setup
+- **File**: [sonub-setup-tailwindcss.md](./sonub-setup-tailwindcss.md)
+- **Title**: SvelteKit 프로젝트 Tailwind CSS 설치 및 설정 명세서
+- **Description**: Tailwind CSS 4.x를 SvelteKit 5에 설치하고 Light Mode 전용 정책에 맞춰 구성하는 절차
+- **Version**: 1.2.0
+- **Step**: 15
+- **Priority**: **
+- **Dependencies**:
+  - sonub-setup-svelte.md
+- **Tags**: tailwindcss, styling, css, light-mode, installation
+- **핵심 내용**:
+  - `npx sv create` 단계에서 Tailwind 애드온 선택 및 후속 수동 설치 절차
+  - `@tailwindcss/vite` 플러그인, forms/typography 플러그인 설정과 Vite 통합
+  - Light Mode 전용 설정( `color-scheme: light`, `dark:` 변형 금지 )과 Prettier 플러그인 구성
+  - `npm run check` 기반 검증 및 문제 해결 가이드
+- **관련 문서**: `sonub-design-tailwindcss.md` (사용 패턴), `sonub-design-workflow.md`
 
 ### Shadcn-Svelte Setup
 - **File**: [sonub-setup-shadcn.md](./sonub-setup-shadcn.md)
@@ -211,7 +233,7 @@ This document provides a detailed index of all specifications related to the son
 - **Priority**: *
 - **Dependencies**:
   - sonub-setup-svelte.md
-  - sonub-setup-tailwind.md
+  - sonub-setup-tailwindcss.md
 - **Tags**: shadcn-svelte, ui, components, 라이브러리, 설정, 수동구현
 - **구현된 컴포넌트**:
   - Button 컴포넌트 (6 variants, 4 sizes)
@@ -342,6 +364,49 @@ This document provides a detailed index of all specifications related to the son
   - TypeScript 제네릭 타입 지원 및 구조화된 결과 반환
   - 전체 소스 코드 및 사용 예제 포함
 
+### 🔥 DatabaseListView Component (MUST USE for ALL RTDB List Views)
+- **File**: [sonub-firebase-database-list-view.md](./sonub-firebase-database-list-view.md)
+- **Title**: DatabaseListView 컴포넌트 무한 스크롤 가이드
+- **Description**: Firebase Realtime Database의 **모든 데이터 목록 표시**에 사용해야 하는 표준 컴포넌트
+- **Version**: 3.0.0
+- **Step**: 30
+- **Priority**: *** (최우선)
+- **Dependencies**:
+  - sonub-firebase-database-structure.md
+- **Tags**: firebase, rtdb, infinite-scroll, list-view, universal-component, svelte5
+- **Files**:
+  - `src/lib/components/DatabaseListView.svelte`
+- **🔥 핵심 원칙 (반드시 준수)**:
+  - **모든 Firebase Realtime Database 데이터 목록 표시에 DatabaseListView를 사용해야 합니다**
+  - 사용자 목록, 게시글 목록, 댓글 목록, 채팅 메시지, 채팅방 목록, 알림 목록 등 **모든 경우**에 적용
+  - 무한 스크롤, 실시간 동기화, 메모리 관리가 자동으로 처리됩니다
+- **주요 기능**:
+  - 양방향 무한 스크롤 (`scrollTrigger`: 'top' 또는 'bottom')
+  - 실시간 데이터 동기화 (onValue, onChildAdded, onChildRemoved)
+  - 자동 메모리 관리 (리스너 자동 해제)
+  - orderPrefix 기반 서버 측 필터링 (카테고리, 채팅방 등)
+  - reverse 옵션 (최신 데이터부터 표시)
+  - 공개 메서드: `refresh()`, `scrollToTop()`, `scrollToBottom()`
+  - 고도로 커스터마이징 가능한 snippet 시스템
+- **사용 예시**:
+  ```svelte
+  <DatabaseListView
+    path="users"
+    orderBy="createdAt"
+    reverse={true}
+    scrollTrigger="bottom"
+    pageSize={20}
+  >
+    {#snippet item(itemData)}
+      <div>{itemData.data.displayName}</div>
+    {/snippet}
+  </DatabaseListView>
+  ```
+- **⚠️ 주의사항**:
+  - orderBy 필드가 모든 노드에 존재해야 합니다
+  - 컨테이너 스크롤 사용 시 명시적인 높이 설정 필요
+  - pageSize는 10~30 권장
+
 ### Firebase Cloud Functions Guide
 - **File**: [sonub-firebase-cloudfunctions.md](./sonub-firebase-cloudfunctions.md)
 - **Title**: Firebase Cloud Functions 개발 가이드
@@ -373,6 +438,23 @@ This document provides a detailed index of all specifications related to the son
 
 ## Internationalization
 
+### Paraglide Minimal Setup
+- **File**: [sonub-setup-paraglide.md](./sonub-setup-paraglide.md)
+- **Title**: Paraglide 최소 설정 가이드
+- **Description**: Paraglide i18n을 필수 요소만으로 연결하기 위한 프로젝트/빌드/런타임 설정 절차
+- **Version**: 1.0.0
+- **Step**: 15
+- **Priority**: **
+- **Dependencies**:
+  - sonub-setup-svelte.md
+- **Tags**: i18n, paraglide, setup, configuration, localization
+- **핵심 내용**:
+  - `project.inlang/settings.json`에서 message-format 플러그인만 사용하는 최소 구성
+  - `vite.config.ts` 내 단일 `paraglideVitePlugin` 호출과 `outputStructure: 'locale-modules'`
+  - `src/hooks.server.ts`의 `paraglideMiddleware` 래핑과 `src/app.html`의 `%paraglide.lang%` 치환
+  - 자동 생성 산출물 관리 및 수동 타입 파일 제거, 검증 체크리스트 포함
+- **사용 가이드**: 번역 키 작성/사용 흐름은 `sonub-i18n-paraglide.md`를 참고
+
 ### Sonub i18n Paraglide
 - **File**: [sonub-i18n-paraglide.md](./sonub-i18n-paraglide.md)
 - **Title**: Paraglide-JS 기반 i18n 다국어 지원 시스템
@@ -388,6 +470,50 @@ This document provides a detailed index of all specifications related to the son
   - 쿠키/스토어를 통한 로케일 감지 및 SSR 초기화
   - Paraglide 명령 실행, 타입 안전 메시지 사용 예시
   - 지원 언어: en (기본), ko, ja, zh
+
+## Utility Functions
+
+### Sonub Functions Overview
+- **File**: [sonub-functions-overview.md](./sonub-functions-overview.md)
+- **Title**: Sonub Pure Functions 운영 규칙
+- **Description**: 순수 함수만을 `src/lib/functions/*.functions.ts`에 배치하기 위한 공통 규칙과 검증 체크리스트
+- **Version**: 1.0.0
+- **Step**: 25
+- **Priority**: **
+- **Dependencies**:
+  - sonub-setup-svelte.md
+- **Tags**: functions, architecture, guidelines
+- **핵심 내용**:
+  - 도메인별 `*.functions.ts` 네이밍, Named Export 강제, 외부 상태 의존 금지
+  - 추가 함수 작성 시 문서화·테스트 지침과 검증 체크리스트 제공
+
+### Chat Pure Functions
+- **File**: [sonub-functions-chat-functions.md](./sonub-functions-chat-functions.md)
+- **Title**: Chat Pure Functions 명세
+- **Description**: `src/lib/functions/chat.functions.ts`에서 관리하는 1:1 채팅용 순수 함수 목록
+- **Version**: 1.0.0
+- **Step**: 30
+- **Priority**: *
+- **Dependencies**:
+  - sonub-functions-overview.md
+- **Tags**: chat, functions
+- **주요 함수**:
+  - `buildSingleRoomId(a, b)` → 두 UID를 정렬해 `single-{uidA}-{uidB}` 형식 roomId 생성
+  - 사용처와 검증 포인트, 클릭 시 `/chat/room` 진입 전략 명시
+
+### Date Functions
+- **File**: [sonub-functions-date-functions.md](./sonub-functions-date-functions.md)
+- **Title**: 날짜·시간 순수 함수 명세
+- **Description**: `src/lib/functions/date.functions.ts` 기반 날짜/시간 포맷 함수와 Intl 사용 가이드
+- **Version**: 1.2.0
+- **Step**: 30
+- **Priority**: *
+- **Dependencies**:
+  - sonub-functions-overview.md
+- **Tags**: date, time, functions
+- **주요 내용**:
+  - `formatLongDate(timestamp)`/`formatShortDate(timestamp)` dual 포맷 전략
+  - Intl.DateTimeFormat/RelativeTimeFormat 활용법, SSR·타임존 처리 팁
 
 ## User Authentication
 
@@ -601,8 +727,8 @@ This document provides a detailed index of all specifications related to the son
 ### Sonub Admin Test User Management
 - **File**: [sonub-admin-test-create-user-accounts.md](./sonub-admin-test-create-user-accounts.md)
 - **Title**: Sonub Admin Test User Management
-- **Description**: `/admin/users` 페이지에서 테스트 사용자 생성·목록·삭제를 통합 관리하는 명세 (이전 `/admin/test/create-users` 기능 통합)
-- **Version**: 2.0.0
+- **Description**: `/admin/users`는 테스트 사용자 목록/삭제 전용, `/admin/test/create-test-data`는 테스트 사용자/테스트 데이터 생성 전용으로 분리된 명세
+- **Version**: 2.1.0
 - **Step**: 65
 - **Priority**: **
 - **Dependencies**:
@@ -613,8 +739,38 @@ This document provides a detailed index of all specifications related to the son
 - **Tags**: admin, test-user, firebase, rtdb, svelte5
 - **주요 기능**:
   - 상단 탭 공유 레이아웃 (`/admin/+layout.svelte`)
-  - `/admin/users`에서 테스트 사용자 100명 생성/진행률/완료 메시지를 표시
-  - 동일 페이지에서 목록 조회, 개별 및 일괄 삭제 UI 제공
+  - `/admin/test/create-test-data`에서 테스트 사용자 100명 생성 카드와 테스트 데이터 생성 카드 제공
+  - `/admin/users`에서 목록 조회, 개별 및 일괄 삭제 UI 제공 및 빈 상태 링크를 통한 생성 페이지 안내
+
+## Firebase Functions
+
+### Firebase Cloud Functions Triggers
+- **File**: [sonub-firebase-functions-index.md](./sonub-firebase-functions-index.md)
+- **Title**: Firebase Cloud Functions Triggers
+- **Description**: Gen 2 Functions에서 `/users/{uid}` 및 `/chat-messages/{messageId}` 트리거를 정의하고 전역 옵션을 설정한 인덱스 명세
+- **Version**: 1.0.0
+- **Step**: (미정)
+- **Priority**: *
+- **Dependencies**:
+  - sonub-firebase-cloudfunctions.md
+- **Tags**: firebase, cloud-functions, triggers, backend
+- **주요 내용**:
+  - `setGlobalOptions({ region: 'asia-southeast1', maxInstances: 10 })` 설정
+  - `onUserCreate`, `onUserUpdate`, `onChatMessageCreate` 트리거 정의와 처리 목적
+
+### Firebase Cloud Functions - User Handler
+- **File**: [sonub-firebase-functions-user-handler.md](./sonub-firebase-functions-user-handler.md)
+- **Title**: Firebase Cloud Functions - User Handler
+- **Description**: 사용자 생성/수정 시 호출되는 비즈니스 로직 핸들러 명세 (`handleUserCreate`, `handleUserUpdate`)
+- **Version**: 1.0.0
+- **Step**: (미정)
+- **Priority**: *
+- **Dependencies**:
+  - sonub-firebase-functions-index.md
+- **Tags**: firebase, cloud-functions, user, handler
+- **주요 내용**:
+  - createdAt 자동 생성, displayNameLowerCase/updatedAt 조건부 갱신
+  - before/after 데이터를 이용한 변경 감지 및 로깅 전략
 
 ## Chat System
 
