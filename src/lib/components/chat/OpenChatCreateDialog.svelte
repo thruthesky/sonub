@@ -169,6 +169,7 @@
 					maxlength="50"
 					required
 					disabled={isCreating}
+					onkeydown={(e) => e.stopPropagation()}
 				/>
 				<span class="hint-text">최대 50자</span>
 			</label>
@@ -183,6 +184,7 @@
 					maxlength="200"
 					rows="3"
 					disabled={isCreating}
+					onkeydown={(e) => e.stopPropagation()}
 				></textarea>
 				<span class="hint-text">최대 200자</span>
 			</label>
