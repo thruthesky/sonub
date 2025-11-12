@@ -594,6 +594,36 @@ onChildRemoved(dataQuery, (snapshot) => {
 
 ## 변경 이력
 
+- **2025-11-12**: 그룹/오픈 채팅방 입장 로직 개선
+  - **클라이언트 코드 개선** ([src/routes/chat/room/+page.svelte](../src/routes/chat/room/+page.svelte)):
+    - 그룹/오픈 채팅방 입장 시 `/chat-rooms/{roomId}/members/{uid}: true` 자동 설정
+    - `joinChatRoom()` 함수를 import하여 members 필드 관리
+    - 1:1 채팅과 그룹/오픈 채팅을 구분하여 처리
+    - `rtdb` null 체크 추가로 타입 안정성 개선
+  - **Cloud Functions 개선** ([firebase/functions/src/handlers/chat.handler.ts](../firebase/functions/src/handlers/chat.handler.ts)):
+    - `handleChatRoomMemberJoin()` 함수 확장
+    - 채팅방 정보 조회 (roomType, roomName)
+    - `/chat-joins/{uid}/{roomId}` 노드에 상세 정보 자동 추가:
+      - `roomType`: 채팅방 타입 (group, open)
+      - `roomName`: 채팅방 이름 (캐싱용)
+      - `listOrder`: 정렬 순서 (현재 timestamp)
+      - `newMessageCount`: 0으로 초기화
+      - `joinedAt`: 입장 시각 (없는 경우에만)
+    - TypeScript 타입 안정성 개선 (`Record<string, string | number>`)
+  - **채팅방 생성 다이얼로그 개선** ([src/lib/components/chat/ChatCreateDialog.svelte](../src/lib/components/chat/ChatCreateDialog.svelte)):
+    - `rtdb` null 체크 추가로 데이터베이스 연결 오류 처리
+    - 사용자 친화적 에러 메시지 표시
+  - **데이터 흐름 개선**:
+    ```
+    사용자 입장 → 클라이언트: chat-joins + members 설정
+         ↓
+    Cloud Functions: chat-joins 상세 정보 자동 추가
+         ↓
+    결과: 채팅방 목록에서 즉시 정렬 및 표시 가능
+    ```
+  - **TypeScript 검증**: 0 errors, 413 warnings (Tailwind CSS 관련, 기능에 영향 없음)
+  - **Firebase Functions 배포**: asia-southeast1 리전에 성공적으로 배포 완료
+
 - **2025-11-11**: 초기 사양 작성 및 1:1 채팅 기능 완전 구현
   - URL 파라미터 기반 채팅방 접근 (uid, roomId)
   - Firebase Realtime Database를 통한 실시간 메시지 동기화

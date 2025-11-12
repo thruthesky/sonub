@@ -19,7 +19,7 @@
 	type UserData = Record<string, unknown>;
 
 	const PAGE_SIZE = 20;
-	const JOIN_ORDER_FIELD = 'listOrder';
+	const JOIN_ORDER_FIELD = 'singleChatListOrder';
 
 	// UserSearchDialog 상태
 	let userSearchOpen = $state(false);
@@ -214,11 +214,11 @@
 						{@const join = (itemData.data ?? {}) as ChatJoinData}
 						{@const roomId = (join.roomId ?? itemData.key ?? '') as string}
 						{@const roomType = (join.roomType ?? join.type ?? 'single').toString()}
-						{@const listOrder = join.listOrder ?? null}
+						{@const singleChatListOrder = join.singleChatListOrder ?? null}
 						{console.log('🔍 [Chat List Debug] Join data:', {
 							roomId,
 							roomType,
-							listOrder,
+							singleChatListOrder,
 							partnerUid: join.partnerUid,
 							lastMessageText: join.lastMessageText,
 							lastMessageAt: join.lastMessageAt,

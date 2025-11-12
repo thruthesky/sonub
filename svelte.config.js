@@ -8,7 +8,10 @@ const config = {
 	// for more information about preprocessors
 	preprocess: [vitePreprocess(), mdsvex()],
 	kit: {
-		adapter: adapter()
+		adapter: adapter(),
+		alias: {
+			$shared: './shared'
+		}
 	},
 	extensions: ['.svelte', '.svx'],
 	// Tailwind CSS v4의 @import 'tailwindcss' reference 사용 시 발생하는

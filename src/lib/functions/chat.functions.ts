@@ -1,48 +1,118 @@
 /**
- * 채팅 관련 순수 함수 모음
+ * Svelte 클라이언트용 채팅 함수들
+ *
+ * 이 파일은 Firebase에 의존하는 함수들과
+ * shared 폴더의 pure functions에 대한 re-export를 포함합니다.
  */
 
+import { ref, set, update, type Database } from 'firebase/database';
+
+// Pure functions를 shared 폴더에서 import하고 re-export
+export {
+	buildSingleRoomId,
+	isSingleChat,
+	extractUidsFromSingleRoomId,
+	resolveRoomTypeLabel
+} from '$shared/chat.pure-functions';
+
 /**
- * 1:1 채팅방의 roomId를 UID 두 개로부터 고정적으로 생성한다.
+ * 1:1 채팅방에 입장합니다.
+ *
+ * 이 함수는 사용자가 1:1 채팅방에 입장할 때 호출됩니다.
+ * chat-joins/{uid}/{roomId}에 최소한의 정보만 저장하여 Cloud Functions를 트리거합니다.
+ * Cloud Functions(onChatJoinCreate)가 자동으로 필요한 필드들을 추가합니다:
+ * - singleChatListOrder
+ * - allChatListOrder
+ * - partnerUid
+ * - roomType
+ * - joinedAt
+ *
+ * @param db - Firebase Realtime Database 인스턴스
+ * @param roomId - 채팅방 ID
+ * @param uid - 사용자 UID
+ *
+ * @example
+ * ```typescript
+ * import { rtdb } from '$lib/firebase';
+ * import { enterSingleChatRoom } from '$lib/functions/chat.functions';
+ *
+ * // 사용자가 1:1 채팅방에 입장할 때
+ * enterSingleChatRoom(rtdb, roomId, currentUser.uid);
+ * ```
  */
-export function buildSingleRoomId(a: string, b: string) {
-	return `single-${[a, b].sort().join('-')}`;
+export function enterSingleChatRoom(
+	db: Database,
+	roomId: string,
+	uid: string
+): void {
+	const chatJoinRef = ref(db, `chat-joins/${uid}/${roomId}`);
+	update(chatJoinRef, {
+		roomId: roomId
+	}).catch((error) => {
+		console.error('1:1 채팅방 입장 실패:', error);
+	});
 }
 
 /**
- * roomId가 1:1 채팅방인지 확인한다.
+ * 사용자를 그룹/오픈 채팅방에 입장시킵니다.
  *
- * @param roomId - 확인할 채팅방 ID
- * @returns 1:1 채팅방이면 true, 아니면 false
+ * 이 함수는 사용자가 그룹 채팅방 또는 오픈 채팅방에 입장할 때 호출됩니다.
+ * chat-rooms/{roomId}/members/{uid}를 true로 설정하여 다음을 수행합니다:
+ * 1. 사용자가 채팅방에 참여 중임을 표시
+ * 2. 메시지 알림을 받도록 설정
+ * 3. Cloud Functions가 자동으로 memberCount를 증가시키고 chat-joins에 상세 정보를 추가합니다.
+ *
+ * @param db - Firebase Realtime Database 인스턴스
+ * @param roomId - 채팅방 ID
+ * @param uid - 사용자 UID
+ *
+ * @example
+ * ```typescript
+ * import { rtdb } from '$lib/firebase';
+ * import { joinChatRoom } from '$lib/functions/chat.functions';
+ *
+ * // 사용자가 그룹/오픈 채팅방에 입장할 때
+ * joinChatRoom(rtdb, roomId, currentUser.uid);
+ * ```
  */
-export function isSingleChat(roomId: string): boolean {
-	return roomId.startsWith('single-');
+export function joinChatRoom(
+	db: Database,
+	roomId: string,
+	uid: string
+): void {
+	const memberRef = ref(db, `chat-rooms/${roomId}/members/${uid}`);
+	set(memberRef, true).catch((error) => {
+		console.error('채팅방 입장 실패:', error);
+	});
 }
 
 /**
- * 1:1 채팅방 roomId에서 두 사용자의 UID를 추출한다.
+ * 사용자를 채팅방에서 퇴장시킵니다.
  *
- * @param roomId - 1:1 채팅방 ID (형식: "single-uid1-uid2")
- * @returns 두 UID를 포함하는 배열 [uid1, uid2], 형식이 올바르지 않으면 null
- */
-export function extractUidsFromSingleRoomId(roomId: string): [string, string] | null {
-	const parts = roomId.split('-');
-	if (parts.length !== 3 || parts[0] !== 'single') {
-		return null;
-	}
-	return [parts[1], parts[2]];
-}
-
-/**
- * 채팅방 유형 문자열을 배지 텍스트로 변환한다.
+ * 이 함수는 사용자가 그룹 채팅방 또는 오픈 채팅방에서 나갈 때 호출됩니다.
+ * chat-rooms/{roomId}/members/{uid} 속성을 삭제하여 다음을 수행합니다:
+ * 1. 사용자가 채팅방에서 완전히 나갔음을 표시
+ * 2. Cloud Functions가 자동으로 memberCount를 감소시킴
  *
- * @param roomType - DB에 저장된 채팅방 유형 문자열
- * @returns UI에 표시할 짧은 배지 텍스트
+ * @param db - Firebase Realtime Database 인스턴스
+ * @param roomId - 채팅방 ID
+ * @param uid - 사용자 UID
+ * @returns Promise<void>
+ *
+ * @example
+ * ```typescript
+ * import { rtdb } from '$lib/firebase';
+ * import { leaveChatRoom } from '$lib/functions/chat.functions';
+ *
+ * // 사용자가 채팅방에서 나갈 때
+ * await leaveChatRoom(rtdb, roomId, currentUser.uid);
+ * ```
  */
-export function resolveRoomTypeLabel(roomType: string): string {
-	const normalized = roomType?.toLowerCase() ?? '';
-	if (normalized.includes('open')) return 'Open';
-	if (normalized.includes('group')) return 'Group';
-	if (normalized.includes('single')) return 'Single';
-	return 'Room';
+export async function leaveChatRoom(
+	db: Database,
+	roomId: string,
+	uid: string
+): Promise<void> {
+	const memberRef = ref(db, `chat-rooms/${roomId}/members/${uid}`);
+	await set(memberRef, null); // null로 설정하여 속성 삭제
 }

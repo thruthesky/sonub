@@ -74,8 +74,34 @@ step: 20
 
 ---
 
+## ⭐️ Start Here – 필수 선행 문서
+
+- **프로젝트 전반 개요는 반드시 [sonub-project-overview.md](./sonub-project-overview.md)를 먼저 읽습니다.**
+  - Sonub의 목적, 핵심 기능 범위, 저작권/문의 채널 안내
+  - 클라이언트·서버·shared 모듈 구조와 Pure Functions 공유 전략
+  - 개발/배포/운영 지침과 shared 폴더 사용 패턴
+- 해당 문서를 읽지 않으면 아래 세부 스펙의 컨텍스트를 이해할 수 없으므로, 모든 작업자는 `specs/index.md → sonub-project-overview.md → 관련 세부 문서` 순으로 학습합니다.
+
+---
+
 # Specifications Index
 This document provides a detailed index of all specifications related to the sonub project. Each specification is listed with its title, description, and relevant metadata extracted from its YAML header.
+
+## Foundation
+
+### Sonub Project Overview
+- **File**: [sonub-project-overview.md](./sonub-project-overview.md)
+- **Title**: Sonub 프로젝트 개요
+- **Description**: Sonub의 비전, 기능 범위, 모듈 구조(client/server/shared) 및 shared 순수 함수 사용 지침을 총괄적으로 정리한 문서
+- **Version**: 1.0.0
+- **Step**: 5
+- **Priority**: "***"
+- **Tags**: overview, architecture, shared, setup, guidance
+- **핵심 내용**:
+  - Social Network Hub(Sonub)의 목표와 제공 기능(프로필/친구/채팅/피드/알림)
+  - SvelteKit + Firebase 기반 프로젝트 셋업 지침과 디렉터리 구조
+  - shared 순수 함수 철학, 사용 예시(`shared/date.pure-functions.ts`, `shared/chat.pure-functions.ts`)
+  - 개발·배포·운영·유지보수 가이드 및 피드백 경로(GitHub Issues)
 
 ## Design and Styling
 

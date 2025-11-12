@@ -74,6 +74,11 @@
 			return;
 		}
 
+		if (!rtdb) {
+			errorMessage = '데이터베이스 연결 오류가 발생했습니다.';
+			return;
+		}
+
 		isCreating = true;
 		errorMessage = '';
 
@@ -91,14 +96,13 @@
 			}
 
 		// 채팅방 데이터 (type에 따라 동적 생성)
-			// createdAt과 owner 필드는 Cloud Functions에서 자동으로 설정됨
-			// _requestingUid는 임시 필드로, Cloud Functions에서 검증 후 owner로 복사되고 삭제됨
+			// createdAt과 memberCount는 Cloud Functions에서 자동으로 설정됨
 			const roomData: Record<string, unknown> = {
 				name: trimmedName,
 				description: roomDescription.trim() || '',
 				type: type,
 				open: isOpenChat, // 그룹챗은 비공개, 오픈챗은 공개
-				_requestingUid: currentUid // Cloud Functions에서 owner 설정 시 사용
+				owner: currentUid // 채팅방 소유자 UID
 			};
 
 			// type에 따른 추가 필드
@@ -116,7 +120,7 @@
 			const joinData: Record<string, unknown> = {
 				roomId,
 				roomType: type,
-				roomTitle: trimmedName,
+				roomName: trimmedName,
 				joinedAt: now,
 				lastMessageAt: now
 			};

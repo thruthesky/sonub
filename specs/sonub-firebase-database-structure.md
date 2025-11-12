@@ -146,8 +146,36 @@ Firebase Realtime Database (루트)
 ├── followers/                # 팔로워 (나를 팔로우하는 사용자)
 ├── following/                # 팔로잉 (내가 팔로우하는 사용자)
 ├── chat-messages/            # 채팅 메시지 (게시글 + 댓글 역할 통합)
-└── chat-joins/               # 채팅방 참여 정보 (채팅방 목록용)
+├── chat-joins/               # 채팅방 참여 정보 (채팅방 목록용)
+└── stats/                    # 전역 통계
+    └── counters/
+        └── user              # 전체 사용자 수 (Cloud Functions에서만 증가)
 ```
+
+---
+
+## 통계 (stats/counters)
+
+전체 통계 값은 `/stats/counters/` 경로에서 관리하며, **백엔드(Cloud Functions)만** 쓰기가 가능합니다.
+
+### 사용자 수 통계 구조
+
+```
+/stats/
+  /counters/
+    user: number   // 전체 가입 사용자 수
+```
+
+### 동작 방식
+
+- 새 사용자가 생성되면 `firebase/functions/src/handlers/user.handler.ts`의 `handleUserCreate()`가 실행됩니다.
+- 해당 로직은 `/stats/counters/user` 값을 `ServerValue.increment(1)`로 증가시켜 동시성 문제 없이 총 사용자 수를 집계합니다.
+- 클라이언트는 이 값을 읽기만 하며, 쓰기는 금지됩니다.
+
+### 활용 예시
+
+- 홈페이지 우측 사이드바의 통계 카드
+- `/stats` 페이지에서 제공하는 사용자 수 대시보드
 
 ---
 
@@ -326,7 +354,7 @@ Firebase Authentication의 다음 필드들은 `/users/<uid>` 노드에 **저장
 
 ## 채팅방 (chat-rooms)
 
-채팅방 메타데이터는 `/chat-rooms/<roomId>/` 경로에 저장됩니다. 그룹/오픈 챗을 포함해 **모든 방 생성은 Cloud Functions가 owner를 강제로 주입**하도록 설계되어 있으며, 클라이언트는 방 이름·설명과 공개 여부 같은 기초 정보만 작성합니다.
+채팅방 메타데이터는 `/chat-rooms/<roomId>/` 경로에 저장됩니다. 클라이언트는 방 이름, 설명, 공개 여부 등 기본 정보와 함께 `owner` 필드를 설정하며, 보안 규칙이 `owner`가 `auth.uid`와 일치하는지 검증합니다. Cloud Functions는 `createdAt`, `members` (owner 자동 추가), `memberCount` 필드를 자동으로 생성하고, `members` 필드 변경 시 `memberCount`를 자동으로 동기화합니다. 클라이언트는 자기 자신의 uid를 `members`에 추가/수정하여 채팅방 입장/퇴장 및 메시지 알림 설정을 관리합니다.
 
 ### 데이터 구조
 
@@ -336,22 +364,29 @@ Firebase Authentication의 다음 필드들은 `/users/<uid>` 노드에 **저장
 │   ├── name: "팀 채팅방"
 │   ├── description: "Sprint 24 진행 채널"
 │   ├── open: false
-│   ├── owner: "uid_creator"              // Cloud Functions에서 자동 설정
+│   ├── type: "group"
+│   ├── owner: "uid_creator"              // 클라이언트가 설정 (보안 규칙으로 검증)
 │   ├── createdAt: 1698473000000          // Cloud Functions에서 자동 설정
 │   ├── updatedAt: 1698473000000
 │   ├── groupListOrder: "-1698473000000"
 │   ├── members:
-│   │   ├── 0: "uid_creator"
-│   │   └── 1: "uid_teammate"
+│   │   ├── uid_creator: true             // Cloud Functions에서 owner 자동 추가, 클라이언트는 자기 자신만 추가/수정 가능
+│   │   └── uid_teammate: true            // 클라이언트가 입장 시 추가 (true=메시지 알림 받기, false=알림 안 받기)
+│   ├── memberCount: 2                    // Cloud Functions에서 members 기반으로 자동 계산 (모든 uid 개수, true/false 구분 없이)
 │   └── stats:
-│       ├── memberCount: 2
 │       └── messageCount: 120
 └── open-general/
     ├── name: "오픈 커뮤니티"
     ├── open: true
-    ├── owner: "uid_creator"              // Cloud Functions에서 자동 설정
+    ├── type: "open"
+    ├── owner: "uid_creator"              // 클라이언트가 설정 (보안 규칙으로 검증)
     ├── createdAt: 1698474000000          // Cloud Functions에서 자동 설정
     ├── openListOrder: "-1698474000000"
+    ├── members:
+    │   ├── uid_creator: true             // 메시지 알림 받음
+    │   ├── uid_user2: true               // 메시지 알림 받음
+    │   └── uid_user3: false              // 메시지 알림 안 받음 (채팅방에는 참여 중)
+    ├── memberCount: 3                    // Cloud Functions에서 members 기반으로 자동 계산 (모든 uid 개수, true/false 구분 없이)
     └── ...
 ```
 
@@ -361,35 +396,59 @@ Firebase Authentication의 다음 필드들은 `/users/<uid>` 노드에 **저장
 |------|------|------|------|
 | `name` | string | ✅ | 채팅방 이름, 최대 50자 |
 | `description` | string | ❌ | 소개 문구, 최대 200자 |
+| `type` | string | ✅ | 채팅방 유형 (`group`, `open`, `single`) |
 | `open` | boolean | ✅ | 오픈 챗 여부 (`true`면 전체 공개) |
-| `owner` | string | ✅ | 방 생성자 UID. **Cloud Functions에서만 설정** (클라이언트 쓰기 불가) |
+| `owner` | string | ✅ | 방 생성자 UID. **클라이언트가 설정** (보안 규칙으로 `auth.uid`와 일치 검증) |
 | `createdAt` | number | ✅ | 생성 시간 (Unix timestamp ms). **Cloud Functions에서만 설정** |
 | `updatedAt` | number | ✅ | 수정 시간 (Unix timestamp ms) |
 | `groupListOrder` | string/number | ❌ | 그룹 챗 정렬용 order. 클라이언트가 `-Date.now()` 형식으로 설정 |
 | `openListOrder` | string/number | ❌ | 오픈 챗 정렬용 order. `open: true`일 때만 생성 |
-| `memberCount` | number | ✅ | 참여자 수. Cloud Functions가 `members` 배열과 동기화 |
-| `members` | string[] | ✅ | 참여자 UID 배열. 최소 1명(owner) 포함 |
+| `members` | object | ✅ | 참여자 및 알림 설정 객체 (`{uid: boolean}`). **Cloud Functions에서 owner 자동 추가**, **클라이언트는 자기 자신만 추가/수정/삭제 가능**. `true`=메시지 알림 받음, `false`=알림 안 받음, `삭제됨`=채팅방에서 완전히 나감 |
+| `memberCount` | number | ✅ | 전체 참여자 수. **Cloud Functions에서 자동 계산** (`members` 객체의 모든 uid 개수, true/false 구분 없이) |
 | `stats` | object | ❌ | 메시지 수 등 확장 가능한 통계 필드 |
-| `_requestingUid` | string | 임시 | **임시 필드**. 클라이언트가 `auth.uid`와 동일한 값으로 설정하면, Cloud Functions가 이를 검증하여 `owner`로 복사 후 삭제 |
 
 ### 클라이언트/서버 역할 분리
 
+#### 채팅방 생성 시
+
 - **클라이언트**
-  - `/chat-rooms/{roomId}`에 `name`, `description`, `open`, `type` 등 기본 정보를 작성
-  - `_requestingUid: auth.uid`를 임시 필드로 전달 (보안 규칙에 의해 검증됨)
-  - `owner`, `createdAt` 필드는 **작성하지 않음** (Cloud Functions에서만 설정 가능)
+  - `/chat-rooms/{roomId}`에 `name`, `description`, `open`, `type`, `owner` 등 기본 정보를 작성
+  - `owner` 필드를 `auth.uid`로 설정 (보안 규칙이 `auth.uid`와 일치하는지 검증)
+  - `createdAt`, `memberCount`, `members` 필드는 **작성하지 않음** (Cloud Functions에서만 설정)
 - **Cloud Functions**
   - `onValueCreated("/chat-rooms/{roomId}")` 트리거 실행
-  - `_requestingUid` 값을 읽어 생성자 UID 확인 (보안 규칙으로 이미 검증됨)
-  - `owner` 필드를 `_requestingUid` 값으로 설정
+  - `owner` 값을 읽어 생성자 UID 확인 (보안 규칙으로 이미 검증됨)
   - `createdAt` 필드를 현재 타임스탬프로 설정
-  - `_requestingUid` 임시 필드 삭제
-  - 필요시 `members[0]`로 owner 추가 및 정렬 필드 계산
+  - `members` 객체에 `{owner: true}` 추가
+  - `memberCount`를 1로 설정 (초기값)
+
+#### 채팅방 입장/퇴장 시
+
+- **클라이언트**
+  - 채팅방 입장: `/chat-rooms/{roomId}/members/{uid}`를 `true`로 설정
+    - `joinChatRoom(db, roomId, uid)` 함수 사용 (chat.functions.ts)
+    - 메시지 알림을 받도록 설정
+    - 보안 규칙: 자기 자신의 uid만 쓰기 가능
+  - 채팅방 퇴장: `/chat-rooms/{roomId}/members/{uid}`를 `false`로 설정
+    - `leaveChatRoom(db, roomId, uid)` 함수 사용 (chat.functions.ts)
+    - 메시지 알림을 받지 않도록 설정
+- **Cloud Functions**
+  - `onValueWritten("/chat-rooms/{roomId}/members/{uid}")` 트리거 실행
+  - `/chat-rooms/{roomId}/members` 아래의 모든 uid 읽기
+  - `value === true`인 uid의 개수를 세어 `memberCount` 업데이트
+  - 자동으로 활성 참여자 수를 동기화
 
 > 🔐 **보안 규칙 연계**:
-> - `/chat-rooms/{roomId}/_requestingUid`는 `!data.exists() && newData.val() === auth.uid` 조건으로 제한
-> - `/chat-rooms/{roomId}/owner`와 `/chat-rooms/{roomId}/createdAt`는 `.write: false`로 클라이언트 쓰기 금지
-> - 따라서 사양상 owner와 createdAt 위조가 불가능하며, Cloud Functions만이 신뢰할 수 있는 값을 설정할 수 있습니다.
+> - `/chat-rooms/{roomId}/owner`는 방이 존재하지 않을 때만 쓰기 가능하며, `newData.val() === auth.uid` 조건으로 제한
+> - `/chat-rooms/{roomId}/createdAt`와 `/chat-rooms/{roomId}/memberCount`는 `.write: false`로 클라이언트 쓰기 금지
+> - `/chat-rooms/{roomId}/members/{uid}`는 `$uid === auth.uid` 조건으로 자기 자신만 쓰기 가능
+> - 따라서 사양상 owner 위조가 불가능하며, Cloud Functions만이 신뢰할 수 있는 값을 설정할 수 있습니다.
+
+> 💡 **메시지 알림 관리**:
+> - `members` 필드는 참여자 목록과 메시지 알림 수신 여부를 함께 관리합니다
+> - `true`: 사용자가 채팅방에 참여 중이며 메시지 알림을 받음
+> - `false`: 사용자가 채팅방에서 나갔거나 알림을 받지 않음
+> - `memberCount`는 항상 `members` 필드에서 `true`인 uid의 개수와 동일하게 유지됩니다
 
 ---
 
@@ -509,19 +568,36 @@ Firebase Authentication의 다음 필드들은 `/users/<uid>` 노드에 **저장
 |------|------|------|------|
 | `roomId` | string | ✅ | 채팅방 ID |
 | `roomType` | string | ✅ | 채팅방 유형 (single, group, open) |
+| `roomName` | string | ❌ | 채팅방 이름 (그룹/오픈 채팅방의 경우) |
 | `partnerUid` | string | ❌ | 1:1 채팅의 상대방 UID (1:1 채팅만 해당) |
 | `lastMessageText` | string | ❌ | 마지막 메시지 내용 (미리보기용) |
 | `lastMessageAt` | number | ✅ | 마지막 메시지 시간 (Unix timestamp, 밀리초) |
 | `joinedAt` | number | ✅ | 채팅방 참여 시간 (Unix timestamp, 밀리초) |
 | `updatedAt` | number | ✅ | 마지막 업데이트 시간 (Unix timestamp, 밀리초) |
-| `listOrder` | string | ✅ | **정렬 필드** (prefix + timestamp, 최신순/PIN 정렬용) |
 | `newMessageCount` | number | ✅ | 읽지 않은 메시지 개수 (Cloud Functions가 자동 증감) |
+| `listOrder` | string | ❌ | **정렬 필드** (후방 호환성용, 사용 중단 예정) |
+| `singleChatListOrder` | string | ❌ | **1:1 채팅 정렬 필드** (prefix + timestamp) |
+| `groupChatListOrder` | string/number | ❌ | **그룹 채팅 정렬 필드** (prefix + timestamp) |
+| `openChatListOrder` | string/number | ❌ | **오픈 채팅 정렬 필드** (prefix + timestamp) |
+| `openAndGroupChatListOrder` | number | ❌ | **그룹+오픈 통합 정렬 필드** (timestamp) |
+| `allChatListOrder` | number | ❌ | **전체 채팅방 통합 정렬 필드** (timestamp, 모든 타입) |
 
-### 🔥 listOrder 필드 상세 설명
+### 🔥 정렬 필드 상세 설명
 
-`listOrder`는 **채팅방 목록을 최신 메시지 순으로 정렬하고, 읽지 않은 메시지/PIN 상태를 구분**하기 위한 특수 필드입니다.
+채팅방 목록을 다양한 방식으로 정렬하기 위해 여러 정렬 필드가 제공됩니다.
 
-#### 왜 listOrder가 필요한가?
+#### 정렬 필드 개요
+
+| 필드 | 용도 | 타입 | Cloud Functions 설정 |
+|------|------|------|---------------------|
+| `singleChatListOrder` | 1:1 채팅만 정렬 | string (prefix + timestamp) | ✅ 자동 |
+| `groupChatListOrder` | 그룹 채팅만 정렬 | string (prefix + timestamp) | ✅ 자동 |
+| `openChatListOrder` | 오픈 채팅만 정렬 | string (prefix + timestamp) | ✅ 자동 |
+| `openAndGroupChatListOrder` | 그룹+오픈 통합 정렬 | number (timestamp) | ✅ 자동 |
+| `allChatListOrder` | 모든 채팅방 통합 정렬 | number (timestamp) | ✅ 자동 |
+| `listOrder` | (후방 호환성용) | string | ⚠️ 사용 중단 |
+
+#### 왜 정렬 필드가 필요한가?
 
 Firebase Realtime Database에서 채팅방 목록을 정렬할 때 다음 요구사항을 만족해야 합니다:
 
@@ -530,29 +606,43 @@ Firebase Realtime Database에서 채팅방 목록을 정렬할 때 다음 요구
    - 문제점: 읽지 않은 메시지가 있는 채팅방을 맨 위에 표시할 수 없음
    - 문제점: PIN(고정) 기능 구현 불가
 
-2. ✅ **prefix + timestamp 사용**: `listOrder = "prefix + ${timestamp}"` 형식으로 저장
-   - 장점: Firebase 쿼리만으로 내림차순 정렬 가능 (reverse() 사용)
+2. ✅ **prefix + timestamp 사용**: 타입별 정렬 필드 사용
+   - 장점: Firebase 쿼리만으로 내림차순 정렬 가능
    - 장점: 읽지 않은 메시지가 있는 채팅방을 맨 위에 자동 배치
    - 장점: PIN 기능을 prefix로 쉽게 구현 가능
    - 장점: 서버에서 자동으로 관리되어 데이터 일관성 보장
 
-#### listOrder 계산 방식
+#### 정렬 필드 계산 방식 (Cloud Functions)
 
 ```typescript
 // Cloud Functions에서 자동으로 계산
 const timestamp = messageData.createdAt || Date.now();
 
+// === 1:1 채팅 ===
 // 발신자: 읽음 상태 (prefix 없음)
-const senderListOrder = `${timestamp}`;  // "1698473000000"
+const senderSingleListOrder = `${timestamp}`;  // "1698473000000"
+// 수신자: 읽지 않은 상태 (200 prefix)
+const partnerSingleListOrder = `200${timestamp}`;  // "2001698473000000"
 
-// 수신자: 읽지 않은 상태 (200 prefix 추가)
-const partnerListOrder = `200${timestamp}`;  // "2001698473000000"
+// === 그룹 채팅 ===
+// 발신자: 읽음 상태
+const senderGroupListOrder = `${timestamp}`;
+// 수신자들: 읽지 않은 상태 (200 prefix)
+const memberGroupListOrder = `200${timestamp}`;
 
-// PIN 기능: 사용자가 채팅방을 고정하면 500 prefix 사용
-const pinnedListOrder = `500${timestamp}`;  // "5001698473000000"
+// === 오픈 채팅 ===
+// 발신자: 읽음 상태
+const senderOpenListOrder = `${timestamp}`;
+// 수신자들: 읽지 않은 상태 (200 prefix)
+const memberOpenListOrder = `200${timestamp}`;
+
+// === 통합 정렬 필드 ===
+// 모든 사용자에게 동일한 timestamp (읽음/읽지않음 구분 없음)
+const allChatListOrder = timestamp;  // 1698473000000
+const openAndGroupChatListOrder = timestamp;  // 그룹+오픈만
 ```
 
-#### listOrder prefix 규칙
+#### prefix 규칙
 
 | Prefix | 상태 | 설명 | 예시 값 |
 |--------|------|------|---------|
@@ -560,7 +650,7 @@ const pinnedListOrder = `500${timestamp}`;  // "5001698473000000"
 | `200` | 읽지 않음 | 읽지 않은 메시지가 있는 채팅방 (맨 위 정렬) | `2001698473000000` |
 | `500` | PIN 고정 | 사용자가 고정한 채팅방 (최상위 정렬) | `5001698473000000` |
 
-#### listOrder 정렬 원리
+#### 정렬 원리
 
 Firebase는 문자열을 **사전순(lexicographical order)**으로 정렬하고, `reverse()`로 내림차순 정렬합니다:
 
@@ -577,7 +667,7 @@ Firebase는 문자열을 **사전순(lexicographical order)**으로 정렬하고
 - **200 prefix**: 읽지 않은 메시지가 있는 채팅방은 읽음 채팅방보다 위
 - **prefix 없음**: 읽음 상태 채팅방은 일반 timestamp 정렬
 
-#### 읽음 처리 (listOrder 업데이트)
+#### 읽음 처리 (정렬 필드 업데이트)
 
 사용자가 채팅방에 입장하면 클라이언트에서 200 prefix를 제거합니다:
 
@@ -588,87 +678,109 @@ const currentListOrder = "2001698473000000";  // 읽지 않은 상태
 // 200 prefix 제거 (읽음 처리)
 if (currentListOrder.startsWith("200")) {
   const newListOrder = currentListOrder.substring(3);  // "1698473000000"
-  await database.ref(`chat-joins/${uid}/${roomId}/listOrder`).set(newListOrder);
+
+  // 채팅방 타입에 따라 적절한 필드 업데이트
+  if (roomType === 'single') {
+    await database.ref(`chat-joins/${uid}/${roomId}/singleChatListOrder`).set(newListOrder);
+  } else if (roomType === 'group') {
+    await database.ref(`chat-joins/${uid}/${roomId}/groupChatListOrder`).set(newListOrder);
+  } else if (roomType === 'open') {
+    await database.ref(`chat-joins/${uid}/${roomId}/openChatListOrder`).set(newListOrder);
+  }
 
   // 읽지 않은 메시지 카운터도 0으로 초기화
   await database.ref(`chat-joins/${uid}/${roomId}/newMessageCount`).set(0);
-}
-
-// PIN 채팅방은 prefix 제거하지 않음
-if (currentListOrder.startsWith("500")) {
-  // 500 prefix는 유지 (항상 맨 위에 고정)
-  // newMessageCount만 0으로 초기화
-  await database.ref(`chat-joins/${uid}/${roomId}/newMessageCount`).set(0);
-}
-```
-
-#### PIN 고정 기능
-
-사용자가 채팅방을 고정/해제할 때:
-
-```typescript
-// 채팅방 고정
-const currentListOrder = "1698473000000";
-const pinnedListOrder = `500${currentListOrder}`;  // "5001698473000000"
-await database.ref(`chat-joins/${uid}/${roomId}/listOrder`).set(pinnedListOrder);
-
-// 채팅방 고정 해제
-const currentListOrder = "5001698473000000";
-if (currentListOrder.startsWith("500")) {
-  const unpinnedListOrder = currentListOrder.substring(3);  // "1698473000000"
-  await database.ref(`chat-joins/${uid}/${roomId}/listOrder`).set(unpinnedListOrder);
 }
 ```
 
 #### 클라이언트에서 사용 예시
 
 ```typescript
-// 채팅방 목록 조회 (내림차순 정렬: PIN → 읽지 않음 → 읽음)
-const chatJoinsRef = database.ref(`chat-joins/${uid}`);
-const query = chatJoinsRef
-  .orderByChild('listOrder')  // listOrder로 정렬
-  .limitToLast(20);           // 최신 20개
+// 예시 1: 1:1 채팅만 조회
+const query = database.ref(`chat-joins/${uid}`)
+  .orderByChild('singleChatListOrder')
+  .limitToLast(20);
 
+// 예시 2: 그룹 채팅만 조회
+const query = database.ref(`chat-joins/${uid}`)
+  .orderByChild('groupChatListOrder')
+  .limitToLast(20);
+
+// 예시 3: 그룹+오픈 채팅 통합 조회
+const query = database.ref(`chat-joins/${uid}`)
+  .orderByChild('openAndGroupChatListOrder')
+  .limitToLast(20);
+
+// 예시 4: 모든 채팅방 통합 조회
+const query = database.ref(`chat-joins/${uid}`)
+  .orderByChild('allChatListOrder')
+  .limitToLast(20);
+
+// 결과 처리 (공통)
 query.on('value', (snapshot) => {
   const chatRooms = [];
   snapshot.forEach((child) => {
     chatRooms.push(child.val());
   });
-
-  // reverse()로 내림차순 변환 (큰 값부터)
-  chatRooms.reverse();
-
-  // 정렬 순서:
-  // 1. PIN 고정 (500 prefix)
-  // 2. 읽지 않음 (200 prefix)
-  // 3. 읽음 (prefix 없음)
+  chatRooms.reverse(); // 최신순 정렬
   console.log(chatRooms);
 });
 ```
 
 #### 주의사항
 
-- ⚠️ **발신자의 listOrder**: prefix 없이 timestamp만 저장 (읽음 상태)
-- ⚠️ **수신자의 listOrder**: 200 prefix + timestamp 저장 (읽지 않은 상태)
-- ✅ **Cloud Functions가 메시지 생성 시 자동으로 업데이트**합니다
+- ⚠️ **발신자의 정렬 필드**: prefix 없이 timestamp만 저장 (읽음 상태)
+- ⚠️ **수신자의 정렬 필드**: 200 prefix + timestamp 저장 (읽지 않은 상태)
+- ✅ **Cloud Functions가 메시지 생성 시 자동으로 모든 정렬 필드를 업데이트**합니다
 - ✅ **클라이언트는 읽음 처리/PIN 기능만 직접 수정**합니다
-- ⚠️ `listOrder`는 문자열 타입이지만 사전순으로 정렬됩니다
+- ⚠️ 타입별 정렬 필드(single/group/open)는 문자열 타입이지만 사전순으로 정렬됩니다
+- ⚠️ 통합 정렬 필드(all/openAndGroup)는 숫자 타입입니다
 - ⚠️ `newMessageCount`와 함께 사용하여 읽지 않은 메시지 개수를 표시합니다
 
 ### 클라이언트/서버 역할 분리
 
 채팅방 참여 정보의 경우:
-- **클라이언트는** `chat-joins` 노드를 직접 생성하지 않지만, 다음 작업은 수행할 수 있습니다:
-  - 채팅방 입장 시 `listOrder`의 200 prefix 제거 (읽음 처리)
+- **클라이언트는** 다음 작업을 수행합니다:
+  - **채팅방 입장 시** `chat-joins/{uid}/{roomId}` 노드 생성 (모든 채팅방 타입: 1:1, 그룹, 오픈)
+  - 채팅방 입장 시 각 정렬 필드의 200 prefix 제거 (읽음 처리)
+    - 예: `singleChatListOrder`의 "200{timestamp}"를 "{timestamp}"로 변경
   - 채팅방 입장 시 `newMessageCount`를 0으로 초기화
-  - 채팅방 PIN 고정/해제 시 `listOrder`의 500 prefix 추가/제거
+  - 채팅방 PIN 고정/해제 시 각 정렬 필드의 500 prefix 추가/제거
+    - 예: `singleChatListOrder`의 "{timestamp}"를 "500{timestamp}"로 변경
+
 - **서버는** 채팅 메시지 생성을 감지하여 다음 작업을 자동으로 수행합니다 (Cloud Functions):
-  - 1:1 채팅의 경우 양쪽 사용자의 `chat-joins/{uid}/{roomId}` 자동 생성/업데이트
-  - `lastMessageText`, `lastMessageAt`, `updatedAt` 자동 업데이트
-  - **`listOrder` 자동 계산 및 업데이트**:
-    - 발신자: `${timestamp}` (prefix 없음, 읽음 상태)
-    - 수신자: `200${timestamp}` (200 prefix, 읽지 않은 상태)
-  - **`newMessageCount` 자동 증가**: 수신자의 카운터만 increment(1)
+
+  **1:1 채팅의 경우:**
+  - 양쪽 사용자의 `chat-joins/{uid}/{roomId}` 자동 생성/업데이트
+  - `lastMessageText`, `lastMessageAt` 자동 업데이트
+  - **정렬 필드 자동 계산 및 업데이트**:
+    - 발신자:
+      - `singleChatListOrder`: `${timestamp}` (prefix 없음, 읽음 상태)
+      - `allChatListOrder`: `timestamp` (숫자 타입)
+    - 수신자:
+      - `singleChatListOrder`: `200${timestamp}` (200 prefix, 읽지 않은 상태)
+      - `allChatListOrder`: `timestamp` (숫자 타입)
+  - **`newMessageCount` 자동 증가**: 수신자만 increment(1)
+  - `joinedAt`는 최초 생성 시에만 설정 (기존 값이 있으면 유지)
+  - `partnerUid` 설정 (1:1 채팅 상대방 UID)
+
+  **그룹/오픈 채팅의 경우:**
+  - `chat-rooms/{roomId}`에서 `members` 목록 조회
+  - 모든 멤버의 `chat-joins/{memberUid}/{roomId}` 자동 업데이트
+  - 각 멤버에 대해 다음 필드 자동 설정:
+    - `roomName`: 채팅방 이름 (chat-rooms에서 가져옴)
+    - `lastMessageText`: 마지막 메시지 내용
+    - `lastMessageAt`: 마지막 메시지 시간
+    - `allChatListOrder`: timestamp (숫자 타입)
+    - `openAndGroupChatListOrder`: timestamp (숫자 타입)
+    - **타입별 정렬 필드**:
+      - 그룹 채팅인 경우:
+        - 발신자: `groupChatListOrder`: `${timestamp}`
+        - 다른 멤버들: `groupChatListOrder`: `200${timestamp}`
+      - 오픈 채팅인 경우:
+        - 발신자: `openChatListOrder`: `${timestamp}`
+        - 다른 멤버들: `openChatListOrder`: `200${timestamp}`
+  - **`newMessageCount` 자동 증가**: 발신자를 제외한 모든 멤버에 대해 increment(1)
   - `joinedAt`는 최초 생성 시에만 설정 (기존 값이 있으면 유지)
 
 ### 관련 가이드
@@ -759,3 +871,8 @@ query.on('value', (snapshot) => {
 | 날짜 | 작업자 | 내용 |
 | ---- | ------ | ---- |
 | 2025-11-12 | Codex Agent | `/chat-rooms` 섹션을 신설하고 Cloud Functions + Security Rules가 owner/createdBy를 자동 설정·검증하는 과정을 상세화하여 채팅방 데이터 흐름을 명시. |
+| 2025-11-12 | Claude Code | `roomTitle` 필드를 사양에 맞게 `roomName`으로 통일. 클라이언트(ChatCreateDialog.svelte)와 Firebase Functions 타입 정의(types/index.ts)에서 `roomTitle`을 `roomName`으로 변경. 후방 호환성을 위해 읽기 함수(resolveRoomTitle)는 `roomTitle`과 `roomName` 둘 다 체크하도록 유지. |
+| 2025-11-12 | Claude Code | `listOrder` 필드를 모든 소스 코드와 스펙 문서에서 완전히 제거. 채팅방 타입별 전용 정렬 필드 사용으로 변경: 1) types/index.ts에서 `listOrder` 필드 삭제 2) chat.handler.ts의 멤버 입장 로직에서 타입별 정렬 필드 자동 설정 (groupChatListOrder, openChatListOrder, openAndGroupChatListOrder, allChatListOrder) 3) chat/list/+page.svelte에서 `allChatListOrder` 사용 (모든 채팅 통합 목록) 4) group-chat-list/+page.svelte에서 `openAndGroupChatListOrder` 사용 (그룹+오픈 통합 목록) 5) database.rules.json 인덱스 업데이트 6) Firebase Functions 배포 완료. |
+| 2025-11-12 | Claude Code | `handleChatJoinCreate` 함수 보완하여 클라이언트가 `chat-joins/{uid}/{roomId}` 노드를 직접 생성할 때 타입별 정렬 필드가 자동 생성되도록 수정: 1) 1:1 채팅 감지 로직 추가 (`isSingleChat()` 활용) 2) 1:1 채팅 시 `singleChatListOrder`, `allChatListOrder`, `partnerUid`, `roomType` 자동 설정 3) 그룹/오픈 채팅 시 `chat-rooms` 조회 후 `roomType`, `roomName`, `allChatListOrder` 및 타입별 정렬 필드 설정 4) 이미 완전히 설정된 경우 (`joinedAt` + `roomType` 존재) 건너뛰기 최적화 5) `index.ts`의 `onChatJoinCreate` JSDoc 주석 업데이트하여 새 로직 반영 6) Firebase Functions 배포 완료. |
+| 2025-11-13 | Claude Code | 친구 페이지(chat/list) 정렬 필드 수정: 1:1 채팅방만 표시하도록 `allChatListOrder` → `singleChatListOrder` 변경. `chat/list/+page.svelte`의 `JOIN_ORDER_FIELD` 상수 및 템플릿 내 변수명 업데이트. |
+| 2025-11-13 | Claude Code | 클라이언트 채팅방 입장 함수 수정 및 `displayNameLowerCase` 자동 생성 로직 개선: 1) `chat.functions.ts`의 `createSingleChatJoin` 함수명을 `enterSingleChatRoom`으로 변경하고 `set()` 대신 `update()` 사용으로 기존 데이터 보존하도록 수정 2) `user.handler.ts`의 `handleUserUpdate`에서 `displayNameLowerCase` 필드가 없으면 자동 생성하도록 로직 개선 (기존: displayName 변경 시에만 생성 → 개선: displayNameLowerCase 필드 없거나 displayName 변경 시 생성) 3) `types/index.ts`의 `UserData` 인터페이스에 `displayNameLowerCase` 필드 추가 4) Firebase Functions 배포 완료. |

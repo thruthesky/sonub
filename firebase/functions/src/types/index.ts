@@ -75,6 +75,8 @@ export interface CommentData {
 export interface UserData {
   /** 사용자 닉네임 */
   displayName?: string;
+  /** 사용자 닉네임 소문자 (대소문자 구분 없는 검색용, Cloud Functions에서 자동 생성) */
+  displayNameLowerCase?: string;
   /** 프로필 사진 URL (사용자 업로드) */
   photoUrl?: string;
   /** Firebase Auth photoURL (대문자, deprecated) */
@@ -217,8 +219,8 @@ export interface ChatJoin {
   roomId?: string;
   /** 채팅방 타입 */
   roomType?: ChatRoomType;
-  /** 채팅방 제목 */
-  roomTitle?: string;
+  /** 채팅방 이름 */
+  roomName?: string;
   /** 1:1 채팅의 상대방 UID */
   partnerUid?: string;
   /** 마지막 메시지 내용 */
@@ -233,6 +235,14 @@ export interface ChatJoin {
   unreadCount?: number;
   /** 읽지 않은 메시지 수 (newMessageCount 권장) */
   newMessageCount?: number;
-  /** 정렬용 필드: prefix + timestamp (최신순/PIN 정렬용) */
-  listOrder?: string;
+  /** 1:1 채팅 정렬용 필드: prefix + timestamp */
+  singleChatListOrder?: string;
+  /** 그룹 채팅 정렬용 필드: prefix + timestamp */
+  groupChatListOrder?: string | number;
+  /** 오픈 채팅 정렬용 필드: prefix + timestamp */
+  openChatListOrder?: string | number;
+  /** 그룹+오픈 채팅 통합 정렬용 필드: timestamp */
+  openAndGroupChatListOrder?: number;
+  /** 모든 채팅방(1:1, 그룹, 오픈) 통합 정렬용 필드: timestamp */
+  allChatListOrder?: number;
 }

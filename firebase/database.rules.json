@@ -8,9 +8,7 @@
       "$uid": {
         // 2025-12-12 까지는 무조건 쓰기 통과 (테스트 데이터 생성용)
         // 그 이후는 본인만 쓰기 가능
-        ".write": "now < 1765555200000 || auth.uid == $uid",
-        // 필수 필드 검증
-        ".validate": "newData.hasChildren(['displayName'])"
+        ".write": "now < 1765555200000 || auth.uid == $uid"
       },
       ".indexOn": [
         "createdAt",
@@ -27,6 +25,14 @@
         }
       }
     },
+    "stats": {
+      ".read": true,
+      ".write": false,
+      "counters": {
+        ".read": true,
+        ".write": false
+      }
+    },
     "chat-rooms": {
       // 채팅방 메타데이터
       // createdAt과 owner 필드는 Cloud Functions에서만 설정됨
@@ -34,8 +40,8 @@
       "$roomId": {
         ".write": "auth != null",
         "owner": {
-          // Cloud Functions에서만 설정 가능 (클라이언트는 쓰기 불가)
-          ".write": false,
+          // 채팅방이 존재하지 않으면 본인 UID로 설정 가능, 존재하면 수정 불가
+          ".write": "!root.child('chat-rooms').child($roomId).exists() && newData.val() === auth.uid",
           ".validate": "newData.isString()"
         },
         "createdAt": {
@@ -74,6 +80,14 @@
           ".write": false,
           ".validate": "newData.isNumber() && newData.val() >= 0"
         },
+        "members": {
+          // 사용자는 자기 자신의 uid만 추가/수정 가능
+          // true = 메시지 알림 받기, false = 알림 받지 않기
+          "$uid": {
+            ".write": "auth != null && $uid === auth.uid",
+            ".validate": "newData.isBoolean() || newData.val() === null"
+          }
+        },
         "$other": {
           ".validate": false
         }
@@ -85,8 +99,11 @@
     "chat-joins": {
       "$uid": {
         ".indexOn": [
-          "listOrder",
-          "groupListOrder"
+          "allChatListOrder",
+          "singleChatListOrder",
+          "groupChatListOrder",
+          "openChatListOrder",
+          "openAndGroupChatListOrder"
         ],
         ".read": "$uid === auth.uid",
         ".write": "$uid === auth.uid"

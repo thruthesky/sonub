@@ -34,14 +34,27 @@ export async function handleUserCreate(
 
   const now = Date.now();
 
+  const updates: Record<string, unknown> = {};
+
   // createdAt 필드 자동 생성 (없는 경우만)
   const createdAt =
     typeof userData.createdAt === "number" ? userData.createdAt : now;
 
   // /users/{uid}/createdAt 직접 저장 (없는 경우만)
   if (userData.createdAt === undefined || userData.createdAt === null) {
-    await admin.database().ref(`users/${uid}/createdAt`).set(createdAt);
-    logger.info("createdAt 저장 완료", {uid, createdAt});
+    updates[`users/${uid}/createdAt`] = createdAt;
+    logger.info("createdAt 저장 예정", {uid, createdAt});
+  }
+
+  // 📊 전체 사용자 통계 업데이트: /stats/counters/user +1
+  updates["stats/counters/user"] = admin.database.ServerValue.increment(1);
+
+  if (Object.keys(updates).length > 0) {
+    await admin.database().ref().update(updates);
+    logger.info("사용자 생성 관련 업데이트 완료", {
+      uid,
+      updatesCount: Object.keys(updates).length,
+    });
   }
 
   return {
@@ -104,12 +117,18 @@ export async function handleUserUpdate(
   }
 
   // 4. displayNameLowerCase 자동 생성 (대소문자 구분 없는 검색용)
-  if (afterData.displayName && displayNameChanged) {
-    const displayNameLowerCase = afterData.displayName.toLowerCase();
+  // displayNameLowerCase가 없거나 displayName이 변경된 경우 생성/업데이트
+  const needsDisplayNameLowerCase =
+    afterData.displayName &&
+    (!afterData.displayNameLowerCase || displayNameChanged);
+
+  if (needsDisplayNameLowerCase) {
+    const displayNameLowerCase = afterData.displayName!.toLowerCase();
     updates[`users/${uid}/displayNameLowerCase`] = displayNameLowerCase;
-    logger.info("displayNameLowerCase 업데이트", {
+    logger.info("displayNameLowerCase 생성/업데이트", {
       uid,
       displayNameLowerCase,
+      reason: !afterData.displayNameLowerCase ? "필드 없음" : "displayName 변경",
     });
   }
 

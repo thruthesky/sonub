@@ -13,9 +13,10 @@
 	import { userProfileStore } from '$lib/stores/user-profile.svelte';
 	import { pushData } from '$lib/stores/database.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { buildSingleRoomId } from '$lib/functions/chat.functions';
+	import { buildSingleRoomId, enterSingleChatRoom, joinChatRoom } from '$lib/functions/chat.functions';
 	import { formatLongDate } from '$lib/functions/date.functions';
 	import { tick } from 'svelte';
+	import { rtdb } from '$lib/firebase';
 
 	// GET 파라미터 추출
 	const uidParam = $derived.by(() => $page.url.searchParams.get('uid') ?? '');
@@ -42,6 +43,22 @@
 	$effect(() => {
 		if (uidParam) {
 			userProfileStore.ensureSubscribed(uidParam);
+		}
+	});
+
+	// 채팅방 입장 처리
+	// 1:1 채팅과 그룹/오픈 채팅은 서로 다른 방식으로 처리합니다.
+	$effect(() => {
+		if (activeRoomId && authStore.user?.uid && rtdb) {
+			if (isSingleChat) {
+				// 1:1 채팅: chat-joins 노드에 최소 정보만 업데이트
+				// Cloud Functions(onChatJoinCreate)가 자동으로 필요한 필드들을 추가합니다.
+				enterSingleChatRoom(rtdb, activeRoomId, authStore.user.uid);
+			} else {
+				// 그룹/오픈 채팅: members 필드만 설정
+				// Cloud Functions가 자동으로 memberCount를 업데이트하고 chat-joins에 상세 정보를 추가합니다.
+				joinChatRoom(rtdb, activeRoomId, authStore.user.uid);
+			}
 		}
 	});
 

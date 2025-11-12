@@ -6,11 +6,19 @@
 	 * TailwindCSS를 사용하여 스타일링합니다.
 	 */
 
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { authStore } from '$lib/stores/auth.svelte';
-	import Avatar from '$lib/components/user/avatar.svelte';
-	import { m } from '$lib/paraglide/messages';
-	import { User, Bell, TrendingUp, Sparkles, Mail } from 'lucide-svelte';
+import * as Card from '$lib/components/ui/card/index.js';
+import { authStore } from '$lib/stores/auth.svelte';
+import Avatar from '$lib/components/user/avatar.svelte';
+import { m } from '$lib/paraglide/messages';
+import { User, Bell, TrendingUp, Sparkles, Mail, BarChart3 } from 'lucide-svelte';
+import { goto } from '$app/navigation';
+import { rtdbStore } from '$lib/stores/database.svelte';
+
+const userCountStore = rtdbStore<number>('stats/counters/user', 0);
+
+function goToStats() {
+	void goto('/stats');
+}
 </script>
 
 <aside class="hidden lg:block lg:w-64 xl:w-72">
@@ -57,6 +65,33 @@
 			</Card.Header>
 			<Card.Content class="pt-2">
 				<p class="empty-state">{m.sidebarNoNotifications()}</p>
+			</Card.Content>
+		</Card.Root>
+
+		<Card.Root class="stats-card">
+			<Card.Header class="pb-3">
+				<div class="flex items-center gap-2">
+					<div class="stats-icon-wrapper">
+						<BarChart3 class="stats-icon" size={16} />
+					</div>
+					<Card.Title class="text-base font-semibold">실시간 통계</Card.Title>
+				</div>
+			</Card.Header>
+			<Card.Content class="space-y-3 pt-2">
+					<div>
+						<p class="stats-label">총 사용자 수</p>
+						<p class="stats-value">
+							{#if $userCountStore.loading}
+								로딩 중...
+							{:else}
+								{$userCountStore.data ?? 0}명
+							{/if}
+						</p>
+					</div>
+				<p class="stats-helper">가입 시 Cloud Functions가 자동으로 갱신합니다.</p>
+				<button type="button" class="stats-button" onclick={goToStats}>
+					자세히 보기
+				</button>
 			</Card.Content>
 		</Card.Root>
 
@@ -145,5 +180,34 @@
 	/* 제안 버튼 스타일 */
 	.suggestion-button {
 		@apply flex w-full cursor-pointer items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-medium text-gray-700 transition-all hover:bg-purple-100 hover:text-purple-700 hover:shadow-sm;
+	}
+
+	/* 통계 카드 */
+	.stats-card {
+		@apply border-emerald-100 bg-gradient-to-br from-emerald-50 to-white shadow-md;
+	}
+
+	.stats-icon-wrapper {
+		@apply flex items-center justify-center rounded-full bg-emerald-100 p-1.5;
+	}
+
+	.stats-icon {
+		@apply text-emerald-600;
+	}
+
+	.stats-label {
+		@apply text-xs uppercase tracking-wide text-gray-500;
+	}
+
+	.stats-value {
+		@apply text-2xl font-bold text-gray-900;
+	}
+
+	.stats-helper {
+		@apply text-xs text-gray-500;
+	}
+
+	.stats-button {
+		@apply w-full rounded-lg bg-emerald-600 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700;
 	}
 </style>

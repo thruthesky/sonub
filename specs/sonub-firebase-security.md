@@ -189,32 +189,24 @@ firebase deploy --only database
       "$roomId": {
         ".write": "auth != null",
         "owner": {
-          ".write": "!data.exists() && newData.val() === auth.uid",
+          ".write": "!root.child('chat-rooms').child($roomId).exists() && newData.val() === auth.uid",
           ".validate": "newData.isString()"
         },
         "name": {
-          ".write": "root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",
+          ".write": "!root.child('chat-rooms').child($roomId).exists() || root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
         },
         "description": {
-          ".write": "root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",
+          ".write": "!root.child('chat-rooms').child($roomId).exists() || root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",
           ".validate": "newData.isString() && newData.val().length <= 200"
         },
         "type": {
           ".write": "!data.exists()",
           ".validate": "newData.val() === 'group' || newData.val() === 'open' || newData.val() === 'single'"
         },
-        "owner": {
-          ".write": false,
-          ".validate": "newData.isString()"
-        },
         "createdAt": {
-          ".write": false,
+          ".write": "!data.exists()",
           ".validate": "newData.isNumber()"
-        },
-        "_requestingUid": {
-          ".write": "!data.exists() && newData.val() === auth.uid",
-          ".validate": "newData.isString()"
         },
         "open": {
           ".write": "!data.exists()",
@@ -229,8 +221,14 @@ firebase deploy --only database
           ".validate": "newData.isNumber()"
         },
         "memberCount": {
-          ".write": "root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",
+          ".write": false,
           ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "members": {
+          "$uid": {
+            ".write": "auth != null && ($uid === auth.uid || root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid)",
+            ".validate": "newData.isBoolean() || newData.val() === null"
+          }
         },
         "$other": {
           ".validate": false
@@ -255,7 +253,8 @@ firebase deploy --only database
 | **open** | 생성 시만 | boolean | 공개 여부. 생성 후 변경 불가 |
 | **groupListOrder** | 생성 시만 | 숫자 | 그룹 채팅 정렬 순서. 생성 후 변경 불가 |
 | **openListOrder** | 생성 시만 | 숫자 | 오픈 채팅 정렬 순서. 생성 후 변경 불가 |
-| **memberCount** | owner만 | 0 이상의 숫자 | 멤버 수. owner만 수정 가능 |
+| **memberCount** | Cloud Functions만 | 0 이상의 숫자 | 멤버 수. 서버에서 자동 관리 |
+| **members/$uid** | 본인 또는 owner | boolean / null | 방 참여 여부와 알림 설정. 사용자는 스스로 true/false 설정, owner는 구성원 관리 가능, null은 퇴장 처리 |
 | **$other** | 허용 안 함 | - | 정의되지 않은 필드는 생성 불가 |
 
 ### 보안 규칙 패턴

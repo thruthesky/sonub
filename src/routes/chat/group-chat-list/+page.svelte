@@ -18,7 +18,7 @@
 	type ChatJoinData = Record<string, unknown>;
 
 	const PAGE_SIZE = 20;
-	const JOIN_ORDER_FIELD = 'groupListOrder';
+	const JOIN_ORDER_FIELD = 'openAndGroupChatListOrder';
 
 	// ChatCreateDialog 상태
 	let createDialogOpen = $state(false);
@@ -186,11 +186,11 @@
 						{@const join = (itemData.data ?? {}) as ChatJoinData}
 						{@const roomId = (join.roomId ?? itemData.key ?? '') as string}
 						{@const roomType = (join.roomType ?? join.type ?? 'group').toString()}
-						{@const listOrder = join.groupListOrder ?? null}
+						{@const openAndGroupChatListOrder = join.openAndGroupChatListOrder ?? null}
 						{console.log('🔍 [Group Chat List Debug] Join data:', {
 							roomId,
 							roomType,
-							listOrder,
+							openAndGroupChatListOrder,
 							lastMessageText: join.lastMessageText,
 							lastMessageAt: join.lastMessageAt,
 							newMessageCount: join.newMessageCount,

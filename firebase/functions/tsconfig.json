@@ -1,18 +1,20 @@
 {
   "compilerOptions": {
-    "module": "NodeNext",
+    "module": "CommonJS",
     "esModuleInterop": true,
-    "moduleResolution": "nodenext",
+    "moduleResolution": "node",
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "outDir": "lib",
-    "baseUrl": "../..",
+    "baseUrl": ".",
     "paths": {
-      "@functions/*": ["src/lib/functions/*"]
+      "@functions/*": ["../../src/lib/functions/*"],
+      "@shared/*": ["../../shared/*"]
     },
     "rootDirs": [
       "./src",
-      "../src/lib/functions"
+      "../../src/lib/functions",
+      "../../shared"
     ],
     "sourceMap": true,
     "strict": true,
@@ -25,6 +27,6 @@
   "include": [
     "src",
     "scripts",
-    "../src/lib/functions/**/*.ts"
+    "../../shared/**/*.ts"
   ]
 }
