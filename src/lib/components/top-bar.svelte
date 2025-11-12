@@ -71,17 +71,16 @@ import { m } from '$lib/paraglide/messages';
 
 			<!-- 우측: 사용자 메뉴 -->
 			<div class="flex items-center gap-2">
-				<!-- 게시판 아이콘 -->
+				<!-- 게시판 버튼 -->
 				<Button
 					href="/post/list"
 					variant="ghost"
-					size="icon"
 					aria-label={m.navBoard()}
 					title={m.navBoard()}
-					class="cursor-pointer text-gray-600 hover:text-gray-900"
+					class="cursor-pointer text-gray-600 hover:text-gray-900 px-2 lg:px-3 gap-2"
 				>
 					<svg
-						class="h-6 w-6"
+						class="h-6 w-6 flex-shrink-0"
 						fill="none"
 						stroke="currentColor"
 						viewBox="0 0 24 24"
@@ -98,19 +97,19 @@ import { m } from '$lib/paraglide/messages';
 							d="M7 3v18M17 3v18"
 						/>
 					</svg>
+					<span class="hidden lg:inline text-sm">{m.navBoard()}</span>
 				</Button>
 
-				<!-- 채팅 아이콘 -->
+				<!-- 채팅 버튼 -->
 				<Button
 					href="/chat/list"
 					variant="ghost"
-					size="icon"
 					aria-label={m.navChat()}
 					title={m.navChat()}
-					class="cursor-pointer text-gray-600 hover:text-gray-900"
+					class="cursor-pointer text-gray-600 hover:text-gray-900 px-2 lg:px-3 gap-2"
 				>
 					<svg
-						class="h-6 w-6"
+						class="h-6 w-6 flex-shrink-0"
 						fill="none"
 						stroke="currentColor"
 						viewBox="0 0 24 24"
@@ -122,19 +121,19 @@ import { m } from '$lib/paraglide/messages';
 							d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
 						/>
 					</svg>
+					<span class="hidden lg:inline text-sm">{m.navChat()}</span>
 				</Button>
 
-				<!-- 사용자 찾기 아이콘 -->
+				<!-- 친구찾기 버튼 -->
 				<Button
 					href="/user/list"
 					variant="ghost"
-					size="icon"
 					aria-label={m.navFindUsers()}
 					title={m.navFindUsers()}
-					class="cursor-pointer text-gray-600 hover:text-gray-900"
+					class="cursor-pointer text-gray-600 hover:text-gray-900 px-2 lg:px-3 gap-2"
 				>
 					<svg
-						class="h-6 w-6"
+						class="h-6 w-6 flex-shrink-0"
 						fill="none"
 						stroke="currentColor"
 						viewBox="0 0 24 24"
@@ -146,6 +145,7 @@ import { m } from '$lib/paraglide/messages';
 							d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
 						/>
 					</svg>
+					<span class="hidden lg:inline text-sm">{m.navFindUsers()}</span>
 				</Button>
 
 				{#if authStore.loading}
