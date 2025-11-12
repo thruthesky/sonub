@@ -5,6 +5,8 @@
    * displayNameLowerCase 값을 기준으로 정확히 일치하는 사용자를 검색하는 모달입니다.
    * - 사용자 검색이 필요한 모든 페이지에서 재사용합니다.
    * - 검색어는 제출 시 자동으로 소문자로 정규화됩니다.
+   * - showResults=true 시 검색 결과를 다이얼로그 내에 DatabaseListView로 표시합니다.
+   * - 검색 결과에서 사용자를 클릭하면 onUserSelect 콜백이 호출됩니다.
    */
   import { createEventDispatcher } from 'svelte';
   import { Button } from '$lib/components/ui/button/index.js';
@@ -16,6 +18,10 @@
     DialogHeader,
     DialogTitle
   } from '$lib/components/ui/dialog';
+  import DatabaseListView from '$lib/components/DatabaseListView.svelte';
+  import Avatar from '$lib/components/user/avatar.svelte';
+
+  type UserData = Record<string, unknown>;
 
   interface Props {
     open?: boolean;
@@ -29,6 +35,14 @@
     autoLowercase?: boolean;
     submitLabel?: string;
     clearLabel?: string;
+    /** 검색 결과를 다이얼로그 내에 표시할지 여부 (기본값: false) */
+    showResults?: boolean;
+    /** RTDB 사용자 경로 (기본값: "users") */
+    usersPath?: string;
+    /** 검색할 필드 이름 (기본값: "displayNameLowerCase") */
+    searchField?: string;
+    /** 검색 결과 페이지 크기 (기본값: 20) */
+    pageSize?: number;
   }
 
   let {
@@ -42,15 +56,22 @@
     minLength = 2,
     autoLowercase = true,
     submitLabel = '검색하기',
-    clearLabel = '검색 초기화'
+    clearLabel = '검색 초기화',
+    showResults = false,
+    usersPath = 'users',
+    searchField = 'displayNameLowerCase',
+    pageSize = 20
   }: Props = $props();
 
   const dispatch = createEventDispatcher<{
     search: { keyword: string };
     clear: void;
+    userSelect: { user: UserData; uid: string };
   }>();
 
   let inputRef: HTMLInputElement | null = $state(null);
+  /** 검색이 실행된 키워드 (DatabaseListView에 전달) */
+  let searchKeyword = $state<string | null>(null);
 
   function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
@@ -60,13 +81,31 @@
     }
     const normalized = autoLowercase ? trimmed.toLowerCase() : trimmed;
     keyword = normalized;
-    dispatch('search', { keyword: normalized });
-    open = false;
+
+    if (showResults) {
+      // 검색 결과를 표시하는 모드
+      searchKeyword = normalized;
+    } else {
+      // 검색어만 전달하는 모드 (기존 방식)
+      dispatch('search', { keyword: normalized });
+      open = false;
+    }
   }
 
   function handleClear() {
     keyword = '';
+    searchKeyword = null;
     dispatch('clear');
+    if (!showResults) {
+      open = false;
+    }
+  }
+
+  /**
+   * 검색 결과에서 사용자 클릭 시 호출
+   */
+  function handleUserClick(user: UserData, uid: string) {
+    dispatch('userSelect', { user, uid });
     open = false;
   }
 
@@ -77,10 +116,17 @@
       });
     }
   });
+
+  // 다이얼로그가 닫힐 때 검색 결과 초기화
+  $effect(() => {
+    if (!open) {
+      searchKeyword = null;
+    }
+  });
 </script>
 
 <Dialog bind:open>
-  <DialogContent class="user-search-dialog">
+  <DialogContent class="user-search-dialog {showResults ? 'max-w-2xl' : ''}">
     <DialogHeader>
       <DialogTitle>{title}</DialogTitle>
       <DialogDescription>{description}</DialogDescription>
@@ -110,10 +156,58 @@
         </Button>
       </DialogFooter>
     </form>
+
+    {#if showResults && searchKeyword}
+      <div class="search-results">
+        <h3 class="results-title">검색 결과</h3>
+        {#key searchKeyword}
+          <DatabaseListView
+            path={usersPath}
+            pageSize={pageSize}
+            orderBy={searchField}
+            equalToValue={searchKeyword}
+          >
+            {#snippet item(itemData)}
+              {@const user = (itemData.data ?? {}) as UserData}
+              {@const uid = (itemData.key ?? '') as string}
+              {@const displayName =
+                typeof user.displayName === 'string' ? user.displayName : uid}
+              {@const email = typeof user.email === 'string' ? user.email : ''}
+              <button
+                type="button"
+                class="user-item"
+                onclick={() => handleUserClick(user, uid)}
+              >
+                <Avatar uid={uid} size={48} class="shadow-sm" />
+                <div class="user-info">
+                  <h4 class="user-name">{displayName}</h4>
+                  {#if email}
+                    <p class="user-email">{email}</p>
+                  {/if}
+                  <p class="user-uid">UID: {uid}</p>
+                </div>
+              </button>
+            {/snippet}
+
+            {#snippet loading()}
+              <p class="status-message">사용자 검색 중...</p>
+            {/snippet}
+
+            {#snippet empty()}
+              <div class="status-message">
+                <p>"{searchKeyword}" 와 일치하는 사용자를 찾을 수 없습니다.</p>
+              </div>
+            {/snippet}
+          </DatabaseListView>
+        {/key}
+      </div>
+    {/if}
   </DialogContent>
 </Dialog>
 
 <style>
+  @import 'tailwindcss' reference;
+
   .user-search-dialog :global(.search-input) {
     @apply w-full rounded-xl border border-gray-300 px-4 py-3 text-base text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900;
   }
@@ -124,5 +218,44 @@
 
   .user-search-dialog :global(.search-hint) {
     @apply text-sm leading-relaxed text-gray-500;
+  }
+
+  /* 검색 결과 컨테이너 */
+  .search-results {
+    @apply mt-4 max-h-96 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50;
+  }
+
+  .results-title {
+    @apply sticky top-0 border-b border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700;
+  }
+
+  /* 사용자 아이템 */
+  .user-item {
+    @apply flex w-full items-center gap-3 border-b border-gray-100 bg-white p-4 text-left transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500;
+  }
+
+  .user-item:last-child {
+    @apply border-b-0;
+  }
+
+  .user-info {
+    @apply flex-1 space-y-1;
+  }
+
+  .user-name {
+    @apply text-base font-semibold text-gray-900;
+  }
+
+  .user-email {
+    @apply text-sm text-gray-600;
+  }
+
+  .user-uid {
+    @apply text-xs text-gray-400;
+  }
+
+  /* 상태 메시지 */
+  .status-message {
+    @apply py-8 text-center text-sm text-gray-500;
   }
 </style>

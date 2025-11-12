@@ -7,6 +7,7 @@
 
 	import DatabaseListView from '$lib/components/DatabaseListView.svelte';
 	import Avatar from '$lib/components/user/avatar.svelte';
+	import UserSearchDialog from '$lib/components/user/UserSearchDialog.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
@@ -15,9 +16,14 @@
 	import ChatListMenu from '$lib/components/chat/ChatListMenu.svelte';
 
 	type ChatJoinData = Record<string, unknown>;
+	type UserData = Record<string, unknown>;
 
 	const PAGE_SIZE = 20;
 	const JOIN_ORDER_FIELD = 'listOrder';
+
+	// UserSearchDialog 상태
+	let userSearchOpen = $state(false);
+	let searchKeyword = $state('');
 
 	/**
 	 * 방생성 버튼 클릭 핸들러
@@ -29,10 +35,21 @@
 
 	/**
 	 * 친구 찾기 메뉴 클릭 핸들러
+	 * UserSearchDialog를 열어서 사용자 검색
 	 */
 	function handleFindFriends() {
-		console.log('친구 찾기 메뉴 클릭됨');
-		// TODO: 친구 찾기 기능 구현
+		userSearchOpen = true;
+	}
+
+	/**
+	 * 사용자 선택 핸들러
+	 * 선택된 사용자와 1:1 채팅방으로 이동
+	 */
+	function handleUserSelect(event: CustomEvent<{ user: UserData; uid: string }>) {
+		const { uid } = event.detail;
+		console.log('선택된 사용자:', event.detail);
+		// 1:1 채팅방으로 이동
+		void goto(`/chat/room?uid=${uid}`);
 	}
 
 	/**

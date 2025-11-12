@@ -124,8 +124,13 @@
 
 	<!-- 오른쪽 버튼들 -->
 	<div class="flex items-center gap-2">
-		<!-- 방생성 버튼 -->
-		<Button variant="outline" size="sm" onclick={handleCreateRoom}>{m.chatCreateRoom()}</Button>
+		<!-- 친구 탭인 경우: 친구찾기 버튼 표시 -->
+		{#if selectedTab === 'friends'}
+			<Button variant="outline" size="sm" onclick={() => onFindFriends?.()}>{m.chatFindFriends()}</Button>
+		{:else}
+			<!-- 그룹챗/오픈챗 탭인 경우: 방생성 버튼 표시 -->
+			<Button variant="outline" size="sm" onclick={handleCreateRoom}>{m.chatCreateRoom()}</Button>
+		{/if}
 
 		<!-- 설정 드롭다운 -->
 		<div class="relative">
