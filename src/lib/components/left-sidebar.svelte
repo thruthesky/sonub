@@ -9,8 +9,9 @@
 
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { BUILD_VERSION } from '$lib/version';
-import { getLocale, setLocale, locales } from '$lib/paraglide/runtime';
-import { m } from '$lib/paraglide/messages';
+	import { getLocale, setLocale, locales } from '$lib/paraglide/runtime';
+	import { m } from '$lib/paraglide/messages';
+	import { page } from '$app/stores';
 
 	// 언어 이름 매핑
 	const localeNames: Record<string, string> = {
@@ -19,6 +20,13 @@ import { m } from '$lib/paraglide/messages';
 		ja: '日本語',
 		zh: '中文'
 	};
+
+	/**
+	 * 현재 경로가 주어진 경로와 일치하는지 확인
+	 */
+	function isActivePath(href: string): boolean {
+		return $page.url.pathname === href;
+	}
 
 	/**
 	 * 언어 변경 핸들러
@@ -39,58 +47,108 @@ import { m } from '$lib/paraglide/messages';
 <aside class="hidden lg:block lg:w-64 xl:w-72">
 	<div class="sticky top-20 space-y-4">
 		<!-- 네비게이션 메뉴 -->
-		<Card.Root>
+		<Card.Root class="sidebar-card">
 			<Card.Header>
-				<Card.Title class="text-base">{m.sidebarMenu()}</Card.Title>
+				<Card.Title class="flex items-center gap-2 text-base">
+					<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M4 6h16M4 12h16M4 18h16"
+						/>
+					</svg>
+					{m.sidebarMenu()}
+				</Card.Title>
 			</Card.Header>
-			<Card.Content class="space-y-2">
-				<a
-					href="/"
-					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-				>
+			<Card.Content class="space-y-1">
+				<a href="/" class="nav-link" class:active={isActivePath('/')}>
+					<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+						/>
+					</svg>
 					{m.navHome()}
 				</a>
-				<a
-					href="/about"
-					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-				>
+				<a href="/about" class="nav-link" class:active={isActivePath('/about')}>
+					<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+						/>
+					</svg>
 					{m.navAbout()}
 				</a>
-				<a
-					href="/products"
-					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-				>
+				<a href="/products" class="nav-link" class:active={isActivePath('/products')}>
+					<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+						/>
+					</svg>
 					{m.navProducts()}
 				</a>
-				<a
-					href="/contact"
-					class="block rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-				>
+				<a href="/contact" class="nav-link" class:active={isActivePath('/contact')}>
+					<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+						/>
+					</svg>
 					{m.navContact()}
 				</a>
 			</Card.Content>
 		</Card.Root>
 
 		<!-- 정보 카드 -->
-		<Card.Root>
+		<Card.Root class="sidebar-card">
 			<Card.Header>
-				<Card.Title class="text-base">{m.sidebarRecentActivity()}</Card.Title>
+				<Card.Title class="flex items-center gap-2 text-base">
+					<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+						/>
+					</svg>
+					{m.sidebarRecentActivity()}
+				</Card.Title>
 			</Card.Header>
 			<Card.Content>
-				<p class="text-sm text-gray-600">{m.sidebarNoRecentActivity()}</p>
+				<p class="activity-text">{m.sidebarNoRecentActivity()}</p>
 			</Card.Content>
 		</Card.Root>
 
 		<!-- 언어 선택 드롭다운 -->
-		<Card.Root>
+		<Card.Root class="sidebar-card">
 			<Card.Header>
-				<Card.Title class="text-base">{m.sidebarSelectLanguage()}</Card.Title>
+				<Card.Title class="flex items-center gap-2 text-base">
+					<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+						/>
+					</svg>
+					{m.sidebarSelectLanguage()}
+				</Card.Title>
 			</Card.Header>
 			<Card.Content>
 				<select
 					value={getLocale()}
 					onchange={handleLocaleChange}
-					class="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 transition-colors hover:border-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+					class="language-select"
 					aria-label={m.sidebarSelectLanguage()}
 				>
 					{#each locales as locale}
@@ -103,13 +161,63 @@ import { m } from '$lib/paraglide/messages';
 		</Card.Root>
 
 		<!-- 빌드 버전 정보 -->
-		<Card.Root>
+		<Card.Root class="sidebar-card version-card">
 			<Card.Header>
-				<Card.Title class="text-base">{m.sidebarBuildVersion()}</Card.Title>
+				<Card.Title class="flex items-center gap-2 text-base">
+					<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+						/>
+					</svg>
+					{m.sidebarBuildVersion()}
+				</Card.Title>
 			</Card.Header>
 			<Card.Content>
-				<p class="text-sm text-gray-600">{BUILD_VERSION}</p>
+				<p class="version-text">{BUILD_VERSION}</p>
 			</Card.Content>
 		</Card.Root>
 	</div>
 </aside>
+
+<style>
+	@import 'tailwindcss' reference;
+
+	/* 사이드바 카드 스타일 */
+	.sidebar-card {
+		@apply shadow-md transition-shadow duration-300 hover:shadow-lg;
+	}
+
+	/* 네비게이션 링크 스타일 */
+	.nav-link {
+		@apply flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-blue-50 hover:text-blue-600;
+	}
+
+	.nav-link.active {
+		@apply bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 shadow-sm;
+		border-left: 3px solid theme('colors.blue.600');
+		padding-left: calc(0.75rem - 3px);
+	}
+
+	/* 활동 텍스트 스타일 */
+	.activity-text {
+		@apply text-sm text-gray-500 italic;
+	}
+
+	/* 언어 선택 드롭다운 스타일 */
+	.language-select {
+		@apply w-full cursor-pointer rounded-lg border-2 border-gray-300 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm transition-all duration-200 hover:border-blue-400 hover:shadow focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50;
+	}
+
+	/* 버전 카드 스타일 */
+	.version-card {
+		@apply bg-gradient-to-br from-gray-50 to-blue-50;
+	}
+
+	/* 버전 텍스트 스타일 */
+	.version-text {
+		@apply rounded-md bg-white px-3 py-2 text-center text-sm font-mono font-semibold text-blue-600 shadow-sm;
+	}
+</style>
