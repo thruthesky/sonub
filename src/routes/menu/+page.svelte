@@ -35,14 +35,13 @@
 			isSigningOut = false;
 		}
 	}
-
 </script>
 
 <svelte:head>
 	<title>{m.pageTitleMenu()}</title>
 </svelte:head>
 
-<div class="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center">
+<div class="">
 	<div class="mx-auto w-full max-w-md space-y-6">
 		<!-- 메뉴 헤더 -->
 		<div class="text-center">
@@ -58,7 +57,7 @@
 				</Card.Content>
 			</Card.Root>
 
-		<!-- 로그인 상태 -->
+			<!-- 로그인 상태 -->
 		{:else if authStore.isAuthenticated}
 			<!-- 사용자 정보 카드 -->
 			<Card.Root>
@@ -90,8 +89,18 @@
 						class="w-full justify-start text-left text-gray-700 hover:bg-gray-100 hover:text-gray-900"
 						href="/my/profile"
 					>
-						<svg class="mr-3 h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+						<svg
+							class="mr-3 h-5 w-5 text-gray-600"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+							/>
 						</svg>
 						<span>{m.menuEditProfile()}</span>
 					</Button>
@@ -103,8 +112,18 @@
 							class="w-full justify-start text-left text-gray-700 hover:bg-gray-100 hover:text-gray-900"
 							href="/admin/dashboard"
 						>
-							<svg class="mr-3 h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+							<svg
+								class="mr-3 h-5 w-5 text-gray-600"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+								/>
 							</svg>
 							<span>{m.menuAdminPage()}</span>
 						</Button>
@@ -115,8 +134,18 @@
 							class="w-full justify-start text-left text-gray-700 hover:bg-gray-100 hover:text-gray-900"
 							href="/dev/test/database-list-view"
 						>
-							<svg class="mr-3 h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+							<svg
+								class="mr-3 h-5 w-5 text-gray-600"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+								/>
 							</svg>
 							<span>{m.menuDevTest()}</span>
 						</Button>
@@ -130,14 +159,19 @@
 						disabled={isSigningOut}
 					>
 						<svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+							/>
 						</svg>
 						<span>{isSigningOut ? m.authSigningOut() : m.navLogout()}</span>
 					</Button>
 				</Card.Content>
 			</Card.Root>
 
-		<!-- 비로그인 상태 -->
+			<!-- 비로그인 상태 -->
 		{:else}
 			<Card.Root>
 				<Card.Header>

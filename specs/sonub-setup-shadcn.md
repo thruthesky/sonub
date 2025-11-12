@@ -45,6 +45,11 @@ tags: ["shadcn-svelte", "ui", "components", "라이브러리", "설정", "수동
 - Svelte 버전은 컴포넌트가 여러 파일로 분리 (예: Accordion → 4개 파일)
 - `index.ts`를 통해 단일 파일에서 임포트 가능
 
+### 1.5. Sonub 전용 정책
+- shadcn-svelte는 기본적으로 **다크 모드**를 지원하지만 Sonub UI 정책은 Light Mode Only이다. 따라서 필요한 모든 컴포넌트를 **`src/lib/components/ui/`** 폴더에 직접 추가·수정하여 사용하며, 다크 모드 관련 토큰은 제거하거나 Light 모드 값으로 재정의한다.
+- “모든 UI는 svelte-shadcn + Tailwind로 구현” 규칙을 지키기 위해 npm 패키지를 바로 import하지 않고, shadcn CLI가 생성한 소스(또는 동일한 구조의 수동 작성본)를 프로젝트 내부에 두고 Tailwind 유틸리티와 함께 사용한다. 즉, shadcn이 제공하는 예시를 참고하되 **모든 컴포넌트를 직접 소유**하고 유지보수한다.
+- 이론적으로는 shadcn 기본 컴포넌트를 강제로 Light Mode만 사용하도록 오버라이드할 수 있지만, 다크 모드 전용 토큰/변수를 일일이 덮어쓰는 추가 설정이 필요하다. Light-only 정책을 확실히 유지하고 코드 복잡도를 줄이기 위해 **필요한 컴포넌트를 직접 만들어 쓰는 방식**을 선택했다.
+
 ---
 
 ## 2. 중요 안내

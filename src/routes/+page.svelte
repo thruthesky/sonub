@@ -96,117 +96,281 @@
 	<title>{m.pageTitleHome()}</title>
 </svelte:head>
 
-<div class="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center">
-	<div class="mx-auto max-w-4xl space-y-8 text-center">
-		<!-- 메인 타이틀 -->
-		<div class="space-y-4">
-			<h1 class="text-4xl font-bold text-gray-900 md:text-6xl">{m.authWelcomeMessage()}</h1>
-			<p class="text-lg text-gray-600 md:text-xl">
-				{m.authIntro()}
-			</p>
-		</div>
+<div class="mx-auto max-w-7xl space-y-8">
+	<!-- 메인 타이틀 -->
+	<div class="space-y-4 text-center">
+		<h1 class="text-4xl font-bold text-gray-900 md:text-6xl">{m.authWelcomeMessage()}</h1>
+		<p class="text-lg text-gray-600 md:text-xl">
+			{m.authIntro()}
+		</p>
+	</div>
 
-		<!-- 사용자 환영 메시지 또는 로그인 유도 -->
-		{#if authStore.loading}
-			<Card.Root class="mx-auto max-w-md">
-				<Card.Content class="pt-6">
-					<p class="text-center text-gray-600">{m.commonLoading()}</p>
-				</Card.Content>
-			</Card.Root>
-		{:else if authStore.isAuthenticated}
-			<Card.Root class="mx-auto max-w-md">
+	<!-- 사용자 환영 메시지 또는 로그인 유도 -->
+	{#if authStore.loading}
+		<Card.Root class="mx-auto max-w-md">
+			<Card.Content class="pt-6">
+				<p class="text-center text-gray-600">{m.commonLoading()}</p>
+			</Card.Content>
+		</Card.Root>
+	{:else if authStore.isAuthenticated}
+		<Card.Root class="mx-auto max-w-md">
+			<Card.Header>
+				<Card.Title>{m.authWelcome()}</Card.Title>
+				<Card.Description>
+					{m.authWelcomeUser({ name: authStore.user?.displayName || authStore.user?.email || m.commonUser() })}
+				</Card.Description>
+			</Card.Header>
+			<Card.Content>
+				<div class="flex items-center justify-center gap-4">
+					{#if authStore.user?.uid}
+						<Avatar uid={authStore.user.uid} size={64} class="shadow-sm" />
+					{:else}
+						<div class="h-16 w-16 rounded-full bg-gray-200" aria-hidden="true"></div>
+					{/if}
+				</div>
+			</Card.Content>
+		</Card.Root>
+	{:else}
+		<Card.Root class="mx-auto max-w-md">
+			<Card.Header>
+				<Card.Title>{m.authGetStarted()}</Card.Title>
+				<Card.Description>{m.authSignInGuideStart()}</Card.Description>
+			</Card.Header>
+			<Card.Content>
+				<Button class="w-full" href="/user/login">{m.authSignInAction()}</Button>
+			</Card.Content>
+		</Card.Root>
+	{/if}
+
+	<!-- TODO 리스트 -->
+	<div class="mt-16">
+		<h2 class="mb-8 text-3xl font-bold text-gray-900">향후 개발 기능 목록</h2>
+		<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+			<!-- 1. 메시지 뱃지 -->
+			<Card.Root class="todo-card">
 				<Card.Header>
-					<Card.Title>{m.authWelcome()}</Card.Title>
-					<Card.Description>
-						{m.authWelcomeUser({ name: authStore.user?.displayName || authStore.user?.email || m.commonUser() })}
-					</Card.Description>
+					<div class="flex items-start gap-3">
+						<span class="todo-number">1</span>
+						<Card.Title class="text-xl">새로운 메시지 뱃지 증가 및 방 입장시 초기화</Card.Title>
+					</div>
 				</Card.Header>
 				<Card.Content>
-					<div class="flex items-center justify-center gap-4">
-						{#if authStore.user?.uid}
-							<Avatar uid={authStore.user.uid} size={64} class="shadow-sm" />
-						{:else}
-							<div class="h-16 w-16 rounded-full bg-gray-200" aria-hidden="true"></div>
-						{/if}
+					<ul class="todo-list">
+						<li>채팅방 목록에서 읽지 않은 메시지 개수 뱃지 표시</li>
+						<li>채팅방 입장 시 자동으로 뱃지 카운트 초기화</li>
+						<li><code>/chat-joins/{'{uid}'}/{'{roomId}'}/newMessageCount</code> 필드 활용</li>
+					</ul>
+				</Card.Content>
+			</Card.Root>
+
+			<!-- 2. 북마크 기능 -->
+			<Card.Root class="todo-card">
+				<Card.Header>
+					<div class="flex items-start gap-3">
+						<span class="todo-number">2</span>
+						<Card.Title class="text-xl">북마크 기능 (북마크 폴더로 관리)</Card.Title>
+					</div>
+				</Card.Header>
+				<Card.Content>
+					<ul class="todo-list">
+						<li>채팅방을 북마크에 추가/제거</li>
+						<li>북마크 폴더 생성 및 관리 (예: 업무, 친구, 가족 등)</li>
+						<li>북마크된 채팅방을 폴더별로 그룹화하여 표시</li>
+						<li><code>/user-bookmarks/{'{uid}'}/{'{folderId}'}/{'{roomId}'}</code></li>
+					</ul>
+				</Card.Content>
+			</Card.Root>
+
+			<!-- 3. 채팅 핀 기능 -->
+			<Card.Root class="todo-card">
+				<Card.Header>
+					<div class="flex items-start gap-3">
+						<span class="todo-number">3</span>
+						<Card.Title class="text-xl">채팅 핀(Chat Pin) 기능</Card.Title>
+					</div>
+				</Card.Header>
+				<Card.Content>
+					<ul class="todo-list">
+						<li>중요한 채팅방을 상단에 고정</li>
+						<li>핀 설정/해제 토글 버튼</li>
+						<li>핀된 채팅방은 항상 목록 최상단에 표시</li>
+						<li><code>/chat-joins/{'{uid}'}/{'{roomId}'}/pinned: boolean</code></li>
+					</ul>
+				</Card.Content>
+			</Card.Root>
+
+			<!-- 4. FCM 클라이언트 설정 -->
+			<Card.Root class="todo-card">
+				<Card.Header>
+					<div class="flex items-start gap-3">
+						<span class="todo-number">4</span>
+						<Card.Title class="text-xl">푸시 알림: FCM 클라이언트 설정</Card.Title>
+					</div>
+				</Card.Header>
+				<Card.Content>
+					<ul class="todo-list">
+						<li>Firebase Cloud Messaging (FCM) Permission 요청</li>
+						<li>FCM 토큰 생성 및 저장</li>
+						<li><code>/fcm-tokens/{'{uid}'}/{'{tokenId}'}</code></li>
+						<li>토큰 갱신 처리 및 만료된 토큰 정리</li>
+					</ul>
+				</Card.Content>
+			</Card.Root>
+
+			<!-- 5. 푸시 알림 -->
+			<Card.Root class="todo-card">
+				<Card.Header>
+					<div class="flex items-start gap-3">
+						<span class="todo-number">5</span>
+						<Card.Title class="text-xl">새로운 채팅 메시지 푸시 알림</Card.Title>
+					</div>
+				</Card.Header>
+				<Card.Content>
+					<ul class="todo-list">
+						<li>Cloud Functions에서 새 메시지 감지 시 FCM 전송</li>
+						<li>알림 페이로드: 발신자 이름, 메시지 내용 미리보기, 채팅방 ID</li>
+						<li>앱이 포그라운드/백그라운드일 때 각각 다른 처리</li>
+						<li>알림 클릭 시 해당 채팅방으로 이동</li>
+					</ul>
+				</Card.Content>
+			</Card.Root>
+
+			<!-- 6. 그룹 채팅 -->
+			<Card.Root class="todo-card">
+				<Card.Header>
+					<div class="flex items-start gap-3">
+						<span class="todo-number">6</span>
+						<Card.Title class="text-xl">그룹 채팅 기능</Card.Title>
+					</div>
+				</Card.Header>
+				<Card.Content>
+					<div class="space-y-4">
+						<div>
+							<h4 class="todo-subtitle">6-1. 오픈 채팅 기능</h4>
+							<ul class="todo-list">
+								<li>공개 채팅방 생성 (누구나 입장 가능)</li>
+								<li>오픈 채팅 목록 페이지 (<code>/chat/open</code>)</li>
+								<li>채팅방 이름, 설명, 태그로 검색 가능</li>
+								<li><code>/open-chats/{'{roomId}'}</code></li>
+								<li>최대 참여 인원 설정 옵션</li>
+							</ul>
+						</div>
+						<div>
+							<h4 class="todo-subtitle">6-2. 일반 그룹 채팅</h4>
+							<ul class="todo-list">
+								<li>초대 기반 비공개 그룹 채팅</li>
+								<li>오픈 채팅 메뉴에 표시되지 않음</li>
+								<li>검색 불가능 (초대 링크 또는 직접 초대만 가능)</li>
+								<li><code>/group-chats/{'{roomId}'}</code></li>
+								<li>멤버 관리: 초대, 추방, 나가기</li>
+							</ul>
+						</div>
 					</div>
 				</Card.Content>
 			</Card.Root>
-		{:else}
-			<Card.Root class="mx-auto max-w-md">
-				<Card.Header>
-					<Card.Title>{m.authGetStarted()}</Card.Title>
-					<Card.Description>{m.authSignInGuideStart()}</Card.Description>
-				</Card.Header>
-				<Card.Content>
-					<Button class="w-full" href="/user/login">{m.authSignInAction()}</Button>
-				</Card.Content>
-			</Card.Root>
-		{/if}
 
-		<!-- 기능 소개 -->
-		<div class="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3">
-			<Card.Root>
+			<!-- 7. 비밀번호 기능 -->
+			<Card.Root class="todo-card">
 				<Card.Header>
-					<Card.Title class="text-lg">{m.featureSveltekit5()}</Card.Title>
+					<div class="flex items-start gap-3">
+						<span class="todo-number">7</span>
+						<Card.Title class="text-xl">그룹 채팅 비밀번호 기능</Card.Title>
+					</div>
 				</Card.Header>
 				<Card.Content>
-					<p class="text-sm text-gray-600">
-						{m.featureSveltekit5Desc()}
-					</p>
+					<ul class="todo-list">
+						<li>오픈 채팅에 비밀번호 설정 옵션</li>
+						<li>입장 시 비밀번호 입력 모달</li>
+						<li><code>/open-chats/{'{roomId}'}/password</code> (해시 저장)</li>
+						<li>Cloud Functions에서 비밀번호 검증 수행</li>
+					</ul>
 				</Card.Content>
 			</Card.Root>
 
-			<Card.Root>
+			<!-- 8. Post 타입 메시지 -->
+			<Card.Root class="todo-card">
 				<Card.Header>
-					<Card.Title class="text-lg">{m.featureFirebaseAuth()}</Card.Title>
+					<div class="flex items-start gap-3">
+						<span class="todo-number">8</span>
+						<Card.Title class="text-xl">채팅 메시지 "Post" 타입 선택</Card.Title>
+					</div>
 				</Card.Header>
 				<Card.Content>
-					<p class="text-sm text-gray-600">{m.featureFirebaseAuthDesc()}</p>
+					<div class="space-y-4">
+						<div>
+							<h4 class="todo-subtitle">8-1. 카테고리 선택</h4>
+							<ul class="todo-list">
+								<li>메시지 입력창 옆 드롭다운에서 타입 선택: "message" 또는 "post"</li>
+								<li>"post" 선택 시 카테고리 선택 UI 표시</li>
+								<li>카테고리 목록: 공지사항, 자유게시판, Q&A, 갤러리 등</li>
+							</ul>
+						</div>
+						<div>
+							<h4 class="todo-subtitle">8-2. 제목, 내용, 사진 업로드</h4>
+							<ul class="todo-list">
+								<li>제목 입력 필드 추가 (필수)</li>
+								<li>내용 입력 (rich text editor 또는 마크다운)</li>
+								<li>다중 이미지 업로드 지원</li>
+								<li>Firebase Storage에 이미지 저장</li>
+								<li><code>/chat-messages/{'{messageId}'}</code> (type: "post")</li>
+							</ul>
+						</div>
+						<div>
+							<h4 class="todo-subtitle">8-3. 카테고리별 게시판 메뉴</h4>
+							<ul class="todo-list">
+								<li>홈페이지 메뉴에 카테고리별 페이지 추가</li>
+								<li>DatabaseListView 사용하여 실시간 목록 표시</li>
+								<li>orderBy: "createdAt", orderPrefix로 카테고리 필터링</li>
+								<li>게시글 상세 페이지: <code>/board/{'{category}'}/{'{postId}'}</code></li>
+							</ul>
+						</div>
+						<div>
+							<h4 class="todo-subtitle">8-4. 댓글 기능 (게시판처럼 보이게)</h4>
+							<ul class="todo-list">
+								<li>게시글 상세 페이지에서 댓글 목록 표시</li>
+								<li>댓글 작성, 수정, 삭제 기능</li>
+								<li><code>/chat-messages/{'{messageId}'}</code> (parentId: postId)</li>
+								<li>대댓글 지원 (최대 1단계)</li>
+								<li>DatabaseListView 사용하여 실시간 댓글 동기화</li>
+							</ul>
+						</div>
+					</div>
 				</Card.Content>
 			</Card.Root>
-
-			<Card.Root>
-				<Card.Header>
-					<Card.Title class="text-lg">{m.featureTailwindCss()}</Card.Title>
-				</Card.Header>
-				<Card.Content>
-					<p class="text-sm text-gray-600">
-						{m.featureTailwindCssDesc()}
-					</p>
-				</Card.Content>
-			</Card.Root>
-		</div>
-
-		<!-- 링크 -->
-		<div
-			class="flex flex-col items-center justify-center gap-4 text-sm text-gray-600 sm:flex-row"
-		>
-			<a
-				href="https://svelte.dev/docs/kit"
-				target="_blank"
-				rel="noopener noreferrer"
-				class="hover:text-gray-900"
-			>
-				{m.linkSvelteKitDocs()}
-			</a>
-			<span class="hidden sm:inline">•</span>
-			<a
-				href="https://firebase.google.com/docs"
-				target="_blank"
-				rel="noopener noreferrer"
-				class="hover:text-gray-900"
-			>
-				{m.linkFirebaseDocs()}
-			</a>
-			<span class="hidden sm:inline">•</span>
-			<a
-				href="https://www.shadcn-svelte.com"
-				target="_blank"
-				rel="noopener noreferrer"
-				class="hover:text-gray-900"
-			>
-				{m.linkShadcnSvelte()}
-			</a>
 		</div>
 	</div>
 </div>
+
+<style>
+	@import 'tailwindcss' reference;
+
+	/* TODO 카드 스타일 */
+	:global(.todo-card) {
+		@apply transition-shadow duration-200 hover:shadow-lg;
+	}
+
+	.todo-number {
+		@apply flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white;
+	}
+
+	.todo-list {
+		@apply space-y-2 text-sm text-gray-700;
+	}
+
+	.todo-list li {
+		@apply relative pl-5;
+	}
+
+	.todo-list li::before {
+		content: '•';
+		@apply absolute left-0 top-0 font-bold text-indigo-600;
+	}
+
+	.todo-list code {
+		@apply rounded bg-gray-100 px-1.5 py-0.5 text-xs font-mono text-indigo-600;
+	}
+
+	.todo-subtitle {
+		@apply mb-2 font-semibold text-gray-900;
+	}
+</style>

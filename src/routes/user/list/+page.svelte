@@ -16,7 +16,7 @@
     DialogFooter,
     DialogHeader,
     DialogTitle
-  } from 'shadcn-svelte';
+  } from '$lib/components/ui/dialog';
   import { formatLongDate } from '$lib/functions/date.functions';
   import { m } from '$lib/paraglide/messages.js';
 
@@ -25,6 +25,9 @@
   let searchDialogOpen = $state(false);
   let searchInput = $state('');
   let activeSearch = $state('');
+
+  // 검색 입력창 참조 (자동 포커스용)
+  let searchInputRef: HTMLInputElement | null = $state(null);
 
   const normalizedSearch = $derived.by(() => activeSearch.trim());
   const isSearching = $derived.by(() => normalizedSearch.length > 0);
@@ -55,6 +58,12 @@
   $effect(() => {
     if (searchDialogOpen) {
       searchInput = activeSearch;
+      // 다이얼로그가 열리면 입력창에 자동 포커스
+      if (searchInputRef) {
+        requestAnimationFrame(() => {
+          searchInputRef?.focus();
+        });
+      }
     }
   });
 </script>
@@ -70,19 +79,24 @@
   </div>
 
   <div class="search-toolbar">
-    <Button type="button" variant="secondary" class="search-button" on:click={openSearchDialog}>
+    <Button
+      type="button"
+      variant="default"
+      class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg"
+      onclick={openSearchDialog}
+    >
       사용자 검색
     </Button>
     {#if isSearching}
       <div class="search-chip">
         <span>"{normalizedSearch}" 검색 결과</span>
-        <button type="button" on:click={clearSearch}>초기화</button>
+        <button type="button" onclick={clearSearch}>초기화</button>
       </div>
     {/if}
   </div>
 
   <Dialog bind:open={searchDialogOpen}>
-    <DialogContent class="search-dialog">
+    <DialogContent>
       <DialogHeader>
         <DialogTitle>사용자 검색</DialogTitle>
         <DialogDescription>
@@ -90,24 +104,31 @@
         </DialogDescription>
       </DialogHeader>
 
-      <form class="search-form" on:submit={handleSearchSubmit}>
+      <form class="search-form" onsubmit={handleSearchSubmit}>
         <label class="search-label">
           검색할 사용자 이름 (소문자 기준)
           <input
+            bind:this={searchInputRef}
             type="text"
             placeholder="예: sonub"
             bind:value={searchInput}
             class="search-input"
             minlength="2"
             required
+            onkeydown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSearchSubmit(e as any);
+              }
+            }}
           />
         </label>
         <p class="search-hint">
           Firebase RTDB 의 `displayNameLowerCase` 필드와 일치해야 하므로 공백/대소문자를 제거한 형태로 입력해주세요.
         </p>
 
-        <DialogFooter class="search-dialog-footer">
-          <Button type="button" variant="ghost" on:click={clearSearch}>검색 초기화</Button>
+        <DialogFooter>
+          <Button type="button" variant="ghost" onclick={clearSearch}>검색 초기화</Button>
           <Button type="submit">검색하기</Button>
         </DialogFooter>
       </form>
@@ -241,16 +262,6 @@
     }
   }
 
-  .search-button {
-    width: 100%;
-  }
-
-  @media (min-width: 640px) {
-    .search-button {
-      width: auto;
-    }
-  }
-
   .search-chip {
     display: inline-flex;
     align-items: center;
@@ -268,10 +279,6 @@
     color: #fbbf24;
     font-size: 0.8rem;
     cursor: pointer;
-  }
-
-  .search-dialog {
-    max-width: 28rem;
   }
 
   .search-form {
@@ -307,12 +314,6 @@
     margin: 0;
     font-size: 0.85rem;
     color: #6b7280;
-  }
-
-  .search-dialog-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
   }
 
   .page-header {
