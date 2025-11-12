@@ -307,3 +307,14 @@
 	{/if}
 </div>
 
+<!-- 사용자 검색 다이얼로그 -->
+<UserSearchDialog
+	bind:open={userSearchOpen}
+	bind:keyword={searchKeyword}
+	showResults={true}
+	title="친구 찾기"
+	description="사용자를 검색하여 1:1 채팅을 시작하세요."
+	label="사용자 이름"
+	placeholder="검색할 사용자 이름을 입력하세요"
+	on:userSelect={handleUserSelect}
+/>

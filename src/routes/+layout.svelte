@@ -11,7 +11,6 @@
 	 */
 
 	import '../app.css';
-	import favicon from '$lib/assets/favicon.svg';
 	import TopBar from '$lib/components/top-bar.svelte';
 	import LeftSidebar from '$lib/components/left-sidebar.svelte';
 	import RightSidebar from '$lib/components/right-sidebar.svelte';
@@ -22,7 +21,12 @@
 </script>
 
 <svelte:head>
-	<link rel="icon" href={favicon} />
+	<!-- Favicon 설정 -->
+	<link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png" />
+	<link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png" />
+	<link rel="apple-touch-icon" sizes="512x512" href="/favicon-512.png" />
+	<!-- 기본 favicon (브라우저 호환성) -->
+	<link rel="icon" type="image/png" href="/favicon-64.png" />
 </svelte:head>
 
 <div class="min-h-screen bg-gray-50">

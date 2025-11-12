@@ -6,6 +6,7 @@
 	 */
 
 	import DatabaseListView from '$lib/components/DatabaseListView.svelte';
+	import OpenChatCreateDialog from '$lib/components/chat/OpenChatCreateDialog.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
@@ -19,12 +20,25 @@
 	const CHAT_ROOMS_PATH = 'chat-rooms';
 	const ORDER_FIELD = 'openListOrder';
 
+	// OpenChatCreateDialog 상태
+	let createDialogOpen = $state(false);
+
 	/**
 	 * 방생성 버튼 클릭 핸들러
+	 * OpenChatCreateDialog를 열어서 오픈 채팅방 생성
 	 */
 	function handleCreateRoom() {
-		console.log('방생성 버튼 클릭됨');
-		// TODO: 방생성 기능 구현
+		createDialogOpen = true;
+	}
+
+	/**
+	 * 채팅방 생성 완료 핸들러
+	 * 생성된 채팅방으로 자동 이동
+	 */
+	function handleRoomCreated(event: CustomEvent<{ roomId: string }>) {
+		const { roomId } = event.detail;
+		console.log('✅ 오픈 채팅방 생성 완료, 이동:', roomId);
+		void goto(`/chat/room?roomId=${roomId}`);
 	}
 
 	/**
@@ -256,3 +270,6 @@
 		</section>
 	{/if}
 </div>
+
+<!-- 오픈 채팅방 생성 다이얼로그 -->
+<OpenChatCreateDialog bind:open={createDialogOpen} on:created={handleRoomCreated} />
