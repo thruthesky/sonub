@@ -16,9 +16,11 @@ const config = {
 	// 이 경고는 실제 빌드나 런타임에는 영향을 주지 않습니다.
 	onwarn: (warning, handler) => {
 		// css-unused-selector 경고 무시
-		if (warning.code === 'css-unused-selector') {
-			return;
-		}
+		// 둘 다 차단
+		if (
+			warning.code === 'css-unused-selector' ||
+			warning.code === 'css_unused_selector'
+		) return;
 		// 다른 경고는 정상적으로 처리
 		handler(warning);
 	}
