@@ -23,6 +23,7 @@ import {handleUserCreate, handleUserUpdate} from "./handlers/user.handler";
 import {
   handleChatMessageCreate,
   handleChatJoinCreate,
+  handleChatRoomCreate,
 } from "./handlers/chat.handler";
 
 // Firebase Admin 초기화
@@ -128,6 +129,52 @@ export const onChatMessageCreate = onValueCreated(
 
     // 비즈니스 로직 핸들러 호출
     return await handleChatMessageCreate(messageId, messageData);
+  }
+);
+
+
+
+/**
+ * 채팅방 생성 시 트리거되는 Cloud Function
+ *
+ * 트리거 경로: /chat-rooms/{roomId}
+ *
+ * 수행 작업:
+ * 1. 임시 필드(_requestingUid)를 통해 채팅방 생성자 확인
+ * 2. createdAt 필드 자동 생성
+ * 3. owner 필드를 _requestingUid 값으로 설정
+ * 4. 임시 필드(_requestingUid) 삭제
+ *
+ * 보안:
+ * - _requestingUid 필드는 RTDB 보안 규칙에 의해 auth.uid와 동일하게 검증됨
+ * - createdAt과 owner 필드는 Cloud Functions에서만 설정 가능
+ * - 클라이언트는 이 필드들을 직접 설정할 수 없음
+ *
+ * 참고:
+ * - 그룹 채팅방: type='group'
+ * - 오픈 채팅방: type='open'
+ * - 1:1 채팅방: type='single' (owner 필드 불필요)
+ *
+ * 비즈니스 로직은 handlers/chat.handler.ts의 handleChatRoomCreate() 참조
+ */
+export const onChatRoomCreate = onValueCreated(
+  "/chat-rooms/{roomId}",
+  async (event) => {
+    const roomId = event.params.roomId as string;
+    const roomData = (event.data.val() || {}) as Record<string, unknown>;
+    // _requestingUid는 보안 규칙에 의해 auth.uid와 동일하게 검증되므로 신뢰 가능
+    const authUid = typeof roomData._requestingUid === "string"
+      ? roomData._requestingUid
+      : undefined;
+
+    logger.info("채팅방 생성 감지", {
+      roomId,
+      authUid,
+      roomType: roomData.type,
+    });
+
+    // 비즈니스 로직 핸들러 호출
+    return await handleChatRoomCreate(roomId, roomData, authUid);
   }
 );
 

@@ -433,6 +433,16 @@ if (chatRoom.open === true) {
    - 생성자를 `owner`로 설정
 4. 생성 완료 후 해당 채팅방으로 자동 입장
 
+#### Cloud Functions + 보안 규칙이 owner를 보장하는 방식
+
+- 클라이언트는 `/chat-rooms/{roomId}`에 **owner와 createdAt 필드 없이** 기본 정보만 저장하고, `_requestingUid`에 `auth.uid`를 전달합니다. (UI 컴포넌트: `ChatCreateDialog`)
+- `firebase/functions/src/index.ts`의 `onValueCreated("/chat-rooms/{roomId}")` 트리거가 실행되면 `_requestingUid` 값을 읽어 생성자의 UID를 확보합니다.
+- 확보한 UID는 `owner` 필드에 기록되고, `createdAt`는 현재 타임스탬프로 설정되며, `_requestingUid` 임시 필드는 삭제됩니다.
+- `firebase/database.rules.json`에서는
+  - `/chat-rooms/{roomId}/owner`: `!data.exists() && newData.val() === auth.uid` → 최초 작성 시 Cloud Functions만 통과 가능
+  - `/chat-rooms/{roomId}/name`, `description` 등 주요 필드: `owner`와 동일한 UID만 수정 가능
+- 따라서 **클라이언트가 owner 값을 조작하거나 다른 사용자를 owner로 지정할 수 없고**, Cloud Functions가 인증 컨텍스트로 신뢰 가능한 값을 설정하도록 사양으로 고정되어 있습니다.
+
 **생성되는 데이터 구조:**
 ```typescript
 /chat-rooms/{roomId} {
@@ -821,3 +831,4 @@ Firebase RTDB에서는 다양한 정렬 요구사항을 처리하기 위해 **�
 | 2025-11-12 | Claude Sonnet 4.5 | ChatListMenu 컴포넌트 분리: `/src/lib/components/chat/ChatListMenu.svelte`를 생성하여 채팅 목록 상단 메뉴(탭바, 방생성 버튼, 설정 드롭다운)를 재사용 가능한 컴포넌트로 추출함. `/src/routes/chat/list/+page.svelte`에서 메뉴 코드를 제거하고 컴포넌트로 교체하여 코드 재사용성을 향상시킴. Svelte 5 runes($state, $props) 사용, Props 인터페이스 정의, 콜백 함수 기반 이벤트 처리 구현. |
 | 2025-11-12 | Codex Agent | 사용자 검색 기능이 `src/lib/components/user/UserSearchDialog.svelte` 공용 모달을 사용한다는 사실을 명시하고 채팅/관리자/사용자 목록 페이지에서 동일한 검색 UX를 공유하도록 문서화. |
 | 2025-11-12 | Claude Sonnet 4.5 | 채팅 목록 페이지 완성: ChatListMenu 컴포넌트에 페이지 이동 기능 추가 (탭 클릭 시 해당 페이지로 자동 이동). `/chat/group-chat-list/+page.svelte` 생성하여 그룹챗 목록 표시 (DatabaseListView 사용, groupListOrder 정렬). `/chat/open-chat-list/+page.svelte` 생성하여 오픈챗 목록 표시 (chat-rooms 경로, openListOrder 정렬). 세 가지 채팅 목록 페이지(친구/그룹챗/오픈챗)가 모두 ChatListMenu 컴포넌트를 재사용하며, 각 페이지는 selectedTab prop을 통해 현재 활성 탭을 표시. |
+| 2025-11-12 | Codex Agent | 방생성 섹션에 Cloud Functions가 `event.auth.uid`로 owner/createdBy를 자동 주입하고, `firebase/database.rules.json`이 해당 필드를 보호한다는 설명을 추가하여 클라이언트 조작 불가 구조를 명문화. |

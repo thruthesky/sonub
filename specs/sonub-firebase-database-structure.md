@@ -324,6 +324,75 @@ Firebase Authentication의 다음 필드들은 `/users/<uid>` 노드에 **저장
 
 ---
 
+## 채팅방 (chat-rooms)
+
+채팅방 메타데이터는 `/chat-rooms/<roomId>/` 경로에 저장됩니다. 그룹/오픈 챗을 포함해 **모든 방 생성은 Cloud Functions가 owner를 강제로 주입**하도록 설계되어 있으며, 클라이언트는 방 이름·설명과 공개 여부 같은 기초 정보만 작성합니다.
+
+### 데이터 구조
+
+```
+/chat-rooms/
+├── group-team123/
+│   ├── name: "팀 채팅방"
+│   ├── description: "Sprint 24 진행 채널"
+│   ├── open: false
+│   ├── owner: "uid_creator"              // Cloud Functions에서 자동 설정
+│   ├── createdAt: 1698473000000          // Cloud Functions에서 자동 설정
+│   ├── updatedAt: 1698473000000
+│   ├── groupListOrder: "-1698473000000"
+│   ├── members:
+│   │   ├── 0: "uid_creator"
+│   │   └── 1: "uid_teammate"
+│   └── stats:
+│       ├── memberCount: 2
+│       └── messageCount: 120
+└── open-general/
+    ├── name: "오픈 커뮤니티"
+    ├── open: true
+    ├── owner: "uid_creator"              // Cloud Functions에서 자동 설정
+    ├── createdAt: 1698474000000          // Cloud Functions에서 자동 설정
+    ├── openListOrder: "-1698474000000"
+    └── ...
+```
+
+### 필드 설명
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `name` | string | ✅ | 채팅방 이름, 최대 50자 |
+| `description` | string | ❌ | 소개 문구, 최대 200자 |
+| `open` | boolean | ✅ | 오픈 챗 여부 (`true`면 전체 공개) |
+| `owner` | string | ✅ | 방 생성자 UID. **Cloud Functions에서만 설정** (클라이언트 쓰기 불가) |
+| `createdAt` | number | ✅ | 생성 시간 (Unix timestamp ms). **Cloud Functions에서만 설정** |
+| `updatedAt` | number | ✅ | 수정 시간 (Unix timestamp ms) |
+| `groupListOrder` | string/number | ❌ | 그룹 챗 정렬용 order. 클라이언트가 `-Date.now()` 형식으로 설정 |
+| `openListOrder` | string/number | ❌ | 오픈 챗 정렬용 order. `open: true`일 때만 생성 |
+| `memberCount` | number | ✅ | 참여자 수. Cloud Functions가 `members` 배열과 동기화 |
+| `members` | string[] | ✅ | 참여자 UID 배열. 최소 1명(owner) 포함 |
+| `stats` | object | ❌ | 메시지 수 등 확장 가능한 통계 필드 |
+| `_requestingUid` | string | 임시 | **임시 필드**. 클라이언트가 `auth.uid`와 동일한 값으로 설정하면, Cloud Functions가 이를 검증하여 `owner`로 복사 후 삭제 |
+
+### 클라이언트/서버 역할 분리
+
+- **클라이언트**
+  - `/chat-rooms/{roomId}`에 `name`, `description`, `open`, `type` 등 기본 정보를 작성
+  - `_requestingUid: auth.uid`를 임시 필드로 전달 (보안 규칙에 의해 검증됨)
+  - `owner`, `createdAt` 필드는 **작성하지 않음** (Cloud Functions에서만 설정 가능)
+- **Cloud Functions**
+  - `onValueCreated("/chat-rooms/{roomId}")` 트리거 실행
+  - `_requestingUid` 값을 읽어 생성자 UID 확인 (보안 규칙으로 이미 검증됨)
+  - `owner` 필드를 `_requestingUid` 값으로 설정
+  - `createdAt` 필드를 현재 타임스탬프로 설정
+  - `_requestingUid` 임시 필드 삭제
+  - 필요시 `members[0]`로 owner 추가 및 정렬 필드 계산
+
+> 🔐 **보안 규칙 연계**:
+> - `/chat-rooms/{roomId}/_requestingUid`는 `!data.exists() && newData.val() === auth.uid` 조건으로 제한
+> - `/chat-rooms/{roomId}/owner`와 `/chat-rooms/{roomId}/createdAt`는 `.write: false`로 클라이언트 쓰기 금지
+> - 따라서 사양상 owner와 createdAt 위조가 불가능하며, Cloud Functions만이 신뢰할 수 있는 값을 설정할 수 있습니다.
+
+---
+
 ## 채팅 메시지 (chat-messages)
 
 채팅 메시지는 `/chat-messages/<messageId>/` 경로에 저장됩니다.
@@ -682,3 +751,11 @@ query.on('value', (snapshot) => {
 - [Firebase Realtime Database 공식 문서](https://firebase.google.com/docs/database)
 - [Firebase Security Rules 공식 문서](https://firebase.google.com/docs/rules)
 - [Firebase Cloud Functions 공식 문서](https://firebase.google.com/docs/functions)
+
+---
+
+## 작업 이력 (SED Log)
+
+| 날짜 | 작업자 | 내용 |
+| ---- | ------ | ---- |
+| 2025-11-12 | Codex Agent | `/chat-rooms` 섹션을 신설하고 Cloud Functions + Security Rules가 owner/createdBy를 자동 설정·검증하는 과정을 상세화하여 채팅방 데이터 흐름을 명시. |

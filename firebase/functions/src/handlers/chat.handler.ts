@@ -133,6 +133,87 @@ export async function handleChatMessageCreate(
 }
 
 /**
+ * 채팅방 생성 시 비즈니스 로직 처리
+ *
+ * @param roomId - 생성된 채팅방 ID
+ * @param roomData - 채팅방 데이터
+ * @param authUid - 인증된 사용자 UID
+ * @returns Promise<void>
+ *
+ * 주요 처리 로직:
+ * 1. 인증된 사용자 UID 유효성 검사
+ * 2. createdAt 필드 자동 생성 (타임스탬프)
+ * 3. owner 필드를 authUid로 설정
+ *
+ * 보안:
+ * - createdAt과 owner 필드는 Cloud Functions에서만 설정
+ * - 클라이언트에서 이 필드들을 설정할 수 없음
+ * - RTDB 보안 규칙과 함께 작동하여 데이터 무결성 보장
+ */
+export async function handleChatRoomCreate(
+  roomId: string,
+  roomData: Record<string, unknown>,
+  authUid: string | undefined
+): Promise<void> {
+  logger.info("채팅방 생성 처리 시작", {
+    roomId,
+    authUid,
+    roomType: roomData.type,
+  });
+
+  // 단계 1: 인증된 사용자 UID 유효성 검사
+  if (!authUid || authUid.trim().length === 0) {
+    logger.error("인증되지 않은 사용자가 채팅방을 생성하려고 시도함", {
+      roomId,
+    });
+    throw new Error("채팅방 생성은 인증된 사용자만 가능합니다");
+  }
+
+  const timestamp = Date.now();
+  const updates: {[key: string]: unknown} = {};
+
+  // 단계 2: createdAt 필드 확인 및 설정
+  const createdAtRef = admin.database().ref(
+    `chat-rooms/${roomId}/createdAt`
+  );
+  const createdAtSnapshot = await createdAtRef.once("value");
+
+  if (!createdAtSnapshot.exists()) {
+    updates[`chat-rooms/${roomId}/createdAt`] = timestamp;
+    logger.info("createdAt 필드 생성", {roomId, createdAt: timestamp});
+  }
+
+  // 단계 3: owner 필드 확인 및 설정
+  const ownerRef = admin.database().ref(`chat-rooms/${roomId}/owner`);
+  const ownerSnapshot = await ownerRef.once("value");
+
+  if (!ownerSnapshot.exists()) {
+    updates[`chat-rooms/${roomId}/owner`] = authUid;
+    logger.info("owner 필드 생성", {roomId, owner: authUid});
+  } else {
+    logger.warn("owner 필드가 이미 존재함", {
+      roomId,
+      existingOwner: ownerSnapshot.val(),
+    });
+  }
+
+  // 단계 4: 임시 필드(_requestingUid) 삭제
+  updates[`chat-rooms/${roomId}/_requestingUid`] = null;
+
+  // 단계 5: 모든 업데이트를 한 번에 실행
+  if (Object.keys(updates).length > 0) {
+    await admin.database().ref().update(updates);
+    logger.info("채팅방 필드 설정 완료", {
+      roomId,
+      owner: authUid,
+      createdAt: timestamp,
+      roomType: roomData.type,
+      updatesCount: Object.keys(updates).length,
+    });
+  }
+}
+
+/**
  * 채팅방 참여 정보 생성 시 비즈니스 로직 처리
  *
  * @param uid - 사용자 UID

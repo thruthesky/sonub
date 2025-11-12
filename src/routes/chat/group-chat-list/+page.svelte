@@ -7,7 +7,7 @@
 
 	import DatabaseListView from '$lib/components/DatabaseListView.svelte';
 	import Avatar from '$lib/components/user/avatar.svelte';
-	import GroupChatCreateDialog from '$lib/components/chat/GroupChatCreateDialog.svelte';
+	import ChatCreateDialog from '$lib/components/chat/ChatCreateDialog.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
@@ -20,12 +20,12 @@
 	const PAGE_SIZE = 20;
 	const JOIN_ORDER_FIELD = 'groupListOrder';
 
-	// GroupChatCreateDialog 상태
+	// ChatCreateDialog 상태
 	let createDialogOpen = $state(false);
 
 	/**
 	 * 방생성 버튼 클릭 핸들러
-	 * GroupChatCreateDialog를 열어서 그룹 채팅방 생성
+	 * ChatCreateDialog를 열어서 그룹 채팅방 생성
 	 */
 	function handleCreateRoom() {
 		createDialogOpen = true;
@@ -271,4 +271,4 @@
 </div>
 
 <!-- 그룹 채팅방 생성 다이얼로그 -->
-<GroupChatCreateDialog bind:open={createDialogOpen} on:created={handleRoomCreated} />
+<ChatCreateDialog type="group" bind:open={createDialogOpen} on:created={handleRoomCreated} />

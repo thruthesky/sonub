@@ -143,6 +143,23 @@
           minlength={minLength}
           required
           class="search-input"
+          onkeydown={(e) => {
+            e.stopPropagation();
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              const trimmed = keyword.trim();
+              if (trimmed.length >= minLength) {
+                const normalized = autoLowercase ? trimmed.toLowerCase() : trimmed;
+                keyword = normalized;
+                if (showResults) {
+                  searchKeyword = normalized;
+                } else {
+                  dispatch('search', { keyword: normalized });
+                  open = false;
+                }
+              }
+            }
+          }}
         />
       </label>
       <p class="search-hint">{helperText}</p>

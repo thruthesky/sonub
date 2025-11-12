@@ -6,7 +6,7 @@
 	 */
 
 	import DatabaseListView from '$lib/components/DatabaseListView.svelte';
-	import OpenChatCreateDialog from '$lib/components/chat/OpenChatCreateDialog.svelte';
+	import ChatCreateDialog from '$lib/components/chat/ChatCreateDialog.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
@@ -20,12 +20,12 @@
 	const CHAT_ROOMS_PATH = 'chat-rooms';
 	const ORDER_FIELD = 'openListOrder';
 
-	// OpenChatCreateDialog 상태
+	// ChatCreateDialog 상태
 	let createDialogOpen = $state(false);
 
 	/**
 	 * 방생성 버튼 클릭 핸들러
-	 * OpenChatCreateDialog를 열어서 오픈 채팅방 생성
+	 * ChatCreateDialog를 열어서 오픈 채팅방 생성
 	 */
 	function handleCreateRoom() {
 		createDialogOpen = true;
@@ -272,4 +272,4 @@
 </div>
 
 <!-- 오픈 채팅방 생성 다이얼로그 -->
-<OpenChatCreateDialog bind:open={createDialogOpen} on:created={handleRoomCreated} />
+<ChatCreateDialog type="open" bind:open={createDialogOpen} on:created={handleRoomCreated} />

@@ -1,7 +1,7 @@
 ---
 name: sonub-firebase-security
-version: 1.1.0
-description: Firebase RTDB 및 Storage의 보안 규칙 정의 - 사용자 데이터 보호 및 관리자 권한 관리
+version: 1.3.0
+description: Firebase RTDB 및 Storage의 보안 규칙 정의 - 사용자 데이터 보호 및 관리자 권한 관리, 채팅방 필드별 세밀한 보안 규칙, 초기화 및 배포 방법
 author: Claude
 email: noreply@anthropic.com
 step: 35
@@ -15,6 +15,9 @@ tags:
   - rules
   - rtdb
   - authorization
+  - deployment
+  - chat-rooms
+  - field-level-security
 ---
 
 ## 📋 개요
@@ -84,7 +87,23 @@ export const isAdmin = $derived(
 
 ---
 
-## Firebase Realtime Database 보안 규칙
+## 2️⃣ Firebase Realtime Database 보안 규칙
+
+### 초기화 및 설정
+
+Firebase Realtime Database 보안 규칙을 설정하려면 다음 단계를 따릅니다:
+
+```bash
+# Firebase 프로젝트 폴더로 이동
+cd firebase
+
+# Firebase Realtime Database 초기화
+firebase init database
+```
+
+초기화가 완료되면 `firebase/database.rules.json` 파일이 생성됩니다.
+
+### 보안 규칙 정의
 
 사용자의 프로필 데이터는 다음과 같이 보호됩니다:
 
@@ -132,8 +151,174 @@ export const isAdmin = $derived(
 - `test/data`: QA 테스트 전용 경로. DatabaseListView 데모가 자유롭게 데이터를 생성/삭제할 수 있도록 `.read`와
   `.write`를 모두 `true`로 설정한다. 이 노드는 **프로덕션 데이터와 분리된 테스트 공간**이므로 민감한 정보를 저장하지 않는다.
 
+### 보안 규칙 배포
 
-## Firebase Storage 보안 규칙
+`firebase/database.rules.json` 파일을 수정한 후, 다음 명령어로 Firebase Realtime Database에 보안 규칙을 배포합니다:
+
+```bash
+# firebase 폴더에서 실행
+cd firebase
+
+# Realtime Database 보안 규칙만 배포
+firebase deploy --only database
+```
+
+**주의사항:**
+- 보안 규칙 배포 전에 반드시 JSON 문법을 확인하세요.
+- 배포 후 Firebase Console에서 규칙이 올바르게 적용되었는지 확인하세요.
+- 규칙 변경은 즉시 적용되므로 프로덕션 환경에서는 신중하게 배포하세요.
+
+---
+
+## 2️⃣-2 채팅방(chat-rooms) 보안 규칙
+
+### 설계 원칙
+
+채팅방 보안 규칙은 **가독성(readability) 향상**을 위해 각 필드별로 세밀하게 설정합니다:
+- 복잡한 단일 규칙보다 필드별 명확한 규칙 작성
+- 각 필드의 생명주기(생성, 수정, 삭제) 명확히 정의
+- `.write`와 `.validate`를 분리하여 권한과 데이터 검증 구분
+
+### 필드별 보안 규칙
+
+```json
+{
+  "rules": {
+    "chat-rooms": {
+      ".read": true,
+      "$roomId": {
+        ".write": "auth != null",
+        "owner": {
+          ".write": "!data.exists() && newData.val() === auth.uid",
+          ".validate": "newData.isString()"
+        },
+        "name": {
+          ".write": "root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+        },
+        "description": {
+          ".write": "root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "type": {
+          ".write": "!data.exists()",
+          ".validate": "newData.val() === 'group' || newData.val() === 'open' || newData.val() === 'single'"
+        },
+        "owner": {
+          ".write": false,
+          ".validate": "newData.isString()"
+        },
+        "createdAt": {
+          ".write": false,
+          ".validate": "newData.isNumber()"
+        },
+        "_requestingUid": {
+          ".write": "!data.exists() && newData.val() === auth.uid",
+          ".validate": "newData.isString()"
+        },
+        "open": {
+          ".write": "!data.exists()",
+          ".validate": "newData.isBoolean()"
+        },
+        "groupListOrder": {
+          ".write": "!data.exists()",
+          ".validate": "newData.isNumber()"
+        },
+        "openListOrder": {
+          ".write": "!data.exists()",
+          ".validate": "newData.isNumber()"
+        },
+        "memberCount": {
+          ".write": "root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "$other": {
+          ".validate": false
+        }
+      },
+      ".indexOn": ["openListOrder"]
+    }
+  }
+}
+```
+
+### 필드별 규칙 설명
+
+| 필드 | 쓰기 권한 | 검증 규칙 | 설명 |
+|------|----------|----------|------|
+| **owner** | Cloud Functions만 | 문자열 | 채팅방 소유자 UID. **Cloud Functions에서만 설정 가능** (`.write: false`) |
+| **createdAt** | Cloud Functions만 | 숫자(타임스탬프) | 생성 시간. **Cloud Functions에서만 설정 가능** (`.write: false`) |
+| **_requestingUid** | 생성 시 본인만 | 문자열 | **임시 필드**. 클라이언트가 `auth.uid`와 동일한 값으로 전달하면, Cloud Functions가 검증 후 `owner`로 복사하고 삭제 |
+| **name** | owner만 | 1-50자 문자열 | 채팅방 이름. owner만 수정 가능 |
+| **description** | owner만 | 최대 200자 문자열 | 채팅방 설명. owner만 수정 가능 |
+| **type** | 생성 시만 | 'group', 'open', 'single' | 채팅방 타입. 생성 후 변경 불가 |
+| **open** | 생성 시만 | boolean | 공개 여부. 생성 후 변경 불가 |
+| **groupListOrder** | 생성 시만 | 숫자 | 그룹 채팅 정렬 순서. 생성 후 변경 불가 |
+| **openListOrder** | 생성 시만 | 숫자 | 오픈 채팅 정렬 순서. 생성 후 변경 불가 |
+| **memberCount** | owner만 | 0 이상의 숫자 | 멤버 수. owner만 수정 가능 |
+| **$other** | 허용 안 함 | - | 정의되지 않은 필드는 생성 불가 |
+
+### 보안 규칙 패턴
+
+#### 1. 불변 필드 (Immutable Field)
+```json
+"owner": {
+  ".write": "!data.exists() && newData.val() === auth.uid",
+  ".validate": "newData.isString()"
+}
+```
+- `!data.exists()`: 데이터가 없을 때만 (= 생성 시에만)
+- `newData.val() === auth.uid`: 값이 현재 사용자 UID와 일치해야 함
+
+#### 2. Owner 전용 수정 필드
+```json
+"name": {
+  ".write": "root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",
+  ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+}
+```
+- owner 값을 확인하여 소유자만 수정 가능
+- 데이터 타입과 길이 검증
+
+#### 3. 읽기 전용 필드 (생성 후)
+```json
+"type": {
+  ".write": "!data.exists()",
+  ".validate": "newData.val() === 'group' || newData.val() === 'open' || newData.val() === 'single'"
+}
+```
+- 생성 시에만 설정 가능
+- 허용된 값만 설정 가능
+
+#### 4. 정의되지 않은 필드 차단
+```json
+"$other": {
+  ".validate": false
+}
+```
+- 정의되지 않은 필드는 생성/수정 불가
+- 데이터베이스 스키마 보호
+
+---
+
+
+## 3️⃣ Firebase Storage 보안 규칙
+
+### 초기화 및 설정
+
+Firebase Storage 보안 규칙을 설정하려면 다음 단계를 따릅니다:
+
+```bash
+# Firebase 프로젝트 폴더로 이동
+cd firebase
+
+# Firebase Storage 초기화
+firebase init storage
+```
+
+초기화가 완료되면 `firebase/storage.rules` 파일이 생성됩니다.
+
+### 보안 규칙 정의
 
 프로필 사진 저장소의 보안 규칙:
 
@@ -150,4 +335,21 @@ service firebase.storage {
   }
 }
 ```
+
+### 보안 규칙 배포
+
+`firebase/storage.rules` 파일을 수정한 후, 다음 명령어로 Firebase Storage에 보안 규칙을 배포합니다:
+
+```bash
+# firebase 폴더에서 실행
+cd firebase
+
+# Storage 보안 규칙만 배포
+firebase deploy --only storage
+```
+
+**주의사항:**
+- 보안 규칙 배포 전에 반드시 문법을 확인하세요.
+- 배포 후 Firebase Console에서 규칙이 올바르게 적용되었는지 확인하세요.
+- 규칙 변경은 즉시 적용되므로 프로덕션 환경에서는 신중하게 배포하세요.
 
