@@ -226,5 +226,17 @@
 	"chatSendFailed": "メッセージの送信に失敗しました。",
 	"chatUnknownUser": "不明なユーザー",
 	"chatYou": "あなた",
-	"chatPartner": "チャットパートナー"
+	"chatPartner": "チャットパートナー",
+	"chatSingleChat": "1:1チャット",
+	"chatMyRoomsTitle": "マイ会話",
+	"chatMyRoomsDesc": "参加したチャットルームが時系列で表示されます。",
+	"chatEmptyRooms": "まだチャットルームに参加していません。",
+	"chatLoadingRooms": "チャットルームを読み込んでいます...",
+	"chatOpenRoom": "会話を開く",
+	"chatLastMessageLabel": "最後のメッセージ",
+	"chatTabFriends": "友達",
+	"chatTabGroupChats": "グループチャット",
+	"chatTabOpenChats": "オープンチャット",
+	"chatTabBookmarks": "ブックマーク",
+	"chatTabSearch": "検索"
 }

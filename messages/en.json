@@ -232,5 +232,10 @@
 	"chatEmptyRooms": "You have not joined any chat rooms yet.",
 	"chatLoadingRooms": "Loading your chat rooms...",
 	"chatOpenRoom": "Open conversation",
-	"chatLastMessageLabel": "Last message"
+	"chatLastMessageLabel": "Last message",
+	"chatTabFriends": "Friends",
+	"chatTabGroupChats": "Group Chats",
+	"chatTabOpenChats": "Open Chats",
+	"chatTabBookmarks": "Bookmarks",
+	"chatTabSearch": "Search"
 }
