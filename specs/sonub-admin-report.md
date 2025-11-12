@@ -174,7 +174,7 @@ tags:
 /reports/
 ```
 
-**📚 상세 데이터베이스 구조는 [sonub-firebase-database.md](./sonub-firebase-database.md#신고-reports)를 참조하세요.**
+**📚 상세 데이터베이스 구조는 [sonub-firebase-database-structure.md](specs/sonub-firebase-database-structure.md#신고-reports)를 참조하세요.**
 
 #### 신고 데이터 구조
 
@@ -1473,7 +1473,7 @@ async function handleCancelReport(report: ReportWithId) {
 ## 참고 문서
 
 **필수 참고 문서:**
-- **[sonub-firebase-database.md](./sonub-firebase-database.md)** - Firebase 데이터베이스 전체 구조
+- **[sonub-firebase-database-structure.md](specs/sonub-firebase-database-structure.md)** - Firebase 데이터베이스 전체 구조
 - **[sonub-user-overview.md](./sonub-user-overview.md)** - 사용자 관리 시스템 설계
 - **[sonub-setup-firebase.md](./sonub-setup-firebase.md)** - Firebase 기본 설정
 - **[sonub-setup-shadcn.md](./sonub-setup-shadcn.md)** - shadcn-svelte UI 컴포넌트

@@ -236,5 +236,8 @@
 	"chatTabOpenChats": "오픈챗",
 	"chatTabBookmarks": "북마크",
 	"chatTabSearch": "검색",
-	"chatCreateRoom": "방생성"
+	"chatCreateRoom": "방생성",
+	"chatFindFriends": "친구 찾기",
+	"chatCreateGroupChat": "그룹챗 생성",
+	"chatCreateOpenChat": "오픈챗 생성"
 }

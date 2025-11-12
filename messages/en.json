@@ -237,5 +237,9 @@
 	"chatTabGroupChats": "Group Chats",
 	"chatTabOpenChats": "Open Chats",
 	"chatTabBookmarks": "Bookmarks",
-	"chatTabSearch": "Search"
+	"chatTabSearch": "Search",
+	"chatCreateRoom": "Create Room",
+	"chatFindFriends": "Find Friends",
+	"chatCreateGroupChat": "Create Group Chat",
+	"chatCreateOpenChat": "Create Open Chat"
 }

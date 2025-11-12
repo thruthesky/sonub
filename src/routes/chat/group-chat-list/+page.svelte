@@ -1,8 +1,8 @@
 <script lang="ts">
 	/**
-	 * 채팅방 목록 페이지
+	 * 그룹 채팅방 목록 페이지
 	 *
-	 * DatabaseListView를 사용하여 내가 참여한 채팅방 목록을 무한 스크롤로 표시합니다.
+	 * DatabaseListView를 사용하여 내가 참여한 그룹 채팅방 목록을 무한 스크롤로 표시합니다.
 	 */
 
 	import DatabaseListView from '$lib/components/DatabaseListView.svelte';
@@ -17,7 +17,7 @@
 	type ChatJoinData = Record<string, unknown>;
 
 	const PAGE_SIZE = 20;
-	const JOIN_ORDER_FIELD = 'listOrder';
+	const JOIN_ORDER_FIELD = 'groupListOrder';
 
 	/**
 	 * 방생성 버튼 클릭 핸들러
@@ -71,8 +71,8 @@
 	const chatJoinPath = $derived.by(() => {
 		const uid = authStore.user?.uid;
 		const path = uid ? `chat-joins/${uid}` : '';
-		console.log('🔍 [Chat List Debug] User UID:', uid);
-		console.log('🔍 [Chat List Debug] Chat join path:', path);
+		console.log('🔍 [Group Chat List Debug] User UID:', uid);
+		console.log('🔍 [Group Chat List Debug] Chat join path:', path);
 		return path;
 	});
 
@@ -84,17 +84,6 @@
 		if (typeof join.roomName === 'string' && join.roomName.trim()) return join.roomName;
 		if (typeof join.title === 'string' && join.title.trim()) return join.title;
 		if (typeof join.displayName === 'string' && join.displayName.trim()) return join.displayName;
-		if (typeof join.partnerDisplayName === 'string' && join.partnerDisplayName.trim())
-			return join.partnerDisplayName;
-
-		const partnerUid: string | undefined =
-			typeof join.partnerUid === 'string' ? join.partnerUid
-			: typeof join.targetUid === 'string' ? join.targetUid
-			: undefined;
-
-		if (partnerUid) {
-			return `@${partnerUid.slice(0, 8)}`;
-		}
 
 		return fallback;
 	}
@@ -103,20 +92,6 @@
 	 * 채팅방 열기
 	 */
 	function openConversation(join: ChatJoinData, roomId: string) {
-		const normalizedType = (join.roomType ?? join.type ?? 'single')
-			.toString()
-			.toLowerCase();
-
-		const partnerUid: string | undefined =
-			typeof join.partnerUid === 'string' ? join.partnerUid
-			: typeof join.targetUid === 'string' ? join.targetUid
-			: undefined;
-
-		if (normalizedType.includes('single') && partnerUid) {
-			void goto(`/chat/room?uid=${partnerUid}`);
-			return;
-		}
-
 		if (roomId) {
 			void goto(`/chat/room?roomId=${roomId}`);
 		}
@@ -124,15 +99,15 @@
 </script>
 
 <svelte:head>
-	<title>{m.pageTitleChat()}</title>
+	<title>{m.chatTabGroupChats()}</title>
 </svelte:head>
 
 <div class="space-y-6">
 	<section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
 		<div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
 			<div>
-				<h1 class="text-2xl font-semibold text-gray-900">{m.chatMyRoomsTitle()}</h1>
-				<p class="text-sm text-gray-500">{m.chatMyRoomsDesc()}</p>
+				<h1 class="text-2xl font-semibold text-gray-900">{m.chatTabGroupChats()}</h1>
+				<p class="text-sm text-gray-500">내가 참여한 그룹 채팅방 목록입니다</p>
 			</div>
 			{#if authStore.isAuthenticated && authStore.user?.uid}
 				<p class="text-xs uppercase tracking-wide text-gray-400">
@@ -143,7 +118,7 @@
 
 		<!-- 채팅 목록 메뉴 컴포넌트 -->
 		<ChatListMenu
-			selectedTab="friends"
+			selectedTab="groupChats"
 			onCreateRoom={handleCreateRoom}
 			onFindFriends={handleFindFriends}
 			onCreateGroupChat={handleCreateGroupChat}
@@ -178,7 +153,7 @@
 					reverse: true
 				}}
 				{#if chatJoinPath}
-					{console.log('🔍 [Chat List Debug] DatabaseListView props:', dbListViewProps)}
+					{console.log('🔍 [Group Chat List Debug] DatabaseListView props:', dbListViewProps)}
 				{/if}
 				<DatabaseListView
 					path={chatJoinPath}
@@ -188,7 +163,7 @@
 					reverse={true}
 				>
 					{#snippet item(itemData, index)}
-						{console.log('🔍 [Chat List Debug] Item received:', {
+						{console.log('🔍 [Group Chat List Debug] Item received:', {
 							index,
 							key: itemData.key,
 							hasData: !!itemData.data,
@@ -196,22 +171,17 @@
 						})}
 						{@const join = (itemData.data ?? {}) as ChatJoinData}
 						{@const roomId = (join.roomId ?? itemData.key ?? '') as string}
-						{@const roomType = (join.roomType ?? join.type ?? 'single').toString()}
-						{@const listOrder = join.listOrder ?? null}
-						{console.log('🔍 [Chat List Debug] Join data:', {
+						{@const roomType = (join.roomType ?? join.type ?? 'group').toString()}
+						{@const listOrder = join.groupListOrder ?? null}
+						{console.log('🔍 [Group Chat List Debug] Join data:', {
 							roomId,
 							roomType,
 							listOrder,
-							partnerUid: join.partnerUid,
 							lastMessageText: join.lastMessageText,
 							lastMessageAt: join.lastMessageAt,
 							newMessageCount: join.newMessageCount,
 							allFields: Object.keys(join)
 						})}
-						{@const partnerUid: string | null =
-							typeof join.partnerUid === 'string' ? join.partnerUid
-							: typeof join.targetUid === 'string' ? join.targetUid
-							: null}
 						{@const lastMessage =
 							typeof join.lastMessageText === 'string' && join.lastMessageText.trim()
 								? join.lastMessageText
@@ -228,17 +198,13 @@
 							class="flex w-full items-start gap-4 border-b border-gray-100 p-4 text-left transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
 							onclick={() => openConversation(join, roomId)}
 						>
-							{#if partnerUid}
-								<Avatar uid={partnerUid} size={48} class="shadow-sm" />
-							{:else}
-								<div class="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-gray-600">
-									{roomTitle.slice(0, 2)}
-								</div>
-							{/if}
+							<div class="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-blue-500 text-sm font-semibold text-white shadow-sm">
+								{roomTitle.slice(0, 2)}
+							</div>
 
 							<div class="flex-1 space-y-1">
 								<div class="flex flex-wrap items-center gap-x-2 text-sm text-gray-500">
-									<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-gray-600">
+									<span class="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-purple-600">
 										{resolveRoomTypeLabel(roomType)}
 									</span>
 									<span class="text-xs text-gray-400">#{roomId}</span>
@@ -273,7 +239,7 @@
 
 					{#snippet empty()}
 						<div class="py-12 text-center text-gray-500">
-							<p class="text-sm">{m.chatEmptyRooms()}</p>
+							<p class="text-sm">참여한 그룹 채팅방이 없습니다</p>
 						</div>
 					{/snippet}
 
@@ -289,4 +255,3 @@
 		</section>
 	{/if}
 </div>
-

@@ -20,42 +20,64 @@ step: 20
 priority: "***"
 ---
 
-- [채팅 및 게시판 통합 시스템 개요](#채팅-및-게시판-통합-시스템-개요)
-  - [워크플로우](#워크플로우)
-    - [📋 문서의 범위](#-문서의-범위)
-    - [🎯 핵심 설계 개념](#-핵심-설계-개념)
-    - [클라이언트와 백엔드의 역할 분리](#클라이언트와-백엔드의-역할-분리)
-  - [개요](#개요)
-  - [채팅방 시스템](#채팅방-시스템)
-    - [채팅방 타입](#채팅방-타입)
-    - [권한 관리 (Role)](#권한-관리-role)
-    - [서브 채팅방 구조](#서브-채팅방-구조)
-  - [채팅방 순서도](#채팅방-순서도)
-    - [채팅 UI 흐름 개요](#채팅-ui-흐름-개요)
-    - [채팅방 목록 페이지 구조](#채팅방-목록-페이지-구조)
-    - [채팅방 목록 조회 방식](#채팅방-목록-조회-방식)
-    - [채팅방 입장](#채팅방-입장)
-    - [방생성 기능](#방생성-기능)
-    - [북마크(즐겨찾기) 기능](#북마크즐겨찾기-기능)
-    - [검색 기능](#검색-기능)
-    - [전체 흐름도 (Mermaid)](#전체-흐름도-mermaid)
-    - [데이터 흐름 요약](#데이터-흐름-요약)
-  - [메시지 시스템](#메시지-시스템)
-    - [메시지 타입](#메시지-타입)
-    - [메시지 저장 구조](#메시지-저장-구조)
-    - [메시지 Order 필드](#메시지-order-필드)
-    - [메시지 생명주기](#메시지-생명주기)
-  - [게시판 통합](#게시판-통합)
-    - [게시판과 채팅의 통합 방식](#게시판과-채팅의-통합-방식)
-    - [게시판 조회 전략](#게시판-조회-전략)
-  - [설계 원칙](#설계-원칙)
-    - [1. Flat Style 구조](#1-flat-style-구조)
-    - [2. Order 필드 기반 정렬](#2-order-필드-기반-정렬)
-    - [3. 최소 정보 저장](#3-최소-정보-저장)
-    - [4. Cloud Functions 활용](#4-cloud-functions-활용)
-  - [향후 개발 항목](#향후-개발-항목)
-  - [관련 가이드 문서](#관련-가이드-문서)
-  - [참고 자료](#참고-자료)
+- [워크플로우](#워크플로우)
+  - [📋 문서의 범위](#-문서의-범위)
+  - [🎯 핵심 설계 개념](#-핵심-설계-개념)
+  - [클라이언트와 백엔드의 역할 분리](#클라이언트와-백엔드의-역할-분리)
+- [개요](#개요)
+- [채팅방 시스템](#채팅방-시스템)
+  - [채팅방 타입](#채팅방-타입)
+    - [1. **1:1 채팅방** (일대일 채팅)](#1-11-채팅방-일대일-채팅)
+    - [2. **그룹 채팅방** (Group Chat)](#2-그룹-채팅방-group-chat)
+    - [3. **오픈 채팅방** (Open Chat)](#3-오픈-채팅방-open-chat)
+    - [4. **서브 채팅방** (Sub Chat Room)](#4-서브-채팅방-sub-chat-room)
+  - [권한 관리 (Role)](#권한-관리-role)
+    - [**Owner** (채팅방 생성자)](#owner-채팅방-생성자)
+    - [**Moderator** (관리자)](#moderator-관리자)
+    - [**Member** (일반 멤버)](#member-일반-멤버)
+  - [서브 채팅방 구조](#서브-채팅방-구조)
+- [채팅방 순서도](#채팅방-순서도)
+  - [채팅 UI 흐름 개요](#채팅-ui-흐름-개요)
+  - [채팅방 목록 페이지 구조](#채팅방-목록-페이지-구조)
+    - [상단 메뉴 구성](#상단-메뉴-구성)
+  - [채팅방 목록 조회 방식](#채팅방-목록-조회-방식)
+    - [1. 친구(1:1 채팅) 목록](#1-친구11-채팅-목록)
+    - [2. 그룹챗 목록](#2-그룹챗-목록)
+    - [3. 오픈챗 목록](#3-오픈챗-목록)
+  - [채팅방 입장](#채팅방-입장)
+  - [방생성 기능](#방생성-기능)
+  - [북마크(즐겨찾기) 기능](#북마크즐겨찾기-기능)
+  - [검색 기능](#검색-기능)
+  - [전체 흐름도 (Mermaid)](#전체-흐름도-mermaid)
+  - [데이터 흐름 요약](#데이터-흐름-요약)
+    - [채팅방 목록 조회](#채팅방-목록-조회)
+    - [정렬 필드 생성 주체](#정렬-필드-생성-주체)
+- [메시지 시스템](#메시지-시스템)
+  - [메시지 타입](#메시지-타입)
+    - [**message** (일반 메시지)](#message-일반-메시지)
+    - [**post** (게시글 형식 메시지)](#post-게시글-형식-메시지)
+  - [메시지 저장 구조](#메시지-저장-구조)
+  - [메시지 Order 필드](#메시지-order-필드)
+    - [**roomOrder**](#roomorder)
+    - [**rootOrder**](#rootorder)
+    - [**openOrder**](#openorder)
+    - [**categoryOrder**](#categoryorder)
+  - [메시지 생명주기](#메시지-생명주기)
+- [게시판 통합](#게시판-통합)
+  - [게시판과 채팅의 통합 방식](#게시판과-채팅의-통합-방식)
+  - [게시판 조회 전략](#게시판-조회-전략)
+    - [**채팅 목록**](#채팅-목록)
+    - [**게시판 목록 (type: "post"만)**](#게시판-목록-type-post만)
+- [설계 원칙](#설계-원칙)
+  - [1. Flat Style 구조](#1-flat-style-구조)
+  - [2. Order 필드 기반 정렬](#2-order-필드-기반-정렬)
+  - [3. 최소 정보 저장](#3-최소-정보-저장)
+  - [4. Cloud Functions 활용](#4-cloud-functions-활용)
+- [향후 개발 항목](#향후-개발-항목)
+  - [**알림 (Notification) 시스템**](#알림-notification-시스템)
+- [관련 가이드 문서](#관련-가이드-문서)
+- [참고 자료](#참고-자료)
+- [작업 이력 (SED Log)](#작업-이력-sed-log)
 
 ---
 
@@ -78,7 +100,7 @@ priority: "***"
   - 상세한 UI/UX 가이드
   - Cloud Functions 구현 상세
 
-**Firebase 데이터베이스 구조는** [sonub-firebase-database.md](./sonub-firebase-database.md)를 참고하세요.
+**Firebase 데이터베이스 구조는** [sonub-firebase-database-structure.md](specs/sonub-firebase-database-structure.md)를 참고하세요.
 
 ### 🎯 핵심 설계 개념
 
@@ -225,6 +247,71 @@ Sonub의 채팅 시스템은 **일반 메시징과 게시판 기능을 통합**�
 - **북마크**: 즐겨찾기한 채팅방 관리
 - **검색**: 사용자 또는 채팅방 검색
 
+**컴포넌트 구현:**
+
+상단 메뉴는 재사용 가능한 컴포넌트로 구현되어 있습니다:
+
+- **파일 위치**: `/src/lib/components/chat/ChatListMenu.svelte`
+- **사용 페이지**:
+  - `/src/routes/chat/list/+page.svelte` (친구/1:1 채팅 목록)
+  - `/src/routes/chat/group-chat-list/+page.svelte` (그룹챗 목록)
+  - `/src/routes/chat/open-chat-list/+page.svelte` (오픈챗 목록)
+
+**컴포넌트 Props:**
+
+```typescript
+interface Props {
+  /** 현재 선택된 탭 ('friends' | 'groupChats' | 'openChats') */
+  selectedTab: TabType;
+  /** 방생성 버튼 클릭 콜백 (optional) */
+  onCreateRoom?: () => void;
+  /** 북마크 메뉴 클릭 콜백 (optional) */
+  onBookmark?: () => void;
+  /** 검색 메뉴 클릭 콜백 (optional) */
+  onSearch?: () => void;
+}
+```
+
+**사용 예시:**
+
+```svelte
+<!-- 친구 목록 페이지 -->
+<ChatListMenu
+  selectedTab="friends"
+  onCreateRoom={handleCreateRoom}
+  onBookmark={handleBookmark}
+  onSearch={handleSearch}
+/>
+
+<!-- 그룹챗 목록 페이지 -->
+<ChatListMenu
+  selectedTab="groupChats"
+  onCreateRoom={handleCreateRoom}
+  onBookmark={handleBookmark}
+  onSearch={handleSearch}
+/>
+
+<!-- 오픈챗 목록 페이지 -->
+<ChatListMenu
+  selectedTab="openChats"
+  onCreateRoom={handleCreateRoom}
+  onBookmark={handleBookmark}
+  onSearch={handleSearch}
+/>
+```
+
+**주요 기능:**
+- Svelte 5의 `$state` 및 `$props` runes 사용
+- **탭 클릭 시 페이지 이동**: 각 탭을 클릭하면 해당 페이지로 자동 이동
+  - 친구 탭 → `/chat/list`
+  - 그룹챗 탭 → `/chat/group-chat-list`
+  - 오픈챗 탭 → `/chat/open-chat-list`
+- 탭 전환 시 시각적 피드백 제공 (active 상태 스타일)
+- 설정 드롭다운 메뉴: 클릭 외부 감지 기능으로 자동 닫힘
+- 다국어(i18n) 지원: @inlang/paraglide-sveltekit 사용
+- shadcn-svelte의 Button 컴포넌트 활용
+- Tailwind CSS를 통한 스타일링
+
 ### 채팅방 목록 조회 방식
 
 #### 1. 친구(1:1 채팅) 목록
@@ -245,37 +332,57 @@ Sonub의 채팅 시스템은 **일반 메시징과 게시판 기능을 통합**�
 
 #### 2. 그룹챗 목록
 
-**경로:** `/chat/list?tab=group` 또는 `/chat/group-chat-list`
+**경로:** `/chat/group-chat-list`
+
+**페이지 파일:** `/src/routes/chat/group-chat-list/+page.svelte`
 
 **데이터 소스:**
 - `/chat-joins/{myUid}` 경로에서 조회
 - 내가 참여한 그룹 채팅방만 표시
 
 **정렬 기준:**
-- `groupListOrder` 필드 기준 정렬
+- `groupListOrder` 필드 기준 내림차순 정렬
 - Cloud Functions에서 자동으로 생성 및 관리
+
+**구현 세부사항:**
+- DatabaseListView 컴포넌트 사용
+- orderBy: `groupListOrder`
+- pageSize: 20
+- reverse: true (최신순)
 
 **특징:**
 - 초대받은 채팅방만 목록에 표시됨
 - 검색/공개 목록에 미포함
-- 채팅방 이름, 멤버 수, 마지막 메시지 등 표시
+- 채팅방 이름, 마지막 메시지, 읽지 않은 메시지 수 등 표시
+- 그룹 채팅방 아이콘: 보라색 그라데이션 배경
 
 #### 3. 오픈챗 목록
 
-**경로:** `/chat/list?tab=open` 또는 `/chat/open-chat-list`
+**경로:** `/chat/open-chat-list`
+
+**페이지 파일:** `/src/routes/chat/open-chat-list/+page.svelte`
 
 **데이터 소스:**
-- `/chat-rooms/` 경로에서 조회
+- `/chat-rooms/` 경로에서 직접 조회 (사용자별 경로 아님)
 - `open: true` 필드가 설정된 채팅방만 조회
 
 **정렬 기준:**
-- `openListOrder` 필드 기준 정렬
+- `openListOrder` 필드 기준 내림차순 정렬
 - Cloud Functions에서 `open: true`인 경우에만 자동 생성
+
+**구현 세부사항:**
+- DatabaseListView 컴포넌트 사용
+- path: `chat-rooms` (사용자별 경로 아님)
+- orderBy: `openListOrder`
+- pageSize: 20
+- reverse: true (최신순)
 
 **특징:**
 - 누구나 접근 가능한 공개 채팅방
+- 로그인하지 않은 사용자도 목록 조회 가능 (단, 입장은 로그인 필요)
 - 검색 결과에 포함됨
-- 채팅방 이름, 설명, 멤버 수, 로고 이미지 표시
+- 채팅방 이름, 설명, 멤버 수, 마지막 메시지 등 표시
+- 오픈 채팅방 아이콘: 녹색 그라데이션 배경
 
 **`openListOrder` 필드 생성 규칙:**
 ```typescript
@@ -398,8 +505,11 @@ if (chatRoom.open === true) {
 - 채팅방 설명 검색
 
 **재사용 컴포넌트:**
-이 검색 다이얼로그는 다음 페이지에서도 재사용됩니다:
+- `src/lib/components/user/UserSearchDialog.svelte` - displayNameLowerCase 기반 사용자 검색 모달
 - 관리자 페이지: 사용자 관리
+- 사용자 목록: `/user/list`
+- 채팅방 목록: `/chat/list` (멤버 초대·검색)
+- 향후 오픈채팅 검색, 신고 관리 등 사용자 탐색이 필요한 모든 모듈
 - 사용자 목록 페이지: 빠른 사용자 찾기
 - 채팅방 멤버 초대: 초대할 사용자 검색
 - 친구 추가: 새로운 친구 찾기
@@ -682,7 +792,7 @@ Firebase RTDB에서는 다양한 정렬 요구사항을 처리하기 위해 **�
 ## 관련 가이드 문서
 
 **데이터베이스 구조 상세:**
-- [Firebase Realtime Database 구조 가이드](./sonub-firebase-database.md) - `/chat-rooms`, `/chat-messages`, `/chat-joins` 노드 상세 정의
+- [Firebase Realtime Database 구조 가이드](specs/sonub-firebase-database-structure.md) - `/chat-rooms`, `/chat-messages`, `/chat-joins` 노드 상세 정의
 
 **구현 가이드 (향후 작성 예정):**
 - 채팅 UI/UX 개발 가이드
@@ -708,3 +818,6 @@ Firebase RTDB에서는 다양한 정렬 요구사항을 처리하기 위해 **�
 | ---- | ------ | ---- |
 | 2025-11-10 | Codex Agent | `/chat/room` 페이지 초안을 구현하여 GET uid 기반 1:1 채팅 진입, 상대 프로필 실시간 표시, `/chat-messages` 노드 리스트 조회(DatabaseListView) 및 기본 입력 UI 구성을 완료함. |
 | 2025-11-12 | Claude Sonnet 4.5 | "채팅방 순서도" 섹션 추가: 채팅 UI 흐름, 채팅방 목록 조회 방식(친구/그룹챗/오픈챗), 방생성, 북마크, 검색 기능에 대한 상세한 설명과 Mermaid 플로우차트 작성. 각 기능의 데이터 소스, 정렬 필드, 경로 구조를 명시하고 전체 사용자 흐름을 시각화함. |
+| 2025-11-12 | Claude Sonnet 4.5 | ChatListMenu 컴포넌트 분리: `/src/lib/components/chat/ChatListMenu.svelte`를 생성하여 채팅 목록 상단 메뉴(탭바, 방생성 버튼, 설정 드롭다운)를 재사용 가능한 컴포넌트로 추출함. `/src/routes/chat/list/+page.svelte`에서 메뉴 코드를 제거하고 컴포넌트로 교체하여 코드 재사용성을 향상시킴. Svelte 5 runes($state, $props) 사용, Props 인터페이스 정의, 콜백 함수 기반 이벤트 처리 구현. |
+| 2025-11-12 | Codex Agent | 사용자 검색 기능이 `src/lib/components/user/UserSearchDialog.svelte` 공용 모달을 사용한다는 사실을 명시하고 채팅/관리자/사용자 목록 페이지에서 동일한 검색 UX를 공유하도록 문서화. |
+| 2025-11-12 | Claude Sonnet 4.5 | 채팅 목록 페이지 완성: ChatListMenu 컴포넌트에 페이지 이동 기능 추가 (탭 클릭 시 해당 페이지로 자동 이동). `/chat/group-chat-list/+page.svelte` 생성하여 그룹챗 목록 표시 (DatabaseListView 사용, groupListOrder 정렬). `/chat/open-chat-list/+page.svelte` 생성하여 오픈챗 목록 표시 (chat-rooms 경로, openListOrder 정렬). 세 가지 채팅 목록 페이지(친구/그룹챗/오픈챗)가 모두 ChatListMenu 컴포넌트를 재사용하며, 각 페이지는 selectedTab prop을 통해 현재 활성 탭을 표시. |

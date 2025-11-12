@@ -238,5 +238,9 @@
 	"chatTabGroupChats": "グループチャット",
 	"chatTabOpenChats": "オープンチャット",
 	"chatTabBookmarks": "ブックマーク",
-	"chatTabSearch": "検索"
+	"chatTabSearch": "検索",
+	"chatCreateRoom": "ルーム作成",
+	"chatFindFriends": "友達を探す",
+	"chatCreateGroupChat": "グループチャット作成",
+	"chatCreateOpenChat": "オープンチャット作成"
 }

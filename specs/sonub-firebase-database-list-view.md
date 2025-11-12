@@ -3203,6 +3203,7 @@ DatabaseListView 컴포넌트를 다른 프로젝트에 재사용하려면:
 ```
 
 > 📌 이 옵션은 `/user/list` 페이지의 검색 모달에서 사용됩니다. 사용자가 입력한 닉네임을 소문자로 변환해 `equalToValue`로 전달하면 RTDB에서 해당 이름과 완전히 일치하는 사용자만 즉시 표시할 수 있습니다.
+> 실제 UI는 `src/lib/components/user/UserSearchDialog.svelte`를 재사용하여 `orderBy="displayNameLowerCase"` + `equalToValue` 조합을 일관되게 캡슐화합니다.
 
 #### 21.3.3. scrollTrigger (스크롤 방향)
 
@@ -4632,6 +4633,7 @@ export async function handleUserCreate(uid: string, userData: UserData) {
 | 2025-11-09 | 2.0.0 | 종합 문서화 완료 (SED 형식) |
 | 2025-11-11 | 3.0.0 | 전체 Props, Controller API, 범용 사용 가이드 추가 |
 | 2025-11-11 | 3.1.0 | `equalToValue` 기반 정확 일치 필터와 사용자 검색 예시 추가 |
+| 2025-11-12 | 3.2.0 | `UserSearchDialog` 공용 컴포넌트 도입을 명시하고 `/user/list` 검색 UX 재사용 지침을 추가 |
 
 ## 작업 이력 (SED Log)
 
@@ -4641,6 +4643,7 @@ export async function handleUserCreate(uid: string, userData: UserData) {
 | 2025-11-10 | Codex Agent | 사용자 목록 타일 하단에 `채팅`/`공개 프로필` 칩을 추가하여 `/chat/room?uid=...`로 바로 이동하도록 UX 개선, DatabaseListView 예제가 채팅 흐름과 연결되도록 업데이트함. |
 | 2025-11-11 | Claude Code | DatabaseListView 컴포넌트의 전체 Props 레퍼런스 (reverse, scrollTrigger, autoScrollToEnd, threshold 등), Controller API (refresh, scrollToTop, scrollToBottom), 그리고 범용 활용 가이드 추가. 모든 RTDB 데이터 목록 표시에 DatabaseListView 사용 필수 명시. |
 | 2025-11-11 | Codex Agent | `equalToValue` 정확 일치 필터와 `/user/list` 검색 모달 사례를 문서화하여 displayNameLowerCase 기반 사용자 검색 흐름을 정식 지원. |
+| 2025-11-12 | Codex Agent | 사용자 검색 모달을 `UserSearchDialog` 컴포넌트로 분리한 내용을 반영하고 equalToValue 예시와 연동 경로를 업데이트. |
 
 ---
 

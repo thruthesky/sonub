@@ -208,7 +208,7 @@
 
 	/* 언어 선택 드롭다운 스타일 */
 	.language-select {
-		@apply w-full cursor-pointer rounded-lg border-2 border-gray-300 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm transition-all duration-200 hover:border-blue-400 hover:shadow focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50;
+		@apply w-full cursor-pointer rounded-lg border-2 border-gray-300 bg-white px-3 py-2.5 text-sm font-medium text-gray-900 shadow-sm transition-all duration-200 hover:border-blue-400 hover:shadow focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50;
 	}
 
 	/* 버전 카드 스타일 */

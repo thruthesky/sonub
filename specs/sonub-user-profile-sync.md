@@ -871,6 +871,6 @@ Firebase Console > Realtime Database에서 수동 확인:
 - [Vitest Documentation](https://vitest.dev/)
 - [Playwright Testing](https://playwright.dev/)
 - [sonub-setup-firebase.md](./sonub-setup-firebase.md)
-- [sonub-firebase-database.md](./sonub-firebase-database.md)
+- [sonub-firebase-database-structure.md](specs/sonub-firebase-database-structure.md)
 - [sonub-user-login.md](./sonub-user-login.md)
 - [sonub-user-props.md](./sonub-user-props.md)

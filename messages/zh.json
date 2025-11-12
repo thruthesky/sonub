@@ -290,5 +290,8 @@
 	"chatTabOpenChats": "开放聊天",
 	"chatTabBookmarks": "书签",
 	"chatTabSearch": "搜索",
-	"chatCreateRoom": "创建房间"
+	"chatCreateRoom": "创建房间",
+	"chatFindFriends": "查找好友",
+	"chatCreateGroupChat": "创建群聊",
+	"chatCreateOpenChat": "创建开放聊天"
 }

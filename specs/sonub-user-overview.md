@@ -70,12 +70,13 @@ SNS 웹 프로젝트에서 사용자의 프로필 정보는 다음과 같이 구
 - 검색 중에는 DatabaseListView를 `{#key users-search-${keyword}}`로 래핑해 컴포넌트를 재구독하며, 결과 배지는 "검색 결과" 문구와 초기화 버튼을 함께 제공한다.
 - 모달 하단에는 `검색 초기화` 버튼을 두어 입력값과 활성 검색 상태를 동시에 초기화한다. 이 버튼 또한 shadcn-svelte `Button` 컴포넌트를 사용한다.
 - 검색이 비활성화되면 기본 목록(정렬 기준: `createdAt`)으로 자동 복귀하며, 실시간 listener는 기존과 동일하게 유지된다.
+- 사용자 검색 다이얼로그는 `src/lib/components/user/UserSearchDialog.svelte` 컴포넌트를 공통으로 사용하여 관리자 페이지, 채팅 목록 등 다른 화면에서도 동일한 UX와 로직을 재사용한다.
 
 ---
 
 # 사용자 프로필 데이터 구조
 
-- 사용자 데이터 구조는 [Firebase Realtime Database 구조 설계](./sonub-firebase-database.md) 문서를 참고합니다.
+- 사용자 데이터 구조는 [Firebase Realtime Database 구조 설계](specs/sonub-firebase-database-structure.md) 문서를 참고합니다.
 
 ---
 
@@ -101,3 +102,11 @@ SNS 웹 프로젝트에서 사용자의 프로필 정보는 다음과 같이 구
 5. **displayName은 필수 필드**: 사용자 식별을 위해 반드시 필요
 6. **user-props로 대량 쿼리 최적화**: 특정 속성만 필요할 때 `/user-props/` 경로 사용하여 효율성 향상
 7. **Cloud Functions로 자동 동기화**: 프로필 업데이트 시 user-props도 자동으로 동기화되어 데이터 일관성 보장
+
+---
+
+## 작업 이력 (SED Log)
+
+| 날짜 | 작업자 | 내용 |
+| ---- | ------ | ---- |
+| 2025-11-12 | Codex Agent | 사용자 검색 모달을 `src/lib/components/user/UserSearchDialog.svelte`로 분리하고 `/user/list` 명세에 재사용 기준을 명시. |

@@ -917,7 +917,7 @@ test.describe('My Report List', () => {
 - [Playwright Testing](https://playwright.dev/)
 - [Vitest Documentation](https://vitest.dev/)
 - [sonub-setup-firebase.md](./sonub-setup-firebase.md)
-- [sonub-firebase-database.md](./sonub-firebase-database.md)
+- [sonub-firebase-database-structure.md](specs/sonub-firebase-database-structure.md)
 - [sonub-user-login.md](./sonub-user-login.md)
 - [sonub-design-workflow.md](./sonub-design-workflow.md)
 - [sonub-setup-svelte.md](./sonub-setup-svelte.md)

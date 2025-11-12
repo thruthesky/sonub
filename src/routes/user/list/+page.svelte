@@ -8,26 +8,16 @@
 
   import DatabaseListView from '$lib/components/DatabaseListView.svelte';
   import Avatar from '$lib/components/user/avatar.svelte';
+  import UserSearchDialog from '$lib/components/user/UserSearchDialog.svelte';
   import { Button } from '$lib/components/ui/button/index.js';
-  import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle
-  } from '$lib/components/ui/dialog';
   import { formatLongDate } from '$lib/functions/date.functions';
   import { m } from '$lib/paraglide/messages.js';
 
   const DEFAULT_PAGE_SIZE = 15;
 
   let searchDialogOpen = $state(false);
-  let searchInput = $state('');
+  let dialogKeyword = $state('');
   let activeSearch = $state('');
-
-  // 검색 입력창 참조 (자동 포커스용)
-  let searchInputRef: HTMLInputElement | null = $state(null);
 
   const normalizedSearch = $derived.by(() => activeSearch.trim());
   const isSearching = $derived.by(() => normalizedSearch.length > 0);
@@ -38,34 +28,25 @@
   const listPageSize = $derived.by(() => (isSearching ? 50 : DEFAULT_PAGE_SIZE));
 
   function openSearchDialog() {
-    searchInput = activeSearch;
+    dialogKeyword = activeSearch;
     searchDialogOpen = true;
   }
 
-  function handleSearchSubmit(event: SubmitEvent) {
-    event.preventDefault();
-    const trimmed = searchInput.trim().toLowerCase();
-    activeSearch = trimmed;
-    searchDialogOpen = false;
+  function handleDialogSearch(event: CustomEvent<{ keyword: string }>) {
+    const { keyword } = event.detail;
+    activeSearch = keyword;
+    dialogKeyword = keyword;
+  }
+
+  function handleDialogClear() {
+    clearSearch();
   }
 
   function clearSearch() {
-    searchInput = '';
+    dialogKeyword = '';
     activeSearch = '';
     searchDialogOpen = false;
   }
-
-  $effect(() => {
-    if (searchDialogOpen) {
-      searchInput = activeSearch;
-      // 다이얼로그가 열리면 입력창에 자동 포커스
-      if (searchInputRef) {
-        requestAnimationFrame(() => {
-          searchInputRef?.focus();
-        });
-      }
-    }
-  });
 </script>
 
 <svelte:head>
@@ -95,45 +76,12 @@
     {/if}
   </div>
 
-  <Dialog bind:open={searchDialogOpen}>
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>사용자 검색</DialogTitle>
-        <DialogDescription>
-          displayNameLowerCase 필드가 정확히 일치하는 사용자를 찾습니다. 입력값은 자동으로 소문자로 변환됩니다.
-        </DialogDescription>
-      </DialogHeader>
-
-      <form class="search-form" onsubmit={handleSearchSubmit}>
-        <label class="search-label">
-          검색할 사용자 이름 (소문자 기준)
-          <input
-            bind:this={searchInputRef}
-            type="text"
-            placeholder="예: sonub"
-            bind:value={searchInput}
-            class="search-input"
-            minlength="2"
-            required
-            onkeydown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleSearchSubmit(e as any);
-              }
-            }}
-          />
-        </label>
-        <p class="search-hint">
-          Firebase RTDB 의 `displayNameLowerCase` 필드와 일치해야 하므로 공백/대소문자를 제거한 형태로 입력해주세요.
-        </p>
-
-        <DialogFooter>
-          <Button type="button" variant="ghost" onclick={clearSearch}>검색 초기화</Button>
-          <Button type="submit">검색하기</Button>
-        </DialogFooter>
-      </form>
-    </DialogContent>
-  </Dialog>
+  <UserSearchDialog
+    bind:open={searchDialogOpen}
+    bind:keyword={dialogKeyword}
+    on:search={handleDialogSearch}
+    on:clear={handleDialogClear}
+  />
 
   {#key listKey}
     <DatabaseListView
@@ -279,41 +227,6 @@
     color: #fbbf24;
     font-size: 0.8rem;
     cursor: pointer;
-  }
-
-  .search-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-top: 0.5rem;
-  }
-
-  .search-label {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    font-size: 0.9rem;
-    color: #374151;
-    font-weight: 600;
-  }
-
-  .search-input {
-    width: 100%;
-    border: 1px solid #d1d5db;
-    border-radius: 0.5rem;
-    padding: 0.65rem 0.85rem;
-    font-size: 1rem;
-  }
-
-  .search-input:focus {
-    outline: 2px solid #111827;
-    border-color: #111827;
-  }
-
-  .search-hint {
-    margin: 0;
-    font-size: 0.85rem;
-    color: #6b7280;
   }
 
   .page-header {

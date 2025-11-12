@@ -84,6 +84,8 @@
 </aside>
 
 <style>
+	@import 'tailwindcss' reference;
+
 	/* 프로필 카드 스타일 */
 	.profile-card {
 		@apply border-blue-100 bg-gradient-to-br from-blue-50 to-white shadow-md;
