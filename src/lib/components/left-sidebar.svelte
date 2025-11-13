@@ -23,16 +23,19 @@
 
 	const upcomingTodos = [
 		{
+			order: '7',
 			id: 'chat-invites',
 			title: () => m.sidebarTodoChatInvites(),
 			description: () => m.sidebarTodoChatInvitesDesc()
 		},
 		{
+			order: '8',
 			id: 'post-type',
 			title: () => m.sidebarTodoPostType(),
 			description: () => m.sidebarTodoPostTypeDesc()
 		},
 		{
+			order: '9',
 			id: 'board-stats',
 			title: () => m.sidebarTodoBoardStats(),
 			description: () => m.sidebarTodoBoardStatsDesc()
@@ -189,7 +192,7 @@
 					{#each upcomingTodos as todo}
 						<li class="todo-summary-item">
 							<div class="todo-summary-title">
-								<span class="todo-marker" aria-hidden="true"></span>
+								<span class="todo-order">{todo.order}</span>
 								{todo.title()}
 							</div>
 							<p class="todo-summary-desc">
@@ -326,8 +329,8 @@
 		@apply mt-1 text-xs leading-relaxed text-gray-600;
 	}
 
-	.todo-marker {
-		@apply h-2 w-2 rounded-full bg-indigo-500 shadow;
+	.todo-order {
+		@apply flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white shadow;
 	}
 
 	/* 활동 텍스트 스타일 */

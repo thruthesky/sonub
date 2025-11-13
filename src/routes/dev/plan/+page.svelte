@@ -299,9 +299,17 @@
 				<ul class="todo-list">
 					<li>게시판에서 글을 작성하면 해당 채팅방의 메시지 목록에 자동으로 표시</li>
 					<li>type: "post"인 메시지를 채팅방 메시지 목록에 통합하여 표시</li>
+					<li>
+						<strong>양방향 동기화:</strong> 게시판에서 글을 작성하면 채팅 메시지로 추가되고, 반대로
+						채팅 메시지에서 글/post 형태로 메시지를 작성하면 게시판에 표시
+					</li>
 					<li>채팅방 화면에서 일반 메시지와 게시글을 구분하여 렌더링</li>
 					<li>게시글은 제목, 카테고리, 미리보기 형태로 표시</li>
 					<li>클릭 시 게시글 상세 페이지로 이동</li>
+					<li>
+						<strong>멤버 정보 표시:</strong> 게시판에 총 몇 명의 멤버가 있는지 표시하고, 채팅방
+						정보를 표시
+					</li>
 				</ul>
 			</Card.Content>
 		</Card.Root>
@@ -412,6 +420,99 @@
 							<li>결제 실패/성공 이메일 알림</li>
 							<li>관리자 대시보드에서 결제 내역 조회</li>
 							<li>환불 요청 처리 시스템</li>
+						</ul>
+					</div>
+				</div>
+			</Card.Content>
+		</Card.Root>
+
+		<!-- 13. 다음 버전 기능 -->
+		<Card.Root class="todo-card">
+			<Card.Header>
+				<div class="flex items-start gap-3">
+					<span class="todo-number">13</span>
+					<div class="flex flex-col gap-1">
+						<Card.Title class="text-xl">다음 버전 기능</Card.Title>
+						<span class="todo-badge todo-badge--pending">📋 예정</span>
+					</div>
+				</div>
+			</Card.Header>
+			<Card.Content>
+				<div class="space-y-4">
+					<div>
+						<h4 class="todo-subtitle">13-1. 서브 채팅방 (Sub Chat Room)</h4>
+						<ul class="todo-list">
+							<li>
+								<strong>용도:</strong> 내가 운영 중인 여러 개의 채팅방을 하나로 묶어서 하나의
+								채팅방처럼 메시지를 모두 보고자 할 때 사용
+							</li>
+							<li><strong>특징:</strong> 부모 채팅방은 읽기 전용 (read-only)</li>
+							<li>부모 채팅방에서 모든 서브 채팅방의 메시지를 통합하여 표시</li>
+							<li>
+								<strong>커뮤니케이션 제약:</strong> 서브 채팅방에서 생성한 메시지는 해당 서브
+								채팅방의 멤버만 읽을 수 있음
+							</li>
+							<li>
+								부모 채팅방에서 답변이나 관련 대화를 해도 서브 채팅방에서는 보이지 않는 구조적
+								제약 존재
+							</li>
+							<li>
+								<strong>해결 방안:</strong> 채팅은 반드시 서브 채팅방에 입장해서만 가능하도록
+								구현
+							</li>
+							<li>
+								데이터 구조: <code>/chat-rooms/{'{parentRoomId}'}/subRooms/{'{subRoomId}'}</code>
+							</li>
+							<li>부모 채팅방 UI에서 서브 채팅방 목록 및 빠른 전환 기능 제공</li>
+						</ul>
+					</div>
+					<div>
+						<h4 class="todo-subtitle">13-2. 관리자 페이지 (Dashboard) 및 관리자 기능</h4>
+						<ul class="todo-list">
+							<li>관리자 권한 시스템 구현 (<code>/users/{'{uid}'}/isAdmin: boolean</code>)</li>
+							<li>
+								<strong>대시보드 기능:</strong>
+								<ul class="todo-list ml-4">
+									<li>전체 사용자 통계 (가입자 수, 활성 사용자, 신규 가입자)</li>
+									<li>채팅방 통계 (전체 채팅방 수, 활성 채팅방, 메시지 수)</li>
+									<li>결제 통계 (총 매출, 결제 건수, 평균 결제 금액)</li>
+									<li>콕 포인트 통계 (총 콕 발행량, 사용량, 잔여량)</li>
+								</ul>
+							</li>
+							<li>
+								<strong>사용자 관리:</strong>
+								<ul class="todo-list ml-4">
+									<li>사용자 목록 조회 및 검색</li>
+									<li>사용자 상세 정보 확인</li>
+									<li>사용자 계정 활성화/비활성화</li>
+									<li>사용자 권한 수정 (일반 사용자 ↔ 관리자)</li>
+								</ul>
+							</li>
+							<li>
+								<strong>채팅방 관리:</strong>
+								<ul class="todo-list ml-4">
+									<li>모든 채팅방 목록 조회</li>
+									<li>부적절한 채팅방 삭제</li>
+									<li>채팅방 메시지 모니터링</li>
+									<li>신고된 채팅방/메시지 처리</li>
+								</ul>
+							</li>
+							<li>
+								<strong>결제 관리:</strong>
+								<ul class="todo-list ml-4">
+									<li>결제 내역 조회 및 검색</li>
+									<li>환불 처리</li>
+									<li>결제 오류 로그 확인</li>
+								</ul>
+							</li>
+							<li>
+								<strong>시스템 로그:</strong>
+								<ul class="todo-list ml-4">
+									<li>Cloud Functions 실행 로그</li>
+									<li>FCM 전송 로그</li>
+									<li>에러 로그 및 모니터링</li>
+								</ul>
+							</li>
 						</ul>
 					</div>
 				</div>
