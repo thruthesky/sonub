@@ -256,6 +256,42 @@
 		padding-left: calc(0.75rem - 3px);
 	}
 
+	/* 개발 링크 스타일 */
+	.dev-link {
+		@apply flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-indigo-50 hover:text-indigo-600;
+	}
+
+	.dev-link.active {
+		@apply bg-gradient-to-r from-indigo-50 to-indigo-100 text-indigo-700 shadow-sm;
+		border-left: 3px solid theme('colors.indigo.600');
+		padding-left: calc(0.75rem - 3px);
+	}
+
+	/* 개발 기능 요약 스타일 */
+	.dev-summary {
+		@apply rounded-lg bg-gradient-to-br from-indigo-50 to-purple-50 p-3 space-y-2;
+	}
+
+	.dev-summary-header {
+		@apply flex items-center gap-2 text-xs font-semibold text-indigo-700 uppercase tracking-wide;
+	}
+
+	.dev-feature-list {
+		@apply space-y-1.5;
+	}
+
+	.dev-feature-list li {
+		@apply flex items-center gap-2 text-sm text-gray-700;
+	}
+
+	.feature-number {
+		@apply flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white;
+	}
+
+	.feature-name {
+		@apply text-xs font-medium text-gray-800;
+	}
+
 	/* 활동 텍스트 스타일 */
 	.activity-text {
 		@apply text-sm text-gray-500 italic;
