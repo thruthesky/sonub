@@ -144,7 +144,7 @@
 					개발일지
 				</Card.Title>
 			</Card.Header>
-			<Card.Content class="space-y-1">
+			<Card.Content class="space-y-3">
 				<a href="/dev/plan" class="dev-link" class:active={isActivePath('/dev/plan')}>
 					<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 						<path
@@ -156,6 +156,31 @@
 					</svg>
 					개발 계획
 				</a>
+
+				<!-- 최근 추가된 기능 요약 -->
+				<div class="dev-summary">
+					<div class="dev-summary-header">
+						<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M12 4v16m8-8H4"
+							/>
+						</svg>
+						<span>최근 추가 기능</span>
+					</div>
+					<ul class="dev-feature-list">
+						<li>
+							<span class="feature-number">10</span>
+							<span class="feature-name">남/여 찾기 (콕 포인트)</span>
+						</li>
+						<li>
+							<span class="feature-number">11</span>
+							<span class="feature-name">토스/페이팔 결제</span>
+						</li>
+					</ul>
+				</div>
 			</Card.Content>
 		</Card.Root>
 

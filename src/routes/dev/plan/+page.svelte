@@ -261,6 +261,118 @@
 				</ul>
 			</Card.Content>
 		</Card.Root>
+
+		<!-- 10. 남/여 찾기 기능 (콕 포인트 시스템) -->
+		<Card.Root class="todo-card">
+			<Card.Header>
+				<div class="flex items-start gap-3">
+					<span class="todo-number">10</span>
+					<div class="flex flex-col gap-1">
+						<Card.Title class="text-xl">남/여 찾기 기능 (콕 포인트 시스템)</Card.Title>
+						<span class="todo-badge todo-badge--pending">📋 예정</span>
+					</div>
+				</div>
+			</Card.Header>
+			<Card.Content>
+				<div class="space-y-4">
+					<div>
+						<h4 class="todo-subtitle">10-1. 콕(Coke) 가상 포인트 시스템</h4>
+						<ul class="todo-list">
+							<li>콕은 채팅에 사용하는 가상 포인트 (연료/코크스 의미)</li>
+							<li>1콕 = 1원</li>
+							<li><code>/user-points/{'{uid}'}/coke</code>에 보유 콕 수 저장</li>
+							<li>콕 구매 히스토리 기록: <code>/coke-purchases/{'{uid}'}/{'{purchaseId}'}</code></li>
+						</ul>
+					</div>
+					<div>
+						<h4 class="todo-subtitle">10-2. 무료 채팅 한도</h4>
+						<ul class="todo-list">
+							<li>모르는 사람과 총 50명까지 무료 채팅 가능</li>
+							<li>총 채팅 메시지 200번까지 무료 (모르는 사람 대상)</li>
+							<li><code>/user-chat-limits/{'{uid}'}/freePeopleCount</code>: 무료로 채팅한 사람 수</li>
+							<li><code>/user-chat-limits/{'{uid}'}/freeMessageCount</code>: 무료 메시지 전송 횟수</li>
+						</ul>
+					</div>
+					<div>
+						<h4 class="todo-subtitle">10-3. 콕 소비 규칙</h4>
+						<ul class="todo-list">
+							<li>모르는 사람에게 처음 채팅 시작: 30콕 소모</li>
+							<li>20단어 이하 메시지: 10콕 소모</li>
+							<li>20단어 초과 메시지: 20콕 소모</li>
+							<li>친구 또는 이미 채팅 중인 사람: 무료</li>
+							<li>Cloud Functions에서 메시지 전송 시 콕 차감 처리</li>
+						</ul>
+					</div>
+					<div>
+						<h4 class="todo-subtitle">10-4. 남/여 찾기 UI</h4>
+						<ul class="todo-list">
+							<li>성별 필터링 옵션 (남성/여성/전체)</li>
+							<li>랜덤 매칭 기능</li>
+							<li>사용자 프로필 미리보기 (프로필 사진, 닉네임, 간단한 소개)</li>
+							<li>채팅 시작 전 콕 소모량 안내</li>
+							<li><code>/users/{'{uid}'}/gender</code> 기반 검색</li>
+						</ul>
+					</div>
+				</div>
+			</Card.Content>
+		</Card.Root>
+
+		<!-- 11. 토스/페이팔 결제 기능 -->
+		<Card.Root class="todo-card">
+			<Card.Header>
+				<div class="flex items-start gap-3">
+					<span class="todo-number">11</span>
+					<div class="flex flex-col gap-1">
+						<Card.Title class="text-xl">토스 페이먼츠 & 페이팔 결제 기능</Card.Title>
+						<span class="todo-badge todo-badge--pending">📋 예정</span>
+					</div>
+				</div>
+			</Card.Header>
+			<Card.Content>
+				<div class="space-y-4">
+					<div>
+						<h4 class="todo-subtitle">11-1. 토스 페이먼츠 연동 (국내 결제)</h4>
+						<ul class="todo-list">
+							<li>토스 페이먼츠 SDK 클라이언트 통합</li>
+							<li>결제 수단: 카드, 계좌이체, 간편결제 등</li>
+							<li>Cloud Functions에서 결제 승인 처리</li>
+							<li>결제 성공 시 콕 자동 충전</li>
+							<li><code>/payments/{'{paymentId}'}</code>에 결제 기록 저장</li>
+						</ul>
+					</div>
+					<div>
+						<h4 class="todo-subtitle">11-2. 페이팔 연동 (해외 결제)</h4>
+						<ul class="todo-list">
+							<li>PayPal JavaScript SDK 통합</li>
+							<li>전세계 사용자를 위한 다국가 결제 지원</li>
+							<li>Cloud Functions에서 IPN(Instant Payment Notification) 처리</li>
+							<li>환율 적용 및 콕 충전</li>
+							<li>결제 실패/환불 처리 로직</li>
+						</ul>
+					</div>
+					<div>
+						<h4 class="todo-subtitle">11-3. 콕 상품 패키지</h4>
+						<ul class="todo-list">
+							<li>기본 패키지: 100콕 (100원)</li>
+							<li>인기 패키지: 1,000콕 (900원, 10% 할인)</li>
+							<li>프리미엄 패키지: 5,000콕 (4,000원, 20% 할인)</li>
+							<li>VIP 패키지: 10,000콕 (7,000원, 30% 할인)</li>
+							<li><code>/coke-packages/{'{packageId}'}</code>에 패키지 정보 저장</li>
+						</ul>
+					</div>
+					<div>
+						<h4 class="todo-subtitle">11-4. 결제 보안 및 로깅</h4>
+						<ul class="todo-list">
+							<li>모든 결제는 HTTPS를 통해서만 처리</li>
+							<li>결제 정보는 암호화하여 저장</li>
+							<li>결제 실패/성공 이메일 알림</li>
+							<li>관리자 대시보드에서 결제 내역 조회</li>
+							<li>환불 요청 처리 시스템</li>
+						</ul>
+					</div>
+				</div>
+			</Card.Content>
+		</Card.Root>
 	</div>
 </div>
 
