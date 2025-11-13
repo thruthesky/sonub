@@ -30,6 +30,8 @@ import {
   handleChatRoomCreate,
   handleChatRoomMemberJoin,
   handleChatRoomMemberLeave,
+  handleChatRoomPinCreate,
+  handleChatRoomPinDelete,
 } from "./handlers/chat.handler";
 
 // 상수 정의
@@ -334,5 +336,96 @@ export const onChatRoomMemberLeave = onValueDeleted(
 
     // 비즈니스 로직 핸들러 호출
     return await handleChatRoomMemberLeave(roomId, uid);
+  }
+);
+
+
+
+/**
+ * 채팅방 핀 생성 시 트리거되는 Cloud Function
+ *
+ * 트리거 경로: /chat-joins/{uid}/{roomId}/pin
+ * 트리거 조건: pin 필드가 생성될 때 (set(true))
+ *
+ * 수행 작업:
+ * 1. chat-joins/{uid}/{roomId}의 모든 데이터 읽기
+ * 2. xxxListOrder 또는 xxxChatListOrder로 끝나는 모든 필드 찾기
+ * 3. 각 order 필드에 "500" prefix 추가
+ *
+ * 참고:
+ * - Prefix 규칙: "500" (핀됨) > "200" (읽지 않음) > "" (읽음)
+ * - 클라이언트는 pin: true로 설정
+ * - Cloud Functions가 모든 order 필드를 자동으로 업데이트
+ *
+ * 비즈니스 로직은 handlers/chat.handler.ts의 handleChatRoomPinCreate() 참조
+ */
+export const onChatRoomPinCreate = onValueCreated(
+  {
+    ref: "/chat-joins/{uid}/{roomId}/pin",
+    region: FIREBASE_REGION,
+  },
+  async (event) => {
+    const uid = event.params.uid as string;
+    const roomId = event.params.roomId as string;
+    const pinValue = event.data.val() as boolean | null | undefined;
+
+    logger.info("채팅방 핀 생성 감지", {
+      uid,
+      roomId,
+      pinValue,
+    });
+
+    // pin 값이 true인 경우에만 처리
+    if (pinValue !== true) {
+      logger.warn("핀 값이 true가 아님, 처리 건너뜀", {
+        uid,
+        roomId,
+        pinValue,
+      });
+      return;
+    }
+
+    // 비즈니스 로직 핸들러 호출
+    return await handleChatRoomPinCreate(uid, roomId);
+  }
+);
+
+/**
+ * 채팅방 핀 삭제 시 트리거되는 Cloud Function
+ *
+ * 트리거 경로: /chat-joins/{uid}/{roomId}/pin
+ * 트리거 조건: pin 필드가 삭제될 때 (set(null))
+ *
+ * 수행 작업:
+ * 1. chat-joins/{uid}/{roomId}의 모든 데이터 읽기
+ * 2. xxxListOrder 또는 xxxChatListOrder로 끝나는 모든 필드 찾기
+ * 3. newMessageCount > 0이면 "200" prefix 추가
+ * 4. newMessageCount === 0이면 prefix 제거 (순수 timestamp)
+ *
+ * 참고:
+ * - Prefix 규칙: "500" (핀됨) > "200" (읽지 않음) > "" (읽음)
+ * - 클라이언트는 pin 필드를 삭제 (set(null))
+ * - Cloud Functions가 모든 order 필드를 자동으로 업데이트
+ *
+ * 비즈니스 로직은 handlers/chat.handler.ts의 handleChatRoomPinDelete() 참조
+ */
+export const onChatRoomPinDelete = onValueDeleted(
+  {
+    ref: "/chat-joins/{uid}/{roomId}/pin",
+    region: FIREBASE_REGION,
+  },
+  async (event) => {
+    const uid = event.params.uid as string;
+    const roomId = event.params.roomId as string;
+    const oldPinValue = event.data.val() as boolean | null | undefined;
+
+    logger.info("채팅방 핀 삭제 감지", {
+      uid,
+      roomId,
+      oldPinValue,
+    });
+
+    // 비즈니스 로직 핸들러 호출
+    return await handleChatRoomPinDelete(uid, roomId);
   }
 );

@@ -12,8 +12,10 @@
 	import { goto } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
 	import { formatLongDate } from '$lib/functions/date.functions';
-	import { resolveRoomTypeLabel } from '$lib/functions/chat.functions';
+	import { resolveRoomTypeLabel, togglePinChatRoom } from '$lib/functions/chat.functions';
 	import ChatListMenu from '$lib/components/chat/ChatListMenu.svelte';
+	import ChatFavoritesDialog from '$lib/components/chat/ChatFavoritesDialog.svelte';
+	import { rtdb } from '$lib/firebase';
 
 	type ChatJoinData = Record<string, unknown>;
 
@@ -21,7 +23,11 @@
 	const JOIN_ORDER_FIELD = 'openAndGroupChatListOrder';
 
 	// ChatCreateDialog 상태
-	let createDialogOpen = $state(false);
+	let createDialogOpen = $state(false); // 그룹 채팅방 생성
+	let openChatDialogOpen = $state(false); // 오픈 채팅방 생성
+
+	// ChatFavoritesDialog 상태
+	let favoritesDialogOpen = $state(false);
 
 	/**
 	 * 방생성 버튼 클릭 핸들러
@@ -37,7 +43,7 @@
 	 */
 	function handleRoomCreated(event: CustomEvent<{ roomId: string }>) {
 		const { roomId } = event.detail;
-		console.log('✅ 그룹 채팅방 생성 완료, 이동:', roomId);
+		console.log('✅ 채팅방 생성 완료, 이동:', roomId);
 		void goto(`/chat/room?roomId=${roomId}`);
 	}
 
@@ -51,26 +57,26 @@
 
 	/**
 	 * 그룹챗 생성 메뉴 클릭 핸들러
+	 * 그룹 채팅방 생성 다이얼로그를 엽니다.
 	 */
 	function handleCreateGroupChat() {
-		console.log('그룹챗 생성 메뉴 클릭됨');
-		// TODO: 그룹챗 생성 기능 구현
+		createDialogOpen = true;
 	}
 
 	/**
 	 * 오픈챗 생성 메뉴 클릭 핸들러
+	 * 오픈 채팅방 생성 다이얼로그를 엽니다.
 	 */
 	function handleCreateOpenChat() {
-		console.log('오픈챗 생성 메뉴 클릭됨');
-		// TODO: 오픈챗 생성 기능 구현
+		openChatDialogOpen = true;
 	}
 
 	/**
-	 * 북마크 메뉴 클릭 핸들러
+	 * 즐겨찾기 메뉴 클릭 핸들러
+	 * 즐겨찾기 다이얼로그를 엽니다.
 	 */
 	function handleBookmark() {
-		console.log('북마크 메뉴 클릭됨');
-		// TODO: 북마크 기능 구현
+		favoritesDialogOpen = true;
 	}
 
 	/**
@@ -79,6 +85,40 @@
 	function handleSearch() {
 		console.log('검색 메뉴 클릭됨');
 		// TODO: 검색 기능 구현
+	}
+
+	/**
+	 * 즐겨찾기에서 채팅방 선택 핸들러
+	 * 선택된 채팅방으로 이동합니다.
+	 */
+	function handleRoomSelected(event: CustomEvent<{ roomId: string }>) {
+		const { roomId } = event.detail;
+		void goto(`/chat/room?roomId=${roomId}`);
+	}
+
+	/**
+	 * 채팅방 핀 토글 핸들러
+	 * 클릭 시 채팅방을 핀하거나 핀 해제합니다
+	 */
+	async function handleTogglePin(
+		event: MouseEvent,
+		roomId: string,
+		roomType: string
+	): Promise<void> {
+		event.stopPropagation(); // 버튼 클릭 이벤트 전파 방지
+
+		const uid = authStore.user?.uid;
+		if (!uid) {
+			console.error('사용자 인증 정보가 없습니다');
+			return;
+		}
+
+		try {
+			const isPinned = await togglePinChatRoom(rtdb, roomId, uid, roomType);
+			console.log(`✅ 채팅방 핀 ${isPinned ? '설정' : '해제'} 완료:`, roomId);
+		} catch (error) {
+			console.error('채팅방 핀 토글 실패:', error);
+		}
 	}
 
 	// 현재 로그인 사용자의 chat-joins 경로
@@ -207,44 +247,56 @@
 						{@const timestamp = Number(join.lastMessageAt ?? join.updatedAt ?? join.joinedAt ?? 0) || null}
 						{@const unreadCount = Number(join.newMessageCount ?? join.unreadCount ?? join.unread ?? 0) || 0}
 						{@const roomTitle = resolveRoomTitle(join, roomId || m.chatChatRoom())}
-						<button
-							type="button"
-							class="flex w-full items-start gap-4 border-b border-gray-100 p-4 text-left transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-							onclick={() => openConversation(join, roomId)}
-						>
-							<div class="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-blue-500 text-sm font-semibold text-white shadow-sm">
-								{roomTitle.slice(0, 2)}
-							</div>
-
-							<div class="flex-1 space-y-1">
-								<div class="flex flex-wrap items-center gap-x-2 text-sm text-gray-500">
-									<span class="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-purple-600">
-										{resolveRoomTypeLabel(roomType)}
-									</span>
-									<span class="text-xs text-gray-400">#{roomId}</span>
-									{#if unreadCount > 0}
-										<span class="rounded-full bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white">
-											{unreadCount}
-										</span>
-									{/if}
+						{@const isPinned = join.pin === true}
+						<div class="flex w-full items-start border-b border-gray-100">
+							<button
+								type="button"
+								class="flex flex-1 items-start gap-4 p-4 text-left transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+								onclick={() => openConversation(join, roomId)}
+							>
+								<div class="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-blue-500 text-sm font-semibold text-white shadow-sm">
+									{roomTitle.slice(0, 2)}
 								</div>
 
-								<h2 class="text-lg font-semibold text-gray-900">{roomTitle}</h2>
+								<div class="flex-1 space-y-1">
+									<div class="flex flex-wrap items-center gap-x-2 text-sm text-gray-500">
+										<span class="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-purple-600">
+											{resolveRoomTypeLabel(roomType)}
+										</span>
+										<span class="text-xs text-gray-400">#{roomId}</span>
+										{#if unreadCount > 0}
+											<span class="rounded-full bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white">
+												{unreadCount}
+											</span>
+										{/if}
+									</div>
 
-								<p class="text-sm text-gray-500">
-									<span class="font-medium text-gray-600">{m.chatLastMessageLabel()}:</span>
-									<span class="ml-1 line-clamp-1">{lastMessage || m.chatNoMessages()}</span>
-								</p>
+									<h2 class="text-lg font-semibold text-gray-900">{roomTitle}</h2>
 
-								{#if timestamp}
-									<p class="text-xs text-gray-400">{formatLongDate(timestamp)}</p>
-								{/if}
-							</div>
+									<p class="text-sm text-gray-500">
+										<span class="font-medium text-gray-600">{m.chatLastMessageLabel()}:</span>
+										<span class="ml-1 line-clamp-1">{lastMessage || m.chatNoMessages()}</span>
+									</p>
 
-							<div class="flex items-center">
+									{#if timestamp}
+										<p class="text-xs text-gray-400">{formatLongDate(timestamp)}</p>
+									{/if}
+								</div>
+							</button>
+
+							<div class="flex flex-col items-center gap-2 p-4">
+								<!-- 핀 버튼 -->
+								<button
+									type="button"
+									onclick={(e) => handleTogglePin(e, roomId, roomType)}
+									class="rounded-full p-1.5 transition hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+									title={isPinned ? '핀 해제' : '핀 설정'}
+								>
+									<span class="text-xl">{isPinned ? '📌' : '📍'}</span>
+								</button>
 								<span class="text-sm font-medium text-blue-600">{m.chatOpenRoom()}</span>
 							</div>
-						</button>
+						</div>
 					{/snippet}
 
 					{#snippet loading()}
@@ -272,3 +324,9 @@
 
 <!-- 그룹 채팅방 생성 다이얼로그 -->
 <ChatCreateDialog type="group" bind:open={createDialogOpen} on:created={handleRoomCreated} />
+
+<!-- 오픈 채팅방 생성 다이얼로그 -->
+<ChatCreateDialog type="open" bind:open={openChatDialogOpen} on:created={handleRoomCreated} />
+
+<!-- 즐겨찾기 다이얼로그 -->
+<ChatFavoritesDialog bind:open={favoritesDialogOpen} on:roomSelected={handleRoomSelected} />

@@ -5,7 +5,7 @@
  * shared 폴더의 pure functions에 대한 re-export를 포함합니다.
  */
 
-import { ref, set, update, type Database } from 'firebase/database';
+import { ref, set, update, get, type Database } from 'firebase/database';
 
 // Pure functions를 shared 폴더에서 import하고 re-export
 export {
@@ -131,4 +131,61 @@ export async function leaveChatRoom(
 ): Promise<void> {
 	const memberRef = ref(db, `chat-rooms/${roomId}/members/${uid}`);
 	await set(memberRef, null); // null로 설정하여 속성 삭제
+}
+
+/**
+ * 채팅방 핀 상태를 토글합니다 (고정/해제)
+ *
+ * 이 함수는 사용자가 채팅방을 핀하거나 핀 해제할 때 호출됩니다.
+ * 클라이언트는 단순히 pin 필드를 true/false로 설정하며,
+ * Cloud Functions가 자동으로 모든 xxxListOrder 필드의 prefix를 업데이트합니다.
+ *
+ * Prefix 규칙 (Cloud Functions에서 자동 처리):
+ * - 500 prefix: 핀된 채팅방 (최상위)
+ * - 200 prefix: 읽지 않은 메시지가 있는 채팅방 (상위)
+ * - prefix 없음: 읽은 메시지만 있는 채팅방 (일반)
+ *
+ * @param db - Firebase Realtime Database 인스턴스
+ * @param roomId - 채팅방 ID
+ * @param uid - 사용자 UID
+ * @param roomType - 채팅방 타입 (더 이상 사용하지 않지만 호환성 유지)
+ * @returns Promise<boolean> - 변경 후 핀 상태 (true: 핀됨, false: 핀 해제됨)
+ *
+ * @example
+ * ```typescript
+ * import { rtdb } from '$lib/firebase';
+ * import { togglePinChatRoom } from '$lib/functions/chat.functions';
+ *
+ * // 채팅방 핀 토글
+ * const isPinned = await togglePinChatRoom(rtdb, roomId, currentUser.uid, 'single');
+ * console.log(isPinned ? '핀 설정됨' : '핀 해제됨');
+ * ```
+ */
+export async function togglePinChatRoom(
+	db: Database,
+	roomId: string,
+	uid: string,
+	roomType: string // eslint-disable-line @typescript-eslint/no-unused-vars
+): Promise<boolean> {
+	const chatJoinRef = ref(db, `chat-joins/${uid}/${roomId}`);
+	const pinRef = ref(db, `chat-joins/${uid}/${roomId}/pin`);
+
+	// 현재 핀 상태 읽기
+	const snapshot = await get(pinRef);
+	const currentPinValue = snapshot.exists() ? snapshot.val() : false;
+	const isPinned = currentPinValue === true;
+
+	// 핀 상태 토글
+	if (isPinned) {
+		// 핀 해제: pin 필드 삭제
+		await set(pinRef, null);
+		console.log('✅ 채팅방 핀 해제 완료:', roomId);
+	} else {
+		// 핀 설정: pin: true 설정
+		await set(pinRef, true);
+		console.log('✅ 채팅방 핀 설정 완료:', roomId);
+	}
+
+	// 새로운 핀 상태 반환
+	return !isPinned;
 }

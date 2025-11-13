@@ -520,6 +520,114 @@ Firebase Authentication의 다음 필드들은 `/users/<uid>` 노드에 **저장
 
 ---
 
+## 채팅 북마크 (chat-favorites)
+
+채팅방 북마크(즐겨찾기) 정보는 `/chat-favorites/<uid>/<favoriteId>/` 경로에 저장됩니다.
+사용자가 자주 사용하는 채팅방을 폴더별로 분류하여 관리할 수 있습니다.
+
+### 데이터 구조
+
+```
+/chat-favorites/
+├── <uid1>/
+│   ├── <favoriteId1>/
+│   │   ├── name: "업무 관련"
+│   │   ├── description: "팀 채팅을 모아둔 폴더"
+│   │   ├── createdAt: 1698473000000
+│   │   ├── folderOrder: "5001698473000000"
+│   │   └── roomList:
+│   │       ├── "group-team123": true
+│   │       └── "open-community": true
+│   └── <favoriteId2>/
+│       ├── name: "친구들"
+│       ├── description: "친한 친구들과의 채팅"
+│       ├── createdAt: 1698473100000
+│       ├── folderOrder: "5001698473100000"
+│       └── roomList:
+│           ├── "single-uid1-uid2": true
+│           └── "single-uid1-uid3": true
+└── <uid2>/
+    └── <favoriteId1>/
+        ├── name: "중요"
+        ├── description: ""
+        ├── createdAt: 1698474000000
+        ├── folderOrder: "5001698474000000"
+        └── roomList:
+            └── "group-project": true
+```
+
+### 필드 설명
+
+| 필드 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| `name` | string | ✅ | 북마크 폴더 이름 (최대 30자) |
+| `description` | string | ❌ | 폴더 설명 (최대 100자) |
+| `createdAt` | number | ✅ | 폴더 생성 시간 (Unix timestamp, 밀리초) |
+| `folderOrder` | string | ✅ | 폴더 정렬 순서 (prefix + timestamp) |
+| `roomList` | object | ✅ | 북마크된 채팅방 ID 목록 (`{roomId: boolean}`) |
+
+### folderOrder 필드
+
+북마크 폴더의 정렬 순서를 관리하는 필드입니다.
+
+**형식:**
+```typescript
+folderOrder: "500{timestamp}"
+```
+
+**특징:**
+- **500 prefix**: 폴더를 상단에 고정하기 위한 prefix
+- **timestamp**: 폴더 생성 시간 또는 수동 정렬 시간
+- 사용자가 폴더 순서를 변경하면 새로운 timestamp로 업데이트
+
+**정렬 방식:**
+```
+내림차순 정렬 결과 (최신순):
+"5001698474000000"  (가장 최근 또는 상단 고정)  ← 최상위
+"5001698473100000"  (중간)
+"5001698473000000"  (가장 오래됨)              ← 맨 아래
+```
+
+### 클라이언트/서버 역할 분리
+
+북마크 폴더의 경우:
+- **클라이언트는** 다음 작업을 수행합니다:
+  - 북마크 폴더 생성: `/chat-favorites/{uid}/{favoriteId}` 노드 생성
+    - `name`, `description`, `createdAt` 저장
+    - `folderOrder`: `500${Date.now()}` 형식으로 생성
+    - `roomList`: 빈 객체 `{}` 또는 초기 채팅방 포함
+  - 폴더 이름/설명 수정
+  - 폴더 삭제
+  - 채팅방 추가/제거: `roomList/{roomId}` 값을 `true` 또는 `false`로 설정
+  - 폴더 순서 변경: `folderOrder`를 새로운 `500${Date.now()}`로 업데이트
+
+- **서버는** 북마크 관련 자동 처리가 필요 없습니다:
+  - 모든 작업이 클라이언트에서 직접 수행됨
+  - 단, Security Rules로 본인만 수정 가능하도록 제한
+
+### 사용 예시
+
+**폴더 구조 예시:**
+```
+📁 업무 관련
+  ├── 개발팀 채팅 (group-team123)
+  └── 긴급 공지 (open-community)
+
+📁 친구들
+  ├── 철수와의 대화 (single-uid1-uid2)
+  └── 영희와의 대화 (single-uid1-uid3)
+
+📁 중요
+  └── 프로젝트 A (group-project)
+```
+
+### 관련 가이드
+
+- **📖 구현 가이드**: [채팅 기능 개발 가이드](./sonub-chat-room.md) - 북마크 기능 구현
+- **📖 보안 규칙**: [Firebase 보안 규칙 개발 가이드](./sns-web-security.md) - 북마크 접근 제어
+
+---
+
 ## 채팅방 참여 (chat-joins)
 
 채팅방 참여 정보는 `/chat-joins/<uid>/<roomId>/` 경로에 저장됩니다.
@@ -596,11 +704,12 @@ Firebase Authentication의 다음 필드들은 `/users/<uid>` 노드에 **저장
 | `joinedAt` | number | ✅ | 채팅방 참여 시간 (Unix timestamp, 밀리초) |
 | `updatedAt` | number | ✅ | 마지막 업데이트 시간 (Unix timestamp, 밀리초) |
 | `newMessageCount` | number | ✅ | 읽지 않은 메시지 개수 (Cloud Functions가 자동 증감) |
+| `pin` | boolean | ❌ | **채팅방 핀 상태** (true: 핀됨, 생략: 핀 안됨). 클라이언트가 설정하면 Cloud Functions가 자동으로 모든 order 필드에 "500" prefix 적용 |
 | `listOrder` | string | ❌ | **정렬 필드** (후방 호환성용, 사용 중단 예정) |
 | `singleChatListOrder` | string | ❌ | **1:1 채팅 정렬 필드** (prefix + timestamp) |
 | `groupChatListOrder` | string/number | ❌ | **그룹 채팅 정렬 필드** (prefix + timestamp) |
 | `openChatListOrder` | string/number | ❌ | **오픈 채팅 정렬 필드** (prefix + timestamp) |
-| `openAndGroupChatListOrder` | number | ❌ | **그룹+오픈 통합 정렬 필드** (timestamp) |
+| `openAndGroupChatListOrder` | number | ❌ | **그룹+오픈 통합 정렬 필드** (prefix + timestamp) |
 | `allChatListOrder` | number | ❌ | **전체 채팅방 통합 정렬 필드** (timestamp, 모든 타입) |
 
 ### 🔥 정렬 필드 상세 설명
@@ -713,6 +822,56 @@ if (currentListOrder.startsWith("200")) {
   await database.ref(`chat-joins/${uid}/${roomId}/newMessageCount`).set(0);
 }
 ```
+
+#### 핀 처리 (채팅방 고정 기능)
+
+사용자가 채팅방을 핀하거나 핀 해제하는 기능입니다. 핀된 채팅방은 목록의 최상위에 표시됩니다.
+
+**클라이언트 동작:**
+```typescript
+// 핀 설정: pin 필드를 true로 설정
+await database.ref(`chat-joins/${uid}/${roomId}/pin`).set(true);
+
+// 핀 해제: pin 필드를 삭제
+await database.ref(`chat-joins/${uid}/${roomId}/pin`).set(null);
+```
+
+**Cloud Functions 자동 처리:**
+
+`chat-joins/{uid}/{roomId}/pin` 필드가 생성되거나 삭제되면 Cloud Functions가 자동으로 모든 order 필드를 업데이트합니다:
+
+```typescript
+// onChatRoomPinCreate Cloud Function (onValueCreated 트리거)
+// pin 필드가 생성될 때 (set(true)):
+//    - 모든 xxxListOrder 필드에 "500" prefix 추가
+//    예: "1698473000000" → "5001698473000000"
+//    예: "2001698473000000" → "5001698473000000"
+
+// onChatRoomPinDelete Cloud Function (onValueDeleted 트리거)
+// pin 필드가 삭제될 때 (set(null)):
+//    - newMessageCount > 0이면 "200" prefix 추가
+//    예: "5001698473000000" → "2001698473000000"
+//    - newMessageCount === 0이면 prefix 제거
+//    예: "5001698473000000" → "1698473000000"
+```
+
+**트리거 분리 이유:**
+- `onValueUpdated`는 값이 변경될 때만 트리거되며, 생성/삭제 시에는 트리거되지 않음
+- `onValueCreated`는 필드가 처음 생성될 때 트리거됨 (pin: true 설정 시)
+- `onValueDeleted`는 필드가 삭제될 때 트리거됨 (pin: null 설정 시)
+
+**자동 업데이트되는 필드:**
+- `singleChatListOrder` (1:1 채팅)
+- `groupChatListOrder` (그룹 채팅)
+- `openChatListOrder` (오픈 채팅)
+- `openAndGroupChatListOrder` (그룹+오픈 통합)
+- `allChatListOrder` (전체 채팅방 통합)
+
+**장점:**
+- 클라이언트는 단순히 `pin` 필드만 설정
+- Cloud Functions가 모든 정렬 필드를 일관되게 업데이트
+- 채팅방 타입에 관계없이 동일한 방식으로 동작
+- 핀 상태와 읽음/읽지않음 상태를 독립적으로 관리
 
 #### 클라이언트에서 사용 예시
 
@@ -901,3 +1060,4 @@ query.on('value', (snapshot) => {
 | 2025-11-13 | Claude Code | `/chat-joins/` 데이터 구조 예제 보완: 누락되었던 정렬 필드들을 모든 채팅방 타입 예제에 추가하여 문서 완성도 향상. 1) 1:1 채팅 예제에 `singleChatListOrder`, `allChatListOrder` 추가 2) 그룹 채팅 예제에 `groupChatListOrder`, `openAndGroupChatListOrder`, `allChatListOrder` 및 `roomName` 추가 3) 오픈 채팅 예제 신규 추가 (`open-discussion`) - `openChatListOrder`, `openAndGroupChatListOrder`, `allChatListOrder` 포함 4) 각 정렬 필드에 설명 주석 추가 (읽지 않은 메시지 개수, 용도 등) 5) `listOrder` 필드에 사용 중단 예정 주석 추가. 이로써 데이터 구조 예제가 필드 설명 테이블과 일치하게 되어 개발자가 실제 구조를 더 잘 이해할 수 있게 됨. |
 | 2025-11-13 | Claude Code | 채팅방 입장 시 `newMessageCount` 자동 초기화 기능 구현: 사용자가 채팅방에 입장할 때마다 `/chat-joins/{uid}/{roomId}/newMessageCount`를 0으로 초기화하여 메시지를 모두 읽은 것으로 표시. 1) `enterSingleChatRoom()` 함수 수정 (1:1 채팅용) - `chat-joins` 업데이트 시 `newMessageCount: 0` 추가 2) `joinChatRoom()` 함수 수정 (그룹/오픈 채팅용) - members 등록 후 `chat-joins`에도 `newMessageCount: 0` 설정 추가 3) 두 함수의 JSDoc 주석 업데이트하여 새 동작 문서화. 이로써 사용자가 채팅방 페이지(`/chat/room`)에 들어갈 때마다 `$effect` 훅이 자동으로 실행되어 읽지 않은 메시지 카운트가 0으로 초기화됨. 수정 파일: `src/lib/functions/chat.functions.ts` |
 | 2025-11-13 | Claude Code | 채팅방 헤더 메뉴 기능 구현: `/chat/room` 페이지 상단에 네비게이션 및 메뉴 추가. 1) **헤더 구조**: 뒤로가기 버튼, 채팅 정보 (1:1: 프로필 사진+이름 / 그룹·오픈: 방 이름), 메뉴 버튼을 가로로 배치 2) **드롭다운 메뉴**: shadcn-svelte의 `DropdownMenu` 컴포넌트 활용하여 7개 메뉴 항목 구현 (북마크, 핀: 상단고정, URL 복사, 멤버 목록, 방 탈퇴하기, 신고하고 탈퇴하기, 닫기) 3) **기능 구현**: `handleGoBack()` (채팅 목록으로 이동), `handleCopyUrl()` (현재 URL 클립보드 복사), `handleLeaveRoom()` (`leaveChatRoom()` 호출 후 목록 이동, 확인 다이얼로그 포함) 4) **타입 유틸리티 추가**: `$lib/utils.ts`에 shadcn-svelte 컴포넌트용 타입 추가 (`WithElementRef`, `WithoutChild`, `WithoutChildrenOrChild`) 5) **shadcn-svelte 설치**: `npx shadcn-svelte add dropdown-menu` 실행 6) 일부 메뉴는 TODO placeholder로 향후 구현 예정 (북마크, 핀, 멤버 목록, 신고). 수정 파일: `src/routes/chat/room/+page.svelte`, `src/lib/utils.ts` |
+| 2025-11-13 | Claude Sonnet 4.5 | 채팅방 핀 기능 Critical Bug 수정: `onValueUpdated` 트리거가 pin 필드 생성/삭제 시 작동하지 않는 문제 해결. 1) `handleChatRoomPinUpdate` 함수를 `handleChatRoomPinCreate`와 `handleChatRoomPinDelete` 두 개의 함수로 분리 (chat.handler.ts) 2) `onValueUpdated` 트리거를 `onValueCreated`와 `onValueDeleted` 두 개의 트리거로 분리 (index.ts) 3) 각 트리거에서 적절한 비즈니스 로직 핸들러 호출 4) 상세한 JSDoc 주석 추가하여 트리거 조건, 수행 작업, prefix 규칙 명시 5) Firebase Functions 배포 완료 (기존 onChatRoomPinUpdate 삭제, 새 함수 2개 생성). 문서 업데이트: 핀 처리 섹션에 트리거 분리 이유 추가, Cloud Functions 자동 처리 예제 코드 업데이트. |

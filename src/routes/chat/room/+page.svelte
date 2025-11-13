@@ -14,13 +14,20 @@
 	import { userProfileStore } from '$lib/stores/user-profile.svelte';
 	import { pushData } from '$lib/stores/database.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { buildSingleRoomId, enterSingleChatRoom, joinChatRoom, leaveChatRoom } from '$lib/functions/chat.functions';
+	import {
+		buildSingleRoomId,
+		enterSingleChatRoom,
+		joinChatRoom,
+		leaveChatRoom,
+		togglePinChatRoom
+	} from '$lib/functions/chat.functions';
 	import { formatLongDate } from '$lib/functions/date.functions';
 	import { tick } from 'svelte';
 	import { rtdb } from '$lib/firebase';
-	import { ref, update } from 'firebase/database';
+	import { ref, update, onValue } from 'firebase/database';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { Button } from '$lib/components/ui/button';
+	import ChatFavoritesDialog from '$lib/components/chat/ChatFavoritesDialog.svelte';
 
 	// GET 파라미터 추출
 	const uidParam = $derived.by(() => $page.url.searchParams.get('uid') ?? '');
@@ -81,6 +88,45 @@
 	let composerText = $state('');
 	let isSending = $state(false);
 	let sendError = $state<string | null>(null);
+
+	// ChatFavoritesDialog 상태
+	let favoritesDialogOpen = $state(false);
+
+	// 핀 상태 관리
+	let isPinned = $state(false);
+	let currentRoomType = $derived.by(() => {
+		if (isSingleChat) return 'single';
+		// 그룹/오픈 채팅 구분은 roomId로는 불가능하므로 기본값 사용
+		// TODO: 채팅방 정보에서 타입 가져오기
+		return 'group';
+	});
+
+	// 채팅방 핀 상태 구독
+	$effect(() => {
+		if (!activeRoomId || !authStore.user?.uid || !rtdb) {
+			isPinned = false;
+			return;
+		}
+
+		const pinRef = ref(rtdb, `chat-joins/${authStore.user.uid}/${activeRoomId}/pin`);
+		const unsubscribe = onValue(pinRef, (snapshot) => {
+			if (!snapshot.exists()) {
+				isPinned = false;
+				return;
+			}
+
+			const pinValue = snapshot.val();
+			if (pinValue === true) {
+				isPinned = true;
+			} else {
+				isPinned = false;
+			}
+		});
+
+		return () => {
+			unsubscribe();
+		};
+	});
 
 	// 채팅 입력 창(input) 직접 참조
 	let composerInputRef: HTMLInputElement | null = $state(null);
@@ -171,16 +217,10 @@
 		void goto('/chat/list');
 	}
 
-	// 북마크 추가/제거
+	// 즐겨찾기 추가/제거
+	// 즐겨찾기 다이얼로그를 열어서 현재 채팅방이 포함된 폴더를 강조 표시합니다.
 	function handleBookmark() {
-		console.log('북마크 클릭');
-		// TODO: 북마크 기능 구현
-	}
-
-	// 핀: 상단고정
-	function handlePin() {
-		console.log('핀: 상단고정 클릭');
-		// TODO: 핀 기능 구현
+		favoritesDialogOpen = true;
 	}
 
 	// URL 복사
@@ -199,6 +239,13 @@
 	function handleMemberList() {
 		console.log('멤버 목록 클릭');
 		// TODO: 멤버 목록 다이얼로그 표시
+	}
+
+	// 즐겨찾기에서 채팅방 선택 핸들러
+	// 선택된 채팅방으로 이동합니다.
+	function handleRoomSelected(event: CustomEvent<{ roomId: string }>) {
+		const { roomId } = event.detail;
+		void goto(`/chat/room?roomId=${roomId}`);
 	}
 
 	// 방 탈퇴하기
@@ -221,6 +268,30 @@
 	function handleReportAndLeave() {
 		console.log('신고하고 탈퇴하기 클릭');
 		// TODO: 신고 다이얼로그 표시 후 탈퇴
+	}
+
+	/**
+	 * 채팅방 핀 토글 핸들러
+	 * 채팅방을 핀하거나 핀 해제합니다
+	 */
+	async function handleTogglePin() {
+		if (!activeRoomId || !authStore.user?.uid || !rtdb) {
+			console.error('채팅방 또는 사용자 정보 없음');
+			return;
+		}
+
+		try {
+			const newPinState = await togglePinChatRoom(
+				rtdb,
+				activeRoomId,
+				authStore.user.uid,
+				currentRoomType
+			);
+			console.log(`✅ 채팅방 핀 ${newPinState ? '설정' : '해제'} 완료:`, activeRoomId);
+		} catch (error) {
+			console.error('채팅방 핀 토글 실패:', error);
+			alert('핀 기능을 사용할 수 없습니다. 채팅방에 참여한 후 시도해주세요.');
+		}
 	}
 
 	/**
@@ -337,6 +408,17 @@
 			{/if}
 		</div>
 
+		<!-- 핀 버튼 -->
+		<Button
+			variant="ghost"
+			size="icon"
+			onclick={handleTogglePin}
+			class="shrink-0"
+			title={isPinned ? '핀 해제' : '핀 설정'}
+		>
+			<span class="text-xl">{isPinned ? '📌' : '📍'}</span>
+		</Button>
+
 		<!-- 메뉴 드롭다운 -->
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
@@ -347,11 +429,7 @@
 			<DropdownMenu.Content align="end" class="w-56">
 				<DropdownMenu.Item onclick={handleBookmark} class="bg-pink-50 hover:bg-pink-100">
 					<span class="mr-2">🔖</span>
-					북마크
-				</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={handlePin} class="bg-red-50 hover:bg-red-100">
-					<span class="mr-2">📌</span>
-					핀: 상단고정
+					{m.chatTabBookmarks()}
 				</DropdownMenu.Item>
 				<DropdownMenu.Item onclick={handleCopyUrl} class="bg-gray-50 hover:bg-gray-100">
 					<span class="mr-2">🔗</span>
@@ -505,6 +583,13 @@
 		</section>
 	{/if}
 </div>
+
+<!-- 즐겨찾기 다이얼로그 -->
+<ChatFavoritesDialog
+	bind:open={favoritesDialogOpen}
+	currentRoomId={activeRoomId}
+	on:roomSelected={handleRoomSelected}
+/>
 
 <style>
 	@import 'tailwindcss' reference;

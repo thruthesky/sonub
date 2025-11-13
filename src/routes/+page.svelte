@@ -215,7 +215,10 @@
 				<Card.Header>
 					<div class="flex items-start gap-3">
 						<span class="todo-number">3</span>
-						<Card.Title class="text-xl">즐겨찾기 기능 (폴더관리)</Card.Title>
+						<div class="flex flex-col gap-1">
+							<Card.Title class="text-xl">즐겨찾기 기능 (폴더관리)</Card.Title>
+							<span class="todo-badge todo-badge--done">완료</span>
+						</div>
 					</div>
 				</Card.Header>
 				<Card.Content>
@@ -233,7 +236,10 @@
 				<Card.Header>
 					<div class="flex items-start gap-3">
 						<span class="todo-number">4</span>
-						<Card.Title class="text-xl">채팅 핀(Chat Pin) 기능</Card.Title>
+						<div class="flex flex-col gap-1">
+							<Card.Title class="text-xl">채팅 핀(Chat Pin) 기능</Card.Title>
+							<span class="todo-badge todo-badge--done">완료</span>
+						</div>
 					</div>
 				</Card.Header>
 				<Card.Content>
@@ -276,6 +282,7 @@
 					<ul class="todo-list">
 						<li>Cloud Functions에서 새 메시지 감지 시 FCM 전송</li>
 						<li>알림 페이로드: 발신자 이름, 메시지 내용 미리보기, 채팅방 ID</li>
+						<li>채팅방 푸시 알림 구독</li>
 						<li>앱이 포그라운드/백그라운드일 때 각각 다른 처리</li>
 						<li>알림 클릭 시 해당 채팅방으로 이동</li>
 					</ul>

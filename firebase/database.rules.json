@@ -116,6 +116,41 @@
         "roomOrder"
       ]
     },
+    "chat-favorites": {
+      // 즐겨찾기 폴더 관리
+      // 사용자별로 채팅방을 폴더로 분류하여 관리
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
+        "$favoriteId": {
+          "name": {
+            // 폴더 이름: 필수, 1-30자
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 30"
+          },
+          "description": {
+            // 폴더 설명: 선택, 최대 100자
+            ".validate": "newData.isString() && newData.val().length <= 100"
+          },
+          "createdAt": {
+            // 생성 시간: 필수, 숫자 (timestamp)
+            ".validate": "newData.isNumber()"
+          },
+          "folderOrder": {
+            // 정렬 순서: 필수, 문자열 (500 prefix = 상단 고정)
+            ".validate": "newData.isString()"
+          },
+          "roomList": {
+            // 폴더에 포함된 채팅방 목록 (roomId -> true)
+            "$roomId": {
+              ".validate": "newData.isBoolean()"
+            }
+          }
+        },
+        ".indexOn": [
+          "folderOrder"
+        ]
+      }
+    },
     "test": {
       "data": {
         // QA 전용 테스트 데이터 노드 - 누구나 읽고 쓰기 가능

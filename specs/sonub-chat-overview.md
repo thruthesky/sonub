@@ -47,7 +47,7 @@ priority: "***"
   - [채팅방 입장](#채팅방-입장)
   - [방생성 기능](#방생성-기능)
     - [Cloud Functions + 보안 규칙이 owner를 보장하는 방식](#cloud-functions--보안-규칙이-owner를-보장하는-방식)
-  - [북마크(즐겨찾기) 기능](#북마크즐겨찾기-기능)
+  - [즐겨찾기 기능](#즐겨찾기-기능)
   - [검색 기능](#검색-기능)
   - [전체 흐름도 (Mermaid)](#전체-흐름도-mermaid)
   - [데이터 흐름 요약](#데이터-흐름-요약)
@@ -226,7 +226,7 @@ Sonub의 채팅 시스템은 **일반 메시징과 게시판 기능을 통합**�
 2. **기본 화면**: 친구(1:1 채팅) 목록이 기본으로 표시됨
 3. **목록 전환**: 상단 탭을 통해 그룹챗, 오픈챗 목록으로 전환 가능
 4. **채팅방 입장**: 목록에서 채팅방을 선택하면 `/chat/room` 페이지로 이동
-5. **추가 기능**: 방생성, 북마크, 검색 등의 부가 기능 제공
+5. **추가 기능**: 방생성, 즐겨찾기, 검색 등의 부가 기능 제공
 
 ### 채팅방 목록 페이지 구조
 
@@ -236,7 +236,7 @@ Sonub의 채팅 시스템은 **일반 메시징과 게시판 기능을 통합**�
 
 ```
 [친구] [그룹챗] [오픈챗] _________________ [방생성] [설정⚙️]
-                                                   └─ 북마크
+                                                   └─ 즐겨찾기
                                                    └─ 검색
 ```
 
@@ -245,7 +245,7 @@ Sonub의 채팅 시스템은 **일반 메시징과 게시판 기능을 통합**�
 - **그룹챗**: 내가 참여한 그룹 채팅방 목록 표시
 - **오픈챗**: 공개된 오픈 채팅방 목록 표시
 - **방생성**: 새로운 그룹/오픈 채팅방 생성
-- **북마크**: 즐겨찾기한 채팅방 관리
+- **즐겨찾기**: 즐겨찾기한 채팅방 관리
 - **검색**: 사용자 또는 채팅방 검색
 
 **컴포넌트 구현:**
@@ -393,6 +393,79 @@ if (chatRoom.open === true) {
 }
 ```
 
+### 채팅방 핀 (고정) 기능
+
+**개요:**
+채팅방 핀 기능은 사용자가 중요한 채팅방을 목록 최상단에 고정할 수 있는 기능입니다. 핀된 채팅방은 모든 채팅 목록(친구/그룹챗/오픈챗)에서 최상단에 표시됩니다.
+
+**작동 방식:**
+1. **클라이언트 역할**: 사용자가 채팅방을 핀하거나 핀 해제할 때, 클라이언트는 단순히 `/chat-joins/{uid}/{roomId}/pin` 필드를 `true` 또는 `null`로 설정합니다.
+2. **Cloud Functions 역할**: `pin` 필드 변경을 감지하면 자동으로 모든 order 필드의 prefix를 업데이트합니다.
+
+**Prefix 규칙:**
+- **"500" prefix**: 핀된 채팅방 (최상위 우선순위)
+- **"200" prefix**: 읽지 않은 메시지가 있는 채팅방 (상위 우선순위)
+- **prefix 없음**: 읽은 메시지만 있는 채팅방 (일반 우선순위)
+
+**클라이언트 코드 예시:**
+```typescript
+import { rtdb } from '$lib/firebase';
+import { togglePinChatRoom } from '$lib/functions/chat.functions';
+
+// 채팅방 핀 토글
+const isPinned = await togglePinChatRoom(rtdb, roomId, currentUser.uid, roomType);
+console.log(isPinned ? '핀 설정됨' : '핀 해제됨');
+```
+
+**Cloud Functions 자동 처리:**
+- `pin: true` 설정 시 → 모든 order 필드에 "500" prefix 자동 추가
+- `pin: null` 설정 시 → "500" prefix 제거, `newMessageCount > 0`이면 "200" prefix 추가, 아니면 prefix 제거
+- 자동 업데이트되는 필드:
+  - `singleChatListOrder`
+  - `groupChatListOrder`
+  - `openChatListOrder`
+  - `openAndGroupChatListOrder`
+  - `allChatListOrder`
+
+**UI 표시:**
+- 채팅 목록 페이지: 각 채팅방 오른쪽에 핀 버튼 표시 (📌 또는 📍)
+- 채팅방 페이지: 헤더에 핀 버튼 표시
+- 핀 상태는 `pin` 필드를 직접 조회하여 실시간 반영
+
+**장점:**
+1. **클라이언트 단순화**: 복잡한 order 필드 계산 로직 불필요
+2. **일관성 보장**: Cloud Functions가 모든 order 필드를 자동으로 동기화
+3. **채팅방 타입 독립적**: 채팅방 타입에 관계없이 동일한 방식으로 작동
+4. **확장성**: 새로운 order 필드 추가 시 Cloud Functions만 수정하면 됨
+
+**데이터 구조:**
+```typescript
+/chat-joins/{uid}/{roomId} {
+  pin: true,  // 핀 상태 (true: 핀됨, 생략: 핀 안됨)
+  singleChatListOrder: "500-1698473000000",  // "500" prefix 자동 추가됨
+  groupChatListOrder: "500-1698473000000",
+  openChatListOrder: "500-1698473000000",
+  // ... 기타 필드
+}
+```
+
+**Cloud Functions 트리거 구조:**
+- `onChatRoomPinCreate`: `pin` 필드가 생성될 때 (set(true)) 트리거됨
+  - `onValueCreated` 이벤트 사용
+  - 모든 xxxListOrder 필드에 "500" prefix 추가
+- `onChatRoomPinDelete`: `pin` 필드가 삭제될 때 (set(null)) 트리거됨
+  - `onValueDeleted` 이벤트 사용
+  - newMessageCount에 따라 "200" prefix 추가 또는 prefix 제거
+
+**관련 파일:**
+- Cloud Functions: `/firebase/functions/src/handlers/chat.handler.ts` - `handleChatRoomPinCreate`, `handleChatRoomPinDelete` 함수
+- Cloud Functions 트리거: `/firebase/functions/src/index.ts` - `onChatRoomPinCreate`, `onChatRoomPinDelete` 트리거
+- 클라이언트 함수: `/src/lib/functions/chat.functions.ts` - `togglePinChatRoom` 함수
+- UI 컴포넌트:
+  - `/src/routes/chat/list/+page.svelte` (1:1 채팅 목록)
+  - `/src/routes/chat/group-chat-list/+page.svelte` (그룹챗 목록)
+  - `/src/routes/chat/room/+page.svelte` (채팅방 페이지)
+
 ### 채팅방 입장
 
 **모든 채팅방 타입(1:1, 그룹, 오픈)은 동일한 페이지/컴포넌트를 사용합니다.**
@@ -459,36 +532,57 @@ if (chatRoom.open === true) {
 }
 ```
 
-### 북마크(즐겨찾기) 기능
+### 즐겨찾기 기능
 
-**트리거:** 사용자가 "설정 ⚙️" → "북마크" 클릭
+**용어 정의:** "북마크"에서 "즐겨찾기"로 용어 통일
 
-**UI:** 모달 다이얼로그 표시
+**트리거:**
+- **채팅 목록에서:** "설정 ⚙️" → "즐겨찾기" 클릭 → 즐겨찾기 폴더 관리 모드
+- **채팅방에서:** "메뉴 ⋮" → "즐겨찾기" 클릭 → 현재 채팅방을 폴더에 추가/제거하는 토글 모드
 
-**데이터 구조:**
-```typescript
-/chat-favorites/{myUid}/{favoriteId} {
-  name: "업무 관련",           // 북마크 폴더 이름
-  createdAt: 1698473000000,
-  roomList: {
-    "room-id-a": true,       // 북마크된 채팅방 ID 목록
-    "room-id-b": true,
-    "room-id-c": true
-  }
-}
-```
+**UI:** 모달 다이얼로그 표시 (별도 페이지가 아닌 다이얼로그로 구현)
+
+**컴포넌트:** `ChatFavoritesDialog.svelte`
+
+**Props:**
+- `open` (bindable): 다이얼로그 열림/닫힘 상태
+- `currentRoomId` (optional): 현재 채팅방 ID (채팅방에서 접근 시 전달)
+- Event: `roomSelected` - 즐겨찾기에서 채팅방 클릭 시 발생
+
+**동작 방식:**
+- **채팅 목록에서 접근:**
+  - 즐겨찾기 폴더 목록 표시
+  - 폴더 클릭 시 해당 폴더의 채팅방 목록 표시
+  - 채팅방 클릭 시 해당 채팅방으로 이동 (`roomSelected` 이벤트 발생)
+  - 폴더 생성/수정/삭제 기능 제공
+
+- **채팅방에서 접근:**
+  - 즐겨찾기 폴더 목록 표시
+  - 현재 채팅방(`currentRoomId`)이 포함된 폴더는 강조 표시 (예: 배경색 변경)
+  - 폴더 클릭 시 현재 채팅방을 해당 폴더에 토글 (추가/제거)
+  - 폴더 생성/수정/삭제 기능 동일하게 제공
+
+**데이터 구조:** [Firebase 데이터베이스 구조 - 채팅 북마크 (chat-favorites)](specs/sonub-firebase-database-structure.md#채팅-북마크-chat-favorites) 참고
 
 **기능:**
-- **북마크 폴더 생성**: 새로운 즐겨찾기 카테고리 생성
-- **북마크 폴더 수정**: 폴더 이름 변경
-- **북마크 폴더 삭제**: 폴더 및 포함된 북마크 삭제
-- **채팅방 북마크 추가**: 선택한 폴더에 채팅방 추가
-- **채팅방 북마크 제거**: 폴더에서 채팅방 제거
-- **북마크 조회**: 폴더별 북마크된 채팅방 목록 표시
+- **즐겨찾기 폴더 생성**: 새로운 즐겨찾기 카테고리 생성 (이름, 설명 입력)
+- **즐겨찾기 폴더 수정**: 폴더 이름 변경 및 설명 추가/수정
+- **즐겨찾기 폴더 삭제**: 폴더 및 포함된 채팅방 참조 삭제
+- **즐겨찾기 폴더 정렬**: folderOrder 필드로 폴더 순서 관리 (상단 고정 가능)
+- **채팅방 즐겨찾기 추가**: 선택한 폴더에 채팅방 추가 (roomList에 roomId: true 설정)
+- **채팅방 즐겨찾기 제거**: 폴더에서 채팅방 제거 (roomList에서 roomId 삭제)
+- **즐겨찾기 조회**: 폴더별 즐겨찾기된 채팅방 목록 표시
+- **채팅방으로 이동**: 즐겨찾기에서 채팅방 클릭 시 해당 채팅방으로 이동
+
+**통합된 페이지:**
+- `/chat/list/+page.svelte` - 친구 채팅 목록
+- `/chat/group-chat-list/+page.svelte` - 그룹 채팅 목록
+- `/chat/open-chat-list/+page.svelte` - 오픈 채팅 목록
+- `/chat/room/+page.svelte` - 채팅방 (currentRoomId 전달)
 
 **활용 예:**
 ```
-📁 업무 관련
+📁 업무 관련 (상단 고정)
   ├── 개발팀 채팅
   ├── 프로젝트 A
   └── 긴급 공지
@@ -554,7 +648,7 @@ flowchart TD
     ChatList --> Actions{추가 기능}
 
     Actions -->|방생성 클릭| CreateRoom["방생성 모달<br/>- 이름, 설명<br/>- 오픈챗 여부<br/>- 로고, 비밀번호"]
-    Actions -->|북마크 클릭| Bookmarks["북마크 모달<br/>- 폴더 생성/수정/삭제<br/>- 채팅방 추가/제거"]
+    Actions -->|즐겨찾기 클릭| Favorites["즐겨찾기 모달<br/>- 폴더 생성/수정/삭제<br/>- 채팅방 추가/제거"]
     Actions -->|검색 클릭| Search["검색 모달<br/>- 사용자 검색<br/>- 오픈챗 검색"]
 
     CreateRoom --> SaveRoom{저장 버튼}
@@ -563,7 +657,7 @@ flowchart TD
     AutoGenerate --> EnterNewRoom["새 채팅방 입장"]
     EnterNewRoom --> ChatRoom
 
-    Bookmarks --> ManageFavorites["북마크 관리<br/>/chat-favorites/{uid}"]
+    Favorites --> ManageFavorites["즐겨찾기 관리<br/>/chat-favorites/{uid}"]
     ManageFavorites --> ChatList
 
     Search --> SearchResult{검색 결과}
@@ -577,7 +671,7 @@ flowchart TD
     style ChatList fill:#fff4e1
     style ChatRoom fill:#e8f5e9
     style CreateRoom fill:#fff3e0
-    style Bookmarks fill:#f3e5f5
+    style Favorites fill:#f3e5f5
     style Search fill:#e0f2f1
     style FirebaseCreate fill:#ffebee
     style AutoGenerate fill:#fce4ec
@@ -600,15 +694,24 @@ flowchart TD
 | `listOrder` | 메시지 수신 시 | Cloud Functions | 모든 채팅방의 기본 정렬 순서 |
 | `groupListOrder` | 그룹챗 입장 시 | Cloud Functions | 그룹챗 목록 정렬 |
 | `openListOrder` | 채팅방 생성/수정 시 (`open: true`) | Cloud Functions | 오픈챗 목록 정렬 |
+| `pin` | 사용자가 핀 설정/해제 시 | 클라이언트 | 채팅방 고정 상태 표시 |
+| **Order Prefix** | `pin` 필드 변경 시 | Cloud Functions | 모든 order 필드에 "500" prefix 자동 추가/제거 |
 
 **정렬 값 형식:**
 ```typescript
 listOrder: `-${timestamp}`           // 예: "-1698473000000"
 groupListOrder: `-${timestamp}`      // 예: "-1698473000000"
 openListOrder: `-${timestamp}`       // 예: "-1698473000000"
+
+// 핀된 채팅방 (자동 prefix 추가)
+singleChatListOrder: `500${timestamp}`   // 예: "500-1698473000000"
+groupChatListOrder: `500${timestamp}`    // 예: "500-1698473000000"
+
+// 읽지 않은 메시지가 있는 채팅방 (자동 prefix 추가)
+singleChatListOrder: `200${timestamp}`   // 예: "200-1698473000000"
 ```
 
-마이너스(`-`) 접두사를 사용하여 Firebase RTDB에서 최신 항목이 먼저 오도록 정렬합니다.
+마이너스(`-`) 접두사를 사용하여 Firebase RTDB에서 최신 항목이 먼저 오도록 정렬합니다. 핀 기능은 "500" prefix를 추가하여 최상단에 표시하고, 읽지 않은 메시지는 "200" prefix로 상위에 표시합니다.
 
 ---
 
@@ -831,16 +934,19 @@ Firebase RTDB에서는 다양한 정렬 요구사항을 처리하기 위해 **�
 
 ---
 
-**마지막 업데이트**: 2025-11-12
+**마지막 업데이트**: 2025-11-13
 **SED 준수**: 엄격 모드, UTF-8 인코딩, 명시적 정의
 
 ## 작업 이력 (SED Log)
 
 | 날짜 | 작업자 | 내용 |
 | ---- | ------ | ---- |
+| 2025-11-13 | Claude Sonnet 4.5 | 즐겨찾기 기능 구현 완료: "북마크"에서 "즐겨찾기"로 용어 통일 (messages/ko.json, en.json, ja.json, zh.json). ChatFavoritesDialog.svelte 컴포넌트 생성 (폴더 생성/수정/삭제, 채팅방 추가/제거, currentRoomId 기반 강조 표시). 모든 채팅 목록 페이지(/chat/list, /chat/group-chat-list, /chat/open-chat-list)와 채팅방 페이지(/chat/room)에 즐겨찾기 다이얼로그 통합. 채팅 목록에서는 폴더 관리 모드, 채팅방에서는 현재 채팅방을 폴더에 토글하는 모드로 동작. Firebase RTDB `/chat-favorites/{uid}` 구조 사용. npm run check 검증 완료 (타입 오류 없음). |
 | 2025-11-10 | Codex Agent | `/chat/room` 페이지 초안을 구현하여 GET uid 기반 1:1 채팅 진입, 상대 프로필 실시간 표시, `/chat-messages` 노드 리스트 조회(DatabaseListView) 및 기본 입력 UI 구성을 완료함. |
 | 2025-11-12 | Claude Sonnet 4.5 | "채팅방 순서도" 섹션 추가: 채팅 UI 흐름, 채팅방 목록 조회 방식(친구/그룹챗/오픈챗), 방생성, 북마크, 검색 기능에 대한 상세한 설명과 Mermaid 플로우차트 작성. 각 기능의 데이터 소스, 정렬 필드, 경로 구조를 명시하고 전체 사용자 흐름을 시각화함. |
 | 2025-11-12 | Claude Sonnet 4.5 | ChatListMenu 컴포넌트 분리: `/src/lib/components/chat/ChatListMenu.svelte`를 생성하여 채팅 목록 상단 메뉴(탭바, 방생성 버튼, 설정 드롭다운)를 재사용 가능한 컴포넌트로 추출함. `/src/routes/chat/list/+page.svelte`에서 메뉴 코드를 제거하고 컴포넌트로 교체하여 코드 재사용성을 향상시킴. Svelte 5 runes($state, $props) 사용, Props 인터페이스 정의, 콜백 함수 기반 이벤트 처리 구현. |
 | 2025-11-12 | Codex Agent | 사용자 검색 기능이 `src/lib/components/user/UserSearchDialog.svelte` 공용 모달을 사용한다는 사실을 명시하고 채팅/관리자/사용자 목록 페이지에서 동일한 검색 UX를 공유하도록 문서화. |
 | 2025-11-12 | Claude Sonnet 4.5 | 채팅 목록 페이지 완성: ChatListMenu 컴포넌트에 페이지 이동 기능 추가 (탭 클릭 시 해당 페이지로 자동 이동). `/chat/group-chat-list/+page.svelte` 생성하여 그룹챗 목록 표시 (DatabaseListView 사용, groupListOrder 정렬). `/chat/open-chat-list/+page.svelte` 생성하여 오픈챗 목록 표시 (chat-rooms 경로, openListOrder 정렬). 세 가지 채팅 목록 페이지(친구/그룹챗/오픈챗)가 모두 ChatListMenu 컴포넌트를 재사용하며, 각 페이지는 selectedTab prop을 통해 현재 활성 탭을 표시. |
 | 2025-11-12 | Codex Agent | 방생성 섹션에 Cloud Functions가 `event.auth.uid`로 owner/createdBy를 자동 주입하고, `firebase/database.rules.json`이 해당 필드를 보호한다는 설명을 추가하여 클라이언트 조작 불가 구조를 명문화. |
+| 2025-11-13 | Claude Sonnet 4.5 | 채팅방 핀(고정) 기능 아키텍처 개선: 클라이언트에서 `pin: true/null` 설정만 담당하고, Cloud Functions에서 모든 xxxListOrder 필드의 prefix를 자동으로 관리하도록 변경. "채팅방 핀 (고정) 기능" 섹션 추가(작동 방식, prefix 규칙, 클라이언트/Cloud Functions 역할 분리, 장점, 관련 파일 명시). "정렬 필드 생성 주체" 표에 pin 필드와 Order Prefix 항목 추가. Cloud Functions: handleChatRoomPinUpdate 함수 구현, index.ts에 onChatRoomPinUpdate 트리거 등록. 클라이언트: togglePinChatRoom 함수 단순화, UI 페이지들의 핀 상태 감지 로직을 order 필드 prefix 체크에서 pin 필드 직접 조회로 변경. |
+| 2025-11-13 | Claude Sonnet 4.5 | 채팅방 핀 기능 Critical Bug 수정: `onValueUpdated` 트리거가 pin 필드 생성/삭제 시 작동하지 않는 문제 해결. 1) `handleChatRoomPinUpdate` 함수를 `handleChatRoomPinCreate`와 `handleChatRoomPinDelete` 두 개의 함수로 분리 2) `onValueUpdated` 트리거를 `onValueCreated`와 `onValueDeleted` 두 개의 트리거로 분리 3) index.ts에서 `onChatRoomPinCreate` (pin 생성 시), `onChatRoomPinDelete` (pin 삭제 시) 두 개의 Cloud Functions 등록 4) 각 핸들러 함수와 트리거에 상세한 JSDoc 주석 추가 5) Firebase Functions 배포 완료 (기존 onChatRoomPinUpdate 삭제, 새 함수 2개 생성). 이제 사용자가 채팅방을 핀하거나 핀 해제할 때 Cloud Functions가 정상적으로 트리거되어 order 필드가 자동 업데이트됨. |
