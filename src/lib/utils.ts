@@ -6,6 +6,7 @@
 
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import type { HTMLAttributes } from 'svelte/elements';
 
 /**
  * 클래스 이름을 병합하는 함수
@@ -18,3 +19,13 @@ import { twMerge } from 'tailwind-merge';
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
+
+/**
+ * shadcn-svelte 컴포넌트용 타입 유틸리티
+ */
+export type WithElementRef<T = HTMLAttributes<HTMLElement>> = T & {
+	ref?: HTMLElement | null;
+};
+
+export type WithoutChild<T> = Omit<T, 'child'>;
+export type WithoutChildrenOrChild<T> = Omit<T, 'children' | 'child'>;

@@ -85,6 +85,9 @@
    * - autoScrollOnNewData: 새 데이터 추가 시 자동 스크롤 여부 (기본값: false)
    *   - true이면 새 노드가 추가될 때 스크롤 위치가 threshold 이내면 자동으로 맨 아래로 스크롤
    *   - 채팅 메시지 목록에 유용 (사용자가 조금만 스크롤업 한 경우 새 메시지를 보여주기 위해 자동 스크롤)
+   * - onItemAdded: 새 데이터 추가 시 호출되는 콜백 함수 (선택 사항)
+   *   - 부모 컴포넌트에서 새 노드가 추가될 때 특정 동작을 수행할 수 있음
+   *   - 예: 새 메시지 알림, 사운드 재생, 배지 업데이트 등
    * - item: 아이템 렌더링 snippet
    * - loading: 로딩 상태 snippet
    * - empty: 빈 상태 snippet
@@ -103,6 +106,7 @@
     scrollTrigger?: 'bottom' | 'top';
     autoScrollToEnd?: boolean;
     autoScrollOnNewData?: boolean;
+    onItemAdded?: (item: ItemData) => void;
     item: ItemSnippet;
     loading?: StatusSnippet;
     empty?: StatusSnippet;
@@ -122,6 +126,7 @@
     scrollTrigger = 'bottom',
     autoScrollToEnd = false,
     autoScrollOnNewData = false,
+    onItemAdded = undefined,
     item,
     loading: loadingSnippet = undefined,
     empty = undefined,
@@ -531,6 +536,12 @@
 
         // 새 아이템에 onValue 리스너 설정
         setupItemListener(newItemKey, newIndex);
+      }
+
+      // 부모 컴포넌트에 새 아이템 추가 알림
+      if (onItemAdded) {
+        console.log('DatabaseListView: Calling onItemAdded callback with new item:', newItem);
+        onItemAdded(newItem);
       }
 
       // autoScrollOnNewData가 활성화된 경우, 스크롤 위치 체크 후 자동 스크롤

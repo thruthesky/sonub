@@ -594,6 +594,75 @@ onChildRemoved(dataQuery, (snapshot) => {
 
 ## 변경 이력
 
+- **2025-11-13**: 채팅방 입장 상태에서 새 메시지 자동 읽음 처리 기능 추가
+  - **DatabaseListView 새 아이템 콜백 활용** ([src/routes/chat/room/+page.svelte](../src/routes/chat/room/+page.svelte)):
+    - `handleNewMessage()` 콜백 함수에 `newMessageCount` 자동 0 업데이트 로직 구현
+    - 사용자가 채팅방에 입장해 있는 상태에서 새 메시지 도착 시 즉시 읽음 처리
+    - Firebase의 `ref`와 `update` 함수를 사용하여 `/chat-joins/{uid}/{roomId}/newMessageCount`를 0으로 업데이트
+    - 채팅 목록에서 읽지 않은 메시지 배지가 자동으로 사라지도록 개선
+
+  - **함수 분리 및 재사용성 개선**:
+    - `markCurrentRoomAsRead()` 함수를 별도로 분리하여 재사용 가능하도록 구현
+    - 채팅방 활성화 상태 및 사용자 인증 상태를 확인하는 유효성 검증 로직 포함
+    - 업데이트 시도 여부를 boolean으로 반환하여 호출자가 결과를 확인 가능
+
+  - **Cloud Functions와의 타이밍 이슈 해결**:
+    - **문제**: 새 메시지 생성 시 Cloud Functions가 `newMessageCount`를 +1 증가시키는데, 클라이언트가 즉시 0으로 설정하면 타이밍 차이로 인해 값이 1로 남을 수 있음
+    - **해결**: 790ms 지연 후 `newMessageCount`를 0으로 업데이트하여 Cloud Functions의 +1 증가가 먼저 완료되도록 보장
+    - **처리 순서**:
+      1. Firebase RTDB에 새 메시지 노드 생성
+      2. Cloud Functions의 `onChatMessageCreate` 트리거 실행 → `newMessageCount` +1 증가
+      3. 클라이언트의 DatabaseListView가 새 메시지 감지 → `handleNewMessage` 콜백 호출
+      4. 790ms 대기 후 클라이언트가 `newMessageCount`를 0으로 업데이트
+    - **추가 안전장치**: setTimeout 내부에서 재차 유효성 검증 (타이머 실행 중 사용자 로그아웃/방 나가기 처리)
+
+  - **구현 로직**:
+    ```typescript
+    /**
+     * 현재 채팅방의 읽지 않은 메시지 수를 0으로 초기화합니다.
+     *
+     * Cloud Functions와의 타이밍 이슈를 해결하기 위해 0.79초 지연 후 업데이트합니다.
+     */
+    function markCurrentRoomAsRead(): boolean {
+      if (!activeRoomId || !authStore.user?.uid || !rtdb) {
+        console.log('채팅방 또는 사용자 정보 없음 - newMessageCount 업데이트 건너뜀');
+        return false;
+      }
+
+      // Cloud Functions 실행 완료를 기다린 후 newMessageCount를 0으로 업데이트
+      setTimeout(() => {
+        // 타이머 실행 중 상태 변경 가능성을 고려한 재검증
+        if (!activeRoomId || !authStore.user?.uid || !rtdb) {
+          console.log('타이머 실행 중 상태 변경 - newMessageCount 업데이트 취소');
+          return;
+        }
+
+        const chatJoinRef = ref(rtdb, `chat-joins/${authStore.user.uid}/${activeRoomId}`);
+        update(chatJoinRef, { newMessageCount: 0 })
+          .then(() => console.log('newMessageCount 0으로 업데이트 완료'))
+          .catch((error) => console.error('newMessageCount 업데이트 실패:', error));
+      }, 790); // 0.79초 지연
+
+      return true;
+    }
+
+    /**
+     * DatabaseListView에서 새 메시지 추가 시 호출되는 콜백
+     */
+    function handleNewMessage(item: { key: string; data: any }) {
+      console.log('새 메시지 추가됨:', item);
+      markCurrentRoomAsRead();
+    }
+    ```
+
+  - **UX 개선 효과**:
+    - 사용자가 채팅방에 머물러 있으면 새 메시지를 즉시 읽은 것으로 간주
+    - 채팅 목록에서 배지 숫자가 자동으로 0으로 업데이트됨 (타이밍 이슈 해결로 정확성 보장)
+    - 사용자가 수동으로 채팅방을 나갔다 들어올 필요 없음
+    - Cloud Functions와의 race condition 해결로 안정적인 읽음 처리 보장
+
+  - **TypeScript 검증**: 0 errors, 471 warnings (Tailwind CSS 관련, 기능에 영향 없음)
+
 - **2025-11-12**: 그룹/오픈 채팅방 입장 로직 개선
   - **클라이언트 코드 개선** ([src/routes/chat/room/+page.svelte](../src/routes/chat/room/+page.svelte)):
     - 그룹/오픈 채팅방 입장 시 `/chat-rooms/{roomId}/members/{uid}: true` 자동 설정

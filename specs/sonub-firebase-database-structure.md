@@ -538,17 +538,36 @@ Firebase Authentication의 다음 필드들은 `/users/<uid>` 노드에 **저장
 │   │   ├── lastMessageAt: 1698473000000
 │   │   ├── joinedAt: 1698472000000
 │   │   ├── updatedAt: 1698473000000
-│   │   ├── listOrder: "1698473000000"
-│   │   └── newMessageCount: 0
-│   └── group-team123/
-│       ├── roomId: "group-team123"
-│       ├── roomType: "group"
-│       ├── lastMessageText: "회의 시작합니다"
-│       ├── lastMessageAt: 1698474000000
-│       ├── joinedAt: 1698472500000
-│       ├── updatedAt: 1698474000000
-│       ├── listOrder: "2001698474000000"
-│       └── newMessageCount: 3
+│   │   ├── newMessageCount: 0
+│   │   ├── listOrder: "1698473000000"  // (사용 중단 예정, 후방 호환성용)
+│   │   ├── singleChatListOrder: "1698473000000"  // 읽지 않은 메시지 없음
+│   │   └── allChatListOrder: 1698473000000  // 전체 채팅방 목록용
+│   ├── group-team123/
+│   │   ├── roomId: "group-team123"
+│   │   ├── roomType: "group"
+│   │   ├── roomName: "팀 회의방"
+│   │   ├── lastMessageText: "회의 시작합니다"
+│   │   ├── lastMessageAt: 1698474000000
+│   │   ├── joinedAt: 1698472500000
+│   │   ├── updatedAt: 1698474000000
+│   │   ├── newMessageCount: 3
+│   │   ├── listOrder: "2001698474000000"  // (사용 중단 예정, 후방 호환성용)
+│   │   ├── groupChatListOrder: "2001698474000000"  // 읽지 않은 메시지 3개
+│   │   ├── openAndGroupChatListOrder: 1698474000000  // 그룹+오픈 통합 목록용
+│   │   └── allChatListOrder: 1698474000000  // 전체 채팅방 목록용
+│   └── open-discussion/
+│       ├── roomId: "open-discussion"
+│       ├── roomType: "open"
+│       ├── roomName: "자유 토론방"
+│       ├── lastMessageText: "누구나 환영합니다"
+│       ├── lastMessageAt: 1698475000000
+│       ├── joinedAt: 1698473000000
+│       ├── updatedAt: 1698475000000
+│       ├── newMessageCount: 0
+│       ├── listOrder: "1698475000000"  // (사용 중단 예정, 후방 호환성용)
+│       ├── openChatListOrder: "1698475000000"  // 읽지 않은 메시지 없음
+│       ├── openAndGroupChatListOrder: 1698475000000  // 그룹+오픈 통합 목록용
+│       └── allChatListOrder: 1698475000000  // 전체 채팅방 목록용
 └── <uid2>/
     └── single-uid1-uid2/
         ├── roomId: "single-uid1-uid2"
@@ -558,8 +577,10 @@ Firebase Authentication의 다음 필드들은 `/users/<uid>` 노드에 **저장
         ├── lastMessageAt: 1698473000000
         ├── joinedAt: 1698472000000
         ├── updatedAt: 1698473000000
-        ├── listOrder: "2001698473000000"
-        └── newMessageCount: 1
+        ├── newMessageCount: 1
+        ├── listOrder: "2001698473000000"  // (사용 중단 예정, 후방 호환성용)
+        ├── singleChatListOrder: "2001698473000000"  // 읽지 않은 메시지 1개
+        └── allChatListOrder: 1698473000000  // 전체 채팅방 목록용
 ```
 
 ### 필드 설명
@@ -876,3 +897,7 @@ query.on('value', (snapshot) => {
 | 2025-11-12 | Claude Code | `handleChatJoinCreate` 함수 보완하여 클라이언트가 `chat-joins/{uid}/{roomId}` 노드를 직접 생성할 때 타입별 정렬 필드가 자동 생성되도록 수정: 1) 1:1 채팅 감지 로직 추가 (`isSingleChat()` 활용) 2) 1:1 채팅 시 `singleChatListOrder`, `allChatListOrder`, `partnerUid`, `roomType` 자동 설정 3) 그룹/오픈 채팅 시 `chat-rooms` 조회 후 `roomType`, `roomName`, `allChatListOrder` 및 타입별 정렬 필드 설정 4) 이미 완전히 설정된 경우 (`joinedAt` + `roomType` 존재) 건너뛰기 최적화 5) `index.ts`의 `onChatJoinCreate` JSDoc 주석 업데이트하여 새 로직 반영 6) Firebase Functions 배포 완료. |
 | 2025-11-13 | Claude Code | 친구 페이지(chat/list) 정렬 필드 수정: 1:1 채팅방만 표시하도록 `allChatListOrder` → `singleChatListOrder` 변경. `chat/list/+page.svelte`의 `JOIN_ORDER_FIELD` 상수 및 템플릿 내 변수명 업데이트. |
 | 2025-11-13 | Claude Code | 클라이언트 채팅방 입장 함수 수정 및 `displayNameLowerCase` 자동 생성 로직 개선: 1) `chat.functions.ts`의 `createSingleChatJoin` 함수명을 `enterSingleChatRoom`으로 변경하고 `set()` 대신 `update()` 사용으로 기존 데이터 보존하도록 수정 2) `user.handler.ts`의 `handleUserUpdate`에서 `displayNameLowerCase` 필드가 없으면 자동 생성하도록 로직 개선 (기존: displayName 변경 시에만 생성 → 개선: displayNameLowerCase 필드 없거나 displayName 변경 시 생성) 3) `types/index.ts`의 `UserData` 인터페이스에 `displayNameLowerCase` 필드 추가 4) Firebase Functions 배포 완료. |
+| 2025-11-13 | Claude Code | `handleChatRoomMemberJoin` 함수 개선: 사용자가 채팅방에 입장할 때 마지막 메시지 정보를 자동으로 저장하도록 수정. 1) `chat-messages`에서 `roomOrder` 필드로 해당 채팅방의 마지막 메시지 조회 (limitToLast(1) 사용) 2) 마지막 메시지의 `text`와 `createdAt` 값을 읽어서 `lastMessageText`, `lastMessageAt`으로 변환 3) `chat-joins/{uid}/{roomId}`에 마지막 메시지 정보 저장 (메시지가 있는 경우에만) 4) 함수 JSDoc 주석 업데이트 5) Firebase Functions 빌드 및 배포 완료. |
+| 2025-11-13 | Claude Code | `/chat-joins/` 데이터 구조 예제 보완: 누락되었던 정렬 필드들을 모든 채팅방 타입 예제에 추가하여 문서 완성도 향상. 1) 1:1 채팅 예제에 `singleChatListOrder`, `allChatListOrder` 추가 2) 그룹 채팅 예제에 `groupChatListOrder`, `openAndGroupChatListOrder`, `allChatListOrder` 및 `roomName` 추가 3) 오픈 채팅 예제 신규 추가 (`open-discussion`) - `openChatListOrder`, `openAndGroupChatListOrder`, `allChatListOrder` 포함 4) 각 정렬 필드에 설명 주석 추가 (읽지 않은 메시지 개수, 용도 등) 5) `listOrder` 필드에 사용 중단 예정 주석 추가. 이로써 데이터 구조 예제가 필드 설명 테이블과 일치하게 되어 개발자가 실제 구조를 더 잘 이해할 수 있게 됨. |
+| 2025-11-13 | Claude Code | 채팅방 입장 시 `newMessageCount` 자동 초기화 기능 구현: 사용자가 채팅방에 입장할 때마다 `/chat-joins/{uid}/{roomId}/newMessageCount`를 0으로 초기화하여 메시지를 모두 읽은 것으로 표시. 1) `enterSingleChatRoom()` 함수 수정 (1:1 채팅용) - `chat-joins` 업데이트 시 `newMessageCount: 0` 추가 2) `joinChatRoom()` 함수 수정 (그룹/오픈 채팅용) - members 등록 후 `chat-joins`에도 `newMessageCount: 0` 설정 추가 3) 두 함수의 JSDoc 주석 업데이트하여 새 동작 문서화. 이로써 사용자가 채팅방 페이지(`/chat/room`)에 들어갈 때마다 `$effect` 훅이 자동으로 실행되어 읽지 않은 메시지 카운트가 0으로 초기화됨. 수정 파일: `src/lib/functions/chat.functions.ts` |
+| 2025-11-13 | Claude Code | 채팅방 헤더 메뉴 기능 구현: `/chat/room` 페이지 상단에 네비게이션 및 메뉴 추가. 1) **헤더 구조**: 뒤로가기 버튼, 채팅 정보 (1:1: 프로필 사진+이름 / 그룹·오픈: 방 이름), 메뉴 버튼을 가로로 배치 2) **드롭다운 메뉴**: shadcn-svelte의 `DropdownMenu` 컴포넌트 활용하여 7개 메뉴 항목 구현 (북마크, 핀: 상단고정, URL 복사, 멤버 목록, 방 탈퇴하기, 신고하고 탈퇴하기, 닫기) 3) **기능 구현**: `handleGoBack()` (채팅 목록으로 이동), `handleCopyUrl()` (현재 URL 클립보드 복사), `handleLeaveRoom()` (`leaveChatRoom()` 호출 후 목록 이동, 확인 다이얼로그 포함) 4) **타입 유틸리티 추가**: `$lib/utils.ts`에 shadcn-svelte 컴포넌트용 타입 추가 (`WithElementRef`, `WithoutChild`, `WithoutChildrenOrChild`) 5) **shadcn-svelte 설치**: `npx shadcn-svelte add dropdown-menu` 실행 6) 일부 메뉴는 TODO placeholder로 향후 구현 예정 (북마크, 핀, 멤버 목록, 신고). 수정 파일: `src/routes/chat/room/+page.svelte`, `src/lib/utils.ts` |

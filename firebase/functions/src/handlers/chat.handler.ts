@@ -464,12 +464,20 @@ export async function handleChatJoinCreate(
  * 주요 처리 로직:
  * 1. chat-rooms/{roomId}/members 아래의 모든 uid 읽기
  * 2. 모든 uid의 개수 세기 (true/false 구분 없이)
- * 3. memberCount 필드를 증가시킴
+ * 3. memberCount 필드를 증가시킨다
+ * 4. 채팅방 정보 조회 (roomType, roomName)
+ * 5. 해당 채팅방의 마지막 메시지 조회 (chat-messages에서 roomOrder로 정렬)
+ * 6. chat-joins/{uid}/{roomId}에 다음 정보 저장:
+ *    - roomType, roomName
+ *    - lastMessageText, lastMessageAt (메시지가 있는 경우)
+ *    - newMessageCount (0으로 초기화)
+ *    - 정렬 필드들 (groupChatListOrder, openChatListOrder 등)
  *
  * 참고:
  * - members 필드 구조: chat-rooms/{roomId}/members/{uid}: boolean
  * - true: 채팅방 참여 중, 메시지 알림을 받음
  * - onValueCreated 트리거로 멤버 입장 감지
+ * - 마지막 메시지는 roomOrder 필드로 효율적으로 조회
  */
 export async function handleChatRoomMemberJoin(
   roomId: string,
@@ -537,7 +545,41 @@ export async function handleChatRoomMemberJoin(
     roomName,
   });
 
-  // 단계 5: chat-joins 정보 업데이트
+  // 단계 5: 마지막 채팅 메시지 조회
+  const messagesRef = admin.database().ref("chat-messages");
+  const lastMessageSnapshot = await messagesRef
+    .orderByChild("roomOrder")
+    .startAt(`-${roomId}-`)
+    .endAt(`-${roomId}-\uf8ff`)
+    .limitToLast(1)
+    .once("value");
+
+  let lastMessageText = "";
+  let lastMessageAt = 0;
+
+  if (lastMessageSnapshot.exists()) {
+    const messages = lastMessageSnapshot.val();
+    const messageId = Object.keys(messages)[0];
+    const lastMessage = messages[messageId];
+
+    lastMessageText = lastMessage.text || "";
+    lastMessageAt = lastMessage.createdAt || 0;
+
+    logger.info("마지막 메시지 조회 완료", {
+      roomId,
+      uid,
+      messageId,
+      lastMessageText,
+      lastMessageAt,
+    });
+  } else {
+    logger.info("채팅방에 메시지가 없음", {
+      roomId,
+      uid,
+    });
+  }
+
+  // 단계 6: chat-joins 정보 업데이트
   const chatJoinRef = admin.database().ref(`chat-joins/${uid}/${roomId}`);
   const chatJoinSnapshot = await chatJoinRef.once("value");
 
@@ -547,6 +589,12 @@ export async function handleChatRoomMemberJoin(
     roomName,
     newMessageCount: 0,
   };
+
+  // 마지막 메시지 정보 추가 (메시지가 있는 경우에만)
+  if (lastMessageAt > 0) {
+    updates.lastMessageText = lastMessageText;
+    updates.lastMessageAt = lastMessageAt;
+  }
 
   // roomType에 따라 적절한 정렬 필드 설정
   if (roomType === "group") {

@@ -27,6 +27,9 @@ export {
  * - roomType
  * - joinedAt
  *
+ * 또한 사용자가 채팅방에 입장할 때마다 newMessageCount를 0으로 초기화하여
+ * 모든 메시지를 읽은 것으로 표시합니다.
+ *
  * @param db - Firebase Realtime Database 인스턴스
  * @param roomId - 채팅방 ID
  * @param uid - 사용자 UID
@@ -47,7 +50,8 @@ export function enterSingleChatRoom(
 ): void {
 	const chatJoinRef = ref(db, `chat-joins/${uid}/${roomId}`);
 	update(chatJoinRef, {
-		roomId: roomId
+		roomId: roomId,
+		newMessageCount: 0
 	}).catch((error) => {
 		console.error('1:1 채팅방 입장 실패:', error);
 	});
@@ -61,6 +65,9 @@ export function enterSingleChatRoom(
  * 1. 사용자가 채팅방에 참여 중임을 표시
  * 2. 메시지 알림을 받도록 설정
  * 3. Cloud Functions가 자동으로 memberCount를 증가시키고 chat-joins에 상세 정보를 추가합니다.
+ *
+ * 또한 사용자가 채팅방에 입장할 때마다 newMessageCount를 0으로 초기화하여
+ * 모든 메시지를 읽은 것으로 표시합니다.
  *
  * @param db - Firebase Realtime Database 인스턴스
  * @param roomId - 채팅방 ID
@@ -80,9 +87,18 @@ export function joinChatRoom(
 	roomId: string,
 	uid: string
 ): void {
+	// 1. 채팅방 멤버로 등록
 	const memberRef = ref(db, `chat-rooms/${roomId}/members/${uid}`);
 	set(memberRef, true).catch((error) => {
-		console.error('채팅방 입장 실패:', error);
+		console.error('채팅방 멤버 등록 실패:', error);
+	});
+
+	// 2. newMessageCount를 0으로 초기화 (메시지를 모두 읽은 것으로 표시)
+	const chatJoinRef = ref(db, `chat-joins/${uid}/${roomId}`);
+	update(chatJoinRef, {
+		newMessageCount: 0
+	}).catch((error) => {
+		console.error('newMessageCount 초기화 실패:', error);
 	});
 }
 

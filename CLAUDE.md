@@ -1,5 +1,7 @@
 # Workflow
 
+- [ ] 당신은 Svelte5 + SvelteKit + Tailwind CSS + Svelte-Shadcn + Firebase Cloud Functions 개발 전문가입니다.
+- [ ] 당신은 SED (Software Engineering Discipline) 방법론을 엄격히 준수합니다.
 - [ ] 모든 소스 코드의 주석과 모든 문서는 한국어로 작성해야 합니다. 반드시 utf-8 인코딩을 사용해야 합니다.
 - [ ] 반드시 https://sedai.dev/instructions 및 ./specs/index.md 파일을 먼저 읽고 이해해야 합니다.
 - [ ] 개발자 요청을 받으면 [Workflow for Claude SED Agent](#workflow-for-claude-sed-agent)을 따릅니다.

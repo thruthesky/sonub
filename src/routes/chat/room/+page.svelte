@@ -7,16 +7,20 @@
 	 */
 
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 	import DatabaseListView from '$lib/components/DatabaseListView.svelte';
 	import Avatar from '$lib/components/user/avatar.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { userProfileStore } from '$lib/stores/user-profile.svelte';
 	import { pushData } from '$lib/stores/database.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { buildSingleRoomId, enterSingleChatRoom, joinChatRoom } from '$lib/functions/chat.functions';
+	import { buildSingleRoomId, enterSingleChatRoom, joinChatRoom, leaveChatRoom } from '$lib/functions/chat.functions';
 	import { formatLongDate } from '$lib/functions/date.functions';
 	import { tick } from 'svelte';
 	import { rtdb } from '$lib/firebase';
+	import { ref, update } from 'firebase/database';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+	import { Button } from '$lib/components/ui/button';
 
 	// GET 파라미터 추출
 	const uidParam = $derived.by(() => $page.url.searchParams.get('uid') ?? '');
@@ -161,6 +165,134 @@
 	function handleScrollToBottom() {
 		databaseListView?.scrollToBottom();
 	}
+
+	// 뒤로가기 (채팅 목록으로)
+	function handleGoBack() {
+		void goto('/chat/list');
+	}
+
+	// 북마크 추가/제거
+	function handleBookmark() {
+		console.log('북마크 클릭');
+		// TODO: 북마크 기능 구현
+	}
+
+	// 핀: 상단고정
+	function handlePin() {
+		console.log('핀: 상단고정 클릭');
+		// TODO: 핀 기능 구현
+	}
+
+	// URL 복사
+	async function handleCopyUrl() {
+		try {
+			const url = window.location.href;
+			await navigator.clipboard.writeText(url);
+			console.log('URL 복사됨:', url);
+			// TODO: 토스트 메시지로 알림
+		} catch (error) {
+			console.error('URL 복사 실패:', error);
+		}
+	}
+
+	// 멤버 목록
+	function handleMemberList() {
+		console.log('멤버 목록 클릭');
+		// TODO: 멤버 목록 다이얼로그 표시
+	}
+
+	// 방 탈퇴하기
+	async function handleLeaveRoom() {
+		if (!activeRoomId || !authStore.user?.uid || !rtdb) return;
+
+		const confirmed = confirm('채팅방에서 나가시겠습니까?');
+		if (!confirmed) return;
+
+		try {
+			await leaveChatRoom(rtdb, activeRoomId, authStore.user.uid);
+			console.log('채팅방 탈퇴 완료');
+			void goto('/chat/list');
+		} catch (error) {
+			console.error('채팅방 탈퇴 실패:', error);
+		}
+	}
+
+	// 신고하고 탈퇴하기
+	function handleReportAndLeave() {
+		console.log('신고하고 탈퇴하기 클릭');
+		// TODO: 신고 다이얼로그 표시 후 탈퇴
+	}
+
+	/**
+	 * 현재 채팅방의 읽지 않은 메시지 수를 0으로 초기화합니다.
+	 *
+	 * 사용자가 채팅방에 입장해 있는 상태에서 새 메시지를 읽었음을 표시하기 위해
+	 * Firebase RTDB의 `/chat-joins/{uid}/{roomId}/newMessageCount`를 0으로 업데이트합니다.
+	 *
+	 * **타이밍 이슈 해결:**
+	 * 새 메시지가 생성되면 다음과 같은 순서로 처리됩니다:
+	 * 1. Firebase RTDB에 새 메시지 노드 생성
+	 * 2. Cloud Functions의 onChatMessageCreate 트리거 실행 → newMessageCount +1 증가
+	 * 3. 클라이언트의 DatabaseListView가 새 메시지 감지 → handleNewMessage 콜백 호출
+	 *
+	 * 문제: 클라이언트가 즉시 newMessageCount를 0으로 설정하면,
+	 * Cloud Functions가 아직 실행 중이거나 완료되지 않아 값이 다시 1로 증가할 수 있습니다.
+	 * 결과적으로 채팅 목록에 읽지 않은 메시지 배지(1)가 남아있게 됩니다.
+	 *
+	 * 해결책: 0.79초(790ms) 지연 후 newMessageCount를 0으로 설정합니다.
+	 * 이렇게 하면 Cloud Functions가 먼저 +1 증가를 완료한 후,
+	 * 클라이언트가 0으로 초기화하여 배지가 정확히 사라집니다.
+	 *
+	 * @returns {boolean} 업데이트 시도 여부 (true: 업데이트 시도함, false: 조건 미충족으로 건너뜀)
+	 */
+	function markCurrentRoomAsRead(): boolean {
+		// 채팅방 활성화 상태 및 사용자 인증 확인
+		if (!activeRoomId || !authStore.user?.uid || !rtdb) {
+			console.log('채팅방 또는 사용자 정보 없음 - newMessageCount 업데이트 건너뜀');
+			return false;
+		}
+
+		// Cloud Functions 실행 완료를 기다린 후 newMessageCount를 0으로 업데이트
+		// 790ms 지연을 두어 Cloud Functions의 +1 증가가 먼저 완료되도록 보장
+		setTimeout(() => {
+			// 다시 한번 유효성 검사 (타이머 실행 중 사용자가 로그아웃하거나 방을 나갈 수 있음)
+			if (!activeRoomId || !authStore.user?.uid || !rtdb) {
+				console.log('타이머 실행 중 상태 변경 - newMessageCount 업데이트 취소');
+				return;
+			}
+
+			const chatJoinRef = ref(rtdb, `chat-joins/${authStore.user.uid}/${activeRoomId}`);
+			update(chatJoinRef, {
+				newMessageCount: 0
+			})
+				.then(() => {
+					console.log('newMessageCount 0으로 업데이트 완료 (채팅방에서 새 메시지 읽음 처리)');
+				})
+				.catch((error) => {
+					console.error('newMessageCount 업데이트 실패:', error);
+				});
+		}, 790); // 0.79초 지연
+
+		return true;
+	}
+
+	/**
+	 * DatabaseListView에서 새 메시지 추가 시 호출되는 콜백
+	 *
+	 * 사용자가 채팅방에 입장해 있는 상태에서 새로운 메시지가 도착하면
+	 * 즉시 읽음 처리를 위해 newMessageCount를 0으로 업데이트합니다.
+	 *
+	 * @param item - 새로 추가된 메시지 아이템 ({ key: string, data: any })
+	 */
+	function handleNewMessage(item: { key: string; data: any }) {
+		console.log('새 메시지 추가됨:', item);
+
+		// 현재 채팅방을 읽음 상태로 표시
+		markCurrentRoomAsRead();
+
+		// TODO: 필요한 추가 작업 수행
+		// 예: 사운드 재생, 알림 표시, 배지 업데이트 등
+	}
 </script>
 
 <svelte:head>
@@ -168,47 +300,85 @@
 </svelte:head>
 
 <div class="mx-auto flex max-w-[960px] flex-col gap-6 px-4 py-8 pb-16">
-	<header
-		class="chat-room-header flex items-center justify-between gap-4 p-6 sm:flex-col sm:items-start"
-	>
-		<div>
-			<p class="chat-room-label">{isSingleChat ? m.chatSingleChat() : m.chatChatRoom()}</p>
-			<h1 class="chat-room-title">
-				{#if isSingleChat && uidParam}
-					{targetDisplayName}
-				{:else if roomIdParam}
-					{m.chatRoom()} {roomIdParam}
-				{:else}
-					{m.chatOverview()}
-				{/if}
-			</h1>
-			<p class="chat-room-subtitle mt-1.5">
-				{#if !authStore.isAuthenticated}
-					{m.chatSignInRequired()}
-				{:else if isSingleChat && !uidParam}
-					{m.chatProvideUid()}
-				{:else if targetProfileLoading}
-					{m.chatLoadingProfile()}
-				{:else if targetProfileError}
-					{m.chatLoadProfileFailed()}
-				{:else if isSingleChat}
-					{m.chatChattingWith({ name: targetDisplayName })}
-				{:else if roomIdParam}
-					{m.chatRoomReady({ roomId: roomIdParam })}
-				{:else}
-					{m.chatSelectConversation()}
-				{/if}
-			</p>
-		</div>
-		{#if uidParam}
-			<div class="chat-room-partner flex items-center gap-3 px-4 py-3 sm:w-full sm:justify-center">
-				<Avatar uid={uidParam} size={64} class="shadow-sm" />
-				<div>
-					<p class="partner-name">{targetDisplayName}</p>
-					<p class="partner-uid">{uidParam}</p>
+	<!-- 채팅방 상단 헤더 -->
+	<header class="chat-room-header">
+		<!-- 뒤로가기 버튼 -->
+		<Button variant="ghost" size="icon" onclick={handleGoBack} class="shrink-0">
+			<span class="text-xl">←</span>
+		</Button>
+
+		<!-- 채팅방 제목/프로필 -->
+		<div class="flex flex-1 items-center gap-3 overflow-hidden">
+			{#if isSingleChat && uidParam}
+				<!-- 1:1 채팅: 프로필 사진 + 이름 -->
+				<Avatar uid={uidParam} size={40} class="shrink-0 shadow-sm" />
+				<div class="flex-1 overflow-hidden">
+					<h1 class="truncate text-lg font-semibold text-gray-900">{targetDisplayName}</h1>
+					{#if targetProfileLoading}
+						<p class="text-xs text-gray-500">로딩 중...</p>
+					{:else if targetProfileError}
+						<p class="text-xs text-red-500">프로필 로드 실패</p>
+					{/if}
 				</div>
-			</div>
-		{/if}
+			{:else if roomIdParam}
+				<!-- 그룹/오픈 채팅: 방 이름 -->
+				<div class="flex-1 overflow-hidden">
+					<h1 class="truncate text-lg font-semibold text-gray-900">
+						{m.chatRoom()} {roomIdParam}
+					</h1>
+					<p class="text-xs text-gray-500">{m.chatChatRoom()}</p>
+				</div>
+			{:else}
+				<!-- 기본 상태 -->
+				<div class="flex-1 overflow-hidden">
+					<h1 class="text-lg font-semibold text-gray-900">{m.chatOverview()}</h1>
+					<p class="text-xs text-gray-500">{m.chatSelectConversation()}</p>
+				</div>
+			{/if}
+		</div>
+
+		<!-- 메뉴 드롭다운 -->
+		<DropdownMenu.Root>
+			<DropdownMenu.Trigger>
+				<Button variant="ghost" size="icon" class="shrink-0">
+					<span class="text-xl">⋮</span>
+				</Button>
+			</DropdownMenu.Trigger>
+			<DropdownMenu.Content align="end" class="w-56">
+				<DropdownMenu.Item onclick={handleBookmark} class="bg-pink-50 hover:bg-pink-100">
+					<span class="mr-2">🔖</span>
+					북마크
+				</DropdownMenu.Item>
+				<DropdownMenu.Item onclick={handlePin} class="bg-red-50 hover:bg-red-100">
+					<span class="mr-2">📌</span>
+					핀: 상단고정
+				</DropdownMenu.Item>
+				<DropdownMenu.Item onclick={handleCopyUrl} class="bg-gray-50 hover:bg-gray-100">
+					<span class="mr-2">🔗</span>
+					URL 복사
+				</DropdownMenu.Item>
+				<DropdownMenu.Separator />
+				<DropdownMenu.Item onclick={handleMemberList} class="bg-blue-50 hover:bg-blue-100">
+					<span class="mr-2">👥</span>
+					멤버 목록
+				</DropdownMenu.Item>
+				<DropdownMenu.Separator />
+				<DropdownMenu.Item
+					onclick={handleLeaveRoom}
+					class="bg-orange-50 text-orange-600 hover:bg-orange-100"
+				>
+					<span class="mr-2">🚪</span>
+					방 탈퇴하기
+				</DropdownMenu.Item>
+				<DropdownMenu.Item
+					onclick={handleReportAndLeave}
+					class="bg-yellow-50 text-red-600 hover:bg-yellow-100"
+				>
+					<span class="mr-2">⚠️</span>
+					신고하고 탈퇴하기
+				</DropdownMenu.Item>
+			</DropdownMenu.Content>
+		</DropdownMenu.Root>
 	</header>
 
 	{#if !activeRoomId}
@@ -234,6 +404,7 @@
 							scrollTrigger="top"
 							autoScrollToEnd={true}
 							autoScrollOnNewData={true}
+							onItemAdded={handleNewMessage}
 						>
 							{#snippet item(itemData: { key: string; data: any })}
 								{@const message = itemData.data ?? {}}
@@ -340,31 +511,7 @@
 
 	/* 채팅방 헤더 스타일 */
 	.chat-room-header {
-		@apply rounded-2xl border border-gray-200 bg-white shadow-[0_10px_25px_rgba(15,23,42,0.06)];
-	}
-
-	.chat-room-label {
-		@apply mb-0.5 text-sm font-semibold tracking-wider text-indigo-500 uppercase;
-	}
-
-	.chat-room-title {
-		@apply m-0 text-[1.8rem] font-bold text-gray-900;
-	}
-
-	.chat-room-subtitle {
-		@apply text-[0.95rem] text-gray-500;
-	}
-
-	.chat-room-partner {
-		@apply rounded-full bg-gray-50;
-	}
-
-	.partner-name {
-		@apply m-0 font-semibold text-gray-900;
-	}
-
-	.partner-uid {
-		@apply m-0 text-sm break-all text-gray-500;
+		@apply flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-[0_10px_25px_rgba(15,23,42,0.06)];
 	}
 
 	/* 빈 채팅방 스타일 */

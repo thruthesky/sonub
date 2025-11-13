@@ -27,11 +27,11 @@
 	 * - 채팅방 입장 시 자동으로 뱃지 카운트 초기화
 	 * - `/chat-joins/{uid}/{roomId}/newMessageCount` 필드 활용
 	 *
-	 * ### 3. 북마크 기능 (북마크 폴더로 관리)
-	 * - 채팅방을 북마크에 추가/제거
-	 * - 북마크 폴더 생성 및 관리 (예: 업무, 친구, 가족 등)
-	 * - 북마크된 채팅방을 폴더별로 그룹화하여 표시
-	 * - Firebase 경로: `/user-bookmarks/{uid}/{folderId}/{roomId}`
+	 * ### 3. 즐겨찾기 기능 (폴더관리)
+	 * - 채팅방을 즐겨찾기에 추가/제거
+	 * - 즐겨찾기 폴더 생성 및 관리 (예: 업무, 친구, 가족 등)
+	 * - 즐겨찾기된 채팅방을 폴더별로 그룹화하여 표시
+	 * - Firebase 경로: `/user-favorites/{uid}/{folderId}/{roomId}`
 	 *
 	 * ### 4. 채팅 핀(Chat Pin) 기능
 	 * - 중요한 채팅방을 상단에 고정
@@ -83,6 +83,13 @@
 	 * - Firebase 경로: `/chat-messages/{messageId}` (parentId: postId)
 	 * - 대댓글 지원 (최대 1단계)
 	 * - DatabaseListView 사용하여 실시간 댓글 동기화
+	 *
+	 * ### 9. 게시판 글이 채팅방 메시지 목록에 표시
+	 * - 게시판에서 글을 작성하면 해당 채팅방의 메시지 목록에 자동으로 표시
+	 * - type: "post"인 메시지를 채팅방 메시지 목록에 통합하여 표시
+	 * - 채팅방 화면에서 일반 메시지와 게시글을 구분하여 렌더링
+	 * - 게시글은 제목, 카테고리, 미리보기 형태로 표시
+	 * - 클릭 시 게시글 상세 페이지로 이동
 	 */
 
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -151,7 +158,10 @@
 				<Card.Header>
 					<div class="flex items-start gap-3">
 						<span class="todo-number">1</span>
-						<Card.Title class="text-xl">그룹 채팅 기능</Card.Title>
+						<div class="flex flex-col gap-1">
+							<Card.Title class="text-xl">그룹 채팅 기능</Card.Title>
+							<span class="todo-badge todo-badge--done">완료</span>
+						</div>
 					</div>
 				</Card.Header>
 				<Card.Content>
@@ -185,7 +195,10 @@
 				<Card.Header>
 					<div class="flex items-start gap-3">
 						<span class="todo-number">2</span>
-						<Card.Title class="text-xl">새로운 메시지 뱃지 증가 및 방 입장시 초기화</Card.Title>
+						<div class="flex flex-col gap-1">
+							<Card.Title class="text-xl">새로운 메시지 뱃지 증가 및 방 입장시 초기화</Card.Title>
+							<span class="todo-badge todo-badge--done">완료</span>
+						</div>
 					</div>
 				</Card.Header>
 				<Card.Content>
@@ -197,20 +210,20 @@
 				</Card.Content>
 			</Card.Root>
 
-			<!-- 3. 북마크 기능 -->
+			<!-- 3. 즐겨찾기 기능 -->
 			<Card.Root class="todo-card">
 				<Card.Header>
 					<div class="flex items-start gap-3">
 						<span class="todo-number">3</span>
-						<Card.Title class="text-xl">북마크 기능 (북마크 폴더로 관리)</Card.Title>
+						<Card.Title class="text-xl">즐겨찾기 기능 (폴더관리)</Card.Title>
 					</div>
 				</Card.Header>
 				<Card.Content>
 					<ul class="todo-list">
-						<li>채팅방을 북마크에 추가/제거</li>
-						<li>북마크 폴더 생성 및 관리 (예: 업무, 친구, 가족 등)</li>
-						<li>북마크된 채팅방을 폴더별로 그룹화하여 표시</li>
-						<li><code>/user-bookmarks/{'{uid}'}/{'{folderId}'}/{'{roomId}'}</code></li>
+						<li>채팅방을 즐겨찾기에 추가/제거</li>
+						<li>즐겨찾기 폴더 생성 및 관리 (예: 업무, 친구, 가족 등)</li>
+						<li>즐겨찾기된 채팅방을 폴더별로 그룹화하여 표시</li>
+						<li><code>/user-favorites/{'{uid}'}/{'{folderId}'}/{'{roomId}'}</code></li>
 					</ul>
 				</Card.Content>
 			</Card.Root>
@@ -337,6 +350,25 @@
 					</div>
 				</Card.Content>
 			</Card.Root>
+
+			<!-- 9. 게시판 글이 채팅방 메시지 목록에 표시 -->
+			<Card.Root class="todo-card">
+				<Card.Header>
+					<div class="flex items-start gap-3">
+						<span class="todo-number">9</span>
+						<Card.Title class="text-xl">게시판 글이 채팅방 메시지 목록에 표시</Card.Title>
+					</div>
+				</Card.Header>
+				<Card.Content>
+					<ul class="todo-list">
+						<li>게시판에서 글을 작성하면 해당 채팅방의 메시지 목록에 자동으로 표시</li>
+						<li>type: "post"인 메시지를 채팅방 메시지 목록에 통합하여 표시</li>
+						<li>채팅방 화면에서 일반 메시지와 게시글을 구분하여 렌더링</li>
+						<li>게시글은 제목, 카테고리, 미리보기 형태로 표시</li>
+						<li>클릭 시 게시글 상세 페이지로 이동</li>
+					</ul>
+				</Card.Content>
+			</Card.Root>
 		</div>
 	</div>
 </div>
@@ -372,5 +404,13 @@
 
 	.todo-subtitle {
 		@apply mb-2 font-semibold text-gray-900;
+	}
+
+	.todo-badge {
+		@apply inline-flex w-fit items-center gap-1 rounded-full px-3 py-0.5 text-xs font-semibold uppercase tracking-wide;
+	}
+
+	.todo-badge--done {
+		@apply bg-green-100 text-green-700;
 	}
 </style>
