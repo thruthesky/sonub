@@ -110,3 +110,54 @@ export const analytics: Analytics | null = browser ? getAnalytics(app) : null;
  * Firebase 앱 인스턴스 export (고급 사용)
  */
 export default app;
+
+// ==================== FCM Messaging 추가 ====================
+
+import {
+	getMessaging,
+	isSupported as isMessagingSupported,
+	type Messaging
+} from 'firebase/messaging';
+
+/**
+ * Firebase Cloud Messaging 서비스
+ * 브라우저 환경에서만 초기화하고, Messaging API 지원 여부를 체크합니다.
+ * Safari 등 일부 브라우저는 FCM을 지원하지 않을 수 있습니다.
+ */
+let messaging: Messaging | null = null;
+
+/**
+ * Firebase Messaging 인스턴스를 가져오는 비동기 함수
+ * @returns {Promise<Messaging | null>} Messaging 인스턴스 또는 null
+ */
+export async function getFirebaseMessaging(): Promise<Messaging | null> {
+	// 서버 환경에서는 null 반환
+	if (!browser) {
+		console.warn('[FCM] 서버 환경에서는 Messaging을 사용할 수 없습니다.');
+		return null;
+	}
+
+	// 이미 초기화된 경우 기존 인스턴스 반환
+	if (messaging) {
+		return messaging;
+	}
+
+	try {
+		// 브라우저가 FCM을 지원하는지 체크
+		const supported = await isMessagingSupported();
+
+		if (!supported) {
+			console.warn('[FCM] 이 브라우저는 Firebase Cloud Messaging을 지원하지 않습니다.');
+			return null;
+		}
+
+		// Messaging 인스턴스 생성
+		messaging = getMessaging(app);
+		console.log('✅ Firebase Messaging 초기화 완료');
+
+		return messaging;
+	} catch (error) {
+		console.error('[FCM] Messaging 초기화 실패:', error);
+		return null;
+	}
+}

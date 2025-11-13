@@ -15,9 +15,21 @@
 	import LeftSidebar from '$lib/components/left-sidebar.svelte';
 	import RightSidebar from '$lib/components/right-sidebar.svelte';
 	import DevIcon from '$lib/components/dev/dev-icon.svelte';
+	import FcmPermissionGate from '$lib/components/FcmPermissionGate.svelte';
 	import { dev } from '$app/environment';
+	import { Toaster } from 'svelte-sonner';
+	import { onMount } from 'svelte';
+	import { registerServiceWorker } from '$lib/fcm';
 
 	let { children } = $props();
+
+	/**
+	 * 앱 시작 시 서비스 워커 미리 등록
+	 * FCM 권한 요청 시 서비스 워커가 이미 활성화되어 있어야 토큰 발급이 성공합니다.
+	 */
+	onMount(async () => {
+		await registerServiceWorker();
+	});
 </script>
 
 <svelte:head>
@@ -53,3 +65,9 @@
 {#if dev}
 	<DevIcon />
 {/if}
+
+<!-- 전역 Toast 알림 컴포넌트 -->
+<Toaster position="top-center" richColors />
+
+<!-- FCM 푸시 알림 권한 요청 가드 -->
+<FcmPermissionGate />

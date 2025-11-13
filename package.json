@@ -72,6 +72,7 @@
 		"clsx": "^2.1.1",
 		"firebase": "^12.5.0",
 		"lucide-svelte": "^0.553.0",
+		"svelte-sonner": "^1.0.6",
 		"tailwind-merge": "^3.3.1"
 	}
 }

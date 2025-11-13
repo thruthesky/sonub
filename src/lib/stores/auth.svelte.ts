@@ -150,6 +150,17 @@ class AuthStore {
 
 				// 관리자 목록 로드
 				await this.loadAdminList();
+
+				// FCM 토큰에 UID 업데이트 (동적 import로 순환 의존성 방지)
+				if (typeof window !== 'undefined') {
+					import('$lib/fcm')
+						.then(({ updateFcmTokenWithUid }) => {
+							updateFcmTokenWithUid();
+						})
+						.catch((error) => {
+							console.error('[AuthStore] FCM 토큰 업데이트 import 실패:', error);
+						});
+				}
 			} else {
 				console.log('사용자 로그아웃됨');
 				this._state.adminList = [];

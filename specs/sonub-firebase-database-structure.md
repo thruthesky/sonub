@@ -32,6 +32,11 @@ dependencies: []
     - [설명](#설명)
     - [클라이언트/서버 역할 분리](#클라이언트서버-역할-분리-2)
     - [관련 가이드](#관련-가이드-2)
+  - [FCM 토큰 (fcm-tokens)](#fcm-토큰-fcm-tokens)
+    - [데이터 구조](#데이터-구조-2)
+    - [필드 설명](#필드-설명-1)
+    - [클라이언트/서버 역할 분리](#클라이언트서버-역할-분리-3)
+    - [저장 목적 및 운영 시나리오](#저장-목적-및-운영-시나리오)
   - [주요 설계 원칙](#주요-설계-원칙)
     - [1. Flat Style 구조](#1-flat-style-구조)
     - [2. 속성 분리](#2-속성-분리)
@@ -147,6 +152,7 @@ Firebase Realtime Database (루트)
 ├── following/                # 팔로잉 (내가 팔로우하는 사용자)
 ├── chat-messages/            # 채팅 메시지 (게시글 + 댓글 역할 통합)
 ├── chat-joins/               # 채팅방 참여 정보 (채팅방 목록용)
+├── fcm-tokens/               # FCM 권한 획득 후 장치 토큰 저장
 └── stats/                    # 전역 통계
     └── counters/
         └── user              # 전체 사용자 수 (Cloud Functions에서만 증가)
@@ -971,6 +977,50 @@ query.on('value', (snapshot) => {
 
 ---
 
+## FCM 토큰 (fcm-tokens)
+
+`/fcm-tokens` 경로는 웹·안드로이드·iOS 클라이언트가 **사용자로부터 FCM 권한을 획득**하고 토큰을 발급받은 직후 저장하는 공간입니다. 토큰 문자열 자체를 키로 사용하여 중복 저장을 방지하고, `device`/`uid` 메타데이터만 값을로 두어 간결하게 관리합니다.
+
+### 데이터 구조
+
+```
+/fcm-tokens/
+├── cY8...YzA/                   // tokenId = 실제 FCM registration token
+│   ├── device: "web"
+│   └── uid: "uid_user_1"
+└── dpQ...X9b/
+    ├── device: "android"
+    └── uid: "uid_user_2"
+```
+
+### 필드 설명
+
+| 필드 | 타입 | 필수 | 작성 주체 | 설명 |
+|------|------|------|-----------|------|
+| `tokenId` (키) | string | ✅ | 클라이언트 | FCM SDK가 반환한 토큰 문자열. 경로 키로 사용되어 같은 토큰이 다시 발급되더라도 동일 노드를 덮어써 중복을 막습니다. |
+| `device` | `'web' \| 'android' \| 'ios'` | ✅ | 클라이언트 | 토큰이 생성된 플랫폼 유형. 웹 클라이언트는 반드시 `'web'`을 저장합니다. |
+| `uid` | string | ✅ | 클라이언트 | 토큰을 소유한 로그인 사용자 UID. 인증된 세션에서만 기록해야 합니다. |
+
+### 클라이언트/서버 역할 분리
+
+- **클라이언트**
+  - 사용자에게 FCM 권한을 요청하고, SDK가 반환한 `tokenId`를 그대로 `/fcm-tokens/{tokenId}` 경로의 키로 사용합니다.
+  - `device` 필드를 현재 실행 중인 플랫폼에 맞춰 `'web'`, `'android'`, `'ios'` 중 하나로 설정합니다.
+  - 로그인한 사용자의 UID를 `uid` 필드에 기록하여 서버가 토큰과 사용자를 매칭할 수 있게 합니다.
+  - 동일 디바이스에서 토큰이 새로 고침되면 같은 키에 덮어써 최신 토큰만 유지합니다.
+- **서버 / Cloud Functions**
+  - `/fcm-tokens` 노드를 읽어 사용자별 유효한 토큰 목록을 구성하고 FCM 발송 시 대상 토큰을 선택합니다.
+  - 보안 규칙으로 `auth != null`인 경우에만 토큰을 작성할 수 있게 제한하며, 서버 측은 읽기 권한만 사용합니다.
+
+### 저장 목적 및 운영 시나리오
+
+- **중복 방지**: 토큰 문자열을 키로 사용하므로 같은 토큰이 여러 번 저장되지 않고 항상 동일 경로를 업데이트합니다.
+- **멀티 디바이스 지원**: 한 사용자가 여러 디바이스를 사용할 경우 각 토큰이 서로 다른 키로 저장되어 디바이스별로 개별 푸시가 가능합니다.
+- **권한 획득 흐름**: 클라이언트 앱이 권한을 획득 → FCM 토큰 발급 → `/fcm-tokens/{tokenId}`에 `{ device, uid }` 저장 → 서버가 이 목록을 이용해 대상 디바이스로 메시지를 발송합니다.
+- **웹 케이스 명시**: 웹 환경에서는 `device` 값이 항상 `'web'`으로 고정되며, 브라우저 토큰 회전이 발생하면 동일 경로가 새 값으로 교체됩니다.
+
+---
+
 ## 주요 설계 원칙
 
 ### 1. Flat Style 구조
@@ -1050,6 +1100,7 @@ query.on('value', (snapshot) => {
 
 | 날짜 | 작업자 | 내용 |
 | ---- | ------ | ---- |
+| 2025-11-13 | Codex Agent | `/fcm-tokens/{tokenId}` 스펙을 신설하여 데이터 트리, 목차, 섹션(데이터 구조/필드 설명/역할 분리/운영 시나리오)에 FCM 토큰 저장 규칙과 토큰을 키로 사용하는 중복 방지 이유를 명시했습니다. |
 | 2025-11-12 | Codex Agent | `/chat-rooms` 섹션을 신설하고 Cloud Functions + Security Rules가 owner/createdBy를 자동 설정·검증하는 과정을 상세화하여 채팅방 데이터 흐름을 명시. |
 | 2025-11-12 | Claude Code | `roomTitle` 필드를 사양에 맞게 `roomName`으로 통일. 클라이언트(ChatCreateDialog.svelte)와 Firebase Functions 타입 정의(types/index.ts)에서 `roomTitle`을 `roomName`으로 변경. 후방 호환성을 위해 읽기 함수(resolveRoomTitle)는 `roomTitle`과 `roomName` 둘 다 체크하도록 유지. |
 | 2025-11-12 | Claude Code | `listOrder` 필드를 모든 소스 코드와 스펙 문서에서 완전히 제거. 채팅방 타입별 전용 정렬 필드 사용으로 변경: 1) types/index.ts에서 `listOrder` 필드 삭제 2) chat.handler.ts의 멤버 입장 로직에서 타입별 정렬 필드 자동 설정 (groupChatListOrder, openChatListOrder, openAndGroupChatListOrder, allChatListOrder) 3) chat/list/+page.svelte에서 `allChatListOrder` 사용 (모든 채팅 통합 목록) 4) group-chat-list/+page.svelte에서 `openAndGroupChatListOrder` 사용 (그룹+오픈 통합 목록) 5) database.rules.json 인덱스 업데이트 6) Firebase Functions 배포 완료. |

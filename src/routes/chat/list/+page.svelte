@@ -130,6 +130,11 @@
 			return;
 		}
 
+		if (!rtdb) {
+			console.error('Database가 초기화되지 않았습니다');
+			return;
+		}
+
 		try {
 			const isPinned = await togglePinChatRoom(rtdb, roomId, uid, roomType);
 			console.log(`✅ 채팅방 핀 ${isPinned ? '설정' : '해제'} 완료:`, roomId);

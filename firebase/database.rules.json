@@ -151,6 +151,10 @@
         ]
       }
     },
+    "fcm-tokens": {
+      ".read": true,
+      ".write": true
+    },
     "test": {
       "data": {
         // QA 전용 테스트 데이터 노드 - 누구나 읽고 쓰기 가능

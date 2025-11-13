@@ -928,6 +928,255 @@ orderPrefix를 사용하는 경우, **해당 범위 내에서 삭제된 노드�
 
 ---
 
+### 11.9. orderBy 필드 변경 감지 및 자동 재정렬
+
+#### 11.9.1. 개요
+
+`DatabaseListView`는 **orderBy 필드 값이 실시간으로 변경되면 자동으로 아이템을 재정렬**합니다. 이를 통해 Firebase RTDB에서 정렬 기준 필드가 업데이트되어도 항상 올바른 순서로 목록이 표시됩니다.
+
+**주요 기능**:
+- 각 아이템의 orderBy 필드 값을 실시간 추적
+- 값 변경 감지 시 Firebase 정렬 규칙에 따라 자동 재배치
+- reverse, scrollTrigger 옵션 자동 적용
+- 효율적인 메모리 관리 (변경된 아이템만 처리)
+
+#### 11.9.2. 작동 방식
+
+**1. 초기화 단계**:
+```typescript
+// previousOrderByValues Map에 각 아이템의 초기 orderBy 값 저장
+let previousOrderByValues = new Map<string, any>();
+
+// setupItemListener() 호출 시 현재 orderBy 값 저장
+previousOrderByValues.set(itemKey, currentOrderByValue);
+```
+
+**2. 변경 감지**:
+```typescript
+// onValue 콜백에서 orderBy 필드 변경 감지
+const newOrderByValue = updatedData[orderBy];
+const previousOrderByValue = previousOrderByValues.get(itemKey);
+
+if (previousOrderByValue !== undefined && previousOrderByValue !== newOrderByValue) {
+  // orderBy 값이 변경됨!
+  repositionItem(itemKey, updatedData, newOrderByValue);
+}
+```
+
+**3. 자동 재배치**:
+```typescript
+// repositionItem() 함수가 다음을 수행:
+// 1. items 배열에서 해당 아이템 제거
+// 2. Firebase 정렬 규칙에 따라 올바른 위치 계산
+// 3. 해당 위치에 아이템 삽입
+// 4. 모든 리스너 재설정
+```
+
+#### 11.9.3. Firebase 정렬 규칙
+
+DatabaseListView는 Firebase Realtime Database의 정렬 순서를 정확히 따릅니다:
+
+**정렬 우선순위**:
+1. `null` / `undefined`
+2. `false`
+3. `true`
+4. 숫자 (오름차순)
+5. 문자열 (사전순, 대소문자 구분)
+
+**비교 함수**:
+```typescript
+function compareOrderByValues(a: any, b: any, reverseOrder: boolean): number {
+  // Firebase 정렬 규칙을 엄격히 따름
+  // null/undefined < boolean < number < string
+  // reverseOrder가 true면 부호 반전
+}
+```
+
+#### 11.9.4. 사용 예시
+
+##### 예시 1: 게시글 순서 변경 (order 필드)
+
+**초기 상태**:
+```javascript
+// Firebase RTDB
+{
+  "posts": {
+    "-ABC": { "title": "Post A", "order": 20 },
+    "-DEF": { "title": "Post B", "order": 30 },
+    "-GHI": { "title": "Post C", "order": 40 }
+  }
+}
+```
+
+**화면 표시** (order 오름차순):
+```
+Post A (order: 20)
+Post B (order: 30)
+Post C (order: 40)
+```
+
+**Post B의 order를 10으로 변경**:
+```javascript
+// Firebase에서 order 값 업데이트
+await update(ref(rtdb, 'posts/-DEF'), { order: 10 });
+```
+
+**자동 재정렬 결과**:
+```
+Post B (order: 10)  ← 자동으로 맨 앞으로 이동
+Post A (order: 20)
+Post C (order: 40)
+```
+
+##### 예시 2: 우선순위 변경 (priority 필드)
+
+```svelte
+<DatabaseListView
+  path="tasks"
+  orderBy="priority"
+  reverse={true}
+>
+  {#snippet item(itemData)}
+    <div class="task-card">
+      <h3>{itemData.data.title}</h3>
+      <p>우선순위: {itemData.data.priority}</p>
+      <button onclick={() => updatePriority(itemData.key, 100)}>
+        우선순위 높이기
+      </button>
+    </div>
+  {/snippet}
+</DatabaseListView>
+
+<script>
+  async function updatePriority(taskKey: string, newPriority: number) {
+    // Firebase에서 priority 값 업데이트
+    await update(ref(rtdb, `tasks/${taskKey}`), {
+      priority: newPriority
+    });
+
+    // DatabaseListView가 자동으로 재정렬!
+    // 별도의 리로드 불필요
+  }
+</script>
+```
+
+#### 11.9.5. 내부 구현 상세
+
+**previousOrderByValues 초기화 시점**:
+```typescript
+// 1. loadInitialData() 호출 시 clear
+previousOrderByValues.clear();
+
+// 2. 컴포넌트 언마운트 시 clear
+$effect(() => {
+  return () => {
+    previousOrderByValues.clear();
+  };
+});
+```
+
+**리스너 재설정 최적화**:
+```typescript
+// repositionItem()에서 모든 리스너를 재설정하지만
+// 이는 인덱스 변경에 따른 필수 작업
+// setupItemListener()는 key 기반으로 items를 찾아서
+// 재배치 후에도 정확한 아이템을 업데이트
+```
+
+**효율성**:
+- 변경된 아이템만 재배치 (전체 리로드 불필요)
+- 네트워크 요청 없음 (클라이언트 측 정렬)
+- Firebase 정렬 규칙과 100% 일치
+
+#### 11.9.6. 주의사항
+
+##### ⚠️ reverse와 scrollTrigger 옵션 자동 적용
+
+```typescript
+// repositionItem()은 reverse와 scrollTrigger를 자동으로 고려
+const reverseOrder = reverse && scrollTrigger !== 'top';
+
+// 채팅 스타일(scrollTrigger='top')에서는 reverse 무시
+// 왜냐하면 채팅은 항상 오래된 메시지가 위에 있어야 하므로
+```
+
+##### ⚠️ 대량 업데이트 시 성능
+
+```javascript
+// ❌ 나쁜 예: 여러 아이템을 동시에 업데이트
+for (const item of items) {
+  await update(ref(rtdb, `posts/${item.key}`), { order: newOrder++ });
+  // 각 업데이트마다 onValue 발생 → 여러 번 재정렬
+}
+
+// ✅ 좋은 예: 배치 업데이트 사용
+const updates = {};
+items.forEach((item, index) => {
+  updates[`posts/${item.key}/order`] = index * 10;
+});
+await update(ref(rtdb), updates);
+// 한 번에 업데이트 → 각 아이템의 onValue는 개별 발생하지만
+// 짧은 시간 내에 모두 처리됨
+```
+
+##### ⚠️ orderBy 필드 타입 일관성
+
+```javascript
+// ❌ 타입 혼합 (숫자 → 문자열)
+await update(ref(rtdb, 'posts/-ABC'), { order: "30" }); // 문자열
+await update(ref(rtdb, 'posts/-DEF'), { order: 20 });   // 숫자
+
+// Firebase 정렬: 숫자(20) < 문자열("30")
+// 예상치 못한 순서가 될 수 있음
+
+// ✅ 타입 일관성 유지
+await update(ref(rtdb, 'posts/-ABC'), { order: 30 }); // 숫자
+await update(ref(rtdb, 'posts/-DEF'), { order: 20 }); // 숫자
+```
+
+#### 11.9.7. 장점
+
+✅ **자동 동기화**: orderBy 필드 변경 시 수동 리로드 불필요
+
+✅ **사용자 경험**: 부드러운 재정렬 애니메이션 (CSS transition 활용 가능)
+
+✅ **일관성**: Firebase 정렬 규칙과 100% 일치
+
+✅ **효율성**: 변경된 아이템만 처리, 네트워크 요청 없음
+
+✅ **범용성**: reverse, scrollTrigger 등 모든 옵션과 호환
+
+#### 11.9.8. 실제 사용 사례
+
+- **게시판**: 관리자가 공지사항 순서 변경 (order 필드 수정)
+- **할일 목록**: 사용자가 작업 우선순위 변경 (priority 필드 수정)
+- **카테고리 정렬**: 카테고리 순서 재배치 (displayOrder 필드 수정)
+- **핀 고정**: 특정 아이템을 맨 위로 고정 (pinnedAt 필드 추가/삭제)
+- **인기순 정렬**: 좋아요/조회수 증가 시 자동 순서 변경 (likeCount 필드 자동 업데이트)
+
+#### 11.9.9. 구현 세부사항
+
+**파일 위치**: [src/lib/components/DatabaseListView.svelte](../src/lib/components/DatabaseListView.svelte)
+
+**주요 함수**:
+- `compareOrderByValues()`: Firebase 정렬 규칙 구현
+- `repositionItem()`: 아이템 재배치 로직
+- `setupItemListener()`: orderBy 필드 변경 감지
+
+**추가된 상태**:
+```typescript
+let previousOrderByValues = new Map<string, any>();
+```
+
+**수정된 함수**:
+```typescript
+// setupItemListener() - orderBy 필드 변경 감지 로직 추가
+// loadInitialData() - previousOrderByValues.clear() 추가
+// $effect cleanup - previousOrderByValues.clear() 추가
+```
+
+---
+
 ## 12. 요약
 
 - ✅ **자동 null/undefined 필터링**: orderPrefix가 없으면 startAt(false) 자동 적용
@@ -935,6 +1184,7 @@ orderPrefix를 사용하는 경우, **해당 범위 내에서 삭제된 노드�
 - ✅ **두 가지 스크롤 방식**: Body 스크롤 (전체 페이지) vs 컨테이너 스크롤 (제한된 영역)
 - ✅ **자동 감지**: 두 방식 모두 자동으로 감지하여 무한 스크롤 작동
 - ✅ **실시간 노드 삭제**: onChildRemoved로 삭제된 노드 자동 제거 및 리스너 정리
+- ✅ **orderBy 필드 자동 재정렬**: orderBy 필드 값 변경 시 Firebase 정렬 규칙에 따라 자동 재배치 (v4.0.0+)
 - ✅ **높이 설정 필수**: 컨테이너 스크롤 사용 시 명시적인 높이 설정 필요
 - ✅ **Flexbox 활용**: flex를 사용하면 동적 높이 계산 가능
 - ✅ **용도별 선택**: 페이지 구조와 요구사항에 맞는 방식 선택
@@ -4634,6 +4884,7 @@ export async function handleUserCreate(uid: string, userData: UserData) {
 | 2025-11-11 | 3.0.0 | 전체 Props, Controller API, 범용 사용 가이드 추가 |
 | 2025-11-11 | 3.1.0 | `equalToValue` 기반 정확 일치 필터와 사용자 검색 예시 추가 |
 | 2025-11-12 | 3.2.0 | `UserSearchDialog` 공용 컴포넌트 도입을 명시하고 `/user/list` 검색 UX 재사용 지침을 추가 |
+| 2025-11-13 | 4.0.0 | **orderBy 필드 변경 감지 및 자동 재정렬 기능 추가** |
 
 ## 작업 이력 (SED Log)
 
@@ -4644,9 +4895,10 @@ export async function handleUserCreate(uid: string, userData: UserData) {
 | 2025-11-11 | Claude Code | DatabaseListView 컴포넌트의 전체 Props 레퍼런스 (reverse, scrollTrigger, autoScrollToEnd, threshold 등), Controller API (refresh, scrollToTop, scrollToBottom), 그리고 범용 활용 가이드 추가. 모든 RTDB 데이터 목록 표시에 DatabaseListView 사용 필수 명시. |
 | 2025-11-11 | Codex Agent | `equalToValue` 정확 일치 필터와 `/user/list` 검색 모달 사례를 문서화하여 displayNameLowerCase 기반 사용자 검색 흐름을 정식 지원. |
 | 2025-11-12 | Codex Agent | 사용자 검색 모달을 `UserSearchDialog` 컴포넌트로 분리한 내용을 반영하고 equalToValue 예시와 연동 경로를 업데이트. |
+| 2025-11-13 | Claude Code | **orderBy 필드 변경 감지 및 자동 재정렬 기능 구현**. `previousOrderByValues` Map 추가, `compareOrderByValues()` 및 `repositionItem()` 함수 구현, `setupItemListener()`에 orderBy 필드 변경 감지 로직 추가. Firebase 정렬 규칙을 엄격히 따르며 reverse, scrollTrigger 옵션 자동 적용. 변경된 아이템만 재배치하여 효율성 극대화. 섹션 11.9에 상세 가이드 추가. |
 
 ---
 
-**문서 마지막 업데이트**: 2025-11-11
+**문서 마지막 업데이트**: 2025-11-13
 **작성자**: Claude Code
-**문서 버전**: 3.1.0
+**문서 버전**: 4.0.0
