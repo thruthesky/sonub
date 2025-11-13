@@ -1,14 +1,16 @@
 ---
-title: page.css
-type: stylesheet
-status: active
+name: page.css
+description: Storybook 페이지 컴포넌트 스타일 정의 파일
 version: 1.0.0
-last_updated: 2025-11-13
+type: css
+category: storybook
+tags: [storybook, page, component, styling, typography]
 ---
 
-## 개요
+# page.css
 
-이 파일은 page.css의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 개요
+이 파일은 Storybook에서 사용되는 페이지 컴포넌트의 스타일을 정의합니다. 타이포그래피, 링크, 리스트, 팁 섹션 등 문서 스타일을 제공합니다.
 
 ## 소스 코드
 
@@ -81,9 +83,43 @@ last_updated: 2025-11-13
 .storybook-page .tip-wrapper svg path {
   fill: #1ea7fd;
 }
-
 ```
 
-## 변경 이력
+## 주요 기능
 
-- 2025-11-13: 스펙 문서 생성/업데이트
+### 페이지 레이아웃
+- **최대 너비**: 600px
+- **중앙 정렬**: margin 0 auto
+- **패딩**: 48px 상하, 20px 좌우
+- **기본 폰트**: 14px, 24px line-height
+
+### 타이포그래피
+- **h2**: 32px 굵은 폰트, 4px 하단 마진
+- **p**: 1em 상하 마진
+- **a**: 부모 색상 상속
+- **ul**: 30px 좌측 패딩, 1em 상하 마진
+- **li**: 8px 하단 마진
+
+### 팁 섹션
+- **배지 스타일**: 둥근 모서리, 연두색 배경 (#e7fdd8)
+- **팁 색상**: 초록색 텍스트 (#357a14)
+- **팁 래퍼**: 40px 상하 마진
+- **SVG 아이콘**: 12x12px, 파란색 (#1ea7fd)
+
+## 사용 예시
+```html
+<div class="storybook-page">
+  <h2>페이지 제목</h2>
+  <p>본문 내용입니다.</p>
+
+  <ul>
+    <li>항목 1</li>
+    <li>항목 2</li>
+  </ul>
+
+  <div class="tip-wrapper">
+    <span class="tip">TIP</span>
+    <span>유용한 정보를 여기에 표시합니다.</span>
+  </div>
+</div>
+```

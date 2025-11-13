@@ -1,14 +1,16 @@
 ---
-title: chat.functions.ts
-type: typescript
-status: active
+name: chat.functions.ts
+description: Svelte 클라이언트용 채팅 함수 (Firebase 통합)
 version: 1.0.0
-last_updated: 2025-11-13
+type: typescript
+category: library
+tags: [chat, firebase, rtdb, client, functions]
 ---
 
-## 개요
+# chat.functions.ts
 
-이 파일은 chat.functions.ts의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 개요
+이 파일은 Svelte 클라이언트에서 사용하는 채팅 관련 함수들을 제공합니다. Firebase Realtime Database에 의존하는 함수들과 `shared` 폴더의 Pure Functions를 re-export합니다. 1:1 채팅방, 그룹 채팅방, 오픈 채팅방에 대한 입장/퇴장 로직을 처리합니다.
 
 ## 소스 코드
 
@@ -147,9 +149,75 @@ export async function leaveChatRoom(
 	const memberRef = ref(db, `chat-rooms/${roomId}/members/${uid}`);
 	await set(memberRef, null); // null로 설정하여 속성 삭제
 }
-
 ```
 
-## 변경 이력
+## 주요 기능
 
-- 2025-11-13: 스펙 문서 생성/업데이트
+### Pure Functions Re-export
+- `buildSingleRoomId(a, b)`: 1:1 채팅방 ID 생성
+- `isSingleChat(roomId)`: 1:1 채팅방 여부 확인
+- `extractUidsFromSingleRoomId(roomId)`: roomId에서 UID 추출
+- `resolveRoomTypeLabel(roomType)`: 채팅방 유형 라벨 변환
+
+### Firebase 연동 함수
+
+#### 1. enterSingleChatRoom(db, roomId, uid)
+- **목적**: 1:1 채팅방 입장 처리
+- **동작**:
+  1. `chat-joins/{uid}/{roomId}` 업데이트
+  2. `newMessageCount: 0` 설정 (메시지 읽음 표시)
+  3. Cloud Functions 트리거 → 자동으로 필드 추가
+- **자동 추가 필드** (by Cloud Functions):
+  - `singleChatListOrder`
+  - `allChatListOrder`
+  - `partnerUid`
+  - `roomType`
+  - `joinedAt`
+
+#### 2. joinChatRoom(db, roomId, uid)
+- **목적**: 그룹/오픈 채팅방 입장 처리
+- **동작**:
+  1. `chat-rooms/{roomId}/members/{uid} = true` 설정
+  2. `chat-joins/{uid}/{roomId}/newMessageCount = 0` 설정
+  3. Cloud Functions 트리거 → memberCount 증가
+
+#### 3. leaveChatRoom(db, roomId, uid)
+- **목적**: 채팅방 퇴장 처리
+- **동작**:
+  1. `chat-rooms/{roomId}/members/{uid} = null` (삭제)
+  2. Cloud Functions 트리거 → memberCount 감소
+
+## Cloud Functions 연동
+
+### onChatJoinCreate
+- **트리거**: `chat-joins/{uid}/{roomId}` 생성/업데이트
+- **역할**:
+  - 1:1 채팅방: partnerUid, roomType 추가
+  - 그룹/오픈 채팅방: memberCount 증가
+  - 정렬 필드 자동 계산
+
+### onChatRoomMemberUpdate
+- **트리거**: `chat-rooms/{roomId}/members/{uid}` 변경
+- **역할**: memberCount 자동 업데이트
+
+## 사용 예시
+
+```typescript
+import { rtdb } from '$lib/firebase';
+import {
+  enterSingleChatRoom,
+  joinChatRoom,
+  leaveChatRoom,
+  buildSingleRoomId
+} from '$lib/functions/chat.functions';
+
+// 1:1 채팅방 입장
+const roomId = buildSingleRoomId(myUid, partnerUid);
+enterSingleChatRoom(rtdb!, roomId, myUid);
+
+// 그룹 채팅방 입장
+joinChatRoom(rtdb!, 'group-room-123', myUid);
+
+// 채팅방 퇴장
+await leaveChatRoom(rtdb!, roomId, myUid);
+```

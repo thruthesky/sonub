@@ -1,13 +1,16 @@
 ---
-title: "src/lib/components/DatabaseListView.svelte"
-description: "Sonub 소스 코드 저장용 자동 생성 SED 스펙"
-original_path: "src/lib/components/DatabaseListView.svelte"
-spec_type: "repository-source"
+name: DatabaseListView.svelte
+description: 아이템 데이터 타입
+version: 1.0.0
+type: svelte-component
+category: feature-component
+tags: [svelte5, sveltekit]
 ---
 
-## 개요
+# DatabaseListView.svelte
 
-이 파일은 DatabaseListView.svelte의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 개요
+아이템 데이터 타입
 
 ## 소스 코드
 
@@ -1684,6 +1687,19 @@ spec_type: "repository-source"
 
 ```
 
-## 변경 이력
+## 주요 기능
+-  * 스크롤 컨테이너 DOM 요소 참조 * autoScrollToEnd 기능을 위해 사용 * HTMLElement로 타입 지정 (부모 요소가 div가 아닐 수도 있음) 
 
-- 2025-11-13: 스펙 문서 생성/업데이트
+## Props/Parameters
+State variables: items, loading, initialLoading, hasMore, lastLoadedValue, lastLoadedKey, currentPage, error, childAddedListenerReady, isLoadingMore
+
+## 사용 예시
+```svelte
+<!-- 사용 예시는 필요에 따라 추가하세요 -->
+<DatabaseListView />
+```
+
+---
+
+> 이 문서는 자동 생성되었습니다.
+> 수정이 필요한 경우 직접 편집하세요.

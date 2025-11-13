@@ -1,14 +1,16 @@
 ---
-title: dev-icon.svelte
-type: component
-status: active
+name: dev-icon.svelte
+description: 개발자용 FAB(Floating Action Button) 컴포넌트
 version: 1.0.0
-last_updated: 2025-11-13
+type: svelte-component
+category: feature-component
+tags: [svelte5, sveltekit]
 ---
 
-## 개요
+# dev-icon.svelte
 
-이 파일은 dev-icon.svelte의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 개요
+개발자용 FAB(Floating Action Button) 컴포넌트
 
 ## 소스 코드
 
@@ -656,6 +658,19 @@ last_updated: 2025-11-13
 
 ```
 
-## 변경 이력
+## 주요 기능
+-  * 개발자용 FAB(Floating Action Button) 컴포넌트 * * 개발 및 테스트 환경에서 빠른 테스트 계정 로그인과 서버 정보 확인을 위한 도구입니다. *
 
-- 2025-11-13: 스펙 문서 생성/업데이트
+## Props/Parameters
+State variables: isMenuOpen, isServerInfoOpen, isLoading, currentUser
+
+## 사용 예시
+```svelte
+<!-- 사용 예시는 필요에 따라 추가하세요 -->
+<dev-icon />
+```
+
+---
+
+> 이 문서는 자동 생성되었습니다.
+> 수정이 필요한 경우 직접 편집하세요.

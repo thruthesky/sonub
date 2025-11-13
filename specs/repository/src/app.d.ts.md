@@ -1,33 +1,22 @@
 ---
-title: "src/app.d.ts"
-description: "Sonub 소스 코드 저장용 자동 생성 SED 스펙"
-original_path: "src/app.d.ts"
-spec_type: "repository-source"
+name: app.d.ts
+description: SvelteKit 타입 정의 파일
+version: 1.0.0
+type: typescript
+category: types
+tags: [sveltekit, types, declaration]
 ---
 
+# app.d.ts
+
 ## 개요
+SvelteKit 애플리케이션의 전역 타입을 정의합니다.
 
-이 파일은 app.d.ts의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## App 네임스페이스
+- Error
+- Locals
+- PageData
+- PageState
+- Platform
 
-## 소스 코드
-
-```typescript
-// See https://svelte.dev/docs/kit/types#app.d.ts
-// for information about these interfaces
-declare global {
-	namespace App {
-		// interface Error {}
-		// interface Locals {}
-		// interface PageData {}
-		// interface PageState {}
-		// interface Platform {}
-	}
-}
-
-export {};
-
-```
-
-## 변경 이력
-
-- 2025-11-13: 스펙 문서 생성/업데이트
+현재는 모두 주석 처리되어 있습니다.

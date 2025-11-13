@@ -1,13 +1,16 @@
 ---
-title: "firebase/functions/src/types/index.ts"
-description: "Sonub 소스 코드 저장용 자동 생성 SED 스펙"
-original_path: "firebase/functions/src/types/index.ts"
-spec_type: "repository-source"
+name: index.ts (types)
+description: Firebase Cloud Functions TypeScript 타입 정의 모음
+version: 1.0.0
+type: firebase-function
+category: type
+tags: [firebase, cloud-functions, typescript, types, interfaces]
 ---
 
-## 개요
+# index.ts (types)
 
-이 파일은 index.ts의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 개요
+이 파일은 Firebase Cloud Functions TypeScript의 모든 타입을 통합 관리합니다. SNS 프로젝트에서 사용되는 게시글, 댓글, 사용자, 좋아요, 신고, 채팅 등 모든 데이터 구조의 타입 정의를 포함합니다.
 
 ## 소스 코드
 
@@ -260,9 +263,29 @@ export interface ChatJoin {
   /** 모든 채팅방(1:1, 그룹, 오픈) 통합 정렬용 필드: timestamp */
   allChatListOrder?: number;
 }
-
 ```
 
-## 변경 이력
+## 주요 기능
+- **게시판 관련 타입**:
+  - `ForumCategory`: 게시판 카테고리 타입
+  - `PostData`: 게시글 데이터 구조
+  - `CommentData`: 댓글 데이터 구조
+- **사용자 관련 타입**:
+  - `UserData`: 사용자 프로필 데이터 구조
+- **상호작용 관련 타입**:
+  - `ParsedLikeId`: 좋아요 ID 파싱 결과
+  - `ReportReason`: 신고 사유
+  - `ReportData`: 신고 데이터 구조
+  - `ParsedReportId`: 신고 ID 파싱 결과
+- **채팅 관련 타입**:
+  - `ChatMessageType`: 채팅 메시지 타입
+  - `ChatMessage`: 채팅 메시지 데이터 구조
+  - `ChatRoomType`: 채팅방 타입
+  - `ChatJoin`: 채팅방 참여 정보 구조
 
-- 2025-11-13: 스펙 문서 생성/업데이트
+## 사용되는 Firebase 트리거
+- 이 파일은 직접 트리거되지 않음
+- 다른 핸들러 및 유틸리티 함수에서 타입으로 사용됨
+
+## 관련 함수
+- 모든 핸들러와 유틸리티 함수에서 이 타입들을 import하여 사용

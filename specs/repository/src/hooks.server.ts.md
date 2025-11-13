@@ -1,42 +1,27 @@
 ---
-title: "src/hooks.server.ts"
-description: "Sonub 소스 코드 저장용 자동 생성 SED 스펙"
-original_path: "src/hooks.server.ts"
-spec_type: "repository-source"
+name: hooks.server.ts
+description: SvelteKit 서버 훅
+version: 1.0.0
+type: typescript
+category: server
+tags: [sveltekit, hooks, i18n, paraglide, middleware]
 ---
 
+# hooks.server.ts
+
 ## 개요
+Paraglide i18n 미들웨어를 설정하여 요청의 쿠키/헤더에서 사용자 로케일을 자동 감지하고 HTML lang 속성을 설정합니다.
 
-이 파일은 hooks.server.ts의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 주요 기능
+- 요청의 쿠키/헤더에서 로케일 자동 감지
+- 감지된 로케일을 요청 컨텍스트에 설정
+- HTML lang 속성 자동 설정 (%paraglide.lang% 치환)
 
-## 소스 코드
-
+## 사용 예시
 ```typescript
-/**
- * SvelteKit 서버 훅
- *
- * Paraglide i18n 미들웨어:
- * - 요청의 쿠키/헤더에서 사용자 로케일 자동 감지
- * - 감지된 로케일을 요청 컨텍스트에 설정
- * - HTML lang 속성 자동 설정
- */
+// src/app.html
+<html lang="%paraglide.lang%">
 
-import type { Handle } from '@sveltejs/kit';
-import { paraglideMiddleware } from '$lib/paraglide/server';
-
-const handleParaglide: Handle = ({ event, resolve }) =>
-	paraglideMiddleware(event.request, ({ request, locale }) => {
-		event.request = request;
-
-		return resolve(event, {
-			transformPageChunk: ({ html }) => html.replace('%paraglide.lang%', locale)
-		});
-	});
-
-export const handle: Handle = handleParaglide;
-
+// 서버에서 자동으로 치환
+<html lang="ko"> // 또는 "en", "ja", "zh"
 ```
-
-## 변경 이력
-
-- 2025-11-13: 스펙 문서 생성/업데이트

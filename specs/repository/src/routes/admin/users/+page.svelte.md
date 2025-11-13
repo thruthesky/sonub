@@ -1,14 +1,16 @@
 ---
-title: +page.svelte
-type: component
-status: active
+name: +page.svelte
+description: 사용자 목록 페이지
 version: 1.0.0
-last_updated: 2025-11-13
+type: svelte-component
+category: route-page
+tags: [svelte5, sveltekit]
 ---
 
-## 개요
+# +page.svelte
 
-이 파일은 +page.svelte의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 개요
+사용자 목록 페이지
 
 ## 소스 코드
 
@@ -317,6 +319,19 @@ last_updated: 2025-11-13
 
 ```
 
-## 변경 이력
+## 주요 기능
+-  * 사용자 목록 페이지 * * 생성된 테스트 사용자 목록을 표시하고, 삭제할 수 있는 기능을 제공합니다. 
 
-- 2025-11-13: 스펙 문서 생성/업데이트
+## Props/Parameters
+State variables: isLoading, isDeleting, deleteProgress, deleteTotal
+
+## 사용 예시
+```svelte
+<!-- 사용 예시는 필요에 따라 추가하세요 -->
+<+page />
+```
+
+---
+
+> 이 문서는 자동 생성되었습니다.
+> 수정이 필요한 경우 직접 편집하세요.

@@ -1,16 +1,16 @@
 ---
-title: ChatCreateDialog.svelte
-type: component
-status: active
+name: ChatCreateDialog.svelte
+description: 통합 채팅방 생성 다이얼로그
 version: 1.0.0
-last_updated: 2025-11-13
+type: svelte-component
+category: feature-component
+tags: [svelte5, sveltekit, realtime, firebase]
 ---
 
+# ChatCreateDialog.svelte
+
 ## 개요
-
-이 파일은 ChatCreateDialog.svelte의 소스 코드를 포함하는 SED 스펙 문서입니다.
-
-통합 채팅방 생성 다이얼로그 컴포넌트로, type prop에 따라 그룹 채팅방 또는 오픈 채팅방을 생성합니다.
+통합 채팅방 생성 다이얼로그
 
 ## 소스 코드
 
@@ -326,8 +326,22 @@ last_updated: 2025-11-13
 		@apply flex items-center gap-2 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600;
 	}
 </style>
+
 ```
 
-## 변경 이력
+## 주요 기능
+- 코드 분석 필요
 
-- 2025-11-13: 스펙 문서 생성/업데이트
+## Props/Parameters
+State variables: roomName, roomDescription, isCreating, errorMessage
+
+## 사용 예시
+```svelte
+<!-- 사용 예시는 필요에 따라 추가하세요 -->
+<ChatCreateDialog />
+```
+
+---
+
+> 이 문서는 자동 생성되었습니다.
+> 수정이 필요한 경우 직접 편집하세요.

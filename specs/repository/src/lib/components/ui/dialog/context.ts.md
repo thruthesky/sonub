@@ -1,29 +1,17 @@
 ---
-title: context.ts
-type: typescript
-status: active
+name: context.ts (dialog)
+description: Dialog 컨텍스트 타입 정의
 version: 1.0.0
-last_updated: 2025-11-13
+type: typescript
+category: ui-component
+tags: [shadcn, dialog, context]
 ---
 
+# context.ts (dialog)
+
 ## 개요
+Dialog 컴포넌트의 컨텍스트 타입을 정의합니다.
 
-이 파일은 context.ts의 소스 코드를 포함하는 SED 스펙 문서입니다.
-
-## 소스 코드
-
-```typescript
-import type { Writable } from 'svelte/store';
-
-export type DialogContext = {
-  openStore: Writable<boolean>;
-  setOpen(value: boolean): void;
-};
-
-export const dialogContextKey = Symbol('ui-dialog-context');
-
-```
-
-## 변경 이력
-
-- 2025-11-13: 스펙 문서 생성/업데이트
+## DialogContext
+- **openStore**: Writable<boolean>
+- **setOpen(value: boolean)**: void

@@ -1,13 +1,19 @@
 ---
-title: "firebase/functions/tsconfig.dev.json"
-description: "Sonub 소스 코드 저장용 자동 생성 SED 스펙"
-original_path: "firebase/functions/tsconfig.dev.json"
-spec_type: "repository-source"
+name: functions/tsconfig.dev.json
+description: Firebase Cloud Functions 개발 환경용 TypeScript 설정 파일. ESLint 설정 파일 컴파일을 위한 최소 설정입니다.
+version: 1.0.0
+type: configuration
+category: functions-config
+tags: [configuration, typescript, functions, development]
 ---
 
-## 개요
+# functions/tsconfig.dev.json
 
-이 파일은 tsconfig.dev.json의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 개요
+Firebase Cloud Functions 개발 환경의 TypeScript 설정 파일입니다. 이 파일은:
+- ESLint 설정 파일(.eslintrc.js) 컴파일용
+- 최소한의 설정만 포함
+- 메인 tsconfig.json과 분리된 개발 전용 설정
 
 ## 소스 코드
 
@@ -17,9 +23,20 @@ spec_type: "repository-source"
     ".eslintrc.js"
   ]
 }
-
 ```
 
-## 변경 이력
+## 주요 설정
 
-- 2025-11-13: 스펙 문서 생성/업데이트
+### 포함 파일 (include)
+- **.eslintrc.js**: ESLint 설정 파일만 포함
+
+## 사용 목적
+이 파일은 TypeScript로 작성된 ESLint 설정 파일을 컴파일하기 위한 최소한의 설정입니다. 메인 `tsconfig.json`과 분리하여:
+- 개발 도구 설정 파일 별도 관리
+- 빌드 프로세스와 개발 도구 분리
+- IDE/에디터에서 ESLint 설정 인식 개선
+
+## 관련 파일
+- [tsconfig.json](./tsconfig.json.md) - 메인 TypeScript 설정
+- [eslint.config.mjs](./eslint.config.mjs.md) - ESLint 설정 파일
+- [package.json](./package.json.md) - npm 패키지 설정

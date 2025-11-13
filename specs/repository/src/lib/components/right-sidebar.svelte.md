@@ -1,14 +1,16 @@
 ---
-title: right-sidebar.svelte
-type: component
-status: active
+name: right-sidebar.svelte
+description: 우측 사이드바 컴포넌트
 version: 1.0.0
-last_updated: 2025-11-13
+type: svelte-component
+category: layout-component
+tags: [svelte5, sveltekit]
 ---
 
-## 개요
+# right-sidebar.svelte
 
-이 파일은 right-sidebar.svelte의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 개요
+우측 사이드바 컴포넌트
 
 ## 소스 코드
 
@@ -229,6 +231,19 @@ function goToStats() {
 
 ```
 
-## 변경 이력
+## 주요 기능
+- 코드 분석 필요
 
-- 2025-11-13: 스펙 문서 생성/업데이트
+## Props/Parameters
+없음
+
+## 사용 예시
+```svelte
+<!-- 사용 예시는 필요에 따라 추가하세요 -->
+<right-sidebar />
+```
+
+---
+
+> 이 문서는 자동 생성되었습니다.
+> 수정이 필요한 경우 직접 편집하세요.

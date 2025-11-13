@@ -1,13 +1,16 @@
 ---
-title: "firebase/functions/src/handlers/user.handler.ts"
-description: "Sonub 소스 코드 저장용 자동 생성 SED 스펙"
-original_path: "firebase/functions/src/handlers/user.handler.ts"
-spec_type: "repository-source"
+name: user.handler.ts
+description: 사용자 프로필 동기화 및 업데이트 비즈니스 로직 처리 핸들러
+version: 1.0.0
+type: firebase-function
+category: handler
+tags: [firebase, cloud-functions, typescript, user, profile, handler]
 ---
 
-## 개요
+# user.handler.ts
 
-이 파일은 user.handler.ts의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 개요
+이 파일은 사용자 프로필 동기화 및 업데이트와 관련된 비즈니스 로직을 처리하는 핸들러입니다. Firebase Cloud Functions의 트리거 함수에서 호출되어 실제 데이터 처리를 수행합니다.
 
 ## 소스 코드
 
@@ -194,9 +197,22 @@ export async function handleUserUpdate(
     return {success: true, uid, updated: false};
   }
 }
-
 ```
 
-## 변경 이력
+## 주요 기능
+- **handleUserCreate**: 사용자 등록 시 처리
+  - createdAt 필드 자동 생성
+  - 전체 사용자 통계 카운터 증가 (/stats/counters/user)
+- **handleUserUpdate**: 사용자 정보 업데이트 시 처리
+  - createdAt 필드 보완 (없는 경우 생성)
+  - displayName 또는 photoUrl 변경 시에만 updatedAt 업데이트
+  - displayNameLowerCase 자동 생성 (검색 최적화)
+  - birthYearMonthDay 파싱 및 파생 필드 자동 생성 (birthYear, birthMonth, birthDay, birthMonthDay)
 
-- 2025-11-13: 스펙 문서 생성/업데이트
+## 사용되는 Firebase 트리거
+- 트리거 함수에서 호출됨 (직접 트리거하지 않음)
+- `index.ts`의 `onUserCreate`, `onUserUpdate`에서 호출
+
+## 관련 함수
+- `types/index.ts`: UserData 타입 정의
+- `index.ts`: onUserCreate, onUserUpdate 트리거 함수

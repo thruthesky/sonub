@@ -1,13 +1,19 @@
 ---
-title: "firebase/database.rules.json"
-description: "Sonub 소스 코드 저장용 자동 생성 SED 스펙"
-original_path: "firebase/database.rules.json"
-spec_type: "repository-source"
+name: database.rules.json
+description: Firebase Realtime Database 보안 규칙 파일. 읽기/쓰기 권한 및 데이터 검증 규칙을 정의합니다.
+version: 1.0.0
+type: configuration
+category: firebase-config
+tags: [configuration, firebase, database, security, rules]
 ---
 
-## 개요
+# database.rules.json
 
-이 파일은 database.rules.json의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 개요
+Firebase Realtime Database의 보안 규칙 파일입니다. 이 파일은:
+- 사용자, 채팅, 시스템 데이터의 접근 권한 정의
+- 데이터 검증 및 무결성 보장
+- 관리자 권한 및 테스트 데이터 처리
 
 ## 소스 코드
 
@@ -148,6 +154,51 @@ spec_type: "repository-source"
 }
 ```
 
-## 변경 이력
+## 주요 설정
 
-- 2025-11-13: 스펙 문서 생성/업데이트
+### 사용자 데이터 (users)
+- **읽기**: 모든 사용자 가능
+- **쓰기**:
+  - 2025-12-12까지: 무제한 (테스트용)
+  - 이후: 본인만 가능
+- **인덱스**: `createdAt`, `displayNameLowerCase`
+
+### 시스템 설정 (system)
+- **admins**:
+  - 읽기: 로그인한 모든 사용자
+  - 쓰기: 관리자만
+
+### 통계 (stats)
+- **읽기**: 모든 사용자
+- **쓰기**: 차단 (Cloud Functions만 수정 가능)
+
+### 채팅방 (chat-rooms)
+- **읽기**: 모든 사용자
+- **owner**: 채팅방 생성 시 본인 UID로만 설정 가능
+- **createdAt**: Cloud Functions만 설정 가능
+- **name**: 1~50자, owner만 수정 가능
+- **description**: 0~200자, owner만 수정 가능
+- **type**: `group`, `open`, `single` 중 하나
+- **members**: 본인 UID만 추가/수정 가능
+- **인덱스**: `openListOrder`
+
+### 채팅 참여 (chat-joins)
+- **읽기/쓰기**: 본인 데이터만 접근
+- **인덱스**: 5개의 listOrder 필드
+
+### 채팅 메시지 (chat-messages)
+- **읽기/쓰기**: 모든 로그인 사용자
+- **인덱스**: `roomOrder`
+
+### 테스트 데이터 (test)
+- **읽기/쓰기**: 모두 허용 (QA 전용)
+- **인덱스**: 5개의 order 필드
+
+## 보안 고려사항
+- 사용자 쓰기 권한은 2025-12-12 이후 본인만 가능
+- Cloud Functions 전용 필드: `createdAt`, `memberCount`
+- 채팅방 생성 후 불변 필드: `type`, `open`, `groupListOrder`, `openListOrder`
+
+## 관련 파일
+- [firebase.json](./firebase.json.md) - Firebase 프로젝트 설정
+- [sonub-firebase-database-structure.md](../../specs/sonub-firebase-database-structure.md) - Database 구조 문서

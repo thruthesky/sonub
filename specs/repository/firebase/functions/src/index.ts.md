@@ -1,13 +1,20 @@
 ---
-title: "firebase/functions/src/index.ts"
-description: "Sonub 소스 코드 저장용 자동 생성 SED 스펙"
-original_path: "firebase/functions/src/index.ts"
-spec_type: "repository-source"
+name: index.ts
+description: Firebase Cloud Functions Gen 2의 메인 진입점. 모든 트리거 함수들을 정의하고 내보냅니다.
+version: 1.0.0
+type: firebase-function
+category: handler
+tags: [firebase, cloud-functions, typescript, gen2, rtdb, triggers, entry-point]
 ---
 
-## 개요
+# index.ts
 
-이 파일은 index.ts의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 개요
+이 파일은 Firebase Cloud Functions Gen 2의 메인 진입점입니다. 모든 트리거 함수들을 정의하고 내보내는 역할을 합니다. SNS 프로젝트의 백그라운드 이벤트 처리를 위한 함수들이 선언되어 있습니다.
+
+**⚠️ 중요:** 모든 함수는 반드시 Gen 2 버전으로 작성해야 합니다.
+- Gen 2 API: `firebase-functions/v2`
+- Gen 1 API 사용 금지
 
 ## 소스 코드
 
@@ -352,6 +359,32 @@ export const onChatRoomMemberLeave = onValueDeleted(
 );
 ```
 
-## 변경 이력
+## 주요 기능
+- **Firebase Admin 초기화**: Firebase Admin SDK를 초기화하여 Realtime Database 접근
+- **전역 옵션 설정**: 비용 관리를 위해 최대 인스턴스 수를 10개로 제한
+- **사용자 관리 함수**:
+  - `onUserCreate`: 사용자 등록 시 createdAt 생성 및 통계 업데이트
+  - `onUserUpdate`: 사용자 정보 수정 시 updatedAt 업데이트 및 파생 필드 생성
+- **채팅 관리 함수**:
+  - `onChatMessageCreate`: 채팅 메시지 생성 시 chat-joins 업데이트
+  - `onChatRoomCreate`: 채팅방 생성 시 createdAt 및 memberCount 초기화
+  - `onChatJoinCreate`: 채팅방 참여 시 메타데이터 자동 설정
+  - `onChatRoomMemberJoin`: 채팅방 입장 시 memberCount 증가
+  - `onChatRoomMemberLeave`: 채팅방 퇴장 시 memberCount 감소
 
-- 2025-11-13: 스펙 문서 생성/업데이트
+## 사용되는 Firebase 트리거
+- **onValueCreated**: 새로운 데이터가 생성될 때 트리거
+  - `/users/{uid}`
+  - `/chat-messages/{messageId}`
+  - `/chat-rooms/{roomId}`
+  - `/chat-joins/{uid}/{roomId}`
+  - `/chat-rooms/{roomId}/members/{uid}`
+- **onValueUpdated**: 기존 데이터가 수정될 때 트리거
+  - `/users/{uid}`
+- **onValueDeleted**: 데이터가 삭제될 때 트리거
+  - `/chat-rooms/{roomId}/members/{uid}`
+
+## 관련 함수
+- `handlers/user.handler.ts`: 사용자 관련 비즈니스 로직
+- `handlers/chat.handler.ts`: 채팅 관련 비즈니스 로직
+- `types/index.ts`: 타입 정의

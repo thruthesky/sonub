@@ -1,13 +1,16 @@
 ---
-title: "firebase/functions/src/utils/post.utils.ts"
-description: "Sonub 소스 코드 저장용 자동 생성 SED 스펙"
-original_path: "firebase/functions/src/utils/post.utils.ts"
-spec_type: "repository-source"
+name: post.utils.ts
+description: 게시글 참조 조회 유틸리티 함수
+version: 1.0.0
+type: firebase-function
+category: util
+tags: [firebase, cloud-functions, typescript, post, util, rtdb]
 ---
 
-## 개요
+# post.utils.ts
 
-이 파일은 post.utils.ts의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 개요
+이 파일은 게시글 관련 유틸리티 함수를 제공합니다. Firebase Realtime Database에서 게시글 참조를 조회하는 기능을 포함하며, Firebase push key 형식을 자동으로 처리합니다.
 
 ## 소스 코드
 
@@ -96,9 +99,20 @@ export async function getPostReference(postId: string): Promise<{
 
   return null;
 }
-
 ```
 
-## 변경 이력
+## 주요 기능
+- **getPostReference**: 게시글 참조 조회
+  - Firebase push key 형식 자동 처리 (하이픈 접두사)
+  - 두 가지 방식으로 조회 시도:
+    1. 정규화된 postId (하이픈 접두사 추가)
+    2. 원본 postId
+  - 상세한 로깅 제공
+  - 게시글을 찾지 못하면 null 반환
 
-- 2025-11-13: 스펙 문서 생성/업데이트
+## 사용되는 Firebase 트리거
+- 이 파일은 직접 트리거되지 않음
+- 다른 핸들러 함수에서 유틸리티로 호출됨
+
+## 관련 함수
+- Firebase Realtime Database의 `/posts` 노드와 상호작용

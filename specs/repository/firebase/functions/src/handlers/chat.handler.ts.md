@@ -1,13 +1,16 @@
 ---
-title: "firebase/functions/src/handlers/chat.handler.ts"
-description: "Sonub 소스 코드 저장용 자동 생성 SED 스펙"
-original_path: "firebase/functions/src/handlers/chat.handler.ts"
-spec_type: "repository-source"
+name: chat.handler.ts
+description: 채팅 메시지 및 채팅방 관리 비즈니스 로직 처리 핸들러
+version: 1.0.0
+type: firebase-function
+category: handler
+tags: [firebase, cloud-functions, typescript, chat, handler, rtdb]
 ---
 
-## 개요
+# chat.handler.ts
 
-이 파일은 chat.handler.ts의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 개요
+이 파일은 채팅 메시지 생성, 채팅방 생성, 채팅방 참여, 멤버 입장/퇴장과 관련된 비즈니스 로직을 처리하는 핸들러입니다. Firebase Cloud Functions의 트리거 함수에서 호출되어 실제 데이터 처리를 수행합니다.
 
 ## 소스 코드
 
@@ -705,9 +708,36 @@ export async function handleChatRoomMemberLeave(
     uid,
   });
 }
-
 ```
 
-## 변경 이력
+## 주요 기능
+- **handleChatMessageCreate**: 채팅 메시지 생성 시 처리
+  - 프로토콜 메시지 필터링
+  - 1:1 채팅과 그룹/오픈 채팅 분기 처리
+  - chat-joins 노드 자동 업데이트
+  - 읽지 않은 메시지 카운터 관리
+  - 정렬 필드 자동 설정
+- **handleChatRoomCreate**: 채팅방 생성 시 처리
+  - createdAt 자동 생성
+  - members 객체 초기화
+  - memberCount 초기화
+- **handleChatJoinCreate**: 채팅방 참여 정보 생성 시 처리
+  - joinedAt 자동 생성
+  - 1:1 채팅 partnerUid 설정
+  - roomType별 정렬 필드 설정
+- **handleChatRoomMemberJoin**: 멤버 입장 시 처리
+  - memberCount 증가
+  - chat-joins 상세 정보 업데이트
+  - 마지막 메시지 정보 동기화
+- **handleChatRoomMemberLeave**: 멤버 퇴장 시 처리
+  - memberCount 감소
+  - chat-joins 노드 삭제
 
-- 2025-11-13: 스펙 문서 생성/업데이트
+## 사용되는 Firebase 트리거
+- 트리거 함수에서 호출됨 (직접 트리거하지 않음)
+- `index.ts`의 채팅 관련 트리거 함수들에서 호출
+
+## 관련 함수
+- `types/index.ts`: ChatMessage, ChatJoin 타입 정의
+- `shared/chat.pure-functions.ts`: isSingleChat, extractUidsFromSingleRoomId
+- `index.ts`: 채팅 관련 트리거 함수들

@@ -1,28 +1,19 @@
 ---
-title: index.ts
-type: typescript
-status: active
+name: index.ts (button)
+description: Button 컴포넌트 export
 version: 1.0.0
-last_updated: 2025-11-13
+type: typescript
+category: ui-component
+tags: [shadcn, button, export]
 ---
 
+# index.ts (button)
+
 ## 개요
+Button 컴포넌트를 export합니다.
 
-이 파일은 index.ts의 소스 코드를 포함하는 SED 스펙 문서입니다.
-
-## 소스 코드
-
+## Export
 ```typescript
-/**
- * Button 컴포넌트 export
- */
-
 import Button from './button.svelte';
-
 export { Button };
-
 ```
-
-## 변경 이력
-
-- 2025-11-13: 스펙 문서 생성/업데이트

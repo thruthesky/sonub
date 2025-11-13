@@ -1,265 +1,123 @@
 ---
-title: "messages/en.json"
-description: "Sonub 소스 코드 저장용 자동 생성 SED 스펙"
-original_path: "messages/en.json"
-spec_type: "repository-source"
+name: messages/en.json
+description: 영어 다국어 메시지 파일. Paraglide i18n 라이브러리를 통해 사용됩니다.
+version: 1.0.0
+type: configuration
+category: i18n-messages
+tags: [configuration, i18n, english, messages, paraglide]
 ---
 
+# messages/en.json
+
 ## 개요
+Sonub 프로젝트의 영어 번역 파일입니다. 이 파일은:
+- Inlang Paraglide i18n 시스템에서 사용
+- 모든 UI 텍스트의 영어 번역 포함
+- JSON 형식의 키-값 쌍 구조
+- 245개의 번역 키 포함
 
-이 파일은 en.json의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 주요 카테고리
 
-## 소스 코드
+### 공통 (common)
+- Loading, Close, Save, Delete, Cancel, Confirm
+- Success, Error, Complete, Progress
+
+### 네비게이션 (nav)
+- Home, About, Products, Contact, Board, Chat
+- Login, Logout, Menu, My Profile
+
+### 인증 (auth)
+- Welcome messages
+- Google/Apple sign in guide
+- Authentication status
+
+### 프로필 (profile)
+- Nickname, Gender, Date of Birth
+- Profile picture upload/remove
+- Validation errors
+
+### 사용자 (user)
+- User list messages
+- Loading, error states
+- Join date, last login
+
+### 메뉴 (menu)
+- Menu title and guide
+- My Account, Edit Profile
+- Admin Page
+
+### 관리자 (admin)
+- Admin Dashboard
+- Test User Management
+- Report List
+
+### 테스트 (test)
+- Test user creation/deletion
+- Progress indicators
+- Confirmation messages
+
+### 사이드바 (sidebar)
+- Recent Activity
+- Language Selection
+- Build Version
+- Notifications
+
+### 기능 소개 (feature)
+- SvelteKit 5
+- Firebase Auth
+- TailwindCSS
+
+### 페이지 타이틀 (pageTitle)
+- Page titles (Home, Menu, Login, etc.)
+
+### 신고 (report)
+- Report reasons (Abuse, Misinformation, Spam, etc.)
+- My Reports list
+
+### 채팅 (chat)
+- Chat room messages
+- Message loading/sending
+- Single Chat, Group Chats, Open Chats
+- Find Friends, Bookmarks, Search
+
+## 사용 예시
+
+```typescript
+import * as m from '$lib/paraglide/messages.js';
+import { setLanguageTag } from '$lib/paraglide/runtime.js';
+
+// 영어로 전환
+setLanguageTag('en');
+
+// 영어 메시지 사용
+console.log(m.authWelcome()); // "Welcome"
+console.log(m.navHome()); // "Home"
+console.log(m.profileSave()); // "Save Profile"
+```
+
+## 번역 통계
+- **총 번역 키**: 245개
+- **카테고리**: 15개 (common, nav, auth, profile, user, menu, admin, test, sidebar, feature, pageTitle, report, chat 등)
+- **특수 문법**: `{name}`, `{count}` 등 변수 치환 지원
+
+## 관련 파일
+- [ko.json](./ko.json.md) - 한국어 번역
+- [ja.json](./ja.json.md) - 일본어 번역
+- [zh.json](./zh.json.md) - 중국어 번역
+- [vite.config.ts](../vite.config.ts.md) - Paraglide 플러그인 설정
+- [package.json](../package.json.md) - Paraglide 의존성
+
+## 주요 번역 예시
 
 ```json
 {
-	"$schema": "https://inlang.com/schema/inlang-message-format",
-	"helloWorld": "Hello, {name} from en!",
-	"commonLoading": "Loading...",
-	"commonClose": "Close",
-	"commonSave": "Save",
-	"commonDelete": "Delete",
-	"commonCancel": "Cancel",
-	"commonConfirm": "Confirm",
-	"commonRefresh": "Refresh",
-	"commonRetry": "Try Again",
-	"commonInfo": "Information",
-	"commonStatus": "Status",
-	"commonSuccess": "Success",
-	"commonError": "Error",
-	"commonComplete": "Complete",
-	"commonProgress": "Progress",
-	"commonGo": "Go",
-	"commonUser": "User",
-	"navHome": "Home",
-	"navAbout": "About",
-	"navProducts": "Products",
-	"navContact": "Contact",
-	"navBoard": "Board",
-	"navChat": "Chat",
-	"navFindUsers": "Find Users",
-	"navLogin": "Login",
-	"navLogout": "Logout",
-	"navMenu": "Menu",
-	"navMyProfile": "My Profile",
-	"authWelcome": "Welcome",
-	"authWelcomeMessage": "Welcome to Sonub",
-	"authIntro": "Adding community features to SedAi.Dev with Sonub spec.",
-	"authGetStarted": "Get Started",
-	"authSignInGuide": "Sign in with Google or Apple account",
-	"authSignInGuideStart": "Sign in with Google or Apple account to get started",
-	"authSignInAction": "Sign In",
-	"authSignInWithGoogle": "Sign in with Google",
-	"authSignInWithApple": "Sign in with Apple",
-	"authSigningIn": "Signing in...",
-	"authSigningOut": "Signing out...",
-	"authSignInFailed": "Sign In Failed",
-	"authSignInRequired": "Sign In Required",
-	"authSignInRequiredDesc": "Sign in to your account to access more features",
-	"authWelcomeUser": "Welcome, {name}!",
-	"profileNickname": "Nickname",
-	"profileNicknameInput": "Enter your nickname",
-	"profileNicknameRequired": "Please enter your nickname.",
-	"profileNicknameLength": "Nickname must be 50 characters or less.",
-	"profileNicknameMaxLength": "Max 50 characters",
-	"profileGender": "Gender",
-	"profileGenderMale": "Male",
-	"profileGenderFemale": "Female",
-	"profileGenderNoAnswer": "Prefer not to say",
-	"profileDateOfBirth": "Date of Birth",
-	"profileYear": "Year",
-	"profileMonth": "Month",
-	"profileDay": "Day",
-	"profileYearValue": "{year}",
-	"profileMonthValue": "{month}",
-	"profileDayValue": "{day}",
-	"profileDateOfBirthPastError": "Date of birth must be in the past.",
-	"profileAgeRestriction": "Must be 18 years or older ({minYear} - {maxYear})",
-	"profilePicture": "Profile Picture",
-	"profilePictureUploadGuide": "Click to upload profile picture (max 5MB)",
-	"profilePictureUploadSuccess": "Profile picture uploaded successfully.",
-	"profilePictureUploadFailed": "Failed to upload photo. Please try again.",
-	"profilePictureRemove": "Remove Photo",
-	"profilePictureRemoveSuccess": "Profile picture removed successfully.",
-	"profilePictureRemoveFailed": "Failed to remove photo. Please try again.",
-	"profilePictureTypeError": "Only image files can be uploaded.",
-	"profilePictureSizeError": "File size must be 5MB or less.",
-	"profileSave": "Save Profile",
-	"profileSaving": "Saving...",
-	"profileSaveSuccess": "Profile updated successfully.",
-	"profileSaveFailed": "Failed to save profile. Please try again.",
-	"profileLoading": "Loading profile...",
-	"profileLoadFailed": "Failed to load profile information.",
-	"profileInfo": "Profile Information",
-	"profileInfoGuide": "Set your nickname, gender, and date of birth",
-	"profileInfoEditGuide": "You can modify your profile information",
-	"userList": "User List",
-	"userListGuide": "View all registered users in Firebase Realtime Database",
-	"userJoinDate": "Joined:",
-	"userLastLogin": "Last Login:",
-	"userNoName": "No Name",
-	"userLoading": "Loading users...",
-	"userNotRegistered": "No registered users",
-	"userNotJoined": "No users have signed up yet.",
-	"userLoadFailed": "Failed to load user list",
-	"userLoadingMore": "Loading more users...",
-	"userAllLoaded": "All users loaded",
-	"userUnknownError": "An unknown error occurred.",
-	"userProfileDetail": "User Profile Details",
-	"menuTitle": "Menu",
-	"menuGuide": "Account & Settings",
-	"menuMyAccount": "My Account",
-	"menuEditProfile": "Edit Profile",
-	"menuAdminPage": "Admin Page",
-	"menuDevTest": "Dev Test (DatabaseListView)",
-	"adminDashboard": "Admin Dashboard",
-	"adminDashboardGuide": "Select an admin tool to get started.",
-	"adminTestUserManagement": "Test User Management",
-	"adminTestUserManagementDesc": "Manage temporary user creation, listing, and deletion on one page",
-	"adminUserList": "User List",
-	"adminUserListDesc": "View created test user list",
-	"adminReportList": "Report List",
-	"adminReportListDesc": "View and manage user reports",
-	"adminTest": "Test",
-	"adminTestDesc": "Use additional test features",
-	"adminInfoPermissionNotImplemented": "• Admin permission verification is not yet implemented.",
-	"adminInfoTestFlag": "• Test users are marked with `isTemporary: true` flag.",
-	"adminInfoDataDelete": "• Test data can be deleted at any time.",
-	"adminDashboardMenu": "Dashboard",
-	"adminUserListMenu": "Users",
-	"testUserList": "User List",
-	"testUserGuide": "View and manage test temporary users.",
-	"testUserCount": "Test Users Count",
-	"testUserCreated": "{count} created",
-	"testUserNotCreated": "No users created yet",
-	"testUserCreate": "Create Test Users",
-	"testUserCreateIcon": "🚀 Create Test Users",
-	"testUserCreateGuide": "Click the button to sequentially create 100 test temporary users and add them to the list.",
-	"testUserCreating": "⏳ Creating...",
-	"testUserCreateComplete": "✓ Creation Complete",
-	"testUserCreateCompleteMessage": "✓ Complete: {count} test users created.",
-	"testUserCreateAtOnce": "Created at once",
-	"testUserCurrentCreated": "Currently created",
-	"testUserDeletingInProgress": "Deleting",
-	"testUserDeleting": "Deleting...",
-	"testUserDeleteAll": "Delete All Test Users",
-	"testUserNotCreatedGuide": "No test users have been created. Use the <strong><a class=\"text-blue-600\" href=\"/admin/test/create-test-data\">Create Test Data</a></strong> page to generate 100 test accounts.",
-	"testUserGender": "Gender",
-	"testUserBirthYear": "Birth Year",
-	"testUserCreatedDate": "Created",
-	"testUserStatus": "Test User",
-	"testUserInfoDisplay": "• Only users marked with `isTemporary: true` are displayed on this page.",
-	"testUserInfoDelete": "• Each user can be deleted individually or in bulk.",
-	"testUserInfoNoRecover": "• Deleted users cannot be recovered.",
-	"testUserYearDisplay": "{year}",
-	"constructionTitle": "Under Construction",
-	"constructionMessage": "This page is currently under development.",
-	"constructionBackToHome": "Back to Home",
-	"boardConstruction": "Board feature is currently under development.",
-	"chatConstruction": "Chat feature is currently under development.",
-	"sidebarMenu": "Menu",
-	"sidebarRecentActivity": "Recent Activity",
-	"sidebarNoRecentActivity": "No recent activity.",
-	"sidebarSelectLanguage": "Language",
-	"sidebarBuildVersion": "Build Version",
-	"sidebarMyProfile": "My Profile",
-	"sidebarNotifications": "Notifications",
-	"sidebarNoNotifications": "No new notifications.",
-	"sidebarSuggestions": "Suggestions",
-	"sidebarPopularPosts": "Popular Posts",
-	"sidebarNewFeatures": "New Features",
-	"featureSveltekit5": "SvelteKit 5",
-	"featureSveltekit5Desc": "Modern framework using latest Svelte 5 runes",
-	"featureFirebaseAuth": "Firebase Auth",
-	"featureFirebaseAuthDesc": "Google and Apple social login support",
-	"featureTailwindCss": "TailwindCSS",
-	"featureTailwindCssDesc": "Beautiful UI with shadcn-svelte",
-	"linkSvelteKitDocs": "SvelteKit Docs",
-	"linkFirebaseDocs": "Firebase Docs",
-	"linkShadcnSvelte": "shadcn-svelte",
-	"pageTitleHome": "Sonub - Welcome",
-	"pageTitleMenu": "Menu - Sonub",
-	"pageTitleLogin": "Login - Sonub",
-	"pageTitleUserList": "User List - Sonub",
-	"pageTitleMyProfile": "My Profile - Sonub",
-	"pageTitleBoard": "Board - Sonub",
-	"pageTitleChat": "Chat - Sonub",
-	"pageMetaLogin": "Sign in to Sonub",
-	"adminTestMenu": "Test",
-	"profilePicturePreview": "Upload preview",
-	"testUserDeleteConfirm": "Do you want to delete this test user?",
-	"testUserNoUserToDelete": "No test users to delete.",
-	"testUserDeleteAllConfirm": "Do you want to delete all {count} test users?",
-	"testUserDeleteError": "An error occurred while deleting the test user.",
-	"testUserListLoadError": "Error loading test user list:",
-	"testUserCreateError": "Error creating test users:",
-	"testUserDeleteAllError": "Error deleting all test users:",
-	"testUserProgressDisplay": "{current} / {total} ({percentage}%)",
-	"testUserGenderMale": "Male",
-	"testUserGenderFemale": "Female",
-	"testUserGenderOther": "Other",
-	"testUserCreateCount": "100",
-	"reportReasonAbuse": "Abuse and Harassment",
-	"reportReasonFakeNews": "Misinformation",
-	"reportReasonSpam": "Spam",
-	"reportReasonInappropriate": "Inappropriate Content",
-	"reportReasonOther": "Other",
-	"commonPost": "Post",
-	"commonComment": "Comment",
-	"reportCancelConfirm": "Do you want to cancel this report?",
-	"authLoginRequired": "Login required",
-	"reportMyList": "My Reports",
-	"reportMyListGuide": "View your submitted reports",
-	"pageTitleMyReports": "My Reports - Sonub",
-	"adminReportListGuide": "View and manage all user reports",
-	"pageTitleAdminReports": "Admin Reports - Sonub",
-	"chatChatRoom": "Chat Room",
-	"chatRoom": "Room:",
-	"chatOverview": "Chat Overview",
-	"chatSignInRequired": "Please sign in to start chatting.",
-	"chatProvideUid": "Provide a uid query parameter to open a single chat.",
-	"chatLoadingProfile": "Loading the participant profile...",
-	"chatLoadProfileFailed": "Failed to load participant profile.",
-	"chatChattingWith": "You are chatting with {name}.",
-	"chatRoomReady": "Room ID {roomId} is ready.",
-	"chatSelectConversation": "Select a conversation to begin.",
-	"chatRoomNotReady": "Chat room is not ready.",
-	"chatAddUidOrRoomId": "Add ?uid=TARGET_UID or ?roomId=ROOM_KEY to the URL to open a conversation.",
-	"chatLoadingMessages": "Loading messages...",
-	"chatNoMessages": "No messages yet. Say hello!",
-	"chatLoadMessagesFailed": "Failed to load messages.",
-	"chatUnknownError": "Unknown error.",
-	"chatLoadingMore": "Loading more...",
-	"chatUpToDate": "You are up to date.",
-	"chatPreparingStream": "Preparing the message stream...",
-	"chatWriteMessage": "Write a message...",
-	"chatSending": "Sending...",
-	"chatSend": "Send",
-	"chatSignInToSend": "Please sign in to send messages.",
-	"chatSendFailed": "Failed to send message.",
-	"chatUnknownUser": "Unknown user",
-	"chatYou": "You",
-	"chatPartner": "Chat Partner",
-	"chatSingleChat": "Single Chat",
-	"chatMyRoomsTitle": "My conversations",
-	"chatMyRoomsDesc": "Chats you joined appear here in chronological order.",
-	"chatEmptyRooms": "You have not joined any chat rooms yet.",
-	"chatLoadingRooms": "Loading your chat rooms...",
-	"chatOpenRoom": "Open conversation",
-	"chatLastMessageLabel": "Last message",
-	"chatTabFriends": "Friends",
-	"chatTabGroupChats": "Group Chats",
-	"chatTabOpenChats": "Open Chats",
-	"chatTabBookmarks": "Bookmarks",
-	"chatTabSearch": "Search",
-	"chatCreateRoom": "Create Room",
-	"chatFindFriends": "Find Friends",
-	"chatCreateGroupChat": "Create Group Chat",
-	"chatCreateOpenChat": "Create Open Chat"
+  "commonLoading": "Loading...",
+  "authWelcome": "Welcome",
+  "profileNickname": "Nickname",
+  "chatSend": "Send",
+  "adminDashboard": "Admin Dashboard",
+  "testUserCreate": "Create Test Users"
 }
-
 ```
 
-## 변경 이력
-
-- 2025-11-13: 스펙 문서 생성/업데이트
+전체 소스 코드는 `/Users/thruthesky/apps/sonub/messages/en.json` 파일을 참조하세요.

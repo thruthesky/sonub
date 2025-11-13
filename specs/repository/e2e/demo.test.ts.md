@@ -1,27 +1,26 @@
 ---
-title: demo.test.ts
-type: typescript
-status: active
+name: demo.test.ts
+description: Playwright E2E 기본 테스트
 version: 1.0.0
-last_updated: 2025-11-13
+type: test
+category: e2e-test
+tags: [playwright, e2e, test]
 ---
 
+# demo.test.ts
+
 ## 개요
+Playwright를 사용한 E2E 테스트 파일입니다. 홈 페이지의 h1 요소가 표시되는지 확인합니다.
 
-이 파일은 demo.test.ts의 소스 코드를 포함하는 SED 스펙 문서입니다.
-
-## 소스 코드
-
+## 테스트 내용
 ```typescript
-import { expect, test } from '@playwright/test';
-
 test('home page has expected h1', async ({ page }) => {
-	await page.goto('/');
-	await expect(page.locator('h1')).toBeVisible();
+  await page.goto('/');
+  await expect(page.locator('h1')).toBeVisible();
 });
-
 ```
 
-## 변경 이력
-
-- 2025-11-13: 스펙 문서 생성/업데이트
+## 실행 방법
+```bash
+npm run test:e2e
+```

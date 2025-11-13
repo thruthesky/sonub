@@ -1,317 +1,127 @@
 ---
-title: "messages/zh.json"
-description: "Sonub 소스 코드 저장용 자동 생성 SED 스펙"
-original_path: "messages/zh.json"
-spec_type: "repository-source"
+name: messages/zh.json
+description: 중국어 다국어 메시지 파일. Paraglide i18n 라이브러리를 통해 사용됩니다.
+version: 1.0.0
+type: configuration
+category: i18n-messages
+tags: [configuration, i18n, chinese, messages, paraglide]
 ---
 
+# messages/zh.json
+
 ## 개요
+Sonub 프로젝트의 중국어(간체) 번역 파일입니다. 이 파일은:
+- Inlang Paraglide i18n 시스템에서 사용
+- 모든 UI 텍스트의 중국어 번역 포함
+- JSON 형식의 키-값 쌍 구조
+- 297개의 번역 키 포함 (일부 중복 키 존재)
 
-이 파일은 zh.json의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 주요 카테고리
 
-## 소스 코드
+### 공통 (common)
+- 加载中、关闭、保存、删除、取消、确认
+- 成功、错误、完成、进度
+
+### 네비게이션 (nav)
+- 首页、介绍、产品、联系、论坛、聊天
+- 登录、退出登录、菜单、我的资料
+
+### 인증 (auth)
+- 欢迎消息
+- Google/Apple 登录指南
+- 认证状态
+
+### 프로필 (profile)
+- 昵称、性别、出生日期
+- 个人资料照片上传/删除
+- 验证错误
+
+### 사용자 (user)
+- 用户列表相关消息
+- 加载、错误状态
+- 注册日期、最后登录
+
+### 메뉴 (menu)
+- 菜单标题和指南
+- 我的账号、编辑资料
+- 管理员页面
+
+### 관리자 (admin)
+- 管理员控制台
+- 测试用户管理
+- 举报列表
+
+### 테스트 (test)
+- 测试用户创建/删除
+- 进度显示
+- 确认消息
+
+### 사이드바 (sidebar)
+- 最近活动
+- 语言选择
+- 构建版本
+- 通知
+
+### 기능 소개 (feature)
+- SvelteKit 5
+- Firebase Auth
+- TailwindCSS
+
+### 페이지 타이틀 (pageTitle)
+- 各页面标题
+
+### 신고 (report)
+- 举报原因（辱骂、虚假信息、垃圾信息等）
+- 我的举报
+
+### 채팅 (chat)
+- 聊天室相关消息
+- 消息加载/发送
+- 单聊、群聊、开放聊天
+- 查找好友、书签、搜索
+
+## 사용 예시
+
+```typescript
+import * as m from '$lib/paraglide/messages.js';
+import { setLanguageTag } from '$lib/paraglide/runtime.js';
+
+// 중국어로 전환
+setLanguageTag('zh');
+
+// 중국어 메시지 사용
+console.log(m.authWelcome()); // "欢迎"
+console.log(m.navHome()); // "首页"
+console.log(m.profileSave()); // "保存资料"
+```
+
+## 번역 통계
+- **총 번역 키**: 297개 (일부 중복 포함)
+- **카테고리**: 15개 (common, nav, auth, profile, user, menu, admin, test, sidebar, feature, pageTitle, report, chat 등)
+- **특수 문법**: `{name}`, `{count}` 등 변수 치환 지원
+- **주의**: 일부 키가 중복되어 있어 정리 필요
+
+## 관련 파일
+- [ko.json](./ko.json.md) - 한국어 번역
+- [en.json](./en.json.md) - 영어 번역
+- [ja.json](./ja.json.md) - 일본어 번역
+- [vite.config.ts](../vite.config.ts.md) - Paraglide 플러그인 설정
+- [package.json](../package.json.md) - Paraglide 의존성
+
+## 주요 번역 예시
 
 ```json
 {
-	"$schema": "https://inlang.com/schema/inlang-message-format",
-	"helloWorld": "Hello, {name} from zh!",
-	"loading": "加载中...",
-	"close": "关闭",
-	"save": "保存",
-	"delete": "删除",
-	"cancel": "取消",
-	"confirm": "确认",
-	"refresh": "刷新",
-	"retry": "重试",
-	"info": "信息",
-	"status": "状态",
-	"success": "成功",
-	"error": "错误",
-	"complete": "完成",
-	"progress": "进度",
-	"go": "前往",
-	"user": "用户",
-	"home": "首页",
-	"about": "介绍",
-	"products": "产品",
-	"contact": "联系",
-	"board": "论坛",
-	"chat": "聊天",
-	"findUsers": "查找用户",
-	"signIn": "登录",
-	"signOut": "退出登录",
-	"menu": "菜单",
-	"myProfile": "我的资料",
-	"authWelcome": "欢迎",
-	"authWelcomeMessage": "欢迎来到 Sonub",
-	"authIntro": "使用 Sonub spec 为 SedAi.Dev 添加社区功能。",
-	"authGetStarted": "开始使用",
-	"authSignInGuide": "使用 Google 或 Apple 账号登录",
-	"authSignInGuideStart": "使用 Google 或 Apple 账号登录以开始使用",
-	"authSignInAction": "登录",
-	"authSignInWithGoogle": "使用 Google 登录",
-	"authSignInWithApple": "使用 Apple 登录",
-	"authSigningIn": "登录中...",
-	"authSigningOut": "退出登录中...",
-	"authSignInFailed": "登录失败",
-	"authSignInRequired": "需要登录",
-	"authSignInRequiredDesc": "登录您的账号以访问更多功能",
-	"authWelcomeUser": "欢迎，{name}！",
-	"profileNickname": "昵称",
-	"profileNicknameInput": "请输入您的昵称",
-	"profileNicknameRequired": "请输入昵称。",
-	"profileNicknameLengthLimit": "昵称必须在50个字符以内。",
-	"profileNicknameMaxLength": "最多50个字符",
-	"profileGender": "性别",
-	"profileGenderMale": "男",
-	"profileGenderFemale": "女",
-	"profileGenderNotSpecified": "不选择",
-	"profileBirthdate": "出生日期",
-	"profileBirthdateYear": "年",
-	"profileBirthdateMonth": "月",
-	"profileBirthdateDay": "日",
-	"profileYearFormat": "{year}年",
-	"profileMonthFormat": "{month}月",
-	"profileDayFormat": "{day}日",
-	"profileBirthdateFutureError": "出生日期必须是过去的日期。",
-	"profileBirthdateAgeLimit": "必须年满18岁（{minYear}年 - {maxYear}年）",
-	"profilePhoto": "个人资料照片",
-	"profilePhotoUploadGuide": "点击上传个人资料照片（最大5MB）",
-	"profilePhotoUploadSuccess": "个人资料照片上传成功。",
-	"profilePhotoUploadFailed": "照片上传失败。请重试。",
-	"profilePhotoRemove": "删除照片",
-	"profilePhotoRemoveSuccess": "个人资料照片已删除。",
-	"profilePhotoRemoveFailed": "照片删除失败。请重试。",
-	"profilePhotoTypeError": "只能上传图片文件。",
-	"profilePhotoSizeError": "文件大小必须在5MB以内。",
-	"profileSave": "保存资料",
-	"profileSaving": "保存中...",
-	"profileSaveSuccess": "个人资料更新成功。",
-	"profileSaveFailed": "保存个人资料失败。请重试。",
-	"profileLoading": "加载个人资料...",
-	"profileLoadFailed": "加载个人资料信息失败。",
-	"profileMemberInfo": "个人资料信息",
-	"profileMemberInfoGuide": "设置您的昵称、性别和出生日期",
-	"profileMemberInfoEditGuide": "您可以修改您的个人资料信息",
-	"userList": "用户列表",
-	"userListGuide": "查看 Firebase Realtime Database 中注册的所有用户",
-	"userJoinedDate": "注册日期：",
-	"userLastLogin": "最后登录：",
-	"userNoName": "无名称",
-	"userLoading": "加载用户列表...",
-	"userNoRegistration": "没有注册用户",
-	"userNoSignup": "还没有用户注册。",
-	"userLoadFailed": "加载用户列表失败",
-	"userLoadingMore": "加载更多用户...",
-	"userAllLoaded": "已加载所有用户",
-	"userUnknownError": "发生未知错误。",
-	"userProfileDetail": "用户资料详情",
-	"menuTitle": "菜单",
-	"menuGuide": "账号与设置",
-	"menuMyAccount": "我的账号",
-	"menuEditProfile": "编辑资料",
-	"menuAdminPage": "管理员页面",
-	"menuDevTest": "开发测试 (DatabaseListView)",
-	"adminDashboard": "管理员控制台",
-	"adminDashboardGuide": "选择管理工具以开始。",
-	"adminTestUserManagement": "测试用户管理",
-	"adminTestUserManagementDesc": "在一个页面上管理临时用户创建、列表和删除",
-	"adminUserList": "用户列表",
-	"adminUserListDesc": "查看已创建的测试用户列表",
-	"adminReportList": "管理员举报列表",
-	"adminReportListDesc": "查看和管理用户举报",
-	"adminTest": "测试",
-	"adminTestDesc": "使用其他测试功能",
-	"adminInfoPermissionNotImplemented": "• 管理员权限验证尚未实施。",
-	"adminInfoTestFlag": "• 测试用户标记为 `isTemporary: true` 标志。",
-	"adminInfoDataDelete": "• 测试数据可以随时删除。",
-	"adminDashboardMenu": "控制台",
-	"adminUserListMenu": "用户",
-	"testUserList": "用户列表",
-	"testUserGuide": "查看和管理测试临时用户。",
-	"testUserCount": "测试用户数",
-	"testUserCreated": "已创建 {count} 个",
-	"testUserNotCreated": "尚未创建用户",
-	"testUserCreate": "创建测试用户",
-	"testUserCreateIcon": "🚀 创建测试用户",
-	"testUserCreateGuide": "点击按钮以顺序创建100个测试临时用户并将其添加到列表中。",
-	"testUserCreating": "⏳ 创建中...",
-	"testUserCreateComplete": "✓ 创建完成",
-	"testUserCreateCompleteMessage": "✓ 完成：已创建 {count} 个测试用户。",
-	"testUserCreateBatchCount": "一次创建的数量",
-	"testUserCurrentCreateCount": "当前已创建",
-	"testUserDeletingInProgress": "删除中",
-	"testUserDeleting": "删除中...",
-	"testUserDeleteAll": "删除所有测试用户",
-	"testUserNoneGuide": "尚未创建测试用户。请前往 <strong><a class=\"text-blue-600\" href=\"/admin/test/create-test-data\">测试数据创建</a></strong> 页面生成 100 个测试账户。",
-	"testUserGender": "性别",
-	"testUserBirthYear": "出生年份",
-	"testUserCreatedDate": "创建日期",
-	"testUserStatus": "测试用户",
-	"testUserInfoDisplay": "• 此页面仅显示标记为 `isTemporary: true` 的用户。",
-	"testUserInfoDelete": "• 每个用户可以单独或批量删除。",
-	"testUserInfoUnrecoverable": "• 已删除的用户无法恢复。",
-	"testUserYearDisplay": "{year}年",
-	"underConstruction": "施工中",
-	"underConstructionMessage": "此页面目前正在开发中。",
-	"underConstructionBackToHome": "返回首页",
-	"boardUnderConstruction": "论坛功能目前正在开发中。",
-	"chatUnderConstruction": "聊天功能目前正在开发中。",
-	"sidebarMenu": "菜单",
-	"sidebarRecentActivity": "最近活动",
-	"sidebarNoRecentActivity": "没有最近的活动。",
-	"sidebarLanguage": "语言",
-	"sidebarBuildVersion": "构建版本",
-	"sidebarMyProfile": "我的资料",
-	"sidebarNotifications": "通知",
-	"sidebarNoNotifications": "没有新通知。",
-	"sidebarSuggestions": "建议",
-	"sidebarPopularPosts": "热门帖子",
-	"sidebarNewFeatures": "新功能",
-	"featureSveltekit5": "SvelteKit 5",
-	"featureSveltekit5Desc": "使用最新 Svelte 5 runes 的现代框架",
-	"featureFirebaseAuth": "Firebase Auth",
-	"featureFirebaseAuthDesc": "支持 Google 和 Apple 社交登录",
-	"featureTailwindCss": "TailwindCSS",
-	"featureTailwindCssDesc": "与 shadcn-svelte 一起的漂亮 UI",
-	"linkSvelteKitDocs": "SvelteKit 文档",
-	"linkFirebaseDocs": "Firebase 文档",
-	"linkShadcnSvelte": "shadcn-svelte",
-	"pageTitleHome": "Sonub - Welcome",
-	"pageTitleMenu": "菜单 - Sonub",
-	"pageTitleSignIn": "登录 - Sonub",
-	"pageTitleUserList": "用户列表 - Sonub",
-	"pageTitleMyProfile": "我的资料 - Sonub",
-	"pageTitleBoard": "论坛 - Sonub",
-	"pageTitleChat": "聊天 - Sonub",
-	"pageMetaSignIn": "登录到 Sonub",
-	"adminTestMenu": "测试",
-	"profilePhotoUploadPreview": "上传预览",
-	"testUserDeleteConfirm": "您要删除此测试用户吗？",
-	"testUserNoDelete": "没有要删除的测试用户。",
-	"testUserDeleteAllConfirm": "您要删除所有 {count} 个测试用户吗？",
-	"testUserDeleteError": "删除测试用户时发生错误。",
-	"testUserListLoadError": "加载测试用户列表时出错：",
-	"testUserCreateError": "创建测试用户时出错：",
-	"testUserDeleteAllError": "删除所有测试用户时出错：",
-	"testUserProgressDisplay": "{current} / {total} ({percentage}%)",
-	"testUserGenderMale": "男",
-	"testUserGenderFemale": "女",
-	"testUserGenderOther": "其他",
-	"testUserCreateUnit": "100",
-	"commonLoading": "加载中...",
-	"commonClose": "关闭",
-	"commonSave": "保存",
-	"commonDelete": "删除",
-	"commonCancel": "取消",
-	"commonConfirm": "确认",
-	"commonRefresh": "刷新",
-	"commonRetry": "重试",
-	"commonInfo": "信息",
-	"commonStatus": "状态",
-	"commonSuccess": "成功",
-	"commonError": "错误",
-	"commonComplete": "完成",
-	"commonProgress": "进度",
-	"commonGo": "前往",
-	"commonUser": "用户",
-	"navHome": "首页",
-	"navAbout": "介绍",
-	"navProducts": "产品",
-	"navContact": "联系",
-	"navBoard": "论坛",
-	"navChat": "聊天",
-	"navFindUsers": "查找用户",
-	"navLogin": "登录",
-	"navLogout": "退出登录",
-	"navMenu": "菜单",
-	"navMyProfile": "我的资料",
-	"authDescription": "使用 Sonub spec 为 SedAi.Dev 添加社区功能。",
-	"authSignIn": "登录",
-	"profileDateOfBirth": "出生日期",
-	"profilePicture": "个人资料照片",
-	"profileUserInfo": "个人资料信息",
-	"profileUserInfoGuide": "设置您的昵称、性别和出生日期",
-	"userNoUsersRegistered": "没有注册用户",
-	"userNoSignedUp": "还没有用户注册。",
-	"testUserCreatedAtOnce": "一次创建的数量",
-	"testUserCurrentCreated": "当前已创建",
-	"testUserDeletingProgress": "删除中",
-	"testUserNoUsersGuide": "尚未创建测试用户。您可以使用上面的<strong>创建测试用户</strong>功能来创建100个。",
-	"testUserYear": "{year}年",
-	"constructionUnderConstruction": "施工中",
-	"sidebarSelectLanguage": "语言",
-	"featureSvelteKit5": "SvelteKit 5",
-	"featureTailwindCSS": "TailwindCSS",
-	"pageTitleLogin": "登录 - Sonub",
-	"testUserDeleteConfirmation": "您要删除此测试用户吗？",
-	"testUserNoUsersToDelete": "没有要删除的测试用户。",
-	"testUserDeleteAllConfirmation": "您要删除所有 {count} 个测试用户吗？",
-	"testUserProgressIndicator": "{current} / {total} ({percentage}%)",
-	"reportReasonAbuse": "辱骂和诽谤",
-	"reportReasonFakeNews": "虚假信息",
-	"reportReasonSpam": "垃圾信息",
-	"reportReasonInappropriate": "不适当内容",
-	"reportReasonOther": "其他",
-	"commonPost": "帖子",
-	"commonComment": "评论",
-	"reportCancelConfirm": "您要取消此举报吗？",
-	"authLoginRequired": "需要登录",
-	"reportMyList": "我的举报",
-	"reportMyListGuide": "查看您提交的举报",
-	"pageTitleMyReports": "我的举报 - Sonub",
-	"adminReportListGuide": "查看所有用户的举报",
-	"pageTitleAdminReports": "管理员举报列表 - Sonub",
-	"testUserNotCreatedGuide": "尚未创建测试用户。请前往 <strong><a class=\"text-blue-600\" href=\"/admin/test/create-test-data\">测试数据创建</a></strong> 页面生成 100 个测试账户。",
-	"testUserCreateAtOnce": "一次创建的数量",
-	"chatConstruction": "聊天功能目前正在开发中。",
-	"chatChatRoom": "聊天室",
-	"chatRoom": "房间:",
-	"chatOverview": "聊天概览",
-	"chatSignInRequired": "请登录以开始聊天。",
-	"chatProvideUid": "请提供uid查询参数以打开单聊。",
-	"chatLoadingProfile": "正在加载参与者资料...",
-	"chatLoadProfileFailed": "加载参与者资料失败。",
-	"chatChattingWith": "您正在与{name}聊天。",
-	"chatRoomReady": "房间ID {roomId}已准备就绪。",
-	"chatSelectConversation": "选择对话以开始。",
-	"chatRoomNotReady": "聊天室未准备就绪。",
-	"chatAddUidOrRoomId": "在URL中添加?uid=TARGET_UID或?roomId=ROOM_KEY以打开对话。",
-	"chatLoadingMessages": "正在加载消息...",
-	"chatNoMessages": "还没有消息。打个招呼吧!",
-	"chatLoadMessagesFailed": "加载消息失败。",
-	"chatUnknownError": "未知错误。",
-	"chatLoadingMore": "正在加载更多...",
-	"chatUpToDate": "您已是最新状态。",
-	"chatPreparingStream": "正在准备消息流...",
-	"chatWriteMessage": "输入消息...",
-	"chatSending": "发送中...",
-	"chatSend": "发送",
-	"chatSignInToSend": "请登录以发送消息。",
-	"chatSendFailed": "发送消息失败。",
-	"chatUnknownUser": "未知用户",
-	"chatYou": "您",
-	"chatPartner": "聊天对象",
-	"chatSingleChat": "单聊",
-	"chatMyRoomsTitle": "我的对话",
-	"chatMyRoomsDesc": "您加入的聊天室按时间顺序显示。",
-	"chatEmptyRooms": "您还没有加入任何聊天室。",
-	"chatLoadingRooms": "正在加载聊天室...",
-	"chatOpenRoom": "打开对话",
-	"chatLastMessageLabel": "最后消息",
-	"chatTabFriends": "好友",
-	"chatTabGroupChats": "群聊",
-	"chatTabOpenChats": "开放聊天",
-	"chatTabBookmarks": "书签",
-	"chatTabSearch": "搜索",
-	"chatCreateRoom": "创建房间",
-	"chatFindFriends": "查找好友",
-	"chatCreateGroupChat": "创建群聊",
-	"chatCreateOpenChat": "创建开放聊天"
+  "commonLoading": "加载中...",
+  "authWelcome": "欢迎",
+  "profileNickname": "昵称",
+  "chatSend": "发送",
+  "adminDashboard": "管理员控制台",
+  "testUserCreate": "创建测试用户"
 }
-
 ```
 
-## 변경 이력
+## 개선 사항
+이 파일은 일부 키가 중복되어 있습니다 (예: `commonLoading`, `loading`). 향후 중복 키 정리 및 일관성 개선이 필요합니다.
 
-- 2025-11-13: 스펙 문서 생성/업데이트
+전체 소스 코드는 `/Users/thruthesky/apps/sonub/messages/zh.json` 파일을 참조하세요.

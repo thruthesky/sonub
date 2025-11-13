@@ -1,13 +1,16 @@
 ---
-title: "firebase/functions/src/utils/like.utils.ts"
-description: "Sonub 소스 코드 저장용 자동 생성 SED 스펙"
-original_path: "firebase/functions/src/utils/like.utils.ts"
-spec_type: "repository-source"
+name: like.utils.ts
+description: 좋아요 ID 파싱 유틸리티 함수
+version: 1.0.0
+type: firebase-function
+category: util
+tags: [firebase, cloud-functions, typescript, like, util, parser]
 ---
 
-## 개요
+# like.utils.ts
 
-이 파일은 like.utils.ts의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 개요
+이 파일은 좋아요 관련 유틸리티 함수를 제공합니다. likeId를 파싱하여 type, nodeId, uid를 추출하는 기능을 포함합니다.
 
 ## 소스 코드
 
@@ -91,9 +94,19 @@ export function parseLikeId(likeId: string): ParsedLikeId | null {
     uid,
   };
 }
-
 ```
 
-## 변경 이력
+## 주요 기능
+- **parseLikeId**: likeId 파싱 함수
+  - likeId 형식: "{type}-{nodeId}-{uid}"
+  - type 추출 (post 또는 comment)
+  - nodeId와 uid 분리 (하이픈이 포함될 수 있는 경우 처리)
+  - 상세한 로깅 제공
+  - 파싱 실패 시 null 반환
 
-- 2025-11-13: 스펙 문서 생성/업데이트
+## 사용되는 Firebase 트리거
+- 이 파일은 직접 트리거되지 않음
+- 좋아요 관련 핸들러 함수에서 유틸리티로 호출됨
+
+## 관련 함수
+- `types/index.ts`: ParsedLikeId 타입 정의

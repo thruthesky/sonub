@@ -1,14 +1,20 @@
 ---
-title: svelte.config.js
-type: javascript
-status: active
+name: svelte.config.js
+description: SvelteKit 프로젝트의 핵심 설정 파일. 어댑터, 전처리기, 경로 별칭, 경고 처리를 정의합니다.
 version: 1.0.0
-last_updated: 2025-11-13
+type: configuration
+category: root-config
+tags: [configuration, sveltekit, svelte, adapter, preprocessor]
 ---
 
-## 개요
+# svelte.config.js
 
-이 파일은 svelte.config.js의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 개요
+SvelteKit의 핵심 설정 파일입니다. 이 파일은:
+- Node.js 어댑터 설정 (프로덕션 배포용)
+- Vite 및 mdsvex 전처리기 설정
+- `$shared` 경로 별칭 정의
+- Tailwind CSS v4 관련 경고 무시 처리
 
 ## 소스 코드
 
@@ -45,9 +51,27 @@ const config = {
 };
 
 export default config;
-
 ```
 
-## 변경 이력
+## 주요 설정
 
-- 2025-11-13: 스펙 문서 생성/업데이트
+### 전처리기 (Preprocessors)
+- **vitePreprocess()**: TypeScript, PostCSS 등 Vite 기반 전처리
+- **mdsvex()**: Markdown + Svelte 파일(.svx) 지원
+
+### Kit 설정
+- **adapter**: `adapter-node()` - Node.js 서버 환경용 어댑터
+- **alias**: `$shared: './shared'` - 공유 코드 경로 별칭
+
+### 파일 확장자
+- **extensions**: `['.svelte', '.svx']` - Svelte 및 MDSveX 파일 인식
+
+### 경고 처리 (onwarn)
+- **css-unused-selector**: Tailwind CSS v4 사용 시 발생하는 무해한 경고 무시
+- **css_unused_selector**: 동일 경고의 언더스코어 버전도 무시
+- 나머지 경고는 정상적으로 표시
+
+## 관련 파일
+- [vite.config.ts](./vite.config.ts.md) - Vite 빌드 설정
+- [package.json](./package.json.md) - mdsvex, adapter-node 의존성
+- [tsconfig.json](./tsconfig.json.md) - TypeScript 설정

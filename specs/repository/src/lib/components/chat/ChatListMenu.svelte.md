@@ -1,14 +1,16 @@
 ---
-title: ChatListMenu.svelte
-type: component
-status: active
+name: ChatListMenu.svelte
+description: 채팅 목록 상단 메뉴 컴포넌트
 version: 1.0.0
-last_updated: 2025-11-13
+type: svelte-component
+category: feature-component
+tags: [svelte5, sveltekit, realtime, firebase]
 ---
 
-## 개요
+# ChatListMenu.svelte
 
-이 파일은 ChatListMenu.svelte의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 개요
+채팅 목록 상단 메뉴 컴포넌트
 
 ## 소스 코드
 
@@ -337,6 +339,19 @@ last_updated: 2025-11-13
 
 ```
 
-## 변경 이력
+## 주요 기능
+-  * 채팅 목록 상단 메뉴 컴포넌트 * * 친구, 그룹챗, 오픈챗 탭과 방생성, 북마크, 검색 기능을 제공하는 재사용 가능한 메뉴 컴포넌트입니다. 
 
-- 2025-11-13: 스펙 문서 생성/업데이트
+## Props/Parameters
+State variables: isDropdownOpen
+
+## 사용 예시
+```svelte
+<!-- 사용 예시는 필요에 따라 추가하세요 -->
+<ChatListMenu />
+```
+
+---
+
+> 이 문서는 자동 생성되었습니다.
+> 수정이 필요한 경우 직접 편집하세요.

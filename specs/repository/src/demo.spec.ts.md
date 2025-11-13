@@ -1,27 +1,27 @@
 ---
-title: "src/demo.spec.ts"
-description: "Sonub 소스 코드 저장용 자동 생성 SED 스펙"
-original_path: "src/demo.spec.ts"
-spec_type: "repository-source"
+name: demo.spec.ts
+description: Vitest 기본 테스트 파일
+version: 1.0.0
+type: test
+category: unit-test
+tags: [vitest, test, demo]
 ---
 
+# demo.spec.ts
+
 ## 개요
+Vitest 설정을 확인하기 위한 기본 테스트 파일입니다.
 
-이 파일은 demo.spec.ts의 소스 코드를 포함하는 SED 스펙 문서입니다.
-
-## 소스 코드
-
+## 테스트 내용
 ```typescript
-import { describe, it, expect } from 'vitest';
-
 describe('sum test', () => {
-	it('adds 1 + 2 to equal 3', () => {
-		expect(1 + 2).toBe(3);
-	});
+  it('adds 1 + 2 to equal 3', () => {
+    expect(1 + 2).toBe(3);
+  });
 });
-
 ```
 
-## 변경 이력
-
-- 2025-11-13: 스펙 문서 생성/업데이트
+## 실행 방법
+```bash
+npm run test
+```

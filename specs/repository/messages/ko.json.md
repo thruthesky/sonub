@@ -1,263 +1,119 @@
 ---
-title: "messages/ko.json"
-description: "Sonub 소스 코드 저장용 자동 생성 SED 스펙"
-original_path: "messages/ko.json"
-spec_type: "repository-source"
+name: messages/ko.json
+description: 한국어 다국어 메시지 파일. Paraglide i18n 라이브러리를 통해 사용됩니다.
+version: 1.0.0
+type: configuration
+category: i18n-messages
+tags: [configuration, i18n, korean, messages, paraglide]
 ---
 
+# messages/ko.json
+
 ## 개요
+Sonub 프로젝트의 한국어 번역 파일입니다. 이 파일은:
+- Inlang Paraglide i18n 시스템에서 사용
+- 모든 UI 텍스트의 한국어 번역 포함
+- JSON 형식의 키-값 쌍 구조
+- 244개의 번역 키 포함
 
-이 파일은 ko.json의 소스 코드를 포함하는 SED 스펙 문서입니다.
+## 주요 카테고리
 
-## 소스 코드
+### 공통 (common)
+- 로딩, 닫기, 저장, 삭제, 취소, 확인 등 일반적인 액션
+- 성공, 오류, 완료, 진행 상황 등 상태 메시지
+
+### 네비게이션 (nav)
+- 홈, 소개, 제품, 연락, 게시판, 채팅
+- 로그인, 로그아웃, 메뉴, 내 프로필
+
+### 인증 (auth)
+- 환영 메시지
+- Google/Apple 로그인 안내
+- 로그인 상태 메시지
+
+### 프로필 (profile)
+- 닉네임, 성별, 생년월일
+- 프로필 사진 업로드/제거
+- 검증 오류 메시지
+
+### 사용자 (user)
+- 사용자 목록 관련 메시지
+- 로딩, 에러 상태
+- 가입일, 마지막 로그인
+
+### 메뉴 (menu)
+- 메뉴 제목 및 안내
+- 내 계정, 프로필 수정
+- 관리자 페이지
+
+### 관리자 (admin)
+- 대시보드
+- 테스트 사용자 관리
+- 신고 목록
+
+### 테스트 (test)
+- 테스트 사용자 생성/삭제
+- 진행 상태 표시
+- 확인 메시지
+
+### 사이드바 (sidebar)
+- 최근 활동
+- 언어 선택
+- 빌드 버전
+- 알림
+
+### 기능 소개 (feature)
+- SvelteKit 5
+- Firebase Auth
+- TailwindCSS
+
+### 페이지 타이틀 (pageTitle)
+- 각 페이지의 제목 (홈, 메뉴, 로그인 등)
+
+### 신고 (report)
+- 신고 사유 (욕설, 허위정보, 스팸 등)
+- 내 신고 목록
+
+### 채팅 (chat)
+- 채팅방 관련 메시지
+- 메시지 로딩/전송
+- 1:1 채팅, 그룹챗, 오픈챗
+- 친구 찾기, 북마크, 검색
+
+## 사용 예시
+
+```typescript
+import * as m from '$lib/paraglide/messages.js';
+
+// 한국어 메시지 사용
+console.log(m.authWelcome()); // "환영합니다"
+console.log(m.navHome()); // "홈"
+console.log(m.profileSave()); // "프로필 저장"
+```
+
+## 번역 통계
+- **총 번역 키**: 244개
+- **카테고리**: 15개 (common, nav, auth, profile, user, menu, admin, test, sidebar, feature, pageTitle, report, chat 등)
+- **특수 문법**: `{name}`, `{count}` 등 변수 치환 지원
+
+## 관련 파일
+- [en.json](./en.json.md) - 영어 번역
+- [ja.json](./ja.json.md) - 일본어 번역
+- [zh.json](./zh.json.md) - 중국어 번역
+- [vite.config.ts](../vite.config.ts.md) - Paraglide 플러그인 설정
+- [package.json](../package.json.md) - Paraglide 의존성
+
+## 주요 번역 예시
 
 ```json
 {
-	"$schema": "https://inlang.com/schema/inlang-message-format",
-	"helloWorld": "Hello, {name} from ko!",
-	"commonLoading": "로딩 중...",
-	"commonClose": "닫기",
-	"commonSave": "저장",
-	"commonDelete": "삭제",
-	"commonCancel": "취소",
-	"commonConfirm": "확인",
-	"commonRefresh": "새로고침",
-	"commonRetry": "다시 시도",
-	"commonInfo": "정보",
-	"commonStatus": "상태",
-	"commonSuccess": "성공",
-	"commonError": "오류",
-	"commonComplete": "완료",
-	"commonProgress": "진행 상황",
-	"commonGo": "이동",
-	"commonUser": "사용자",
-	"navHome": "홈",
-	"navAbout": "소개",
-	"navProducts": "제품",
-	"navContact": "연락",
-	"navBoard": "게시판",
-	"navChat": "채팅",
-	"navFindUsers": "사용자 찾기",
-	"navLogin": "로그인",
-	"navLogout": "로그아웃",
-	"navMenu": "메뉴",
-	"navMyProfile": "내 프로필",
-	"authWelcome": "환영합니다",
-	"authWelcomeMessage": "Welcome to Sonub",
-	"authIntro": "SedAi.Dev 에 Sonub spec 으로 커뮤니티 기능을 집어 넣는다.",
-	"authGetStarted": "시작하기",
-	"authSignInGuide": "Google 또는 Apple 계정으로 로그인하세요",
-	"authSignInGuideStart": "Google 또는 Apple 계정으로 로그인하여 시작하세요",
-	"authSignInAction": "로그인하기",
-	"authSignInWithGoogle": "Google로 로그인",
-	"authSignInWithApple": "Apple로 로그인",
-	"authSigningIn": "로그인 중...",
-	"authSigningOut": "로그아웃 중...",
-	"authSignInFailed": "로그인 실패",
-	"authSignInRequired": "로그인 필요",
-	"authSignInRequiredDesc": "계정에 로그인하여 더 많은 기능을 사용하세요",
-	"authWelcomeUser": "{name}님, 로그인하셨습니다.",
-	"profileNickname": "닉네임",
-	"profileNicknameInput": "닉네임을 입력하세요",
-	"profileNicknameRequired": "닉네임을 입력해주세요.",
-	"profileNicknameLength": "닉네임은 50자 이하여야 합니다.",
-	"profileNicknameMaxLength": "최대 50자",
-	"profileGender": "성별",
-	"profileGenderMale": "남성",
-	"profileGenderFemale": "여성",
-	"profileGenderNoAnswer": "선택 안 함",
-	"profileDateOfBirth": "생년월일",
-	"profileYear": "년도",
-	"profileMonth": "월",
-	"profileDay": "일",
-	"profileYearValue": "{year}년",
-	"profileMonthValue": "{month}월",
-	"profileDayValue": "{day}일",
-	"profileDateOfBirthPastError": "생년월일은 과거여야 합니다.",
-	"profileAgeRestriction": "만 18세 이상만 가입할 수 있습니다 ({minYear}년 ~ {maxYear}년생)",
-	"profilePicture": "프로필 사진",
-	"profilePictureUploadGuide": "클릭하여 프로필 사진 업로드 (최대 5MB)",
-	"profilePictureUploadSuccess": "프로필 사진이 업로드되었습니다.",
-	"profilePictureUploadFailed": "사진 업로드에 실패했습니다. 다시 시도해주세요.",
-	"profilePictureRemove": "사진 제거",
-	"profilePictureRemoveSuccess": "프로필 사진이 제거되었습니다.",
-	"profilePictureRemoveFailed": "사진 제거에 실패했습니다. 다시 시도해주세요.",
-	"profilePictureTypeError": "이미지 파일만 업로드할 수 있습니다.",
-	"profilePictureSizeError": "파일 크기는 5MB 이하여야 합니다.",
-	"profileSave": "프로필 저장",
-	"profileSaving": "저장 중...",
-	"profileSaveSuccess": "프로필이 성공적으로 업데이트되었습니다.",
-	"profileSaveFailed": "프로필 저장에 실패했습니다. 다시 시도해주세요.",
-	"profileLoading": "프로필 정보를 불러오는 중...",
-	"profileLoadFailed": "프로필 정보를 불러오는데 실패했습니다.",
-	"profileInfo": "회원 정보",
-	"profileInfoGuide": "닉네임, 성별, 생년월일을 설정하세요",
-	"profileInfoEditGuide": "회원 정보를 수정할 수 있습니다",
-	"userList": "사용자 목록",
-	"userListGuide": "Firebase Realtime Database에 등록된 모든 사용자를 확인하세요",
-	"userJoinDate": "가입일:",
-	"userLastLogin": "마지막 로그인:",
-	"userNoName": "이름 없음",
-	"userLoading": "사용자 목록을 불러오는 중...",
-	"userNotRegistered": "등록된 사용자가 없습니다",
-	"userNotJoined": "아직 가입한 사용자가 없습니다.",
-	"userLoadFailed": "사용자 목록을 불러올 수 없습니다",
-	"userLoadingMore": "더 많은 사용자를 불러오는 중...",
-	"userAllLoaded": "모든 사용자를 불러왔습니다",
-	"userUnknownError": "알 수 없는 오류가 발생했습니다.",
-	"userProfileDetail": "사용자 프로필 상세",
-	"menuTitle": "메뉴",
-	"menuGuide": "계정 및 설정 관리",
-	"menuMyAccount": "내 계정",
-	"menuEditProfile": "회원 정보 수정",
-	"menuAdminPage": "관리자 페이지",
-	"menuDevTest": "개발 테스트 (DatabaseListView)",
-	"adminDashboard": "관리자 대시보드",
-	"adminDashboardGuide": "관리 도구를 선택하여 작업을 시작하세요.",
-	"adminTestUserManagement": "테스트 사용자 관리",
-	"adminTestUserManagementDesc": "임시 사용자 생성/목록/삭제를 한 페이지에서 관리합니다",
-	"adminUserList": "사용자 목록",
-	"adminUserListDesc": "생성된 테스트 사용자 목록을 확인합니다",
-	"adminReportList": "관리자 신고 목록",
-	"adminReportListDesc": "사용자 신고 내역을 확인하고 관리합니다",
-	"adminTest": "테스트",
-	"adminTestDesc": "기타 테스트 기능들을 사용합니다",
-	"adminInfoPermissionNotImplemented": "• 현재 관리자 권한 검증은 구현되지 않았습니다.",
-	"adminInfoTestFlag": "• 테스트 사용자는 `isTemporary: true` 플래그로 표시됩니다.",
-	"adminInfoDataDelete": "• 테스트 데이터는 언제든지 삭제할 수 있습니다.",
-	"adminDashboardMenu": "대시보드",
-	"adminUserListMenu": "사용자목록",
-	"testUserList": "사용자 목록",
-	"testUserGuide": "테스트용 임시 사용자 목록을 조회하고 관리합니다.",
-	"testUserCount": "테스트 사용자 수",
-	"testUserCreated": "{count}명 생성됨",
-	"testUserNotCreated": "아직 생성된 사용자 없음",
-	"testUserCreate": "테스트 사용자 생성",
-	"testUserCreateIcon": "🚀 테스트 사용자 생성",
-	"testUserCreateGuide": "버튼을 클릭하면 테스트용 임시 사용자 100명이 순차적으로 생성되고 목록에 추가됩니다.",
-	"testUserCreating": "⏳ 생성 중...",
-	"testUserCreateComplete": "✓ 생성 완료",
-	"testUserCreateCompleteMessage": "✓ 완료: {count}명의 테스트 사용자가 생성되었습니다.",
-	"testUserCreateAtOnce": "한 번에 생성되는 수",
-	"testUserCurrentCreated": "현재 생성된 수",
-	"testUserDeletingInProgress": "삭제 진행 중",
-	"testUserDeleting": "삭제 중...",
-	"testUserDeleteAll": "모든 테스트 사용자 삭제",
-	"testUserNotCreatedGuide": "생성된 테스트 사용자가 없습니다. <strong><a class=\"text-blue-600\" href=\"/admin/test/create-test-data\">테스트 데이터 생성</a></strong> 페이지에서 테스트 사용자 100명을 만들 수 있습니다.",
-	"testUserGender": "성별",
-	"testUserBirthYear": "생년도",
-	"testUserCreatedDate": "생성일",
-	"testUserStatus": "테스트 사용자",
-	"testUserInfoDisplay": "• 이 페이지에는 `isTemporary: true`로 표시된 사용자만 표시됩니다.",
-	"testUserInfoDelete": "• 각 사용자는 개별적으로 또는 일괄적으로 삭제할 수 있습니다.",
-	"testUserInfoNoRecover": "• 삭제된 사용자는 복구할 수 없습니다.",
-	"testUserYearDisplay": "{year}년",
-	"constructionTitle": "공사중",
-	"constructionMessage": "이 페이지는 현재 개발 중입니다.",
-	"constructionBackToHome": "홈으로 돌아가기",
-	"boardConstruction": "게시판 기능은 현재 개발 중입니다.",
-	"chatConstruction": "채팅 기능은 현재 개발 중입니다.",
-	"sidebarMenu": "메뉴",
-	"sidebarRecentActivity": "최근 활동",
-	"sidebarNoRecentActivity": "최근 활동이 없습니다.",
-	"sidebarSelectLanguage": "언어 선택",
-	"sidebarBuildVersion": "빌드 버전",
-	"sidebarMyProfile": "내 프로필",
-	"sidebarNotifications": "알림",
-	"sidebarNoNotifications": "새로운 알림이 없습니다.",
-	"sidebarSuggestions": "추천",
-	"sidebarPopularPosts": "인기 게시물",
-	"sidebarNewFeatures": "새로운 기능",
-	"featureSveltekit5": "SvelteKit 5",
-	"featureSveltekit5Desc": "최신 Svelte 5 runes를 사용한 모던 프레임워크",
-	"featureFirebaseAuth": "Firebase Auth",
-	"featureFirebaseAuthDesc": "Google 및 Apple 소셜 로그인 지원",
-	"featureTailwindCss": "TailwindCSS",
-	"featureTailwindCssDesc": "shadcn-svelte와 함께하는 아름다운 UI",
-	"linkSvelteKitDocs": "SvelteKit 문서",
-	"linkFirebaseDocs": "Firebase 문서",
-	"linkShadcnSvelte": "shadcn-svelte",
-	"pageTitleHome": "Sonub - Welcome",
-	"pageTitleMenu": "메뉴 - Sonub",
-	"pageTitleLogin": "로그인 - Sonub",
-	"pageTitleUserList": "사용자 목록 - Sonub",
-	"pageTitleMyProfile": "내 프로필 - Sonub",
-	"pageTitleBoard": "게시판 - Sonub",
-	"pageTitleChat": "채팅 - Sonub",
-	"pageMetaLogin": "Sonub에 로그인하세요",
-	"adminTestMenu": "테스트",
-	"profilePicturePreview": "업로드 미리보기",
-	"testUserDeleteConfirm": "이 테스트 사용자를 삭제하시겠습니까?",
-	"testUserNoUserToDelete": "삭제할 테스트 사용자가 없습니다.",
-	"testUserDeleteAllConfirm": "{count}명의 모든 테스트 사용자를 삭제하시겠습니까?",
-	"testUserDeleteError": "테스트 사용자 삭제 중 오류가 발생했습니다.",
-	"testUserListLoadError": "테스트 사용자 목록 로드 중 오류:",
-	"testUserCreateError": "테스트 사용자 생성 중 오류:",
-	"testUserDeleteAllError": "모든 테스트 사용자 삭제 중 오류:",
-	"testUserProgressDisplay": "{current} / {total} ({percentage}%)",
-	"testUserGenderMale": "남성",
-	"testUserGenderFemale": "여성",
-	"testUserGenderOther": "기타",
-	"testUserCreateCount": "100",
-	"reportReasonAbuse": "욕설 및 비방",
-	"reportReasonFakeNews": "허위 정보",
-	"reportReasonSpam": "스팸",
-	"reportReasonInappropriate": "부적절한 콘텐츠",
-	"reportReasonOther": "기타",
-	"commonPost": "게시글",
-	"commonComment": "댓글",
-	"reportCancelConfirm": "신고를 취소하시겠습니까?",
-	"authLoginRequired": "로그인이 필요합니다",
-	"reportMyList": "내 신고 목록",
-	"reportMyListGuide": "내가 작성한 신고를 확인할 수 있습니다",
-	"pageTitleMyReports": "내 신고 목록 - Sonub",
-	"chatChatRoom": "채팅방",
-	"chatRoom": "방:",
-	"chatOverview": "채팅 개요",
-	"chatSignInRequired": "채팅을 시작하려면 로그인하세요.",
-	"chatProvideUid": "단일 채팅을 열려면 uid 쿼리 매개변수를 제공하세요.",
-	"chatLoadingProfile": "참가자 프로필을 로딩 중...",
-	"chatLoadProfileFailed": "참가자 프로필 로드 실패.",
-	"chatChattingWith": "{name}님과 채팅 중입니다.",
-	"chatRoomReady": "방 ID {roomId}가 준비되었습니다.",
-	"chatSelectConversation": "대화를 선택하여 시작하세요.",
-	"chatRoomNotReady": "채팅방이 준비되지 않았습니다.",
-	"chatAddUidOrRoomId": "대화를 열려면 URL에 ?uid=TARGET_UID 또는 ?roomId=ROOM_KEY를 추가하세요.",
-	"chatLoadingMessages": "메시지 로딩 중...",
-	"chatNoMessages": "아직 메시지가 없습니다. 인사해보세요!",
-	"chatLoadMessagesFailed": "메시지 로드 실패.",
-	"chatUnknownError": "알 수 없는 오류.",
-	"chatLoadingMore": "더 불러오는 중...",
-	"chatUpToDate": "최신 상태입니다.",
-	"chatPreparingStream": "메시지 스트림 준비 중...",
-	"chatWriteMessage": "메시지를 입력하세요...",
-	"chatSending": "전송 중...",
-	"chatSend": "전송",
-	"chatSignInToSend": "메시지를 전송하려면 로그인하세요.",
-	"chatSendFailed": "메시지 전송 실패.",
-	"chatUnknownUser": "알 수 없는 사용자",
-	"chatYou": "나",
-	"chatPartner": "채팅 상대",
-	"chatSingleChat": "1:1 채팅",
-	"chatMyRoomsTitle": "내 대화",
-	"chatMyRoomsDesc": "참여한 채팅방이 시간순으로 표시됩니다.",
-	"chatEmptyRooms": "아직 참여한 채팅방이 없습니다.",
-	"chatLoadingRooms": "채팅방 로딩 중...",
-	"chatOpenRoom": "대화 열기",
-	"chatLastMessageLabel": "마지막 메시지",
-	"chatTabFriends": "친구",
-	"chatTabGroupChats": "그룹챗",
-	"chatTabOpenChats": "오픈챗",
-	"chatTabBookmarks": "북마크",
-	"chatTabSearch": "검색",
-	"chatCreateRoom": "방생성",
-	"chatFindFriends": "친구 찾기",
-	"chatCreateGroupChat": "그룹챗 생성",
-	"chatCreateOpenChat": "오픈챗 생성"
+  "commonLoading": "로딩 중...",
+  "authWelcome": "환영합니다",
+  "profileNickname": "닉네임",
+  "chatSend": "전송",
+  "adminDashboard": "관리자 대시보드",
+  "testUserCreate": "테스트 사용자 생성"
 }
-
 ```
 
-## 변경 이력
-
-- 2025-11-13: 스펙 문서 생성/업데이트
+전체 소스 코드는 `/Users/thruthesky/apps/sonub/messages/ko.json` 파일을 참조하세요.
