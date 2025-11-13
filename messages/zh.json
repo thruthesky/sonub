@@ -293,5 +293,16 @@
 	"chatCreateRoom": "创建房间",
 	"chatFindFriends": "查找好友",
 	"chatCreateGroupChat": "创建群聊",
-	"chatCreateOpenChat": "创建开放聊天"
+	"chatCreateOpenChat": "创建开放聊天",
+	"boardTabFree": "自由讨论",
+	"boardTabQna": "问答",
+	"boardTabMarket": "会员集市",
+	"boardWritePost": "写帖子",
+	"sidebarUpcomingTodos": "计划中的 TODO",
+	"sidebarTodoChatInvites": "聊天邀请处理",
+	"sidebarTodoChatInvitesDesc": "在聊天列表顶部显示邀请并在入场前询问是否加入。",
+	"sidebarTodoPostType": "论坛帖子类型消息",
+	"sidebarTodoPostTypeDesc": "准备包含分类、标题和评论 UI 的帖子式发送组件。",
+	"sidebarTodoBoardStats": "论坛统计卡片",
+	"sidebarTodoBoardStatsDesc": "实时展示帖子/评论/点赞的计数。"
 }

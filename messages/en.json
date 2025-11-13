@@ -241,5 +241,16 @@
 	"chatCreateRoom": "Create Room",
 	"chatFindFriends": "Find Friends",
 	"chatCreateGroupChat": "Create Group Chat",
-	"chatCreateOpenChat": "Create Open Chat"
+	"chatCreateOpenChat": "Create Open Chat",
+	"boardTabFree": "Free Talk",
+	"boardTabQna": "Q&A",
+	"boardTabMarket": "Marketplace",
+	"boardWritePost": "Write Post",
+	"sidebarUpcomingTodos": "Upcoming TODOs",
+	"sidebarTodoChatInvites": "Chat invite accept/decline",
+	"sidebarTodoChatInvitesDesc": "Surface invite banners above the chat list and confirm before entering.",
+	"sidebarTodoPostType": "Board post-type messages",
+	"sidebarTodoPostTypeDesc": "Prepare the composer with category, title, and comment UI for board-style posts.",
+	"sidebarTodoBoardStats": "Board stats cards",
+	"sidebarTodoBoardStatsDesc": "Show live post/comment/like counters for every board category."
 }

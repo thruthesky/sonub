@@ -122,14 +122,14 @@
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 5. FCM 클라이언트 설정 -->
+		<!-- 5. FCM 클라이언트 설정 + 채팅 메시지 알림 전송 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
 					<span class="todo-number">5</span>
 					<div class="flex flex-col gap-1">
-						<Card.Title class="text-xl">푸시 알림: FCM 클라이언트 설정</Card.Title>
-						<span class="todo-badge todo-badge--progress">🔄 진행중</span>
+						<Card.Title class="text-xl">FCM 클라이언트 설정 + 채팅 메시지 알림 전송</Card.Title>
+						<span class="todo-badge todo-badge--done">✅ 완료</span>
 					</div>
 				</div>
 			</Card.Header>
@@ -137,39 +137,74 @@
 				<ul class="todo-list">
 					<li>Firebase Cloud Messaging (FCM) Permission 요청</li>
 					<li>FCM 토큰 생성 및 저장</li>
-					<li><code>/fcm-tokens/{'{uid}'}/{'{tokenId}'}</code></li>
+					<li><code>/fcm-tokens/{'{tokenId}'}: {'{uid, createdAt}'}</code></li>
 					<li>토큰 갱신 처리 및 만료된 토큰 정리</li>
+					<li>Cloud Functions에서 새 메시지 감지 시 FCM 전송</li>
+					<li>배치 전송 구현 (255개씩 분할 전송)</li>
+					<li>알림 페이로드: 발신자 이름, 메시지 내용 미리보기, 채팅방 ID</li>
 				</ul>
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 6. 푸시 알림 -->
+		<!-- 6. 알림 구독 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
 					<span class="todo-number">6</span>
 					<div class="flex flex-col gap-1">
-						<Card.Title class="text-xl">새로운 채팅 메시지 푸시 알림</Card.Title>
+						<Card.Title class="text-xl">알림 구독</Card.Title>
+						<span class="todo-badge todo-badge--done">✅ 완료</span>
+					</div>
+				</div>
+			</Card.Header>
+			<Card.Content>
+				<ul class="todo-list">
+					<li>채팅방 별 알림을 구독/해제 기능 추가</li>
+					<li>
+						<strong>그룹 채팅:</strong>
+						<code>/chat-rooms/{'{roomId}'}/members/{'{uid}'}: boolean</code> - true: 알림 받기,
+						false: 알림 안받기
+					</li>
+					<li>
+						<strong>1:1 채팅:</strong>
+						<code>/chat-joins/{'{uid}'}/{'{roomId}'}/fcm-subscription</code> - false: 알림 안받기,
+						필드 없음: 알림 받기
+					</li>
+					<li>채팅방 상단 헤더에 알림 구독 버튼 추가 (핀 버튼과 드롭다운 메뉴 사이)</li>
+					<li>실시간 구독 상태 모니터링 ($effect + onValue)</li>
+					<li>구독 중: 진한 벨 아이콘, 구독 해제: 연한 벨 아이콘 + 슬래시</li>
+					<li>Cloud Functions에서 구독 상태 확인 후 FCM 전송</li>
+					<li>구독 해제된 사용자는 FCM 전송 대상에서 자동 제외</li>
+				</ul>
+			</Card.Content>
+		</Card.Root>
+
+		<!-- 7. 채팅 초대 수락/거절 흐름 -->
+		<Card.Root class="todo-card">
+			<Card.Header>
+				<div class="flex items-start gap-3">
+					<span class="todo-number">7</span>
+					<div class="flex flex-col gap-1">
+						<Card.Title class="text-xl">채팅 초대 수락/거절 흐름</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
 					</div>
 				</div>
 			</Card.Header>
 			<Card.Content>
 				<ul class="todo-list">
-					<li>Cloud Functions에서 새 메시지 감지 시 FCM 전송</li>
-					<li>알림 페이로드: 발신자 이름, 메시지 내용 미리보기, 채팅방 ID</li>
-					<li>채팅방 푸시 알림 구독</li>
-					<li>앱이 포그라운드/백그라운드일 때 각각 다른 처리</li>
-					<li>알림 클릭 시 해당 채팅방으로 이동</li>
+					<li>초대 수신 시 <code>/chat-invites/{'{uid}'}/{'{roomId}'}</code> 에 초대 정보를 저장하고 채팅 목록 상단에 노출</li>
+					<li>사용자에게 입장 여부를 먼저 묻는 확인 UI 제공 (입장/거절)</li>
+					<li>거절 시 해당 초대 노드를 삭제하고 목록에서 제거</li>
+					<li>입장 시 초대 노드를 삭제 후 채팅방 입장 처리 및 <code>/chat-joins</code> 동기화</li>
 				</ul>
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 7. 비밀번호 기능 -->
+		<!-- 8. 비밀번호 기능 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
-					<span class="todo-number">7</span>
+					<span class="todo-number">8</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">그룹 채팅 비밀번호 기능</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -186,11 +221,11 @@
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 8. Post 타입 메시지 -->
+		<!-- 9. Post 타입 메시지 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
-					<span class="todo-number">8</span>
+					<span class="todo-number">9</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">채팅 메시지 "Post" 타입 선택</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -200,7 +235,7 @@
 			<Card.Content>
 				<div class="space-y-4">
 					<div>
-						<h4 class="todo-subtitle">8-1. 카테고리 선택</h4>
+						<h4 class="todo-subtitle">9-1. 카테고리 선택</h4>
 						<ul class="todo-list">
 							<li>메시지 입력창 옆 드롭다운에서 타입 선택: "message" 또는 "post"</li>
 							<li>"post" 선택 시 카테고리 선택 UI 표시</li>
@@ -208,7 +243,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">8-2. 제목, 내용, 사진 업로드</h4>
+						<h4 class="todo-subtitle">9-2. 제목, 내용, 사진 업로드</h4>
 						<ul class="todo-list">
 							<li>제목 입력 필드 추가 (필수)</li>
 							<li>내용 입력 (rich text editor 또는 마크다운)</li>
@@ -218,7 +253,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">8-3. 카테고리별 게시판 메뉴</h4>
+						<h4 class="todo-subtitle">9-3. 카테고리별 게시판 메뉴</h4>
 						<ul class="todo-list">
 							<li>홈페이지 메뉴에 카테고리별 페이지 추가</li>
 							<li>DatabaseListView 사용하여 실시간 목록 표시</li>
@@ -227,7 +262,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">8-4. 댓글 기능 (게시판처럼 보이게)</h4>
+						<h4 class="todo-subtitle">9-4. 댓글 기능 (게시판처럼 보이게)</h4>
 						<ul class="todo-list">
 							<li>게시글 상세 페이지에서 댓글 목록 표시</li>
 							<li>댓글 작성, 수정, 삭제 기능</li>
@@ -236,15 +271,24 @@
 							<li>DatabaseListView 사용하여 실시간 댓글 동기화</li>
 						</ul>
 					</div>
+					<div>
+						<h4 class="todo-subtitle">9-5. 게시판 통계 (post/comment/like)</h4>
+						<ul class="todo-list">
+							<li>카테고리 및 전체 게시판에 대해 <code>postCount</code>, <code>commentCount</code>, <code>likeCount</code> 통계를 표시</li>
+							<li>Cloud Functions가 게시글/댓글/좋아요 이벤트 발생 시 대응 카운터를 업데이트 (<code>/stats/board</code> 트리)</li>
+							<li>게시판 목록/상세 헤더에서 최신 통계를 실시간으로 구독하여 UI에 노출</li>
+							<li>대시보드 카드 형태로 각 카테고리의 활동량을 비교할 수 있도록 시각화</li>
+						</ul>
+					</div>
 				</div>
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 9. 게시판 글이 채팅방 메시지 목록에 표시 -->
+		<!-- 10. 게시판 글이 채팅방 메시지 목록에 표시 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
-					<span class="todo-number">9</span>
+					<span class="todo-number">10</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">게시판 글이 채팅방 메시지 목록에 표시</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -262,11 +306,11 @@
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 10. 남/여 찾기 기능 (콕 포인트 시스템) -->
+		<!-- 11. 남/여 찾기 기능 (콕 포인트 시스템) -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
-					<span class="todo-number">10</span>
+					<span class="todo-number">11</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">남/여 찾기 기능 (콕 포인트 시스템)</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -276,7 +320,7 @@
 			<Card.Content>
 				<div class="space-y-4">
 					<div>
-						<h4 class="todo-subtitle">10-1. 콕(Coke) 가상 포인트 시스템</h4>
+						<h4 class="todo-subtitle">11-1. 콕(Coke) 가상 포인트 시스템</h4>
 						<ul class="todo-list">
 							<li>콕은 채팅에 사용하는 가상 포인트 (연료/코크스 의미)</li>
 							<li>1콕 = 1원</li>
@@ -285,7 +329,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">10-2. 무료 채팅 한도</h4>
+						<h4 class="todo-subtitle">11-2. 무료 채팅 한도</h4>
 						<ul class="todo-list">
 							<li>모르는 사람과 총 50명까지 무료 채팅 가능</li>
 							<li>총 채팅 메시지 200번까지 무료 (모르는 사람 대상)</li>
@@ -294,7 +338,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">10-3. 콕 소비 규칙</h4>
+						<h4 class="todo-subtitle">11-3. 콕 소비 규칙</h4>
 						<ul class="todo-list">
 							<li>모르는 사람에게 처음 채팅 시작: 30콕 소모</li>
 							<li>20단어 이하 메시지: 10콕 소모</li>
@@ -304,7 +348,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">10-4. 남/여 찾기 UI</h4>
+						<h4 class="todo-subtitle">11-4. 남/여 찾기 UI</h4>
 						<ul class="todo-list">
 							<li>성별 필터링 옵션 (남성/여성/전체)</li>
 							<li>랜덤 매칭 기능</li>
@@ -317,11 +361,11 @@
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 11. 토스/페이팔 결제 기능 -->
+		<!-- 12. 토스/페이팔 결제 기능 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
-					<span class="todo-number">11</span>
+					<span class="todo-number">12</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">토스 페이먼츠 & 페이팔 결제 기능</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -331,7 +375,7 @@
 			<Card.Content>
 				<div class="space-y-4">
 					<div>
-						<h4 class="todo-subtitle">11-1. 토스 페이먼츠 연동 (국내 결제)</h4>
+						<h4 class="todo-subtitle">12-1. 토스 페이먼츠 연동 (국내 결제)</h4>
 						<ul class="todo-list">
 							<li>토스 페이먼츠 SDK 클라이언트 통합</li>
 							<li>결제 수단: 카드, 계좌이체, 간편결제 등</li>
@@ -341,7 +385,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">11-2. 페이팔 연동 (해외 결제)</h4>
+						<h4 class="todo-subtitle">12-2. 페이팔 연동 (해외 결제)</h4>
 						<ul class="todo-list">
 							<li>PayPal JavaScript SDK 통합</li>
 							<li>전세계 사용자를 위한 다국가 결제 지원</li>
@@ -351,7 +395,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">11-3. 콕 상품 패키지</h4>
+						<h4 class="todo-subtitle">12-3. 콕 상품 패키지</h4>
 						<ul class="todo-list">
 							<li>기본 패키지: 100콕 (100원)</li>
 							<li>인기 패키지: 1,000콕 (900원, 10% 할인)</li>
@@ -361,7 +405,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">11-4. 결제 보안 및 로깅</h4>
+						<h4 class="todo-subtitle">12-4. 결제 보안 및 로깅</h4>
 						<ul class="todo-list">
 							<li>모든 결제는 HTTPS를 통해서만 처리</li>
 							<li>결제 정보는 암호화하여 저장</li>

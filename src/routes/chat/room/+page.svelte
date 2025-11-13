@@ -24,7 +24,7 @@
 	import { formatLongDate } from '$lib/functions/date.functions';
 	import { tick } from 'svelte';
 	import { rtdb } from '$lib/firebase';
-	import { ref, update, onValue } from 'firebase/database';
+	import { ref, update, onValue, set, remove, get } from 'firebase/database';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { Button } from '$lib/components/ui/button';
 	import ChatFavoritesDialog from '$lib/components/chat/ChatFavoritesDialog.svelte';
@@ -125,6 +125,68 @@
 
 		return () => {
 			unsubscribe();
+		};
+	});
+
+	// 채팅방 알림 구독 상태 관리
+	let isNotificationSubscribed = $state(true); // 기본값: 구독 중
+	let subscriptionLoading = $state(false);
+
+	/**
+	 * 채팅방 알림 구독 상태 로드
+	 *
+	 * 1:1 채팅방: /chat-joins/{uid}/{roomId}/fcm-subscription 확인
+	 * - 필드 없음 → 구독 중 (true)
+	 * - false → 구독 해제
+	 *
+	 * 그룹/오픈 채팅방: /chat-rooms/{roomId}/members/{uid} 확인
+	 * - true → 구독 중
+	 * - false → 구독 해제
+	 * - 필드 없음 → 구독 중 (기본값)
+	 */
+	$effect(() => {
+		if (!activeRoomId || !authStore.user?.uid || !rtdb) {
+			isNotificationSubscribed = true; // 기본값
+			return;
+		}
+
+		let unsubscribe: (() => void) | undefined;
+
+		if (isSingleChat) {
+			// 1:1 채팅방: fcm-subscription 필드 구독
+			const subscriptionRef = ref(
+				rtdb,
+				`chat-joins/${authStore.user.uid}/${activeRoomId}/fcm-subscription`
+			);
+
+			unsubscribe = onValue(subscriptionRef, (snapshot) => {
+				if (!snapshot.exists()) {
+					isNotificationSubscribed = true; // 기본값: 구독 중
+					return;
+				}
+
+				const value = snapshot.val();
+				isNotificationSubscribed = value !== false;
+			});
+		} else {
+			// 그룹/오픈 채팅방: members 필드 구독
+			const memberRef = ref(rtdb, `chat-rooms/${activeRoomId}/members/${authStore.user.uid}`);
+
+			unsubscribe = onValue(memberRef, (snapshot) => {
+				if (!snapshot.exists()) {
+					isNotificationSubscribed = true; // 기본값: 구독 중
+					return;
+				}
+
+				const value = snapshot.val();
+				isNotificationSubscribed = value === true;
+			});
+		}
+
+		return () => {
+			if (unsubscribe) {
+				unsubscribe();
+			}
 		};
 	});
 
@@ -295,6 +357,62 @@
 	}
 
 	/**
+	 * 채팅방 알림 구독 토글 핸들러
+	 *
+	 * 1:1 채팅방:
+	 * - 구독 → 구독 해제: fcm-subscription: false 저장
+	 * - 구독 해제 → 구독: fcm-subscription 필드 삭제
+	 *
+	 * 그룹/오픈 채팅방:
+	 * - 구독 → 구독 해제: members/{uid}: false 저장
+	 * - 구독 해제 → 구독: members/{uid}: true 저장
+	 */
+	async function handleToggleNotificationSubscription() {
+		if (!activeRoomId || !authStore.user?.uid || !rtdb || subscriptionLoading) {
+			console.error('채팅방 또는 사용자 정보 없음');
+			return;
+		}
+
+		subscriptionLoading = true;
+		const newStatus = !isNotificationSubscribed;
+
+		try {
+			if (isSingleChat) {
+				// 1:1 채팅방
+				const subscriptionRef = ref(
+					rtdb,
+					`chat-joins/${authStore.user.uid}/${activeRoomId}/fcm-subscription`
+				);
+
+				if (newStatus) {
+					// 구독: 필드 삭제
+					await remove(subscriptionRef);
+					console.log(`📢 1:1 채팅방 알림 구독 완료: ${activeRoomId}`);
+				} else {
+					// 구독 해제: false 저장
+					await set(subscriptionRef, false);
+					console.log(`🔕 1:1 채팅방 알림 구독 해제: ${activeRoomId}`);
+				}
+			} else {
+				// 그룹/오픈 채팅방
+				const memberRef = ref(rtdb, `chat-rooms/${activeRoomId}/members/${authStore.user.uid}`);
+				await set(memberRef, newStatus);
+				console.log(
+					`${newStatus ? '📢' : '🔕'} 그룹 채팅방 알림 ${newStatus ? '구독' : '구독 해제'}: ${activeRoomId}`
+				);
+			}
+
+			// 로컬 상태 업데이트 (onValue 리스너가 자동으로 업데이트하지만 즉각적인 UI 반영을 위해)
+			isNotificationSubscribed = newStatus;
+		} catch (error) {
+			console.error('알림 구독 상태 변경 실패:', error);
+			alert('알림 설정을 변경할 수 없습니다. 잠시 후 다시 시도해주세요.');
+		} finally {
+			subscriptionLoading = false;
+		}
+	}
+
+	/**
 	 * 현재 채팅방의 읽지 않은 메시지 수를 0으로 초기화합니다.
 	 *
 	 * 사용자가 채팅방에 입장해 있는 상태에서 새 메시지를 읽었음을 표시하기 위해
@@ -417,6 +535,36 @@
 			title={isPinned ? '핀 해제' : '핀 설정'}
 		>
 			<span class="text-xl">{isPinned ? '📌' : '📍'}</span>
+		</Button>
+
+		<!-- 알림 구독 버튼 -->
+		<Button
+			variant="ghost"
+			size="icon"
+			onclick={handleToggleNotificationSubscription}
+			disabled={subscriptionLoading}
+			class="shrink-0"
+			title={isNotificationSubscribed ? '알림 구독 해제' : '알림 구독'}
+		>
+			{#if isNotificationSubscribed}
+				<!-- 구독 중: 진한 벨 아이콘 (실선) -->
+				<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+					<path
+						d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"
+					/>
+				</svg>
+			{:else}
+				<!-- 구독 해제: 연한 벨 아이콘 + 슬래시 -->
+				<svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+					/>
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6" />
+				</svg>
+			{/if}
 		</Button>
 
 		<!-- 메뉴 드롭다운 -->

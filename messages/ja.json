@@ -242,5 +242,16 @@
 	"chatCreateRoom": "ルーム作成",
 	"chatFindFriends": "友達を探す",
 	"chatCreateGroupChat": "グループチャット作成",
-	"chatCreateOpenChat": "オープンチャット作成"
+	"chatCreateOpenChat": "オープンチャット作成",
+	"boardTabFree": "自由討論",
+	"boardTabQna": "質問と回答",
+	"boardTabMarket": "会員マーケット",
+	"boardWritePost": "投稿を書く",
+	"sidebarUpcomingTodos": "予定中のTODO",
+	"sidebarTodoChatInvites": "チャット招待の承認/拒否",
+	"sidebarTodoChatInvitesDesc": "チャット一覧の上部に招待を表示し、入室前に参加するか確認します。",
+	"sidebarTodoPostType": "掲示板ポスト型メッセージ",
+	"sidebarTodoPostTypeDesc": "カテゴリ・タイトル・コメントUIを備えた掲示板スタイルの投稿作成を準備します。",
+	"sidebarTodoBoardStats": "掲示板統計カード",
+	"sidebarTodoBoardStatsDesc": "投稿/コメント/いいね数をリアルタイムで表示します。"
 }

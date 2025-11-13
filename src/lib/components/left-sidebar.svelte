@@ -21,6 +21,24 @@
 		zh: '中文'
 	};
 
+	const upcomingTodos = [
+		{
+			id: 'chat-invites',
+			title: () => m.sidebarTodoChatInvites(),
+			description: () => m.sidebarTodoChatInvitesDesc()
+		},
+		{
+			id: 'post-type',
+			title: () => m.sidebarTodoPostType(),
+			description: () => m.sidebarTodoPostTypeDesc()
+		},
+		{
+			id: 'board-stats',
+			title: () => m.sidebarTodoBoardStats(),
+			description: () => m.sidebarTodoBoardStatsDesc()
+		}
+	];
+
 	/**
 	 * 현재 경로가 주어진 경로와 일치하는지 확인
 	 */
@@ -72,39 +90,6 @@
 						/>
 					</svg>
 					{m.navHome()}
-				</a>
-				<a href="/about" class="nav-link" class:active={isActivePath('/about')}>
-					<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-						/>
-					</svg>
-					{m.navAbout()}
-				</a>
-				<a href="/products" class="nav-link" class:active={isActivePath('/products')}>
-					<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-						/>
-					</svg>
-					{m.navProducts()}
-				</a>
-				<a href="/contact" class="nav-link" class:active={isActivePath('/contact')}>
-					<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-						/>
-					</svg>
-					{m.navContact()}
 				</a>
 			</Card.Content>
 		</Card.Root>
@@ -181,6 +166,38 @@
 						</li>
 					</ul>
 				</div>
+			</Card.Content>
+		</Card.Root>
+
+		<!-- TODO 요약 카드 -->
+		<Card.Root class="sidebar-card">
+			<Card.Header>
+				<Card.Title class="flex items-center gap-2 text-base">
+					<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M12 6v6l4 2"
+						/>
+					</svg>
+					{m.sidebarUpcomingTodos()}
+				</Card.Title>
+			</Card.Header>
+			<Card.Content>
+				<ul class="todo-summary">
+					{#each upcomingTodos as todo}
+						<li class="todo-summary-item">
+							<div class="todo-summary-title">
+								<span class="todo-marker" aria-hidden="true"></span>
+								{todo.title()}
+							</div>
+							<p class="todo-summary-desc">
+								{todo.description()}
+							</p>
+						</li>
+					{/each}
+				</ul>
 			</Card.Content>
 		</Card.Root>
 
@@ -290,6 +307,27 @@
 
 	.feature-name {
 		@apply text-xs font-medium text-gray-800;
+	}
+
+	/* TODO 요약 카드 */
+	.todo-summary {
+		@apply space-y-3;
+	}
+
+	.todo-summary-item {
+		@apply rounded-lg border border-indigo-100 bg-white/80 p-3 shadow-sm;
+	}
+
+	.todo-summary-title {
+		@apply flex items-center gap-2 text-sm font-semibold text-gray-900;
+	}
+
+	.todo-summary-desc {
+		@apply mt-1 text-xs leading-relaxed text-gray-600;
+	}
+
+	.todo-marker {
+		@apply h-2 w-2 rounded-full bg-indigo-500 shadow;
 	}
 
 	/* 활동 텍스트 스타일 */

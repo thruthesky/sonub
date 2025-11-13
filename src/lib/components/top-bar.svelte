@@ -47,26 +47,6 @@ import { m } from '$lib/paraglide/messages';
 				>
 					Sonub
 				</a>
-				<div class="hidden gap-4 md:flex">
-					<a
-						href="/about"
-						class="text-gray-600 hover:text-gray-900"
-					>
-						{m.navAbout()}
-					</a>
-					<a
-						href="/products"
-						class="text-gray-600 hover:text-gray-900"
-					>
-						{m.navProducts()}
-					</a>
-					<a
-						href="/contact"
-						class="text-gray-600 hover:text-gray-900"
-					>
-						{m.navContact()}
-					</a>
-				</div>
 			</div>
 
 			<!-- 우측: 사용자 메뉴 -->

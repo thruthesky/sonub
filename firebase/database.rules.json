@@ -153,7 +153,10 @@
     },
     "fcm-tokens": {
       ".read": true,
-      ".write": true
+      ".write": true,
+      ".indexOn": [
+        "uid"
+      ]
     },
     "test": {
       "data": {

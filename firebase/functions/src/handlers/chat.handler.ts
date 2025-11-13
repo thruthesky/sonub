@@ -13,6 +13,10 @@ import {
   isSingleChat,
   extractUidsFromSingleRoomId,
 } from "../../../../shared/chat.pure-functions";
+import {
+  sendChatMessageNotification,
+  isChatSubscribed,
+} from "../utils/fcm.utils";
 
 /**
  * 채팅 메시지 생성 시 비즈니스 로직 처리
@@ -213,6 +217,116 @@ export async function handleChatMessageCreate(
       memberCount: Object.keys(members).length,
       timestamp,
       updatesCount: Object.keys(updates).length,
+    });
+  }
+
+  // ========================================
+  // 푸시 알림 전송
+  // ========================================
+  logger.info("푸시 알림 전송 준비", {messageId, roomId, senderUid});
+
+  try {
+    // 단계 1: 발신자 이름 조회
+    const senderRef = admin.database().ref(`users/${senderUid}/displayName`);
+    const senderSnapshot = await senderRef.once("value");
+    const senderName = senderSnapshot.exists() ?
+      senderSnapshot.val() as string :
+      "알 수 없음";
+
+    logger.info("발신자 이름 조회 완료", {
+      messageId,
+      senderUid,
+      senderName,
+    });
+
+    // 단계 2: 수신자 목록 생성 (구독 상태 확인 포함)
+    let recipientUids: string[] = [];
+
+    if (isSingleChat(roomId)) {
+      // 1:1 채팅: 상대방만 수신자
+      const uids = extractUidsFromSingleRoomId(roomId);
+      if (uids) {
+        const [uid1, uid2] = uids;
+        const partnerUid = senderUid === uid1 ? uid2 : uid1;
+
+        // 구독 상태 확인
+        const isSubscribed = await isChatSubscribed(roomId, partnerUid, true);
+        if (isSubscribed) {
+          recipientUids = [partnerUid];
+        } else {
+          logger.info("수신자가 알림 구독 해제 상태", {
+            messageId,
+            roomId,
+            partnerUid,
+          });
+        }
+      }
+    } else {
+      // 그룹/오픈 채팅: 발신자를 제외한 모든 멤버 (구독 중인 멤버만)
+      const roomRef = admin.database().ref(`chat-rooms/${roomId}`);
+      const roomSnapshot = await roomRef.once("value");
+
+      if (roomSnapshot.exists()) {
+        const roomData = roomSnapshot.val();
+        const members = roomData.members || {};
+
+        // 발신자 제외하고 구독 중인 멤버만 필터링
+        for (const uid of Object.keys(members)) {
+          if (uid === senderUid) continue; // 발신자 제외
+
+          const isSubscribed = members[uid] === true;
+          if (isSubscribed) {
+            recipientUids.push(uid);
+          }
+        }
+
+        logger.info("그룹 채팅 수신자 목록 생성 완료 (구독 중인 멤버만)", {
+          messageId,
+          roomId,
+          totalMembers: Object.keys(members).length,
+          subscribedRecipients: recipientUids.length,
+        });
+      }
+    }
+
+    if (isSingleChat(roomId)) {
+      logger.info("1:1 채팅 수신자 목록 생성 완료", {
+        messageId,
+        roomId,
+        recipientCount: recipientUids.length,
+      });
+    }
+
+    // 단계 3: FCM 푸시 알림 전송
+    if (recipientUids.length > 0) {
+      const result = await sendChatMessageNotification(
+        senderName,
+        messageText,
+        roomId,
+        recipientUids
+      );
+
+      logger.info("푸시 알림 전송 완료", {
+        messageId,
+        roomId,
+        recipientCount: recipientUids.length,
+        successCount: result.successCount,
+        failureCount: result.failureCount,
+        deletedTokenCount: result.deletedTokenCount,
+      });
+    } else {
+      logger.info("수신자가 없어 푸시 알림 전송을 건너뜀", {
+        messageId,
+        roomId,
+      });
+    }
+  } catch (error) {
+    // 푸시 알림 전송 실패는 치명적이지 않으므로 로그만 남기고 계속 진행
+    logger.error("푸시 알림 전송 중 에러 발생", {
+      messageId,
+      roomId,
+      senderUid,
+      error,
     });
   }
 }
