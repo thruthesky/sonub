@@ -252,5 +252,13 @@
 	"sidebarTodoPostType": "Board post-type messages",
 	"sidebarTodoPostTypeDesc": "Prepare the composer with category, title, and comment UI for board-style posts.",
 	"sidebarTodoBoardStats": "Board stats cards",
-	"sidebarTodoBoardStatsDesc": "Show live post/comment/like counters for every board category."
+	"sidebarTodoBoardStatsDesc": "Show live post/comment/like counters for every board category.",
+	"homeSectionRecentUsers": "Recent Users",
+	"homeSectionRecentUsersDesc": "Newly joined members will appear here soon.",
+	"homeSectionRecentOpenChat": "Recent Open Chat Messages",
+	"homeSectionRecentOpenChatDesc": "Live open chat conversations will be streamed in this space.",
+	"homeSectionPopularOpenRoom": "Popular Open Chat Rooms",
+	"homeSectionPopularOpenRoomDesc": "We will highlight the most active open rooms for quick access.",
+	"homeSectionRecentPosts": "Latest Posts & Comments",
+	"homeSectionRecentPostsDesc": "A snapshot of the board’s newest posts and replies is coming here."
 }

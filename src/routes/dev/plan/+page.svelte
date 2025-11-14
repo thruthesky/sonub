@@ -403,23 +403,30 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">12-3. 콕 상품 패키지</h4>
+						<h4 class="todo-subtitle">12-3. 광고 구좌 등록 및 광고 등록</h4>
 						<ul class="todo-list">
-							<li>기본 패키지: 100콕 (100원)</li>
-							<li>인기 패키지: 1,000콕 (900원, 10% 할인)</li>
-							<li>프리미엄 패키지: 5,000콕 (4,000원, 20% 할인)</li>
-							<li>VIP 패키지: 10,000콕 (7,000원, 30% 할인)</li>
-							<li><code>/coke-packages/{'{packageId}'}</code>에 패키지 정보 저장</li>
-						</ul>
-					</div>
-					<div>
-						<h4 class="todo-subtitle">12-4. 결제 보안 및 로깅</h4>
-						<ul class="todo-list">
-							<li>모든 결제는 HTTPS를 통해서만 처리</li>
-							<li>결제 정보는 암호화하여 저장</li>
-							<li>결제 실패/성공 이메일 알림</li>
-							<li>관리자 대시보드에서 결제 내역 조회</li>
-							<li>환불 요청 처리 시스템</li>
+							<li>
+								<strong>광고 구좌 등록:</strong> 관리자가 광고를 게시할 수 있는 광고 구좌(슬롯)를
+								미리 등록
+							</li>
+							<li>광고 구좌 위치: 홈페이지 상단, 사이드바, 게시판 목록 사이 등</li>
+							<li>
+								데이터 구조: <code>/ad-slots/{'{slotId}'}</code> (위치, 크기, 가격 정보 포함)
+							</li>
+							<li>
+								<strong>광고 등록:</strong> 사용자가 광고 구좌를 선택하여 광고를 등록
+							</li>
+							<li>광고 등록 시 결제가 완료되면 즉시 광고가 시작</li>
+							<li>
+								<strong>구독 방식:</strong> 1개월 단위로 자동 구독 (매월 자동 결제)
+							</li>
+							<li>구독 해지 시 다음 결제일부터 광고 중단</li>
+							<li>
+								데이터 구조: <code>/advertisements/{'{adId}'}</code> (광고 내용, 이미지, 링크,
+								구좌 ID, 구독 정보)
+							</li>
+							<li>광고 클릭 통계 및 노출 수 추적</li>
+							<li>Cloud Functions에서 구독 갱신 및 결제 실패 처리</li>
 						</ul>
 					</div>
 				</div>

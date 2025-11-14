@@ -253,5 +253,13 @@
 	"sidebarTodoPostType": "掲示板ポスト型メッセージ",
 	"sidebarTodoPostTypeDesc": "カテゴリ・タイトル・コメントUIを備えた掲示板スタイルの投稿作成を準備します。",
 	"sidebarTodoBoardStats": "掲示板統計カード",
-	"sidebarTodoBoardStatsDesc": "投稿/コメント/いいね数をリアルタイムで表示します。"
+	"sidebarTodoBoardStatsDesc": "投稿/コメント/いいね数をリアルタイムで表示します。",
+	"homeSectionRecentUsers": "最近のユーザー",
+	"homeSectionRecentUsersDesc": "新しく参加したユーザーをここで確認できるようにします。",
+	"homeSectionRecentOpenChat": "最近のオープンチャットメッセージ",
+	"homeSectionRecentOpenChatDesc": "リアルタイムのオープンチャットをこの領域に表示予定です。",
+	"homeSectionPopularOpenRoom": "人気オープンチャットルーム",
+	"homeSectionPopularOpenRoomDesc": "参加者が多いルームをおすすめとして表示します。",
+	"homeSectionRecentPosts": "最新の投稿＆コメント",
+	"homeSectionRecentPostsDesc": "掲示板の最新投稿とコメントをまとめて確認できるよう準備中です。"
 }

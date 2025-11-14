@@ -10,6 +10,29 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import Avatar from '$lib/components/user/avatar.svelte';
 	import { m } from '$lib/paraglide/messages';
+
+	const dashboardCards = [
+		{
+			id: 'recent-users',
+			title: () => m.homeSectionRecentUsers(),
+			description: () => m.homeSectionRecentUsersDesc()
+		},
+		{
+			id: 'recent-open-chat',
+			title: () => m.homeSectionRecentOpenChat(),
+			description: () => m.homeSectionRecentOpenChatDesc()
+		},
+		{
+			id: 'popular-open-room',
+			title: () => m.homeSectionPopularOpenRoom(),
+			description: () => m.homeSectionPopularOpenRoomDesc()
+		},
+		{
+			id: 'recent-posts',
+			title: () => m.homeSectionRecentPosts(),
+			description: () => m.homeSectionRecentPostsDesc()
+		}
+	];
 </script>
 
 <svelte:head>
@@ -61,4 +84,53 @@
 			</Card.Content>
 		</Card.Root>
 	{/if}
+	<!-- 대시보드 카드 플레이스홀더 -->
+	<section class="grid gap-4 md:grid-cols-2">
+		{#each dashboardCards as card}
+			<Card.Root class="home-card">
+				<Card.Header>
+					<Card.Title class="text-lg font-semibold text-gray-900">{card.title()}</Card.Title>
+					<Card.Description class="text-sm text-gray-600">
+						{card.description()}
+					</Card.Description>
+				</Card.Header>
+				<Card.Content>
+					<div class="placeholder-panel">
+						<div class="placeholder-indicators">
+							<span class="indicator-dot" aria-hidden="true"></span>
+							<span class="indicator-dot" aria-hidden="true"></span>
+							<span class="indicator-dot" aria-hidden="true"></span>
+						</div>
+						<p class="placeholder-text">
+							Coming soon
+						</p>
+					</div>
+				</Card.Content>
+			</Card.Root>
+		{/each}
+	</section>
 </div>
+
+<style>
+	@import 'tailwindcss' reference;
+
+	.home-card {
+		@apply h-full border border-gray-100 shadow-sm;
+	}
+
+	.placeholder-panel {
+		@apply flex min-h-[140px] flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50/60 text-center;
+	}
+
+	.placeholder-indicators {
+		@apply mb-3 flex items-center gap-2;
+	}
+
+	.indicator-dot {
+		@apply h-2 w-2 animate-pulse rounded-full bg-gray-400;
+	}
+
+	.placeholder-text {
+		@apply text-sm font-medium text-gray-500;
+	}
+</style>
