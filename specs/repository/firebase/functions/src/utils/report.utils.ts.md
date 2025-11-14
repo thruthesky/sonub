@@ -1,16 +1,21 @@
 ---
 name: report.utils.ts
-description: 신고 ID 파싱 유틸리티 함수
+description: report.utils Cloud Function
 version: 1.0.0
 type: firebase-function
-category: util
-tags: [firebase, cloud-functions, typescript, report, util, parser]
+category: cloud-function
+original_path: firebase/functions/src/utils/report.utils.ts
 ---
 
 # report.utils.ts
 
 ## 개요
-이 파일은 신고 관련 유틸리티 함수를 제공합니다. reportId를 파싱하여 type, nodeId, uid를 추출하는 기능을 포함합니다.
+
+**파일 경로**: `firebase/functions/src/utils/report.utils.ts`
+**파일 타입**: firebase-function
+**카테고리**: cloud-function
+
+report.utils Cloud Function
 
 ## 소스 코드
 
@@ -94,19 +99,13 @@ export function parseReportId(reportId: string): ParsedReportId | null {
     uid,
   };
 }
+
 ```
 
 ## 주요 기능
-- **parseReportId**: reportId 파싱 함수
-  - reportId 형식: "{type}-{nodeId}-{uid}"
-  - type 추출 (post 또는 comment)
-  - nodeId와 uid 분리 (하이픈이 포함될 수 있는 경우 처리)
-  - 상세한 로깅 제공
-  - 파싱 실패 시 null 반환
 
-## 사용되는 Firebase 트리거
-- 이 파일은 직접 트리거되지 않음
-- 신고 관련 핸들러 함수에서 유틸리티로 호출됨
+(이 섹션은 수동으로 업데이트 필요)
 
-## 관련 함수
-- `types/index.ts`: ParsedReportId 타입 정의
+## 관련 파일
+
+(이 섹션은 수동으로 업데이트 필요)

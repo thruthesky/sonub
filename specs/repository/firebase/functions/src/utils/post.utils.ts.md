@@ -1,16 +1,21 @@
 ---
 name: post.utils.ts
-description: 게시글 참조 조회 유틸리티 함수
+description: post.utils Cloud Function
 version: 1.0.0
 type: firebase-function
-category: util
-tags: [firebase, cloud-functions, typescript, post, util, rtdb]
+category: cloud-function
+original_path: firebase/functions/src/utils/post.utils.ts
 ---
 
 # post.utils.ts
 
 ## 개요
-이 파일은 게시글 관련 유틸리티 함수를 제공합니다. Firebase Realtime Database에서 게시글 참조를 조회하는 기능을 포함하며, Firebase push key 형식을 자동으로 처리합니다.
+
+**파일 경로**: `firebase/functions/src/utils/post.utils.ts`
+**파일 타입**: firebase-function
+**카테고리**: cloud-function
+
+post.utils Cloud Function
 
 ## 소스 코드
 
@@ -99,20 +104,13 @@ export async function getPostReference(postId: string): Promise<{
 
   return null;
 }
+
 ```
 
 ## 주요 기능
-- **getPostReference**: 게시글 참조 조회
-  - Firebase push key 형식 자동 처리 (하이픈 접두사)
-  - 두 가지 방식으로 조회 시도:
-    1. 정규화된 postId (하이픈 접두사 추가)
-    2. 원본 postId
-  - 상세한 로깅 제공
-  - 게시글을 찾지 못하면 null 반환
 
-## 사용되는 Firebase 트리거
-- 이 파일은 직접 트리거되지 않음
-- 다른 핸들러 함수에서 유틸리티로 호출됨
+(이 섹션은 수동으로 업데이트 필요)
 
-## 관련 함수
-- Firebase Realtime Database의 `/posts` 노드와 상호작용
+## 관련 파일
+
+(이 섹션은 수동으로 업데이트 필요)

@@ -1,20 +1,21 @@
 ---
 name: index.ts
-description: Firebase Cloud Functions Gen 2의 메인 진입점. 모든 트리거 함수들을 정의하고 내보냅니다.
+description: index Cloud Function
 version: 1.0.0
 type: firebase-function
-category: handler
-tags: [firebase, cloud-functions, typescript, gen2, rtdb, triggers, entry-point]
+category: cloud-function
+original_path: firebase/functions/src/index.ts
 ---
 
 # index.ts
 
 ## 개요
-이 파일은 Firebase Cloud Functions Gen 2의 메인 진입점입니다. 모든 트리거 함수들을 정의하고 내보내는 역할을 합니다. SNS 프로젝트의 백그라운드 이벤트 처리를 위한 함수들이 선언되어 있습니다.
 
-**⚠️ 중요:** 모든 함수는 반드시 Gen 2 버전으로 작성해야 합니다.
-- Gen 2 API: `firebase-functions/v2`
-- Gen 1 API 사용 금지
+**파일 경로**: `firebase/functions/src/index.ts`
+**파일 타입**: firebase-function
+**카테고리**: cloud-function
+
+index Cloud Function
 
 ## 소스 코드
 
@@ -34,8 +35,8 @@ tags: [firebase, cloud-functions, typescript, gen2, rtdb, triggers, entry-point]
 import {setGlobalOptions} from "firebase-functions/v2";
 import {
   onValueCreated,
-  onValueUpdated,
   onValueDeleted,
+  onValueWritten,
 } from "firebase-functions/v2/database";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
@@ -44,13 +45,22 @@ import * as admin from "firebase-admin";
 import {UserData, ChatMessage} from "./types";
 
 // 비즈니스 로직 핸들러 임포트
-import {handleUserCreate, handleUserUpdate} from "./handlers/user.handler";
+import {
+  handleUserCreate,
+  handleUserDisplayNameUpdate,
+  handleUserPhotoUrlUpdate,
+  handleUserBirthYearMonthDayUpdate,
+  handleUserGenderUpdate,
+} from "./handlers/user.handler";
 import {
   handleChatMessageCreate,
   handleChatJoinCreate,
   handleChatRoomCreate,
   handleChatRoomMemberJoin,
   handleChatRoomMemberLeave,
+  handleChatRoomPinCreate,
+  handleChatRoomPinDelete,
+  handleChatInvitationCreate,
 } from "./handlers/chat.handler";
 
 // 상수 정의
@@ -107,34 +117,169 @@ export const onUserCreate = onValueCreated(
 
 
 /**
- * 사용자 정보 수정
+ * 사용자 displayName 필드 생성/수정/삭제 시 트리거
  *
- * 트리거 경로: /users/{uid}
+ * 트리거 경로: /users/{uid}/displayName
+ * 트리거 이벤트: onValueWritten (생성, 수정, 삭제 모두 감지)
  *
  * 수행 작업:
- * 1. createdAt 필드가 없으면 자동 생성
- * 2. 주의: updatedAt 은 모든 업데이트에서 수정하는 것이 아니라, `displayName`, `photoUrl` 이 업데이트 된 경우에만, updatedAt 을 새로운 timestamp 로 업데이트 합니다.
+ * - 생성/수정 시:
+ *   1. createdAt 필드가 없으면 자동 생성
+ *   2. displayNameLowerCase 자동 생성 (대소문자 구분 없는 검색용)
+ *   3. updatedAt 업데이트
+ * - 삭제 시:
+ *   1. displayNameLowerCase 삭제 (동기화)
+ *   2. updatedAt 업데이트
+ *
+ * 무한 루프 방지:
+ * - displayName 필드만 감지하므로 displayNameLowerCase 업데이트 시 재트리거 안 됨
  */
-export const onUserUpdate = onValueUpdated(
+export const onUserDisplayNameWrite = onValueWritten(
   {
-    ref: "/users/{uid}",
+    ref: "/users/{uid}/displayName",
     region: FIREBASE_REGION,
   },
   async (event) => {
     const uid = event.params.uid as string;
+    const beforeValue = event.data.before.val() as string | null;
+    const afterValue = event.data.after.val() as string | null;
 
-    // onValueUpdated는 before와 after 데이터를 모두 제공
-    const beforeData = (event.data.before.val() || {}) as UserData;
-    const afterData = (event.data.after.val() || {}) as UserData;
-
-    logger.info("사용자 정보 수정 감지", {
+    logger.info("displayName 필드 변경 감지 (생성/수정/삭제)", {
       uid,
-      beforeDisplayName: beforeData.displayName ?? null,
-      afterDisplayName: afterData.displayName ?? null,
+      beforeValue,
+      afterValue,
+      action: afterValue === null ? "삭제" : beforeValue === null ? "생성" : "수정",
     });
 
-    // 비즈니스 로직 핸들러 호출 (before/after 데이터 전달)
-    return await handleUserUpdate(uid, beforeData, afterData);
+    // 비즈니스 로직 핸들러 호출
+    return await handleUserDisplayNameUpdate(uid, beforeValue, afterValue);
+  }
+);
+
+/**
+ * 사용자 photoUrl 필드 생성/수정/삭제 시 트리거
+ *
+ * 트리거 경로: /users/{uid}/photoUrl
+ * 트리거 이벤트: onValueWritten (생성, 수정, 삭제 모두 감지)
+ *
+ * 수행 작업:
+ * - 생성/수정 시:
+ *   1. createdAt 필드가 없으면 자동 생성
+ *   2. updatedAt 업데이트
+ * - 삭제 시:
+ *   1. updatedAt 업데이트
+ *
+ * 무한 루프 방지:
+ * - photoUrl 필드만 감지하므로 다른 필드 업데이트 시 재트리거 안 됨
+ */
+export const onUserPhotoUrlWrite = onValueWritten(
+  {
+    ref: "/users/{uid}/photoUrl",
+    region: FIREBASE_REGION,
+  },
+  async (event) => {
+    const uid = event.params.uid as string;
+    const beforeValue = event.data.before.val() as string | null;
+    const afterValue = event.data.after.val() as string | null;
+
+    logger.info("photoUrl 필드 변경 감지 (생성/수정/삭제)", {
+      uid,
+      beforeValue,
+      afterValue,
+      action: afterValue === null ? "삭제" : beforeValue === null ? "생성" : "수정",
+    });
+
+    // 비즈니스 로직 핸들러 호출
+    return await handleUserPhotoUrlUpdate(uid, beforeValue, afterValue);
+  }
+);
+
+/**
+ * 사용자 birthYearMonthDay 필드 생성/수정/삭제 시 트리거
+ *
+ * 트리거 경로: /users/{uid}/birthYearMonthDay
+ * 트리거 이벤트: onValueWritten (생성, 수정, 삭제 모두 감지)
+ *
+ * 수행 작업:
+ * - 생성/수정 시:
+ *   1. createdAt 필드가 없으면 자동 생성
+ *   2. YYYY-MM-DD 형식 파싱 및 유효성 검증
+ *   3. 파생 필드 자동 생성:
+ *      - birthYear (number): 생년
+ *      - birthMonth (number): 생월
+ *      - birthDay (number): 생일
+ *      - birthMonthDay (string): 생월일 (MM-DD 형식)
+ * - 삭제 시:
+ *   1. 모든 파생 필드 삭제 (동기화)
+ *
+ * 무한 루프 방지:
+ * - birthYearMonthDay 필드만 감지하므로 파생 필드 업데이트 시 재트리거 안 됨
+ *
+ * 참고:
+ * - updatedAt은 업데이트하지 않음 (내부 속성 변경으로 간주)
+ */
+export const onUserBirthYearMonthDayWrite = onValueWritten(
+  {
+    ref: "/users/{uid}/birthYearMonthDay",
+    region: FIREBASE_REGION,
+  },
+  async (event) => {
+    const uid = event.params.uid as string;
+    const beforeValue = event.data.before.val() as string | null;
+    const afterValue = event.data.after.val() as string | null;
+
+    logger.info("birthYearMonthDay 필드 변경 감지 (생성/수정/삭제)", {
+      uid,
+      beforeValue,
+      afterValue,
+      action: afterValue === null ? "삭제" : beforeValue === null ? "생성" : "수정",
+    });
+
+    // 비즈니스 로직 핸들러 호출
+    return await handleUserBirthYearMonthDayUpdate(uid, beforeValue, afterValue);
+  }
+);
+
+/**
+ * 사용자 gender 필드 생성/수정/삭제 시 트리거
+ *
+ * 트리거 경로: /users/{uid}/gender
+ * 트리거 이벤트: onValueWritten (생성, 수정, 삭제 모두 감지)
+ *
+ * 수행 작업:
+ * - 생성/수정 시:
+ *   1. photoUrl 존재 여부 확인
+ *   2. photoUrl이 있는 경우:
+ *      - gender=F: sort_recentFemaleWithPhoto에 createdAt 설정, sort_recentMaleWithPhoto는 null
+ *      - gender=M: sort_recentMaleWithPhoto에 createdAt 설정, sort_recentFemaleWithPhoto는 null
+ *   3. photoUrl이 없는 경우: 두 정렬 필드 모두 null
+ *   4. updatedAt 업데이트
+ * - 삭제 시:
+ *   1. sort_recentFemaleWithPhoto와 sort_recentMaleWithPhoto 삭제
+ *   2. updatedAt 업데이트
+ *
+ * 무한 루프 방지:
+ * - gender 필드만 감지하므로 다른 필드 업데이트 시 재트리거 안 됨
+ */
+export const onUserGenderWrite = onValueWritten(
+  {
+    ref: "/users/{uid}/gender",
+    region: FIREBASE_REGION,
+  },
+  async (event) => {
+    const uid = event.params.uid as string;
+    const beforeValue = event.data.before.val() as string | null;
+    const afterValue = event.data.after.val() as string | null;
+
+    logger.info("gender 필드 변경 감지 (생성/수정/삭제)", {
+      uid,
+      beforeValue,
+      afterValue,
+      action: afterValue === null ? "삭제" : beforeValue === null ? "생성" : "수정",
+    });
+
+    // 비즈니스 로직 핸들러 호출
+    return await handleUserGenderUpdate(uid, beforeValue, afterValue);
   }
 );
 
@@ -357,34 +502,150 @@ export const onChatRoomMemberLeave = onValueDeleted(
     return await handleChatRoomMemberLeave(roomId, uid);
   }
 );
+
+
+
+/**
+ * 채팅방 핀 생성 시 트리거되는 Cloud Function
+ *
+ * 트리거 경로: /chat-joins/{uid}/{roomId}/pin
+ * 트리거 조건: pin 필드가 생성될 때 (set(true))
+ *
+ * 수행 작업:
+ * 1. chat-joins/{uid}/{roomId}의 모든 데이터 읽기
+ * 2. xxxListOrder 또는 xxxChatListOrder로 끝나는 모든 필드 찾기
+ * 3. 각 order 필드에 "500" prefix 추가
+ *
+ * 참고:
+ * - Prefix 규칙: "500" (핀됨) > "200" (읽지 않음) > "" (읽음)
+ * - 클라이언트는 pin: true로 설정
+ * - Cloud Functions가 모든 order 필드를 자동으로 업데이트
+ *
+ * 비즈니스 로직은 handlers/chat.handler.ts의 handleChatRoomPinCreate() 참조
+ */
+export const onChatRoomPinCreate = onValueCreated(
+  {
+    ref: "/chat-joins/{uid}/{roomId}/pin",
+    region: FIREBASE_REGION,
+  },
+  async (event) => {
+    const uid = event.params.uid as string;
+    const roomId = event.params.roomId as string;
+    const pinValue = event.data.val() as boolean | null | undefined;
+
+    logger.info("채팅방 핀 생성 감지", {
+      uid,
+      roomId,
+      pinValue,
+    });
+
+    // pin 값이 true인 경우에만 처리
+    if (pinValue !== true) {
+      logger.warn("핀 값이 true가 아님, 처리 건너뜀", {
+        uid,
+        roomId,
+        pinValue,
+      });
+      return;
+    }
+
+    // 비즈니스 로직 핸들러 호출
+    return await handleChatRoomPinCreate(uid, roomId);
+  }
+);
+
+/**
+ * 채팅방 핀 삭제 시 트리거되는 Cloud Function
+ *
+ * 트리거 경로: /chat-joins/{uid}/{roomId}/pin
+ * 트리거 조건: pin 필드가 삭제될 때 (set(null))
+ *
+ * 수행 작업:
+ * 1. chat-joins/{uid}/{roomId}의 모든 데이터 읽기
+ * 2. xxxListOrder 또는 xxxChatListOrder로 끝나는 모든 필드 찾기
+ * 3. newMessageCount > 0이면 "200" prefix 추가
+ * 4. newMessageCount === 0이면 prefix 제거 (순수 timestamp)
+ *
+ * 참고:
+ * - Prefix 규칙: "500" (핀됨) > "200" (읽지 않음) > "" (읽음)
+ * - 클라이언트는 pin 필드를 삭제 (set(null))
+ * - Cloud Functions가 모든 order 필드를 자동으로 업데이트
+ *
+ * 비즈니스 로직은 handlers/chat.handler.ts의 handleChatRoomPinDelete() 참조
+ */
+export const onChatRoomPinDelete = onValueDeleted(
+  {
+    ref: "/chat-joins/{uid}/{roomId}/pin",
+    region: FIREBASE_REGION,
+  },
+  async (event) => {
+    const uid = event.params.uid as string;
+    const roomId = event.params.roomId as string;
+    const oldPinValue = event.data.val() as boolean | null | undefined;
+
+    logger.info("채팅방 핀 삭제 감지", {
+      uid,
+      roomId,
+      oldPinValue,
+    });
+
+    // 비즈니스 로직 핸들러 호출
+    return await handleChatRoomPinDelete(uid, roomId);
+  }
+);
+
+/**
+ * 채팅 초대장 생성 시 트리거되는 Cloud Function
+ *
+ * 트리거 경로: /chat-invitations/{uid}/{roomId}
+ * 트리거 조건: 초대장이 생성될 때
+ *
+ * 수행 작업:
+ * 1. 채팅방 정보 조회 (roomName, roomType)
+ * 2. 초대한 사람 정보 조회 (displayName)
+ * 3. 초대받은 사람의 언어 코드 조회
+ * 4. 초대 메시지 생성 (i18n 사용, 언어별)
+ * 5. 초대장 정보 업데이트 (roomName, inviterName, message)
+ * 6. FCM 푸시 알림 전송 (초대받은 사람의 언어로)
+ *
+ * 참고:
+ * - 클라이언트는 최소한의 정보만 저장 (roomId, inviterUid, createdAt, invitationOrder)
+ * - Cloud Functions가 나머지 정보를 자동으로 채움 (많은 작업을 백엔드에서 수행)
+ * - 1:1 채팅방에 대한 초대는 자동으로 무시됨
+ * - 이미 참여 중인 멤버에 대한 초대도 자동으로 무시됨
+ *
+ * 비즈니스 로직은 handlers/chat.handler.ts의 handleChatInvitationCreate() 참조
+ */
+export const onChatInvitationCreate = onValueCreated(
+  {
+    ref: "/chat-invitations/{uid}/{roomId}",
+    region: FIREBASE_REGION,
+  },
+  async (event) => {
+    const inviteeUid = event.params.uid as string;
+    const roomId = event.params.roomId as string;
+    const invitationData = (event.data.val() || {}) as {
+      inviterUid?: string;
+      createdAt?: number;
+    };
+
+    logger.info("채팅 초대장 생성 감지", {
+      inviteeUid,
+      roomId,
+      inviterUid: invitationData.inviterUid,
+    });
+
+    // 비즈니스 로직 핸들러 호출
+    return await handleChatInvitationCreate(inviteeUid, roomId, invitationData);
+  }
+);
+
 ```
 
 ## 주요 기능
-- **Firebase Admin 초기화**: Firebase Admin SDK를 초기화하여 Realtime Database 접근
-- **전역 옵션 설정**: 비용 관리를 위해 최대 인스턴스 수를 10개로 제한
-- **사용자 관리 함수**:
-  - `onUserCreate`: 사용자 등록 시 createdAt 생성 및 통계 업데이트
-  - `onUserUpdate`: 사용자 정보 수정 시 updatedAt 업데이트 및 파생 필드 생성
-- **채팅 관리 함수**:
-  - `onChatMessageCreate`: 채팅 메시지 생성 시 chat-joins 업데이트
-  - `onChatRoomCreate`: 채팅방 생성 시 createdAt 및 memberCount 초기화
-  - `onChatJoinCreate`: 채팅방 참여 시 메타데이터 자동 설정
-  - `onChatRoomMemberJoin`: 채팅방 입장 시 memberCount 증가
-  - `onChatRoomMemberLeave`: 채팅방 퇴장 시 memberCount 감소
 
-## 사용되는 Firebase 트리거
-- **onValueCreated**: 새로운 데이터가 생성될 때 트리거
-  - `/users/{uid}`
-  - `/chat-messages/{messageId}`
-  - `/chat-rooms/{roomId}`
-  - `/chat-joins/{uid}/{roomId}`
-  - `/chat-rooms/{roomId}/members/{uid}`
-- **onValueUpdated**: 기존 데이터가 수정될 때 트리거
-  - `/users/{uid}`
-- **onValueDeleted**: 데이터가 삭제될 때 트리거
-  - `/chat-rooms/{roomId}/members/{uid}`
+(이 섹션은 수동으로 업데이트 필요)
 
-## 관련 함수
-- `handlers/user.handler.ts`: 사용자 관련 비즈니스 로직
-- `handlers/chat.handler.ts`: 채팅 관련 비즈니스 로직
-- `types/index.ts`: 타입 정의
+## 관련 파일
+
+(이 섹션은 수동으로 업데이트 필요)

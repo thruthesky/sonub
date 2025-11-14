@@ -313,7 +313,8 @@
 	"homeSectionPopularOpenRoomDesc": "我们会推荐参与度最高的开放聊天室。",
 	"homeSectionRecentPosts": "最新帖子与评论",
 	"homeSectionRecentPostsDesc": "稍后将在此展示论坛最新的帖子和评论概览。",
-	"sidebarDevHighlightAttachment": "8. 文件附件上传",
-	"sidebarDevHighlightPassword": "9. 聊天密码功能",
-	"sidebarDevHighlightPostType": "10. 帖子类型消息"
+	"sidebarDevHighlightWrapUp": "8. 聊天室收尾功能",
+	"sidebarDevHighlightAttachment": "9. 文件附件上传",
+	"sidebarDevHighlightPassword": "10. 聊天密码功能",
+	"sidebarDevHighlightPostType": "11. 帖子类型消息"
 }

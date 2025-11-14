@@ -1,16 +1,21 @@
 ---
 name: chat.handler.ts
-description: 채팅 메시지 및 채팅방 관리 비즈니스 로직 처리 핸들러
+description: chat.handler Cloud Function
 version: 1.0.0
 type: firebase-function
-category: handler
-tags: [firebase, cloud-functions, typescript, chat, handler, rtdb]
+category: cloud-function
+original_path: firebase/functions/src/handlers/chat.handler.ts
 ---
 
 # chat.handler.ts
 
 ## 개요
-이 파일은 채팅 메시지 생성, 채팅방 생성, 채팅방 참여, 멤버 입장/퇴장과 관련된 비즈니스 로직을 처리하는 핸들러입니다. Firebase Cloud Functions의 트리거 함수에서 호출되어 실제 데이터 처리를 수행합니다.
+
+**파일 경로**: `firebase/functions/src/handlers/chat.handler.ts`
+**파일 타입**: firebase-function
+**카테고리**: cloud-function
+
+chat.handler Cloud Function
 
 ## 소스 코드
 
@@ -30,6 +35,10 @@ import {
   isSingleChat,
   extractUidsFromSingleRoomId,
 } from "../../../../shared/chat.pure-functions";
+import {
+  sendChatMessageNotification,
+  isChatSubscribed,
+} from "../utils/fcm.utils";
 
 /**
  * 채팅 메시지 생성 시 비즈니스 로직 처리
@@ -230,6 +239,116 @@ export async function handleChatMessageCreate(
       memberCount: Object.keys(members).length,
       timestamp,
       updatesCount: Object.keys(updates).length,
+    });
+  }
+
+  // ========================================
+  // 푸시 알림 전송
+  // ========================================
+  logger.info("푸시 알림 전송 준비", {messageId, roomId, senderUid});
+
+  try {
+    // 단계 1: 발신자 이름 조회
+    const senderRef = admin.database().ref(`users/${senderUid}/displayName`);
+    const senderSnapshot = await senderRef.once("value");
+    const senderName = senderSnapshot.exists() ?
+      senderSnapshot.val() as string :
+      "알 수 없음";
+
+    logger.info("발신자 이름 조회 완료", {
+      messageId,
+      senderUid,
+      senderName,
+    });
+
+    // 단계 2: 수신자 목록 생성 (구독 상태 확인 포함)
+    let recipientUids: string[] = [];
+
+    if (isSingleChat(roomId)) {
+      // 1:1 채팅: 상대방만 수신자
+      const uids = extractUidsFromSingleRoomId(roomId);
+      if (uids) {
+        const [uid1, uid2] = uids;
+        const partnerUid = senderUid === uid1 ? uid2 : uid1;
+
+        // 구독 상태 확인
+        const isSubscribed = await isChatSubscribed(roomId, partnerUid, true);
+        if (isSubscribed) {
+          recipientUids = [partnerUid];
+        } else {
+          logger.info("수신자가 알림 구독 해제 상태", {
+            messageId,
+            roomId,
+            partnerUid,
+          });
+        }
+      }
+    } else {
+      // 그룹/오픈 채팅: 발신자를 제외한 모든 멤버 (구독 중인 멤버만)
+      const roomRef = admin.database().ref(`chat-rooms/${roomId}`);
+      const roomSnapshot = await roomRef.once("value");
+
+      if (roomSnapshot.exists()) {
+        const roomData = roomSnapshot.val();
+        const members = roomData.members || {};
+
+        // 발신자 제외하고 구독 중인 멤버만 필터링
+        for (const uid of Object.keys(members)) {
+          if (uid === senderUid) continue; // 발신자 제외
+
+          const isSubscribed = members[uid] === true;
+          if (isSubscribed) {
+            recipientUids.push(uid);
+          }
+        }
+
+        logger.info("그룹 채팅 수신자 목록 생성 완료 (구독 중인 멤버만)", {
+          messageId,
+          roomId,
+          totalMembers: Object.keys(members).length,
+          subscribedRecipients: recipientUids.length,
+        });
+      }
+    }
+
+    if (isSingleChat(roomId)) {
+      logger.info("1:1 채팅 수신자 목록 생성 완료", {
+        messageId,
+        roomId,
+        recipientCount: recipientUids.length,
+      });
+    }
+
+    // 단계 3: FCM 푸시 알림 전송
+    if (recipientUids.length > 0) {
+      const result = await sendChatMessageNotification(
+        senderName,
+        messageText,
+        roomId,
+        recipientUids
+      );
+
+      logger.info("푸시 알림 전송 완료", {
+        messageId,
+        roomId,
+        recipientCount: recipientUids.length,
+        successCount: result.successCount,
+        failureCount: result.failureCount,
+        deletedTokenCount: result.deletedTokenCount,
+      });
+    } else {
+      logger.info("수신자가 없어 푸시 알림 전송을 건너뜀", {
+        messageId,
+        roomId,
+      });
+    }
+  } catch (error) {
+    // 푸시 알림 전송 실패는 치명적이지 않으므로 로그만 남기고 계속 진행
+    logger.error("푸시 알림 전송 중 에러 발생", {
+      messageId,
+      roomId,
+      senderUid,
+      error,
     });
   }
 }
@@ -708,36 +827,426 @@ export async function handleChatRoomMemberLeave(
     uid,
   });
 }
+
+/**
+ * 채팅방 핀 생성 시 비즈니스 로직 처리
+ *
+ * @param uid - 사용자 UID
+ * @param roomId - 채팅방 ID
+ * @returns Promise<void>
+ *
+ * 주요 처리 로직:
+ * 1. chat-joins/{uid}/{roomId}의 모든 데이터 읽기
+ * 2. xxxListOrder 또는 xxxChatListOrder로 끝나는 모든 필드 찾기
+ * 3. 각 order 필드에 "500" prefix 추가
+ *
+ * 참고:
+ * - Prefix 규칙: "500" (핀됨) > "200" (읽지 않음) > "" (읽음)
+ * - 모든 order 필드에 일관되게 prefix 적용
+ * - Base timestamp는 유지하되 prefix만 변경
+ */
+export async function handleChatRoomPinCreate(
+  uid: string,
+  roomId: string
+): Promise<void> {
+  logger.info("채팅방 핀 생성 처리 시작", {
+    uid,
+    roomId,
+  });
+
+  // chat-joins 데이터 읽기
+  const chatJoinRef = admin.database().ref(`chat-joins/${uid}/${roomId}`);
+  const snapshot = await chatJoinRef.once("value");
+
+  if (!snapshot.exists()) {
+    logger.error("chat-joins 노드가 존재하지 않음", {uid, roomId});
+    return;
+  }
+
+  const data = snapshot.val();
+
+  // xxxListOrder 또는 xxxChatListOrder 필드 찾기
+  const updates: Record<string, string> = {};
+
+  for (const key of Object.keys(data)) {
+    // order 필드만 처리 (ListOrder 또는 ChatListOrder로 끝나는 필드)
+    if (
+      !key.endsWith("ListOrder") &&
+      !key.endsWith("ChatListOrder")
+    ) {
+      continue;
+    }
+
+    const currentValue = String(data[key]);
+
+    // Base timestamp 추출 (prefix 제거)
+    let baseTimestamp: string;
+    if (currentValue.startsWith("500")) {
+      // 이미 "500" prefix가 있으면 건너뜀
+      continue;
+    } else if (currentValue.startsWith("200")) {
+      baseTimestamp = currentValue.slice(3); // "200" 제거
+    } else {
+      baseTimestamp = currentValue;
+    }
+
+    // 핀 설정: "500" prefix 추가
+    const newValue = `500${baseTimestamp}`;
+
+    // 값이 실제로 변경된 경우에만 업데이트
+    if (newValue !== currentValue) {
+      updates[key] = newValue;
+      logger.info("Order 필드 업데이트 예정 (핀 설정)", {
+        uid,
+        roomId,
+        field: key,
+        from: currentValue,
+        to: newValue,
+      });
+    }
+  }
+
+  // 업데이트할 필드가 있는 경우에만 실행
+  if (Object.keys(updates).length > 0) {
+    await chatJoinRef.update(updates);
+
+    logger.info("채팅방 핀 생성 완료", {
+      uid,
+      roomId,
+      updatedFields: Object.keys(updates),
+      updatesCount: Object.keys(updates).length,
+    });
+  } else {
+    logger.info("업데이트할 order 필드가 없음 (핀 설정)", {
+      uid,
+      roomId,
+    });
+  }
+}
+
+/**
+ * 채팅방 핀 삭제 시 비즈니스 로직 처리
+ *
+ * @param uid - 사용자 UID
+ * @param roomId - 채팅방 ID
+ * @returns Promise<void>
+ *
+ * 주요 처리 로직:
+ * 1. chat-joins/{uid}/{roomId}의 모든 데이터 읽기
+ * 2. xxxListOrder 또는 xxxChatListOrder로 끝나는 모든 필드 찾기
+ * 3. newMessageCount > 0이면 "200" prefix 추가
+ * 4. newMessageCount === 0이면 prefix 제거 (순수 timestamp)
+ *
+ * 참고:
+ * - Prefix 규칙: "500" (핀됨) > "200" (읽지 않음) > "" (읽음)
+ * - 모든 order 필드에 일관되게 prefix 적용
+ * - Base timestamp는 유지하되 prefix만 변경
+ */
+export async function handleChatRoomPinDelete(
+  uid: string,
+  roomId: string
+): Promise<void> {
+  logger.info("채팅방 핀 삭제 처리 시작", {
+    uid,
+    roomId,
+  });
+
+  // chat-joins 데이터 읽기
+  const chatJoinRef = admin.database().ref(`chat-joins/${uid}/${roomId}`);
+  const snapshot = await chatJoinRef.once("value");
+
+  if (!snapshot.exists()) {
+    logger.error("chat-joins 노드가 존재하지 않음", {uid, roomId});
+    return;
+  }
+
+  const data = snapshot.val();
+  const newMessageCount = Number(data.newMessageCount ?? 0);
+
+  // xxxListOrder 또는 xxxChatListOrder 필드 찾기
+  const updates: Record<string, string> = {};
+
+  for (const key of Object.keys(data)) {
+    // order 필드만 처리 (ListOrder 또는 ChatListOrder로 끝나는 필드)
+    if (
+      !key.endsWith("ListOrder") &&
+      !key.endsWith("ChatListOrder")
+    ) {
+      continue;
+    }
+
+    const currentValue = String(data[key]);
+
+    // Base timestamp 추출 (prefix 제거)
+    let baseTimestamp: string;
+    if (currentValue.startsWith("500")) {
+      baseTimestamp = currentValue.slice(3); // "500" 제거
+    } else if (currentValue.startsWith("200")) {
+      baseTimestamp = currentValue.slice(3); // "200" 제거
+    } else {
+      baseTimestamp = currentValue;
+    }
+
+    // 핀 해제: newMessageCount에 따라 "200" 추가 또는 prefix 제거
+    let newValue: string;
+    if (newMessageCount > 0) {
+      newValue = `200${baseTimestamp}`;
+    } else {
+      newValue = baseTimestamp;
+    }
+
+    // 값이 실제로 변경된 경우에만 업데이트
+    if (newValue !== currentValue) {
+      updates[key] = newValue;
+      logger.info("Order 필드 업데이트 예정 (핀 해제)", {
+        uid,
+        roomId,
+        field: key,
+        from: currentValue,
+        to: newValue,
+        newMessageCount,
+      });
+    }
+  }
+
+  // 업데이트할 필드가 있는 경우에만 실행
+  if (Object.keys(updates).length > 0) {
+    await chatJoinRef.update(updates);
+
+    logger.info("채팅방 핀 삭제 완료", {
+      uid,
+      roomId,
+      newMessageCount,
+      updatedFields: Object.keys(updates),
+      updatesCount: Object.keys(updates).length,
+    });
+  } else {
+    logger.info("업데이트할 order 필드가 없음 (핀 해제)", {
+      uid,
+      roomId,
+    });
+  }
+}
+
+/**
+ * 채팅 초대장 생성 시 비즈니스 로직 처리
+ *
+ * @param inviteeUid - 초대받은 사용자 UID
+ * @param roomId - 채팅방 ID
+ * @param invitationData - 초대장 데이터 (클라이언트가 생성한 최소 정보)
+ * @returns Promise<void>
+ *
+ * 주요 처리 로직:
+ * 1. 채팅방 정보 조회 (roomName, roomType)
+ * 2. 초대한 사람 정보 조회 (displayName)
+ * 3. 초대받은 사람의 언어 코드 조회
+ * 4. 초대 메시지 생성 (i18n 사용, 언어별)
+ * 5. 초대장 정보 업데이트 (createdAt, invitationOrder, roomName, roomType, inviterName, message)
+ * 6. FCM 푸시 알림 전송 (초대받은 사람의 언어로)
+ *
+ * 참고:
+ * - 클라이언트는 최소한의 정보만 저장 (roomId, inviterUid)
+ * - Cloud Functions가 나머지 정보를 자동으로 채움 (createdAt, invitationOrder, roomName, roomType, inviterName, message)
+ * - 이미 참여 중인 멤버인지 검증 (그룹/오픈 채팅방만)
+ */
+export async function handleChatInvitationCreate(
+  inviteeUid: string,
+  roomId: string,
+  invitationData: {inviterUid?: string}
+): Promise<{success: boolean; inviteeUid: string; roomId: string}> {
+  logger.info("채팅 초대장 생성 처리 시작", {
+    inviteeUid,
+    roomId,
+    inviterUid: invitationData.inviterUid,
+  });
+
+  // 필수 필드 검증
+  if (!invitationData.inviterUid) {
+    logger.error("inviterUid 필드가 없음", {inviteeUid, roomId});
+    throw new Error("inviterUid는 필수이지만 정의되지 않았습니다");
+  }
+
+  const inviterUid = invitationData.inviterUid;
+  const updates: Record<string, unknown> = {};
+
+  // 1. 채팅방 정보 조회
+  const roomRef = admin.database().ref(`chat-rooms/${roomId}`);
+  const roomSnapshot = await roomRef.once("value");
+
+  if (!roomSnapshot.exists()) {
+    logger.error("채팅방을 찾을 수 없음", {roomId});
+    throw new Error(`채팅방을 찾을 수 없습니다: ${roomId}`);
+  }
+
+  const roomData = roomSnapshot.val() as {
+    name?: string;
+    type?: string;
+    members?: Record<string, boolean>;
+  };
+
+  const roomName = roomData.name || "채팅방";
+  const roomType = roomData.type as "group" | "open" | undefined;
+
+  logger.info("채팅방 정보 조회 완료", {
+    roomId,
+    roomName,
+    roomType,
+  });
+
+  // 1:1 채팅방에 대한 초대는 허용하지 않음
+  if (isSingleChat(roomId)) {
+    logger.warn("1:1 채팅방에 대한 초대 시도, 무시함", {
+      roomId,
+      inviterUid,
+      inviteeUid,
+    });
+    return {success: false, inviteeUid, roomId};
+  }
+
+  // 이미 참여 중인 멤버인지 확인
+  if (roomData.members && roomData.members[inviteeUid] === true) {
+    logger.warn("이미 참여 중인 멤버에게 초대 시도, 무시함", {
+      roomId,
+      inviteeUid,
+    });
+    return {success: false, inviteeUid, roomId};
+  }
+
+  // 2. 초대한 사람 정보 조회
+  const inviterRef = admin.database().ref(`users/${inviterUid}`);
+  const inviterSnapshot = await inviterRef.once("value");
+  const inviterData = inviterSnapshot.val() as {
+    displayName?: string;
+  } | null;
+
+  const inviterName = inviterData?.displayName || "사용자";
+
+  logger.info("초대한 사람 정보 조회 완료", {
+    inviterUid,
+    inviterName,
+  });
+
+  // 3. 초대받은 사람의 언어 코드 조회
+  const inviteeRef = admin.database().ref(`users/${inviteeUid}`);
+  const inviteeSnapshot = await inviteeRef.once("value");
+  const inviteeData = inviteeSnapshot.val() as {
+    languageCode?: string;
+  } | null;
+
+  const languageCode = inviteeData?.languageCode || "en";
+
+  logger.info("초대받은 사람 언어 코드 조회 완료", {
+    inviteeUid,
+    languageCode,
+  });
+
+  // 4. 초대 메시지 생성 (i18n 사용)
+  // i18n.ts의 t() 함수 임포트 필요
+  const {t} = await import("../i18n");
+
+  const message = t(languageCode, "chatInvitation.message", {
+    inviterName,
+    roomName,
+  });
+
+  logger.info("초대 메시지 생성 완료", {
+    languageCode,
+    message,
+  });
+
+  // 5. 초대장 정보 업데이트
+  // 서버 타임스탬프 생성
+  const now = Date.now();
+
+  // createdAt과 invitationOrder 추가
+  updates[`chat-invitations/${inviteeUid}/${roomId}/createdAt`] = now;
+  updates[`chat-invitations/${inviteeUid}/${roomId}/invitationOrder`] = `-${now}`;
+
+  // 나머지 필드 추가
+  updates[`chat-invitations/${inviteeUid}/${roomId}/roomName`] = roomName;
+  updates[`chat-invitations/${inviteeUid}/${roomId}/roomType`] = roomType;
+  updates[`chat-invitations/${inviteeUid}/${roomId}/inviterName`] = inviterName;
+  updates[`chat-invitations/${inviteeUid}/${roomId}/message`] = message;
+
+  await admin.database().ref().update(updates);
+
+  logger.info("초대장 정보 업데이트 완료", {
+    inviteeUid,
+    roomId,
+    updatesCount: Object.keys(updates).length,
+  });
+
+  // 6. FCM 푸시 알림 전송
+  try {
+    const {getFcmTokensByUid, sendFcmNotificationBatch} = await import(
+      "../utils/fcm.utils"
+    );
+
+    // 초대받은 사람의 FCM 토큰 조회
+    const tokens = await getFcmTokensByUid(inviteeUid);
+
+    if (tokens.length > 0) {
+      // 푸시 알림 제목과 본문 (i18n 사용)
+      const notificationTitle = t(languageCode, "chatInvitation.title");
+      const notificationBody = t(languageCode, "chatInvitation.body", {
+        inviterName,
+        roomName,
+      });
+
+      logger.info("FCM 푸시 알림 전송 시작", {
+        inviteeUid,
+        tokenCount: tokens.length,
+        title: notificationTitle,
+        body: notificationBody,
+      });
+
+      const fcmResult = await sendFcmNotificationBatch(
+        tokens,
+        notificationTitle,
+        notificationBody,
+        {
+          type: "chat-invitation",
+          roomId,
+          inviterUid,
+          inviterName,
+        }
+      );
+
+      logger.info("FCM 푸시 알림 전송 완료", {
+        inviteeUid,
+        roomId,
+        successCount: fcmResult.successCount,
+        failureCount: fcmResult.failureCount,
+        deletedTokenCount: fcmResult.deletedTokenCount,
+      });
+    } else {
+      logger.info("FCM 토큰이 없어 푸시 알림 전송을 건너뜀", {
+        inviteeUid,
+      });
+    }
+  } catch (fcmError) {
+    logger.error("FCM 푸시 알림 전송 실패 (계속 진행)", {
+      inviteeUid,
+      roomId,
+      error: fcmError,
+    });
+    // FCM 실패는 무시하고 계속 진행
+  }
+
+  logger.info("채팅 초대장 생성 처리 완료", {
+    inviteeUid,
+    roomId,
+  });
+
+  return {success: true, inviteeUid, roomId};
+}
+
 ```
 
 ## 주요 기능
-- **handleChatMessageCreate**: 채팅 메시지 생성 시 처리
-  - 프로토콜 메시지 필터링
-  - 1:1 채팅과 그룹/오픈 채팅 분기 처리
-  - chat-joins 노드 자동 업데이트
-  - 읽지 않은 메시지 카운터 관리
-  - 정렬 필드 자동 설정
-- **handleChatRoomCreate**: 채팅방 생성 시 처리
-  - createdAt 자동 생성
-  - members 객체 초기화
-  - memberCount 초기화
-- **handleChatJoinCreate**: 채팅방 참여 정보 생성 시 처리
-  - joinedAt 자동 생성
-  - 1:1 채팅 partnerUid 설정
-  - roomType별 정렬 필드 설정
-- **handleChatRoomMemberJoin**: 멤버 입장 시 처리
-  - memberCount 증가
-  - chat-joins 상세 정보 업데이트
-  - 마지막 메시지 정보 동기화
-- **handleChatRoomMemberLeave**: 멤버 퇴장 시 처리
-  - memberCount 감소
-  - chat-joins 노드 삭제
 
-## 사용되는 Firebase 트리거
-- 트리거 함수에서 호출됨 (직접 트리거하지 않음)
-- `index.ts`의 채팅 관련 트리거 함수들에서 호출
+(이 섹션은 수동으로 업데이트 필요)
 
-## 관련 함수
-- `types/index.ts`: ChatMessage, ChatJoin 타입 정의
-- `shared/chat.pure-functions.ts`: isSingleChat, extractUidsFromSingleRoomId
-- `index.ts`: 채팅 관련 트리거 함수들
+## 관련 파일
+
+(이 섹션은 수동으로 업데이트 필요)

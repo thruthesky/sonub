@@ -1,16 +1,21 @@
 ---
 name: top-bar.svelte
-description: 탑바 (상단 네비게이션 바) 컴포넌트
+description: top-bar 컴포넌트
 version: 1.0.0
 type: svelte-component
-category: layout-component
-tags: [svelte5, sveltekit]
+category: component
+original_path: src/lib/components/top-bar.svelte
 ---
 
 # top-bar.svelte
 
 ## 개요
-탑바 (상단 네비게이션 바) 컴포넌트
+
+**파일 경로**: `src/lib/components/top-bar.svelte`
+**파일 타입**: svelte-component
+**카테고리**: component
+
+top-bar 컴포넌트
 
 ## 소스 코드
 
@@ -64,26 +69,6 @@ import { m } from '$lib/paraglide/messages';
 				>
 					Sonub
 				</a>
-				<div class="hidden gap-4 md:flex">
-					<a
-						href="/about"
-						class="text-gray-600 hover:text-gray-900"
-					>
-						{m.navAbout()}
-					</a>
-					<a
-						href="/products"
-						class="text-gray-600 hover:text-gray-900"
-					>
-						{m.navProducts()}
-					</a>
-					<a
-						href="/contact"
-						class="text-gray-600 hover:text-gray-900"
-					>
-						{m.navContact()}
-					</a>
-				</div>
 			</div>
 
 			<!-- 우측: 사용자 메뉴 -->
@@ -216,18 +201,9 @@ import { m } from '$lib/paraglide/messages';
 ```
 
 ## 주요 기능
-- 코드 분석 필요
 
-## Props/Parameters
-State variables: isSigningOut
+(이 섹션은 수동으로 업데이트 필요)
 
-## 사용 예시
-```svelte
-<!-- 사용 예시는 필요에 따라 추가하세요 -->
-<top-bar />
-```
+## 관련 파일
 
----
-
-> 이 문서는 자동 생성되었습니다.
-> 수정이 필요한 경우 직접 편집하세요.
+(이 섹션은 수동으로 업데이트 필요)

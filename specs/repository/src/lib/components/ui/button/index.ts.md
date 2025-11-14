@@ -1,19 +1,39 @@
 ---
-name: index.ts (button)
-description: Button 컴포넌트 export
+name: index.ts
+description: index UI 컴포넌트
 version: 1.0.0
 type: typescript
 category: ui-component
-tags: [shadcn, button, export]
+original_path: src/lib/components/ui/button/index.ts
 ---
 
-# index.ts (button)
+# index.ts
 
 ## 개요
-Button 컴포넌트를 export합니다.
 
-## Export
+**파일 경로**: `src/lib/components/ui/button/index.ts`
+**파일 타입**: typescript
+**카테고리**: ui-component
+
+index UI 컴포넌트
+
+## 소스 코드
+
 ```typescript
+/**
+ * Button 컴포넌트 export
+ */
+
 import Button from './button.svelte';
+
 export { Button };
+
 ```
+
+## 주요 기능
+
+(이 섹션은 수동으로 업데이트 필요)
+
+## 관련 파일
+
+(이 섹션은 수동으로 업데이트 필요)

@@ -1,7 +1,7 @@
 ---
 name: sonub-chat-invitation
 title: 채팅 초대 시스템
-version: 1.0.0
+version: 1.1.0
 description: 그룹/오픈 채팅방 초대 및 수락/거절 시스템 사양
 author: JaeHo Song
 email: thruthesky@gmail.com
@@ -629,6 +629,18 @@ firebase deploy --only database
 - [Chat Functions](./sonub-functions-chat-functions.md)
 
 ## 변경 이력
+
+### 2025-01-14 (v1.1.0)
+- **클라이언트 로직 최소화 개선**
+  - 클라이언트가 저장하는 필드를 `roomId`, `inviterUid`만으로 축소
+  - `createdAt`, `invitationOrder` 필드를 Cloud Functions로 이동
+  - 클라이언트는 최소한의 데이터만 저장하고 Cloud Functions가 모든 필드를 추가
+- Cloud Functions `handleChatInvitationCreate` 업데이트
+  - `createdAt` 필드 자동 생성 (서버 타임스탬프)
+  - `invitationOrder` 필드 자동 생성 (정렬용)
+- 함수 시그니처 업데이트: `invitationData: {inviterUid?: string}`
+- 스펙 문서 업데이트 (클라이언트/서버 필드 구분 명확화)
+- Firebase Cloud Functions 재배포
 
 ### 2024-11-14 (v1.0.0)
 - 초기 구현 완료

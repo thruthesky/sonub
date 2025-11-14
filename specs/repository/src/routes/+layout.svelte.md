@@ -1,16 +1,21 @@
 ---
 name: +layout.svelte
-description: 루트 레이아웃 컴포넌트
+description: +layout 페이지
 version: 1.0.0
 type: svelte-component
 category: route-page
-tags: [svelte5, sveltekit]
+original_path: src/routes/+layout.svelte
 ---
 
 # +layout.svelte
 
 ## 개요
-루트 레이아웃 컴포넌트
+
+**파일 경로**: `src/routes/+layout.svelte`
+**파일 타입**: svelte-component
+**카테고리**: route-page
+
++layout 페이지
 
 ## 소스 코드
 
@@ -32,9 +37,37 @@ tags: [svelte5, sveltekit]
 	import LeftSidebar from '$lib/components/left-sidebar.svelte';
 	import RightSidebar from '$lib/components/right-sidebar.svelte';
 	import DevIcon from '$lib/components/dev/dev-icon.svelte';
+	import FcmPermissionGate from '$lib/components/FcmPermissionGate.svelte';
 	import { dev } from '$app/environment';
+	import { Toaster, toast } from 'svelte-sonner';
+	import { onMount } from 'svelte';
+	import { registerServiceWorker, subscribeOnMessage } from '$lib/fcm';
 
 	let { children } = $props();
+
+	/**
+	 * 앱 시작 시 초기화
+	 * 1. 서비스 워커 미리 등록 (FCM 토큰 발급을 위해 필요)
+	 * 2. 포그라운드 메시지 리스너 등록 (Toast 알림 표시)
+	 */
+	onMount(async () => {
+		// 서비스 워커 등록
+		await registerServiceWorker();
+
+		// 포그라운드 메시지 수신 리스너 등록
+		subscribeOnMessage((payload) => {
+			console.log('[Layout] 포그라운드 메시지 수신:', payload);
+
+			// Toast 알림 표시
+			const title = payload.notification?.title ?? payload.data?.title ?? '새 알림';
+			const body = payload.notification?.body ?? payload.data?.body ?? '';
+
+			toast.success(title, {
+				description: body,
+				duration: 5000 // 5초 동안 표시
+			});
+		});
+	});
 </script>
 
 <svelte:head>
@@ -71,21 +104,18 @@ tags: [svelte5, sveltekit]
 	<DevIcon />
 {/if}
 
+<!-- 전역 Toast 알림 컴포넌트 -->
+<Toaster position="top-center" richColors />
+
+<!-- FCM 푸시 알림 권한 요청 가드 -->
+<FcmPermissionGate />
+
 ```
 
 ## 주요 기능
-- 코드 분석 필요
 
-## Props/Parameters
-children
+(이 섹션은 수동으로 업데이트 필요)
 
-## 사용 예시
-```svelte
-<!-- 사용 예시는 필요에 따라 추가하세요 -->
-<+layout />
-```
+## 관련 파일
 
----
-
-> 이 문서는 자동 생성되었습니다.
-> 수정이 필요한 경우 직접 편집하세요.
+(이 섹션은 수동으로 업데이트 필요)

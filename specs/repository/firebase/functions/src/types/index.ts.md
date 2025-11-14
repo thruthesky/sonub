@@ -1,16 +1,21 @@
 ---
-name: index.ts (types)
-description: Firebase Cloud Functions TypeScript 타입 정의 모음
+name: index.ts
+description: index Cloud Function
 version: 1.0.0
 type: firebase-function
-category: type
-tags: [firebase, cloud-functions, typescript, types, interfaces]
+category: cloud-function
+original_path: firebase/functions/src/types/index.ts
 ---
 
-# index.ts (types)
+# index.ts
 
 ## 개요
-이 파일은 Firebase Cloud Functions TypeScript의 모든 타입을 통합 관리합니다. SNS 프로젝트에서 사용되는 게시글, 댓글, 사용자, 좋아요, 신고, 채팅 등 모든 데이터 구조의 타입 정의를 포함합니다.
+
+**파일 경로**: `firebase/functions/src/types/index.ts`
+**파일 타입**: firebase-function
+**카테고리**: cloud-function
+
+index Cloud Function
 
 ## 소스 코드
 
@@ -263,29 +268,36 @@ export interface ChatJoin {
   /** 모든 채팅방(1:1, 그룹, 오픈) 통합 정렬용 필드: timestamp */
   allChatListOrder?: number;
 }
+
+/**
+ * 채팅 초대 데이터 인터페이스
+ * Firebase Realtime Database의 /chat-invitations/{uid}/{roomId} 노드에 저장되는 데이터 구조
+ */
+export interface ChatInvitationData {
+  /** 채팅방 ID */
+  roomId?: string;
+  /** 채팅방 이름 (Cloud Functions에서 자동 설정) */
+  roomName?: string;
+  /** 채팅방 타입 (group | open) */
+  roomType?: "group" | "open";
+  /** 초대한 사람 UID */
+  inviterUid?: string;
+  /** 초대한 사람 이름 (Cloud Functions에서 자동 설정) */
+  inviterName?: string;
+  /** 초대 메시지 (Cloud Functions에서 자동 생성) */
+  message?: string;
+  /** 생성 시간 (Unix timestamp, 밀리초) */
+  createdAt?: number;
+  /** 정렬용 필드: "-{timestamp}" (최신순) */
+  invitationOrder?: string;
+}
+
 ```
 
 ## 주요 기능
-- **게시판 관련 타입**:
-  - `ForumCategory`: 게시판 카테고리 타입
-  - `PostData`: 게시글 데이터 구조
-  - `CommentData`: 댓글 데이터 구조
-- **사용자 관련 타입**:
-  - `UserData`: 사용자 프로필 데이터 구조
-- **상호작용 관련 타입**:
-  - `ParsedLikeId`: 좋아요 ID 파싱 결과
-  - `ReportReason`: 신고 사유
-  - `ReportData`: 신고 데이터 구조
-  - `ParsedReportId`: 신고 ID 파싱 결과
-- **채팅 관련 타입**:
-  - `ChatMessageType`: 채팅 메시지 타입
-  - `ChatMessage`: 채팅 메시지 데이터 구조
-  - `ChatRoomType`: 채팅방 타입
-  - `ChatJoin`: 채팅방 참여 정보 구조
 
-## 사용되는 Firebase 트리거
-- 이 파일은 직접 트리거되지 않음
-- 다른 핸들러 및 유틸리티 함수에서 타입으로 사용됨
+(이 섹션은 수동으로 업데이트 필요)
 
-## 관련 함수
-- 모든 핸들러와 유틸리티 함수에서 이 타입들을 import하여 사용
+## 관련 파일
+
+(이 섹션은 수동으로 업데이트 필요)

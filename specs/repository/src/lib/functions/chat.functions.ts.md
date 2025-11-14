@@ -1,16 +1,21 @@
 ---
 name: chat.functions.ts
-description: Svelte 클라이언트용 채팅 함수 (Firebase 통합)
+description: chat.functions 순수 함수
 version: 1.0.0
 type: typescript
-category: library
-tags: [chat, firebase, rtdb, client, functions]
+category: pure-function
+original_path: src/lib/functions/chat.functions.ts
 ---
 
 # chat.functions.ts
 
 ## 개요
-이 파일은 Svelte 클라이언트에서 사용하는 채팅 관련 함수들을 제공합니다. Firebase Realtime Database에 의존하는 함수들과 `shared` 폴더의 Pure Functions를 re-export합니다. 1:1 채팅방, 그룹 채팅방, 오픈 채팅방에 대한 입장/퇴장 로직을 처리합니다.
+
+**파일 경로**: `src/lib/functions/chat.functions.ts`
+**파일 타입**: typescript
+**카테고리**: pure-function
+
+chat.functions 순수 함수
 
 ## 소스 코드
 
@@ -22,7 +27,7 @@ tags: [chat, firebase, rtdb, client, functions]
  * shared 폴더의 pure functions에 대한 re-export를 포함합니다.
  */
 
-import { ref, set, update, type Database } from 'firebase/database';
+import { ref, set, update, get, remove, type Database } from 'firebase/database';
 
 // Pure functions를 shared 폴더에서 import하고 re-export
 export {
@@ -149,75 +154,191 @@ export async function leaveChatRoom(
 	const memberRef = ref(db, `chat-rooms/${roomId}/members/${uid}`);
 	await set(memberRef, null); // null로 설정하여 속성 삭제
 }
+
+/**
+ * 채팅방 핀 상태를 토글합니다 (고정/해제)
+ *
+ * 이 함수는 사용자가 채팅방을 핀하거나 핀 해제할 때 호출됩니다.
+ * 클라이언트는 단순히 pin 필드를 true/false로 설정하며,
+ * Cloud Functions가 자동으로 모든 xxxListOrder 필드의 prefix를 업데이트합니다.
+ *
+ * Prefix 규칙 (Cloud Functions에서 자동 처리):
+ * - 500 prefix: 핀된 채팅방 (최상위)
+ * - 200 prefix: 읽지 않은 메시지가 있는 채팅방 (상위)
+ * - prefix 없음: 읽은 메시지만 있는 채팅방 (일반)
+ *
+ * @param db - Firebase Realtime Database 인스턴스
+ * @param roomId - 채팅방 ID
+ * @param uid - 사용자 UID
+ * @param roomType - 채팅방 타입 (더 이상 사용하지 않지만 호환성 유지)
+ * @returns Promise<boolean> - 변경 후 핀 상태 (true: 핀됨, false: 핀 해제됨)
+ *
+ * @example
+ * ```typescript
+ * import { rtdb } from '$lib/firebase';
+ * import { togglePinChatRoom } from '$lib/functions/chat.functions';
+ *
+ * // 채팅방 핀 토글
+ * const isPinned = await togglePinChatRoom(rtdb, roomId, currentUser.uid, 'single');
+ * console.log(isPinned ? '핀 설정됨' : '핀 해제됨');
+ * ```
+ */
+export async function togglePinChatRoom(
+	db: Database,
+	roomId: string,
+	uid: string,
+	roomType: string // eslint-disable-line @typescript-eslint/no-unused-vars
+): Promise<boolean> {
+	const chatJoinRef = ref(db, `chat-joins/${uid}/${roomId}`);
+	const pinRef = ref(db, `chat-joins/${uid}/${roomId}/pin`);
+
+	// 현재 핀 상태 읽기
+	const snapshot = await get(pinRef);
+	const currentPinValue = snapshot.exists() ? snapshot.val() : false;
+	const isPinned = currentPinValue === true;
+
+	// 핀 상태 토글
+	if (isPinned) {
+		// 핀 해제: pin 필드 삭제
+		await set(pinRef, null);
+		console.log('✅ 채팅방 핀 해제 완료:', roomId);
+	} else {
+		// 핀 설정: pin: true 설정
+		await set(pinRef, true);
+		console.log('✅ 채팅방 핀 설정 완료:', roomId);
+	}
+
+	// 새로운 핀 상태 반환
+	return !isPinned;
+}
+
+/**
+ * 사용자를 그룹/오픈 채팅방에 초대합니다.
+ *
+ * 이 함수는 채팅방 멤버가 다른 사용자를 초대할 때 호출됩니다.
+ * 클라이언트는 최소한의 정보만 저장하여 Cloud Functions를 트리거합니다.
+ * Cloud Functions(onChatInvitationCreate)가 자동으로 다음 필드들을 추가합니다:
+ * - createdAt: 초대 생성 시간 (타임스탬프)
+ * - invitationOrder: 정렬용 필드 (-createdAt 값)
+ * - roomName: 채팅방 이름
+ * - roomType: 채팅방 타입 (group | open)
+ * - inviterName: 초대한 사람 이름
+ * - message: 다국어 초대 메시지
+ *
+ * 또한 Cloud Functions는 다음을 자동으로 처리합니다:
+ * - 초대받은 사용자의 언어 코드에 맞는 FCM 푸시 알림 전송
+ * - 이미 채팅방에 참여 중인 사용자는 초대하지 않음
+ * - 1:1 채팅방은 초대 불가
+ *
+ * @param db - Firebase Realtime Database 인스턴스
+ * @param roomId - 채팅방 ID
+ * @param inviteeUid - 초대받는 사용자 UID
+ * @param inviterUid - 초대하는 사용자 UID
+ * @returns Promise<void>
+ *
+ * @example
+ * ```typescript
+ * import { rtdb } from '$lib/firebase';
+ * import { inviteUserToChatRoom } from '$lib/functions/chat.functions';
+ *
+ * // 사용자를 채팅방에 초대
+ * await inviteUserToChatRoom(rtdb, roomId, inviteeUid, currentUser.uid);
+ * ```
+ */
+export async function inviteUserToChatRoom(
+	db: Database,
+	roomId: string,
+	inviteeUid: string,
+	inviterUid: string
+): Promise<void> {
+	const invitationRef = ref(db, `chat-invitations/${inviteeUid}/${roomId}`);
+
+	// 클라이언트는 최소한의 데이터만 저장 (roomId, inviterUid)
+	// Cloud Functions가 나머지 필드들을 자동으로 추가합니다
+	await set(invitationRef, {
+		roomId,
+		inviterUid
+		// Cloud Functions가 자동으로 추가하는 필드들:
+		// - createdAt: 초대 생성 시간
+		// - invitationOrder: 정렬용 필드
+		// - roomName: 채팅방 이름
+		// - roomType: 채팅방 타입
+		// - inviterName: 초대한 사람 이름
+		// - message: 다국어 초대 메시지
+	});
+}
+
+/**
+ * 채팅 초대를 수락합니다.
+ *
+ * 이 함수는 사용자가 초대를 수락할 때 호출됩니다.
+ * 다음 작업을 순차적으로 수행합니다:
+ * 1. joinChatRoom() 함수를 호출하여 채팅방에 입장
+ * 2. chat-invitations/{uid}/{roomId}에서 초대 정보 삭제
+ *
+ * @param db - Firebase Realtime Database 인스턴스
+ * @param roomId - 채팅방 ID
+ * @param uid - 사용자 UID
+ * @returns Promise<void>
+ *
+ * @example
+ * ```typescript
+ * import { rtdb } from '$lib/firebase';
+ * import { acceptInvitation } from '$lib/functions/chat.functions';
+ *
+ * // 초대 수락
+ * await acceptInvitation(rtdb, roomId, currentUser.uid);
+ * ```
+ */
+export async function acceptInvitation(
+	db: Database,
+	roomId: string,
+	uid: string
+): Promise<void> {
+	// 1. 채팅방에 입장 (기존 함수 재사용)
+	joinChatRoom(db, roomId, uid);
+
+	// 2. 초대 정보 삭제
+	const invitationRef = ref(db, `chat-invitations/${uid}/${roomId}`);
+	await remove(invitationRef);
+}
+
+/**
+ * 채팅 초대를 거절합니다.
+ *
+ * 이 함수는 사용자가 초대를 거절할 때 호출됩니다.
+ * chat-invitations/{uid}/{roomId}에서 초대 정보만 삭제하며,
+ * 채팅방에는 입장하지 않습니다.
+ *
+ * @param db - Firebase Realtime Database 인스턴스
+ * @param roomId - 채팅방 ID
+ * @param uid - 사용자 UID
+ * @returns Promise<void>
+ *
+ * @example
+ * ```typescript
+ * import { rtdb } from '$lib/firebase';
+ * import { rejectInvitation } from '$lib/functions/chat.functions';
+ *
+ * // 초대 거절
+ * await rejectInvitation(rtdb, roomId, currentUser.uid);
+ * ```
+ */
+export async function rejectInvitation(
+	db: Database,
+	roomId: string,
+	uid: string
+): Promise<void> {
+	const invitationRef = ref(db, `chat-invitations/${uid}/${roomId}`);
+	await remove(invitationRef);
+}
+
 ```
 
 ## 주요 기능
 
-### Pure Functions Re-export
-- `buildSingleRoomId(a, b)`: 1:1 채팅방 ID 생성
-- `isSingleChat(roomId)`: 1:1 채팅방 여부 확인
-- `extractUidsFromSingleRoomId(roomId)`: roomId에서 UID 추출
-- `resolveRoomTypeLabel(roomType)`: 채팅방 유형 라벨 변환
+(이 섹션은 수동으로 업데이트 필요)
 
-### Firebase 연동 함수
+## 관련 파일
 
-#### 1. enterSingleChatRoom(db, roomId, uid)
-- **목적**: 1:1 채팅방 입장 처리
-- **동작**:
-  1. `chat-joins/{uid}/{roomId}` 업데이트
-  2. `newMessageCount: 0` 설정 (메시지 읽음 표시)
-  3. Cloud Functions 트리거 → 자동으로 필드 추가
-- **자동 추가 필드** (by Cloud Functions):
-  - `singleChatListOrder`
-  - `allChatListOrder`
-  - `partnerUid`
-  - `roomType`
-  - `joinedAt`
-
-#### 2. joinChatRoom(db, roomId, uid)
-- **목적**: 그룹/오픈 채팅방 입장 처리
-- **동작**:
-  1. `chat-rooms/{roomId}/members/{uid} = true` 설정
-  2. `chat-joins/{uid}/{roomId}/newMessageCount = 0` 설정
-  3. Cloud Functions 트리거 → memberCount 증가
-
-#### 3. leaveChatRoom(db, roomId, uid)
-- **목적**: 채팅방 퇴장 처리
-- **동작**:
-  1. `chat-rooms/{roomId}/members/{uid} = null` (삭제)
-  2. Cloud Functions 트리거 → memberCount 감소
-
-## Cloud Functions 연동
-
-### onChatJoinCreate
-- **트리거**: `chat-joins/{uid}/{roomId}` 생성/업데이트
-- **역할**:
-  - 1:1 채팅방: partnerUid, roomType 추가
-  - 그룹/오픈 채팅방: memberCount 증가
-  - 정렬 필드 자동 계산
-
-### onChatRoomMemberUpdate
-- **트리거**: `chat-rooms/{roomId}/members/{uid}` 변경
-- **역할**: memberCount 자동 업데이트
-
-## 사용 예시
-
-```typescript
-import { rtdb } from '$lib/firebase';
-import {
-  enterSingleChatRoom,
-  joinChatRoom,
-  leaveChatRoom,
-  buildSingleRoomId
-} from '$lib/functions/chat.functions';
-
-// 1:1 채팅방 입장
-const roomId = buildSingleRoomId(myUid, partnerUid);
-enterSingleChatRoom(rtdb!, roomId, myUid);
-
-// 그룹 채팅방 입장
-joinChatRoom(rtdb!, 'group-room-123', myUid);
-
-// 채팅방 퇴장
-await leaveChatRoom(rtdb!, roomId, myUid);
-```
+(이 섹션은 수동으로 업데이트 필요)

@@ -1,29 +1,45 @@
 ---
 name: page.svelte.spec.ts
-description: 홈 페이지 컴포넌트 테스트
+description: page.svelte.spec 페이지
 version: 1.0.0
 type: test
-category: component-test
-tags: [vitest, svelte, browser, test]
+category: route-page
+original_path: src/routes/page.svelte.spec.ts
 ---
 
 # page.svelte.spec.ts
 
 ## 개요
-Vitest Browser Mode를 사용하여 홈 페이지 (+page.svelte) 컴포넌트를 테스트합니다.
 
-## 테스트 내용
+**파일 경로**: `src/routes/page.svelte.spec.ts`
+**파일 타입**: test
+**카테고리**: route-page
+
+page.svelte.spec 페이지
+
+## 소스 코드
+
 ```typescript
+import { page } from 'vitest/browser';
+import { describe, expect, it } from 'vitest';
+import { render } from 'vitest-browser-svelte';
+import Page from './+page.svelte';
+
 describe('/+page.svelte', () => {
-  it('should render h1', async () => {
-    render(Page);
-    const heading = page.getByRole('heading', { level: 1 });
-    await expect.element(heading).toBeInTheDocument();
-  });
+	it('should render h1', async () => {
+		render(Page);
+
+		const heading = page.getByRole('heading', { level: 1 });
+		await expect.element(heading).toBeInTheDocument();
+	});
 });
+
 ```
 
-## 실행 방법
-```bash
-npm run test:browser
-```
+## 주요 기능
+
+(이 섹션은 수동으로 업데이트 필요)
+
+## 관련 파일
+
+(이 섹션은 수동으로 업데이트 필요)

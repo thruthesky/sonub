@@ -1,16 +1,21 @@
 ---
 name: Page.stories.svelte
-description: Page.stories.svelte 컴포넌트
+description: Page.stories 파일
 version: 1.0.0
 type: svelte-component
-category: storybook
-tags: [svelte5, sveltekit]
+category: other
+original_path: src/stories/Page.stories.svelte
 ---
 
 # Page.stories.svelte
 
 ## 개요
-Page.stories.svelte 컴포넌트
+
+**파일 경로**: `src/stories/Page.stories.svelte`
+**파일 타입**: svelte-component
+**카테고리**: other
+
+Page.stories 파일
 
 ## 소스 코드
 
@@ -49,18 +54,9 @@ Page.stories.svelte 컴포넌트
 ```
 
 ## 주요 기능
-- 코드 분석 필요
 
-## Props/Parameters
-없음
+(이 섹션은 수동으로 업데이트 필요)
 
-## 사용 예시
-```svelte
-<!-- 사용 예시는 필요에 따라 추가하세요 -->
-<Page.stories />
-```
+## 관련 파일
 
----
-
-> 이 문서는 자동 생성되었습니다.
-> 수정이 필요한 경우 직접 편집하세요.
+(이 섹션은 수동으로 업데이트 필요)

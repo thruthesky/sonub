@@ -1,16 +1,21 @@
 ---
 name: app.css
-description: Tailwind CSS 테마 설정 및 전역 스타일 정의 파일
+description: app 파일
 version: 1.0.0
 type: css
-category: styling
-tags: [tailwind, css, theme, color-palette]
+category: other
+original_path: src/app.css
 ---
 
 # app.css
 
 ## 개요
-이 파일은 Tailwind CSS 4.x의 새로운 `@theme` 디렉티브를 사용하여 애플리케이션의 색상 팔레트를 정의합니다. Gray, Blue, Red, Green, Amber, Purple, Indigo, Pink 8가지 색상군을 각각 50~950까지 10단계로 정의하여 일관된 디자인 시스템을 구축합니다.
+
+**파일 경로**: `src/app.css`
+**파일 타입**: css
+**카테고리**: other
+
+app 파일
 
 ## 소스 코드
 
@@ -124,28 +129,13 @@ tags: [tailwind, css, theme, color-palette]
 	--color-pink-900: #831843;
 	--color-pink-950: #500724;
 }
+
 ```
 
 ## 주요 기능
 
-### Tailwind CSS 4.x 플러그인
-- `@tailwindcss/forms`: 폼 요소 스타일링
-- `@tailwindcss/typography`: 타이포그래피 유틸리티
+(이 섹션은 수동으로 업데이트 필요)
 
-### 색상 팔레트
-- **Gray**: UI 기본 색상 (배경, 테두리, 텍스트)
-- **Blue**: 주요 액션 및 링크
-- **Red**: 에러 메시지 및 경고
-- **Green**: 성공 메시지 및 긍정적 피드백
-- **Amber**: 주의 및 알림
-- **Purple**: 강조 및 특별한 기능
-- **Indigo**: 보조 액션
-- **Pink**: 장식 및 강조
+## 관련 파일
 
-### 사용 방법
-```svelte
-<!-- Tailwind 유틸리티 클래스로 사용 -->
-<button class="bg-blue-500 hover:bg-blue-600 text-white">버튼</button>
-<div class="border border-gray-300 bg-gray-50">카드</div>
-<p class="text-red-500">에러 메시지</p>
-```
+(이 섹션은 수동으로 업데이트 필요)

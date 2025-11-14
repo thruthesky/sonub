@@ -1,20 +1,21 @@
 ---
 name: package.json
-description: SvelteKit 프로젝트의 npm 패키지 설정 파일. 프로젝트 의존성, 스크립트, 메타데이터를 정의합니다.
+description: package 설정 파일
 version: 1.0.0
 type: configuration
-category: root-config
-tags: [configuration, npm, dependencies, scripts]
+category: root-configuration
+original_path: package.json
 ---
 
 # package.json
 
 ## 개요
-Sonub 프로젝트의 루트 package.json 파일입니다. 이 파일은:
-- 프로젝트의 npm 스크립트 정의
-- 개발 및 프로덕션 의존성 관리
-- Node.js 버전 요구사항 명시
-- SvelteKit 5, Firebase, Tailwind CSS 등 핵심 라이브러리 포함
+
+**파일 경로**: `package.json`
+**파일 타입**: configuration
+**카테고리**: root-configuration
+
+package 설정 파일
 
 ## 소스 코드
 
@@ -61,13 +62,14 @@ Sonub 프로젝트의 루트 package.json 파일입니다. 이 파일은:
 		"@tailwindcss/forms": "^0.5.10",
 		"@tailwindcss/typography": "^0.5.19",
 		"@tailwindcss/vite": "^4.1.14",
-		"@types/node": "^22",
+		"@types/node": "^22.19.1",
 		"@vitest/browser-playwright": "^4.0.5",
 		"bits-ui": "^2.14.3",
 		"eslint": "^9.38.0",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-storybook": "^10.0.6",
 		"eslint-plugin-svelte": "^3.12.4",
+		"glob": "^11.0.3",
 		"globals": "^16.4.0",
 		"mdsvex": "^0.12.6",
 		"playwright": "^1.56.1",
@@ -79,6 +81,8 @@ Sonub 프로젝트의 루트 package.json 파일입니다. 이 파일은:
 		"svelte": "^5.41.0",
 		"svelte-check": "^4.3.3",
 		"tailwindcss": "^4.1.14",
+		"ts-node": "^10.9.2",
+		"tsx": "^4.20.6",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.46.1",
 		"vite": "^7.1.10",
@@ -90,40 +94,17 @@ Sonub 프로젝트의 루트 package.json 파일입니다. 이 파일은:
 		"clsx": "^2.1.1",
 		"firebase": "^12.5.0",
 		"lucide-svelte": "^0.553.0",
+		"svelte-sonner": "^1.0.6",
 		"tailwind-merge": "^3.3.1"
 	}
 }
+
 ```
 
-## 주요 설정
+## 주요 기능
 
-### 프로젝트 메타데이터
-- **name**: sonub
-- **version**: 0.0.1
-- **type**: module (ES 모듈 사용)
-- **node**: >=20.0.0 (Node.js 20 이상 필수)
-
-### 주요 스크립트
-- **dev**: 개발 서버 시작 (Vite)
-- **build**: 프로덕션 빌드
-- **check**: TypeScript 및 Svelte 타입 체크
-- **lint**: ESLint 및 Prettier 린트 검사
-- **test**: 유닛 및 E2E 테스트 실행
-- **storybook**: Storybook 개발 서버 (포트 6006)
-
-### 핵심 의존성
-- **@sveltejs/kit**: ^2.47.1 (SvelteKit 프레임워크)
-- **svelte**: ^5.41.0 (Svelte 5 runes 사용)
-- **firebase**: ^12.5.0 (Firebase SDK)
-- **tailwindcss**: ^4.1.14 (Tailwind CSS v4)
-- **shadcn-svelte**: ^1.0.10 (UI 컴포넌트 라이브러리)
-- **@inlang/paraglide-sveltekit**: ^0.16.1 (다국어 지원)
-- **vitest**: ^4.0.5 (테스트 프레임워크)
-- **playwright**: ^1.56.1 (E2E 테스트)
-- **storybook**: ^10.0.6 (컴포넌트 문서화)
+(이 섹션은 수동으로 업데이트 필요)
 
 ## 관련 파일
-- [tsconfig.json](./tsconfig.json.md) - TypeScript 설정
-- [vite.config.ts](./vite.config.ts.md) - Vite 빌드 설정
-- [svelte.config.js](./svelte.config.js.md) - Svelte 설정
-- [eslint.config.js](./eslint.config.js.md) - ESLint 설정
+
+(이 섹션은 수동으로 업데이트 필요)

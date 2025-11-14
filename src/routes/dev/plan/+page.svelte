@@ -200,11 +200,11 @@
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 8. 채팅 첨부파일 업로드 -->
+		<!-- 9. 채팅 첨부파일 업로드 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
-					<span class="todo-number">8</span>
+					<span class="todo-number">9</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">채팅 메시지 첨부파일 업로드</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -226,11 +226,11 @@
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 9. 비밀번호 기능 -->
+		<!-- 10. 비밀번호 기능 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
-					<span class="todo-number">9</span>
+					<span class="todo-number">10</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">그룹 채팅 비밀번호 기능</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -247,11 +247,11 @@
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 10. Post 타입 메시지 -->
+		<!-- 11. Post 타입 메시지 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
-					<span class="todo-number">10</span>
+					<span class="todo-number">11</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">채팅 메시지 "Post" 타입 선택</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -261,7 +261,7 @@
 			<Card.Content>
 				<div class="space-y-4">
 					<div>
-						<h4 class="todo-subtitle">10-1. 카테고리 선택</h4>
+						<h4 class="todo-subtitle">11-1. 카테고리 선택</h4>
 						<ul class="todo-list">
 							<li>메시지 입력창 옆 드롭다운에서 타입 선택: "message" 또는 "post"</li>
 							<li>"post" 선택 시 카테고리 선택 UI 표시</li>
@@ -269,7 +269,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">10-2. 제목, 내용, 사진 업로드</h4>
+						<h4 class="todo-subtitle">11-2. 제목, 내용, 사진 업로드</h4>
 						<ul class="todo-list">
 							<li>제목 입력 필드 추가 (필수)</li>
 							<li>내용 입력 (rich text editor 또는 마크다운)</li>
@@ -279,7 +279,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">10-3. 카테고리별 게시판 메뉴</h4>
+						<h4 class="todo-subtitle">11-3. 카테고리별 게시판 메뉴</h4>
 						<ul class="todo-list">
 							<li>홈페이지 메뉴에 카테고리별 페이지 추가</li>
 							<li>DatabaseListView 사용하여 실시간 목록 표시</li>
@@ -288,7 +288,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">10-4. 댓글 기능 (게시판처럼 보이게)</h4>
+						<h4 class="todo-subtitle">11-4. 댓글 기능 (게시판처럼 보이게)</h4>
 						<ul class="todo-list">
 							<li>게시글 상세 페이지에서 댓글 목록 표시</li>
 							<li>댓글 작성, 수정, 삭제 기능</li>
@@ -298,7 +298,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">10-5. 게시판 통계 (post/comment/like)</h4>
+						<h4 class="todo-subtitle">11-5. 게시판 통계 (post/comment/like)</h4>
 						<ul class="todo-list">
 							<li>카테고리 및 전체 게시판에 대해 <code>postCount</code>, <code>commentCount</code>, <code>likeCount</code> 통계를 표시</li>
 							<li>Cloud Functions가 게시글/댓글/좋아요 이벤트 발생 시 대응 카운터를 업데이트 (<code>/stats/board</code> 트리)</li>
@@ -310,11 +310,11 @@
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 11. 게시판 글이 채팅방 메시지 목록에 표시 -->
+		<!-- 12. 게시판 글이 채팅방 메시지 목록에 표시 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
-					<span class="todo-number">11</span>
+					<span class="todo-number">12</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">게시판 글이 채팅방 메시지 목록에 표시</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -340,11 +340,11 @@
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 12. 남/여 찾기 기능 (콕 포인트 시스템) -->
+		<!-- 13. 남/여 찾기 기능 (콕 포인트 시스템) -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
-					<span class="todo-number">12</span>
+					<span class="todo-number">13</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">남/여 찾기 기능 (콕 포인트 시스템)</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -354,7 +354,7 @@
 			<Card.Content>
 				<div class="space-y-4">
 					<div>
-						<h4 class="todo-subtitle">12-1. 콕(Coke) 가상 포인트 시스템</h4>
+						<h4 class="todo-subtitle">13-1. 콕(Coke) 가상 포인트 시스템</h4>
 						<ul class="todo-list">
 							<li>콕은 채팅에 사용하는 가상 포인트 (연료/코크스 의미)</li>
 							<li>1콕 = 1원</li>
@@ -363,7 +363,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">12-2. 무료 채팅 한도</h4>
+						<h4 class="todo-subtitle">13-2. 무료 채팅 한도</h4>
 						<ul class="todo-list">
 							<li>모르는 사람과 총 50명까지 무료 채팅 가능</li>
 							<li>총 채팅 메시지 200번까지 무료 (모르는 사람 대상)</li>
@@ -372,7 +372,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">12-3. 콕 소비 규칙</h4>
+						<h4 class="todo-subtitle">13-3. 콕 소비 규칙</h4>
 						<ul class="todo-list">
 							<li>모르는 사람에게 처음 채팅 시작: 30콕 소모</li>
 							<li>20단어 이하 메시지: 10콕 소모</li>
@@ -382,7 +382,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">12-4. 남/여 찾기 UI</h4>
+						<h4 class="todo-subtitle">13-4. 남/여 찾기 UI</h4>
 						<ul class="todo-list">
 							<li>성별 필터링 옵션 (남성/여성/전체)</li>
 							<li>랜덤 매칭 기능</li>
@@ -395,11 +395,11 @@
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 13. 토스/페이팔 결제 기능 -->
+		<!-- 14. 토스/페이팔 결제 기능 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
-					<span class="todo-number">13</span>
+					<span class="todo-number">14</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">토스 페이먼츠 & 페이팔 결제 기능</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -409,7 +409,7 @@
 			<Card.Content>
 				<div class="space-y-4">
 					<div>
-						<h4 class="todo-subtitle">13-1. 토스 페이먼츠 연동 (국내 결제)</h4>
+						<h4 class="todo-subtitle">14-1. 토스 페이먼츠 연동 (국내 결제)</h4>
 						<ul class="todo-list">
 							<li>토스 페이먼츠 SDK 클라이언트 통합</li>
 							<li>결제 수단: 카드, 계좌이체, 간편결제 등</li>
@@ -419,7 +419,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">13-2. 페이팔 연동 (해외 결제)</h4>
+						<h4 class="todo-subtitle">14-2. 페이팔 연동 (해외 결제)</h4>
 						<ul class="todo-list">
 							<li>PayPal JavaScript SDK 통합</li>
 							<li>전세계 사용자를 위한 다국가 결제 지원</li>
@@ -429,7 +429,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">13-3. 광고 구좌 등록 및 광고 등록</h4>
+						<h4 class="todo-subtitle">14-3. 광고 구좌 등록 및 광고 등록</h4>
 						<ul class="todo-list">
 							<li>
 								<strong>광고 구좌 등록:</strong> 관리자가 광고를 게시할 수 있는 광고 구좌(슬롯)를
@@ -459,11 +459,11 @@
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 14. 다음 버전 기능 -->
+		<!-- 15. 다음 버전 기능 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
-					<span class="todo-number">14</span>
+					<span class="todo-number">15</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">다음 버전 기능</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -473,7 +473,7 @@
 			<Card.Content>
 				<div class="space-y-4">
 					<div>
-						<h4 class="todo-subtitle">14-1. 서브 채팅방 (Sub Chat Room)</h4>
+						<h4 class="todo-subtitle">15-1. 서브 채팅방 (Sub Chat Room)</h4>
 						<ul class="todo-list">
 							<li>
 								<strong>용도:</strong> 내가 운영 중인 여러 개의 채팅방을 하나로 묶어서 하나의
@@ -500,7 +500,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">14-2. 관리자 페이지 (Dashboard) 및 관리자 기능</h4>
+						<h4 class="todo-subtitle">15-2. 관리자 페이지 (Dashboard) 및 관리자 기능</h4>
 						<ul class="todo-list">
 							<li>관리자 권한 시스템 구현 (<code>/users/{'{uid}'}/isAdmin: boolean</code>)</li>
 							<li>

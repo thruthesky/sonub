@@ -1,16 +1,21 @@
 ---
 name: UserSearchDialog.svelte
-description: 사용자 검색 다이얼로그
+description: UserSearchDialog 컴포넌트
 version: 1.0.0
 type: svelte-component
-category: feature-component
-tags: [svelte5, sveltekit]
+category: component
+original_path: src/lib/components/user/UserSearchDialog.svelte
 ---
 
 # UserSearchDialog.svelte
 
 ## 개요
-사용자 검색 다이얼로그
+
+**파일 경로**: `src/lib/components/user/UserSearchDialog.svelte`
+**파일 타입**: svelte-component
+**카테고리**: component
+
+UserSearchDialog 컴포넌트
 
 ## 소스 코드
 
@@ -297,18 +302,9 @@ tags: [svelte5, sveltekit]
 ```
 
 ## 주요 기능
-- 코드 분석 필요
 
-## Props/Parameters
-State variables: searchKeyword
+(이 섹션은 수동으로 업데이트 필요)
 
-## 사용 예시
-```svelte
-<!-- 사용 예시는 필요에 따라 추가하세요 -->
-<UserSearchDialog />
-```
+## 관련 파일
 
----
-
-> 이 문서는 자동 생성되었습니다.
-> 수정이 필요한 경우 직접 편집하세요.
+(이 섹션은 수동으로 업데이트 필요)

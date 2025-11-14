@@ -263,7 +263,8 @@
 	"homeSectionRecentPosts": "最新の投稿＆コメント",
 	"homeSectionRecentPostsDesc": "掲示板の最新投稿とコメントをまとめて確認できるよう準備中です。",
 	"homeSectionRecentUsersCount": "直近で参加したユーザー {count}人",
-	"sidebarDevHighlightAttachment": "8. 添付ファイルアップロード",
-	"sidebarDevHighlightPassword": "9. チャットパスワード機能",
-	"sidebarDevHighlightPostType": "10. Postタイプメッセージ"
+	"sidebarDevHighlightAttachment": "9. 添付ファイルアップロード",
+	"sidebarDevHighlightPassword": "10. チャットパスワード機能",
+	"sidebarDevHighlightPostType": "11. Postタイプメッセージ",
+	"sidebarDevHighlightWrapUp": "8. チャットルーム終了機能"
 }

@@ -1,16 +1,21 @@
 ---
 name: +page.svelte
-description: 내 프로필 수정 페이지
+description: +page 페이지
 version: 1.0.0
 type: svelte-component
 category: route-page
-tags: [svelte5, sveltekit]
+original_path: src/routes/my/profile/+page.svelte
 ---
 
 # +page.svelte
 
 ## 개요
-내 프로필 수정 페이지
+
+**파일 경로**: `src/routes/my/profile/+page.svelte`
+**파일 타입**: svelte-component
+**카테고리**: route-page
+
++page 페이지
 
 ## 소스 코드
 
@@ -584,18 +589,9 @@ tags: [svelte5, sveltekit]
 ```
 
 ## 주요 기능
-- 코드 분석 필요
 
-## Props/Parameters
-State variables: displayName, photoUrl, gender, birthYear, birthMonth, birthDay, loading, saving, successMessage, errorMessage, photoPreview, fileInput, isPhotoUploading
+(이 섹션은 수동으로 업데이트 필요)
 
-## 사용 예시
-```svelte
-<!-- 사용 예시는 필요에 따라 추가하세요 -->
-<+page />
-```
+## 관련 파일
 
----
-
-> 이 문서는 자동 생성되었습니다.
-> 수정이 필요한 경우 직접 편집하세요.
+(이 섹션은 수동으로 업데이트 필요)

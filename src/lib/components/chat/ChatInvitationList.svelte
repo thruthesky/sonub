@@ -17,6 +17,7 @@
 	import { acceptInvitation, rejectInvitation } from '$lib/functions/chat.functions';
 	import { rtdb } from '$lib/firebase';
 	import { m } from '$lib/paraglide/messages';
+	import { goto } from '$app/navigation';
 
 	type InvitationData = Record<string, unknown>;
 
@@ -32,6 +33,7 @@
 
 	/**
 	 * 초대 수락 핸들러
+	 * 초대를 수락한 후 해당 채팅방으로 자동 이동합니다.
 	 */
 	async function handleAccept(roomId: string) {
 		const uid = authStore.user?.uid;
@@ -43,6 +45,9 @@
 		try {
 			await acceptInvitation(rtdb, roomId, uid);
 			console.log('✅ 초대 수락 완료:', roomId);
+
+			// 채팅방으로 자동 이동
+			await goto(`/chat/room?roomId=${roomId}`);
 		} catch (error) {
 			console.error('초대 수락 실패:', error);
 		}

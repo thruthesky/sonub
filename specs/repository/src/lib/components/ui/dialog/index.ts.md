@@ -1,21 +1,40 @@
 ---
-name: index.ts (dialog)
-description: Dialog 컴포넌트 export
+name: index.ts
+description: index UI 컴포넌트
 version: 1.0.0
 type: typescript
 category: ui-component
-tags: [shadcn, dialog, export]
+original_path: src/lib/components/ui/dialog/index.ts
 ---
 
-# index.ts (dialog)
+# index.ts
 
 ## 개요
-Dialog 컴포넌트들을 export합니다.
 
-## Export
-- Dialog
-- DialogContent
-- DialogDescription
-- DialogFooter
-- DialogHeader
-- DialogTitle
+**파일 경로**: `src/lib/components/ui/dialog/index.ts`
+**파일 타입**: typescript
+**카테고리**: ui-component
+
+index UI 컴포넌트
+
+## 소스 코드
+
+```typescript
+import Dialog from './dialog.svelte';
+import DialogContent from './dialog-content.svelte';
+import DialogDescription from './dialog-description.svelte';
+import DialogFooter from './dialog-footer.svelte';
+import DialogHeader from './dialog-header.svelte';
+import DialogTitle from './dialog-title.svelte';
+
+export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle };
+
+```
+
+## 주요 기능
+
+(이 섹션은 수동으로 업데이트 필요)
+
+## 관련 파일
+
+(이 섹션은 수동으로 업데이트 필요)

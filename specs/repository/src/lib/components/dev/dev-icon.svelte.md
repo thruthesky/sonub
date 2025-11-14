@@ -1,16 +1,21 @@
 ---
 name: dev-icon.svelte
-description: 개발자용 FAB(Floating Action Button) 컴포넌트
+description: dev-icon 컴포넌트
 version: 1.0.0
 type: svelte-component
-category: feature-component
-tags: [svelte5, sveltekit]
+category: component
+original_path: src/lib/components/dev/dev-icon.svelte
 ---
 
 # dev-icon.svelte
 
 ## 개요
-개발자용 FAB(Floating Action Button) 컴포넌트
+
+**파일 경로**: `src/lib/components/dev/dev-icon.svelte`
+**파일 타입**: svelte-component
+**카테고리**: component
+
+dev-icon 컴포넌트
 
 ## 소스 코드
 
@@ -659,18 +664,9 @@ tags: [svelte5, sveltekit]
 ```
 
 ## 주요 기능
--  * 개발자용 FAB(Floating Action Button) 컴포넌트 * * 개발 및 테스트 환경에서 빠른 테스트 계정 로그인과 서버 정보 확인을 위한 도구입니다. *
 
-## Props/Parameters
-State variables: isMenuOpen, isServerInfoOpen, isLoading, currentUser
+(이 섹션은 수동으로 업데이트 필요)
 
-## 사용 예시
-```svelte
-<!-- 사용 예시는 필요에 따라 추가하세요 -->
-<dev-icon />
-```
+## 관련 파일
 
----
-
-> 이 문서는 자동 생성되었습니다.
-> 수정이 필요한 경우 직접 편집하세요.
+(이 섹션은 수동으로 업데이트 필요)

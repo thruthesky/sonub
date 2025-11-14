@@ -262,7 +262,8 @@
 	"homeSectionRecentPosts": "Latest Posts & Comments",
 	"homeSectionRecentPostsDesc": "A snapshot of the board’s newest posts and replies is coming here.",
 	"homeSectionRecentUsersCount": "{count} members just joined",
-	"sidebarDevHighlightAttachment": "8. File attachments",
-	"sidebarDevHighlightPassword": "9. Chat password protection",
-	"sidebarDevHighlightPostType": "10. Post-type messages"
+	"sidebarDevHighlightAttachment": "9. File attachments",
+	"sidebarDevHighlightPassword": "10. Chat password protection",
+	"sidebarDevHighlightPostType": "11. Post-type messages",
+	"sidebarDevHighlightWrapUp": "8. Chat room wrap-up"
 }

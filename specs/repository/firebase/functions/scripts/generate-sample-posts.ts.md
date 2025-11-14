@@ -1,16 +1,21 @@
 ---
 name: generate-sample-posts.ts
-description: Firebase Realtime Database에 샘플 게시글을 생성하는 스크립트
+description: generate-sample-posts Cloud Function
 version: 1.0.0
 type: firebase-function
-category: script
-tags: [firebase, cloud-functions, typescript, script, sample-data, rtdb]
+category: cloud-function
+original_path: firebase/functions/scripts/generate-sample-posts.ts
 ---
 
 # generate-sample-posts.ts
 
 ## 개요
-이 파일은 Firebase Realtime Database에 community 카테고리의 샘플 게시글 100개를 생성하는 스크립트입니다. 테스트 및 개발 환경에서 데이터를 빠르게 생성하기 위해 사용됩니다.
+
+**파일 경로**: `firebase/functions/scripts/generate-sample-posts.ts`
+**파일 타입**: firebase-function
+**카테고리**: cloud-function
+
+generate-sample-posts Cloud Function
 
 ## 소스 코드
 
@@ -331,39 +336,13 @@ async function main() {
 
 // 스크립트 실행 시작
 main();
+
 ```
 
 ## 주요 기능
-- **Firebase Admin 초기화**: 자격증명 방식 선택 및 RTDB 연결
-- **샘플 데이터 생성 함수**:
-  - `generateTestUserId`: 테스트 사용자 UID 생성 (5명 순환)
-  - `generatePostTitle`: 게시글 제목 생성 (10종류)
-  - `generatePostContent`: 게시글 내용 생성 (5종류)
-  - `generateAuthorName`: 작성자 이름 생성 (5명)
-  - `generatePost`: 단일 게시글 데이터 객체 생성
-- **데이터베이스 쓰기 함수**:
-  - `generateSamplePosts`: 100개의 샘플 글을 배치로 생성
-  - 배치 크기: 10개씩 처리
-  - 진행 상황 및 결과 출력
-  - 에러 처리 및 로깅
-- **메인 실행 함수**:
-  - `main`: 스크립트 실행 및 종료 처리
 
-## 사용되는 Firebase 트리거
-- 이 파일은 트리거 함수가 아님
-- 직접 실행하는 스크립트
+(이 섹션은 수동으로 업데이트 필요)
 
-## 실행 방법
-```bash
-# 방법 1: ts-node로 직접 실행
-cd firebase/functions
-npx ts-node scripts/generate-sample-posts.ts
+## 관련 파일
 
-# 방법 2: 빌드 후 실행
-npm run build
-node lib/scripts/generate-sample-posts.js
-```
-
-## 관련 함수
-- Firebase Realtime Database의 `/posts` 노드에 데이터 생성
-- `types/index.ts`: PostData 타입 참조
+(이 섹션은 수동으로 업데이트 필요)

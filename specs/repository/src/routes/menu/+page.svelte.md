@@ -1,16 +1,21 @@
 ---
 name: +page.svelte
-description: 메뉴 페이지
+description: +page 페이지
 version: 1.0.0
 type: svelte-component
 category: route-page
-tags: [svelte5, sveltekit]
+original_path: src/routes/menu/+page.svelte
 ---
 
 # +page.svelte
 
 ## 개요
-메뉴 페이지
+
+**파일 경로**: `src/routes/menu/+page.svelte`
+**파일 타입**: svelte-component
+**카테고리**: route-page
+
++page 페이지
 
 ## 소스 코드
 
@@ -154,6 +159,32 @@ tags: [svelte5, sveltekit]
 						<span class="font-medium">{m.menuEditProfile()}</span>
 					</Button>
 
+					<!-- 개발 계획 -->
+					<Button
+						variant="ghost"
+						class="w-full justify-start text-left text-gray-700 hover:bg-gray-50 hover:text-gray-700 border border-transparent hover:border-gray-200 rounded-lg py-3 transition-all duration-200"
+						href="/dev/plan"
+					>
+						<div
+							class="mr-3 p-2 bg-gray-100 rounded-lg group-hover:bg-gray-200 transition-colors"
+						>
+							<svg
+								class="h-5 w-5 text-gray-600"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+								/>
+							</svg>
+						</div>
+						<span class="font-medium">개발 계획</span>
+					</Button>
+
 					<!-- 관리자 페이지 (관리자만) -->
 					{#if authStore.isAdmin}
 						<Button
@@ -281,18 +312,9 @@ tags: [svelte5, sveltekit]
 ```
 
 ## 주요 기능
-- 코드 분석 필요
 
-## Props/Parameters
-State variables: isSigningOut
+(이 섹션은 수동으로 업데이트 필요)
 
-## 사용 예시
-```svelte
-<!-- 사용 예시는 필요에 따라 추가하세요 -->
-<+page />
-```
+## 관련 파일
 
----
-
-> 이 문서는 자동 생성되었습니다.
-> 수정이 필요한 경우 직접 편집하세요.
+(이 섹션은 수동으로 업데이트 필요)

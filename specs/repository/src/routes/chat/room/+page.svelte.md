@@ -1,16 +1,21 @@
 ---
 name: +page.svelte
-description: 채팅방 페이지
+description: +page 페이지
 version: 1.0.0
 type: svelte-component
 category: route-page
-tags: [svelte5, sveltekit, realtime, firebase]
+original_path: src/routes/chat/room/+page.svelte
 ---
 
 # +page.svelte
 
 ## 개요
-채팅방 페이지
+
+**파일 경로**: `src/routes/chat/room/+page.svelte`
+**파일 타입**: svelte-component
+**카테고리**: route-page
+
++page 페이지
 
 ## 소스 코드
 
@@ -31,13 +36,22 @@ tags: [svelte5, sveltekit, realtime, firebase]
 	import { userProfileStore } from '$lib/stores/user-profile.svelte';
 	import { pushData } from '$lib/stores/database.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { buildSingleRoomId, enterSingleChatRoom, joinChatRoom, leaveChatRoom } from '$lib/functions/chat.functions';
+	import {
+		buildSingleRoomId,
+		enterSingleChatRoom,
+		joinChatRoom,
+		leaveChatRoom,
+		togglePinChatRoom,
+		inviteUserToChatRoom
+	} from '$lib/functions/chat.functions';
 	import { formatLongDate } from '$lib/functions/date.functions';
 	import { tick } from 'svelte';
 	import { rtdb } from '$lib/firebase';
-	import { ref, update } from 'firebase/database';
+	import { ref, update, onValue, set, remove, get } from 'firebase/database';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { Button } from '$lib/components/ui/button';
+	import ChatFavoritesDialog from '$lib/components/chat/ChatFavoritesDialog.svelte';
+	import UserSearchDialog from '$lib/components/user/UserSearchDialog.svelte';
 
 	// GET 파라미터 추출
 	const uidParam = $derived.by(() => $page.url.searchParams.get('uid') ?? '');
@@ -98,6 +112,110 @@ tags: [svelte5, sveltekit, realtime, firebase]
 	let composerText = $state('');
 	let isSending = $state(false);
 	let sendError = $state<string | null>(null);
+
+	// ChatFavoritesDialog 상태
+	let favoritesDialogOpen = $state(false);
+
+	// UserSearchDialog 상태 (친구 초대용)
+	let inviteDialogOpen = $state(false);
+
+	// 핀 상태 관리
+	let isPinned = $state(false);
+	let currentRoomType = $derived.by(() => {
+		if (isSingleChat) return 'single';
+		// 그룹/오픈 채팅 구분은 roomId로는 불가능하므로 기본값 사용
+		// TODO: 채팅방 정보에서 타입 가져오기
+		return 'group';
+	});
+
+	// 채팅방 핀 상태 구독
+	$effect(() => {
+		if (!activeRoomId || !authStore.user?.uid || !rtdb) {
+			isPinned = false;
+			return;
+		}
+
+		const pinRef = ref(rtdb, `chat-joins/${authStore.user.uid}/${activeRoomId}/pin`);
+		const unsubscribe = onValue(pinRef, (snapshot) => {
+			if (!snapshot.exists()) {
+				isPinned = false;
+				return;
+			}
+
+			const pinValue = snapshot.val();
+			if (pinValue === true) {
+				isPinned = true;
+			} else {
+				isPinned = false;
+			}
+		});
+
+		return () => {
+			unsubscribe();
+		};
+	});
+
+	// 채팅방 알림 구독 상태 관리
+	let isNotificationSubscribed = $state(true); // 기본값: 구독 중
+	let subscriptionLoading = $state(false);
+
+	/**
+	 * 채팅방 알림 구독 상태 로드
+	 *
+	 * 1:1 채팅방: /chat-joins/{uid}/{roomId}/fcm-subscription 확인
+	 * - 필드 없음 → 구독 중 (true)
+	 * - false → 구독 해제
+	 *
+	 * 그룹/오픈 채팅방: /chat-rooms/{roomId}/members/{uid} 확인
+	 * - true → 구독 중
+	 * - false → 구독 해제
+	 * - 필드 없음 → 구독 중 (기본값)
+	 */
+	$effect(() => {
+		if (!activeRoomId || !authStore.user?.uid || !rtdb) {
+			isNotificationSubscribed = true; // 기본값
+			return;
+		}
+
+		let unsubscribe: (() => void) | undefined;
+
+		if (isSingleChat) {
+			// 1:1 채팅방: fcm-subscription 필드 구독
+			const subscriptionRef = ref(
+				rtdb,
+				`chat-joins/${authStore.user.uid}/${activeRoomId}/fcm-subscription`
+			);
+
+			unsubscribe = onValue(subscriptionRef, (snapshot) => {
+				if (!snapshot.exists()) {
+					isNotificationSubscribed = true; // 기본값: 구독 중
+					return;
+				}
+
+				const value = snapshot.val();
+				isNotificationSubscribed = value !== false;
+			});
+		} else {
+			// 그룹/오픈 채팅방: members 필드 구독
+			const memberRef = ref(rtdb, `chat-rooms/${activeRoomId}/members/${authStore.user.uid}`);
+
+			unsubscribe = onValue(memberRef, (snapshot) => {
+				if (!snapshot.exists()) {
+					isNotificationSubscribed = true; // 기본값: 구독 중
+					return;
+				}
+
+				const value = snapshot.val();
+				isNotificationSubscribed = value === true;
+			});
+		}
+
+		return () => {
+			if (unsubscribe) {
+				unsubscribe();
+			}
+		};
+	});
 
 	// 채팅 입력 창(input) 직접 참조
 	let composerInputRef: HTMLInputElement | null = $state(null);
@@ -188,16 +306,10 @@ tags: [svelte5, sveltekit, realtime, firebase]
 		void goto('/chat/list');
 	}
 
-	// 북마크 추가/제거
+	// 즐겨찾기 추가/제거
+	// 즐겨찾기 다이얼로그를 열어서 현재 채팅방이 포함된 폴더를 강조 표시합니다.
 	function handleBookmark() {
-		console.log('북마크 클릭');
-		// TODO: 북마크 기능 구현
-	}
-
-	// 핀: 상단고정
-	function handlePin() {
-		console.log('핀: 상단고정 클릭');
-		// TODO: 핀 기능 구현
+		favoritesDialogOpen = true;
 	}
 
 	// URL 복사
@@ -216,6 +328,13 @@ tags: [svelte5, sveltekit, realtime, firebase]
 	function handleMemberList() {
 		console.log('멤버 목록 클릭');
 		// TODO: 멤버 목록 다이얼로그 표시
+	}
+
+	// 즐겨찾기에서 채팅방 선택 핸들러
+	// 선택된 채팅방으로 이동합니다.
+	function handleRoomSelected(event: CustomEvent<{ roomId: string }>) {
+		const { roomId } = event.detail;
+		void goto(`/chat/room?roomId=${roomId}`);
 	}
 
 	// 방 탈퇴하기
@@ -238,6 +357,116 @@ tags: [svelte5, sveltekit, realtime, firebase]
 	function handleReportAndLeave() {
 		console.log('신고하고 탈퇴하기 클릭');
 		// TODO: 신고 다이얼로그 표시 후 탈퇴
+	}
+
+	/**
+	 * 친구 초대 메뉴 클릭 핸들러
+	 * UserSearchDialog를 열어서 초대할 친구를 검색합니다.
+	 */
+	function handleInviteFriend() {
+		inviteDialogOpen = true;
+	}
+
+	/**
+	 * 사용자 선택 핸들러 (초대 실행)
+	 * UserSearchDialog에서 사용자를 선택하면 채팅방에 초대합니다.
+	 */
+	async function handleUserSelect(event: CustomEvent<{ user: any; uid: string }>) {
+		const { uid } = event.detail;
+
+		if (!activeRoomId || !authStore.user?.uid || !rtdb) {
+			console.error('채팅방 또는 사용자 정보 없음');
+			return;
+		}
+
+		try {
+			await inviteUserToChatRoom(rtdb, activeRoomId, uid, authStore.user.uid);
+			console.log('✅ 초대 성공:', uid);
+			alert(m.chatInvitationSent());
+		} catch (error) {
+			console.error('❌ 초대 실패:', error);
+			alert('초대를 보내지 못했습니다.');
+		}
+	}
+
+	/**
+	 * 채팅방 핀 토글 핸들러
+	 * 채팅방을 핀하거나 핀 해제합니다
+	 */
+	async function handleTogglePin() {
+		if (!activeRoomId || !authStore.user?.uid || !rtdb) {
+			console.error('채팅방 또는 사용자 정보 없음');
+			return;
+		}
+
+		try {
+			const newPinState = await togglePinChatRoom(
+				rtdb,
+				activeRoomId,
+				authStore.user.uid,
+				currentRoomType
+			);
+			console.log(`✅ 채팅방 핀 ${newPinState ? '설정' : '해제'} 완료:`, activeRoomId);
+		} catch (error) {
+			console.error('채팅방 핀 토글 실패:', error);
+			alert('핀 기능을 사용할 수 없습니다. 채팅방에 참여한 후 시도해주세요.');
+		}
+	}
+
+	/**
+	 * 채팅방 알림 구독 토글 핸들러
+	 *
+	 * 1:1 채팅방:
+	 * - 구독 → 구독 해제: fcm-subscription: false 저장
+	 * - 구독 해제 → 구독: fcm-subscription 필드 삭제
+	 *
+	 * 그룹/오픈 채팅방:
+	 * - 구독 → 구독 해제: members/{uid}: false 저장
+	 * - 구독 해제 → 구독: members/{uid}: true 저장
+	 */
+	async function handleToggleNotificationSubscription() {
+		if (!activeRoomId || !authStore.user?.uid || !rtdb || subscriptionLoading) {
+			console.error('채팅방 또는 사용자 정보 없음');
+			return;
+		}
+
+		subscriptionLoading = true;
+		const newStatus = !isNotificationSubscribed;
+
+		try {
+			if (isSingleChat) {
+				// 1:1 채팅방
+				const subscriptionRef = ref(
+					rtdb,
+					`chat-joins/${authStore.user.uid}/${activeRoomId}/fcm-subscription`
+				);
+
+				if (newStatus) {
+					// 구독: 필드 삭제
+					await remove(subscriptionRef);
+					console.log(`📢 1:1 채팅방 알림 구독 완료: ${activeRoomId}`);
+				} else {
+					// 구독 해제: false 저장
+					await set(subscriptionRef, false);
+					console.log(`🔕 1:1 채팅방 알림 구독 해제: ${activeRoomId}`);
+				}
+			} else {
+				// 그룹/오픈 채팅방
+				const memberRef = ref(rtdb, `chat-rooms/${activeRoomId}/members/${authStore.user.uid}`);
+				await set(memberRef, newStatus);
+				console.log(
+					`${newStatus ? '📢' : '🔕'} 그룹 채팅방 알림 ${newStatus ? '구독' : '구독 해제'}: ${activeRoomId}`
+				);
+			}
+
+			// 로컬 상태 업데이트 (onValue 리스너가 자동으로 업데이트하지만 즉각적인 UI 반영을 위해)
+			isNotificationSubscribed = newStatus;
+		} catch (error) {
+			console.error('알림 구독 상태 변경 실패:', error);
+			alert('알림 설정을 변경할 수 없습니다. 잠시 후 다시 시도해주세요.');
+		} finally {
+			subscriptionLoading = false;
+		}
 	}
 
 	/**
@@ -354,6 +583,47 @@ tags: [svelte5, sveltekit, realtime, firebase]
 			{/if}
 		</div>
 
+		<!-- 핀 버튼 -->
+		<Button
+			variant="ghost"
+			size="icon"
+			onclick={handleTogglePin}
+			class="shrink-0"
+			title={isPinned ? '핀 해제' : '핀 설정'}
+		>
+			<span class="text-xl">{isPinned ? '📌' : '📍'}</span>
+		</Button>
+
+		<!-- 알림 구독 버튼 -->
+		<Button
+			variant="ghost"
+			size="icon"
+			onclick={handleToggleNotificationSubscription}
+			disabled={subscriptionLoading}
+			class="shrink-0"
+			title={isNotificationSubscribed ? '알림 구독 해제' : '알림 구독'}
+		>
+			{#if isNotificationSubscribed}
+				<!-- 구독 중: 진한 벨 아이콘 (실선) -->
+				<svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+					<path
+						d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"
+					/>
+				</svg>
+			{:else}
+				<!-- 구독 해제: 연한 벨 아이콘 + 슬래시 -->
+				<svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+					/>
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6" />
+				</svg>
+			{/if}
+		</Button>
+
 		<!-- 메뉴 드롭다운 -->
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger>
@@ -364,17 +634,21 @@ tags: [svelte5, sveltekit, realtime, firebase]
 			<DropdownMenu.Content align="end" class="w-56">
 				<DropdownMenu.Item onclick={handleBookmark} class="bg-pink-50 hover:bg-pink-100">
 					<span class="mr-2">🔖</span>
-					북마크
-				</DropdownMenu.Item>
-				<DropdownMenu.Item onclick={handlePin} class="bg-red-50 hover:bg-red-100">
-					<span class="mr-2">📌</span>
-					핀: 상단고정
+					{m.chatTabBookmarks()}
 				</DropdownMenu.Item>
 				<DropdownMenu.Item onclick={handleCopyUrl} class="bg-gray-50 hover:bg-gray-100">
 					<span class="mr-2">🔗</span>
 					URL 복사
 				</DropdownMenu.Item>
 				<DropdownMenu.Separator />
+				{#if !isSingleChat}
+					<!-- 그룹/오픈 채팅방에서만 친구 초대 기능 표시 -->
+					<DropdownMenu.Item onclick={handleInviteFriend} class="bg-green-50 hover:bg-green-100">
+						<span class="mr-2">👤</span>
+						{m.chatInviteFriend()}
+					</DropdownMenu.Item>
+					<DropdownMenu.Separator />
+				{/if}
 				<DropdownMenu.Item onclick={handleMemberList} class="bg-blue-50 hover:bg-blue-100">
 					<span class="mr-2">👥</span>
 					멤버 목록
@@ -523,6 +797,23 @@ tags: [svelte5, sveltekit, realtime, firebase]
 	{/if}
 </div>
 
+<!-- 즐겨찾기 다이얼로그 -->
+<ChatFavoritesDialog
+	bind:open={favoritesDialogOpen}
+	currentRoomId={activeRoomId}
+	on:roomSelected={handleRoomSelected}
+/>
+
+<!-- 친구 초대 다이얼로그 -->
+<UserSearchDialog
+	bind:open={inviteDialogOpen}
+	title={m.chatInviteFriend()}
+	description={m.chatInviteToRoom()}
+	submitLabel={m.chatInviteFriend()}
+	showResults={true}
+	on:userSelect={handleUserSelect}
+/>
+
 <style>
 	@import 'tailwindcss' reference;
 
@@ -648,18 +939,9 @@ tags: [svelte5, sveltekit, realtime, firebase]
 ```
 
 ## 주요 기능
-- 코드 분석 필요
 
-## Props/Parameters
-State variables: composerText, isSending, sendError
+(이 섹션은 수동으로 업데이트 필요)
 
-## 사용 예시
-```svelte
-<!-- 사용 예시는 필요에 따라 추가하세요 -->
-<+page />
-```
+## 관련 파일
 
----
-
-> 이 문서는 자동 생성되었습니다.
-> 수정이 필요한 경우 직접 편집하세요.
+(이 섹션은 수동으로 업데이트 필요)

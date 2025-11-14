@@ -772,219 +772,121 @@ This document provides a detailed index of all specifications related to the son
 
 ## Complete Source Code Specs
 
-이 섹션에는 Sonub 프로젝트의 모든 소스 코드를 SED 스펙 형식으로 변환한 문서들이 포함되어 있습니다.
-각 스펙 문서는 원본 소스 코드의 전체 내용을 포함하고 있어, 스펙만으로도 프로젝트를 완전히 재현할 수 있습니다.
+이 섹션에는 Sonub 프로젝트의 **모든 소스 코드**를 SED 스펙 형식으로 변환한 문서들이 포함되어 있습니다.
+각 스펙 문서는 원본 소스 코드의 전체 내용을 포함하고 있어, **스펙만으로도 프로젝트를 완전히 재현**할 수 있습니다.
 
-**총 127개의 소스 코드 스펙 문서**
+### 📊 통계
 
-모든 스펙 문서는 `./specs/repository/` 디렉토리에 원본 파일 구조를 그대로 유지하여 저장되어 있습니다.
+- **총 스펙 문서**: 460개
+- **마지막 업데이트**: 2025-11-14
+- **경로**: `./specs/repository/`
+- **인코딩**: UTF-8 (BOM 제외)
+- **언어**: 한국어 (주석 및 설명)
 
-### 1. Svelte 컴포넌트 (71개)
+### 📁 디렉토리 구조
 
-#### 라우트 페이지 (23개)
-- [src/routes/+page.svelte.md](./repository/src/routes/+page.svelte.md) - 홈페이지
-- [src/routes/+layout.svelte.md](./repository/src/routes/+layout.svelte.md) - 루트 레이아웃 (3컬럼 구조)
-- [src/routes/menu/+page.svelte.md](./repository/src/routes/menu/+page.svelte.md) - 메뉴 페이지
-- [src/routes/stats/+page.svelte.md](./repository/src/routes/stats/+page.svelte.md) - 통계 페이지
-- [src/routes/admin/+layout.svelte.md](./repository/src/routes/admin/+layout.svelte.md) - 관리자 레이아웃
-- [src/routes/admin/dashboard/+page.svelte.md](./repository/src/routes/admin/dashboard/+page.svelte.md) - 관리자 대시보드
-- [src/routes/admin/reports/+page.svelte.md](./repository/src/routes/admin/reports/+page.svelte.md) - 관리자 신고 관리
-- [src/routes/admin/users/+page.svelte.md](./repository/src/routes/admin/users/+page.svelte.md) - 테스트 사용자 관리
-- [src/routes/admin/test/+page.svelte.md](./repository/src/routes/admin/test/+page.svelte.md) - 관리자 테스트 페이지
-- [src/routes/admin/test/create-test-data/+page.svelte.md](./repository/src/routes/admin/test/create-test-data/+page.svelte.md) - 테스트 데이터 생성
-- [src/routes/chat/room/+page.svelte.md](./repository/src/routes/chat/room/+page.svelte.md) - 채팅방 페이지
-- [src/routes/chat/list/+page.svelte.md](./repository/src/routes/chat/list/+page.svelte.md) - 채팅 목록
-- [src/routes/chat/group-chat-list/+page.svelte.md](./repository/src/routes/chat/group-chat-list/+page.svelte.md) - 그룹 채팅 목록
-- [src/routes/chat/open-chat-list/+page.svelte.md](./repository/src/routes/chat/open-chat-list/+page.svelte.md) - 오픈 채팅 목록
-- [src/routes/user/login/+page.svelte.md](./repository/src/routes/user/login/+page.svelte.md) - 로그인 페이지
-- [src/routes/user/list/+page.svelte.md](./repository/src/routes/user/list/+page.svelte.md) - 사용자 목록
-- [src/routes/my/+layout.svelte.md](./repository/src/routes/my/+layout.svelte.md) - 내 정보 레이아웃
-- [src/routes/my/profile/+page.svelte.md](./repository/src/routes/my/profile/+page.svelte.md) - 내 프로필 수정
-- [src/routes/my/reports/+page.svelte.md](./repository/src/routes/my/reports/+page.svelte.md) - 내 신고 목록
-- [src/routes/post/list/+page.svelte.md](./repository/src/routes/post/list/+page.svelte.md) - 게시글 목록
-- [src/routes/demo/+page.svelte.md](./repository/src/routes/demo/+page.svelte.md) - 데모 페이지
-- [src/routes/demo/paraglide/+page.svelte.md](./repository/src/routes/demo/paraglide/+page.svelte.md) - Paraglide i18n 데모
-- [src/routes/dev/test/database-list-view/+page.svelte.md](./repository/src/routes/dev/test/database-list-view/+page.svelte.md) - DatabaseListView 테스트
+모든 스펙 문서는 `./specs/repository/` 디렉토리에 **원본 파일 구조를 그대로 유지**하여 저장되어 있습니다.
 
-#### UI 컴포넌트 (30개)
+```
+specs/repository/
+├── src/                          # SvelteKit 소스 코드 (140+ 파일)
+│   ├── routes/                   # 라우트 페이지 (30+ 파일)
+│   ├── lib/
+│   │   ├── components/           # UI 컴포넌트 (70+ 파일)
+│   │   ├── stores/               # Svelte 스토어 (3개)
+│   │   ├── functions/            # 순수 함수 (2개)
+│   │   ├── utils/                # 유틸리티 (4개)
+│   │   └── paraglide/            # 다국어 메시지 (200+ 파일)
+│   ├── app.css                   # 메인 CSS
+│   ├── app.html                  # HTML 템플릿
+│   └── hooks.server.ts           # 서버 훅
+├── firebase/                     # Firebase 설정 및 Functions (50+ 파일)
+│   ├── functions/
+│   │   ├── src/                  # Cloud Functions 소스
+│   │   ├── test/                 # 테스트 파일
+│   │   └── lib/                  # 빌드 산출물
+│   ├── firebase.json             # Firebase 설정
+│   └── database.rules.json       # 보안 규칙
+├── shared/                       # Shared 순수 함수 (2개)
+├── messages/                     # 다국어 원본 메시지 (4개)
+├── e2e/                          # E2E 테스트 (1개)
+└── [설정 파일들]                 # 루트 설정 파일들 (10+ 개)
+```
 
-**Button 컴포넌트**
-- [src/lib/components/ui/button/button.svelte.md](./repository/src/lib/components/ui/button/button.svelte.md) - 버튼 컴포넌트
-- [src/lib/components/ui/button/index.ts.md](./repository/src/lib/components/ui/button/index.ts.md) - 버튼 인덱스
+### 📚 주요 카테고리
 
-**Card 컴포넌트**
-- [src/lib/components/ui/card/card.svelte.md](./repository/src/lib/components/ui/card/card.svelte.md) - 카드 컴포넌트
-- [src/lib/components/ui/card/card-header.svelte.md](./repository/src/lib/components/ui/card/card-header.svelte.md) - 카드 헤더
-- [src/lib/components/ui/card/card-title.svelte.md](./repository/src/lib/components/ui/card/card-title.svelte.md) - 카드 제목
-- [src/lib/components/ui/card/card-description.svelte.md](./repository/src/lib/components/ui/card/card-description.svelte.md) - 카드 설명
-- [src/lib/components/ui/card/card-content.svelte.md](./repository/src/lib/components/ui/card/card-content.svelte.md) - 카드 콘텐츠
-- [src/lib/components/ui/card/card-footer.svelte.md](./repository/src/lib/components/ui/card/card-footer.svelte.md) - 카드 푸터
-- [src/lib/components/ui/card/index.ts.md](./repository/src/lib/components/ui/card/index.ts.md) - 카드 인덱스
+#### 1. Svelte 컴포넌트
+- **라우트 페이지**: `src/routes/**/*.svelte.md` (30+ 파일)
+  - 홈, 로그인, 프로필, 채팅, 관리자 등
+- **UI 컴포넌트**: `src/lib/components/ui/**/*.svelte.md` (45+ 파일)
+  - Button, Card, Dialog, Dropdown Menu, Alert 등
+- **레이아웃**: `src/lib/components/*.svelte.md` (3개)
+  - Top Bar, Left Sidebar, Right Sidebar
+- **기능 컴포넌트**: `src/lib/components/**/*.svelte.md` (10+ 파일)
+  - DatabaseListView, ChatCreateDialog, UserSearchDialog 등
 
-**Dialog 컴포넌트**
-- [src/lib/components/ui/dialog/dialog.svelte.md](./repository/src/lib/components/ui/dialog/dialog.svelte.md) - 다이얼로그 컴포넌트
-- [src/lib/components/ui/dialog/dialog-content.svelte.md](./repository/src/lib/components/ui/dialog/dialog-content.svelte.md) - 다이얼로그 콘텐츠
-- [src/lib/components/ui/dialog/dialog-header.svelte.md](./repository/src/lib/components/ui/dialog/dialog-header.svelte.md) - 다이얼로그 헤더
-- [src/lib/components/ui/dialog/dialog-title.svelte.md](./repository/src/lib/components/ui/dialog/dialog-title.svelte.md) - 다이얼로그 제목
-- [src/lib/components/ui/dialog/dialog-description.svelte.md](./repository/src/lib/components/ui/dialog/dialog-description.svelte.md) - 다이얼로그 설명
-- [src/lib/components/ui/dialog/dialog-footer.svelte.md](./repository/src/lib/components/ui/dialog/dialog-footer.svelte.md) - 다이얼로그 푸터
-- [src/lib/components/ui/dialog/context.ts.md](./repository/src/lib/components/ui/dialog/context.ts.md) - 다이얼로그 컨텍스트
-- [src/lib/components/ui/dialog/index.ts.md](./repository/src/lib/components/ui/dialog/index.ts.md) - 다이얼로그 인덱스
+#### 2. Firebase Cloud Functions
+- **핸들러**: `firebase/functions/src/handlers/*.ts.md` (2개)
+- **유틸리티**: `firebase/functions/src/utils/*.ts.md` (5개)
+- **타입 정의**: `firebase/functions/src/types/*.ts.md` (1개)
+- **테스트**: `firebase/functions/test/**/*.ts.md` (6개)
 
-**Dropdown Menu 컴포넌트 (15개)**
-- [src/lib/components/ui/dropdown-menu/dropdown-menu-trigger.svelte.md](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-trigger.svelte.md)
-- [src/lib/components/ui/dropdown-menu/dropdown-menu-content.svelte.md](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-content.svelte.md)
-- [src/lib/components/ui/dropdown-menu/dropdown-menu-item.svelte.md](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-item.svelte.md)
-- [src/lib/components/ui/dropdown-menu/dropdown-menu-label.svelte.md](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-label.svelte.md)
-- [src/lib/components/ui/dropdown-menu/dropdown-menu-separator.svelte.md](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-separator.svelte.md)
-- [src/lib/components/ui/dropdown-menu/dropdown-menu-shortcut.svelte.md](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-shortcut.svelte.md)
-- [src/lib/components/ui/dropdown-menu/dropdown-menu-group.svelte.md](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-group.svelte.md)
-- [src/lib/components/ui/dropdown-menu/dropdown-menu-group-heading.svelte.md](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-group-heading.svelte.md)
-- [src/lib/components/ui/dropdown-menu/dropdown-menu-checkbox-item.svelte.md](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-checkbox-item.svelte.md)
-- [src/lib/components/ui/dropdown-menu/dropdown-menu-checkbox-group.svelte.md](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-checkbox-group.svelte.md)
-- [src/lib/components/ui/dropdown-menu/dropdown-menu-radio-item.svelte.md](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-radio-item.svelte.md)
-- [src/lib/components/ui/dropdown-menu/dropdown-menu-radio-group.svelte.md](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-radio-group.svelte.md)
-- [src/lib/components/ui/dropdown-menu/dropdown-menu-sub-trigger.svelte.md](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-sub-trigger.svelte.md)
-- [src/lib/components/ui/dropdown-menu/dropdown-menu-sub-content.svelte.md](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-sub-content.svelte.md)
-- [src/lib/components/ui/dropdown-menu/index.ts.md](./repository/src/lib/components/ui/dropdown-menu/index.ts.md)
+#### 3. 설정 파일
+- **루트 설정**: `package.json.md`, `tsconfig.json.md`, `vite.config.ts.md` 등 (7개)
+- **Firebase 설정**: `firebase/*.json.md` (3개)
+- **Functions 설정**: `firebase/functions/*.json.md` (4개)
 
-**Alert 컴포넌트**
-- [src/lib/components/ui/alert/alert.svelte.md](./repository/src/lib/components/ui/alert/alert.svelte.md) - 알림 컴포넌트
-- [src/lib/components/ui/alert/alert-title.svelte.md](./repository/src/lib/components/ui/alert/alert-title.svelte.md) - 알림 제목
-- [src/lib/components/ui/alert/alert-description.svelte.md](./repository/src/lib/components/ui/alert/alert-description.svelte.md) - 알림 설명
-- [src/lib/components/ui/alert/index.ts.md](./repository/src/lib/components/ui/alert/index.ts.md) - 알림 인덱스
+#### 4. 다국어 및 i18n
+- **원본 메시지**: `messages/*.json.md` (4개: ko, en, ja, zh)
+- **생성된 메시지**: `src/lib/paraglide/messages/*.js.md` (200+ 파일)
 
-#### 레이아웃 컴포넌트 (3개)
-- [src/lib/components/top-bar.svelte.md](./repository/src/lib/components/top-bar.svelte.md) - 탑바 컴포넌트
-- [src/lib/components/left-sidebar.svelte.md](./repository/src/lib/components/left-sidebar.svelte.md) - 좌측 사이드바
-- [src/lib/components/right-sidebar.svelte.md](./repository/src/lib/components/right-sidebar.svelte.md) - 우측 사이드바
+#### 5. 순수 함수 및 유틸리티
+- **Shared 함수**: `shared/*.ts.md` (2개)
+- **라이브러리 함수**: `src/lib/functions/*.ts.md` (2개)
+- **유틸리티**: `src/lib/utils/*.ts.md` (4개)
 
-#### 기능 컴포넌트 (9개)
-- [src/lib/components/DatabaseListView.svelte.md](./repository/src/lib/components/DatabaseListView.svelte.md) - 무한 스크롤 리스트뷰
-- [src/lib/components/admin-menu.svelte.md](./repository/src/lib/components/admin-menu.svelte.md) - 관리자 메뉴
-- [src/lib/components/user-login.svelte.md](./repository/src/lib/components/user-login.svelte.md) - 사용자 로그인
-- [src/lib/components/under-construction.svelte.md](./repository/src/lib/components/under-construction.svelte.md) - 공사중 표시
-- [src/lib/components/chat/ChatListMenu.svelte.md](./repository/src/lib/components/chat/ChatListMenu.svelte.md) - 채팅 목록 메뉴
-- [src/lib/components/chat/ChatCreateDialog.svelte.md](./repository/src/lib/components/chat/ChatCreateDialog.svelte.md) - 채팅 생성 다이얼로그
-- [src/lib/components/user/avatar.svelte.md](./repository/src/lib/components/user/avatar.svelte.md) - 사용자 아바타
-- [src/lib/components/user/UserSearchDialog.svelte.md](./repository/src/lib/components/user/UserSearchDialog.svelte.md) - 사용자 검색 다이얼로그
-- [src/lib/components/dev/dev-icon.svelte.md](./repository/src/lib/components/dev/dev-icon.svelte.md) - 개발자 아이콘
+#### 6. 스토어
+- **Svelte 스토어**: `src/lib/stores/*.svelte.ts.md` (3개)
+  - auth.svelte.ts, database.svelte.ts, user-profile.svelte.ts
 
-#### Storybook (6개)
-- [src/stories/Button.svelte.md](./repository/src/stories/Button.svelte.md) - Storybook 버튼 컴포넌트
-- [src/stories/Button.stories.svelte.md](./repository/src/stories/Button.stories.svelte.md) - 버튼 스토리
-- [src/stories/Header.svelte.md](./repository/src/stories/Header.svelte.md) - Storybook 헤더 컴포넌트
-- [src/stories/Header.stories.svelte.md](./repository/src/stories/Header.stories.svelte.md) - 헤더 스토리
-- [src/stories/Page.svelte.md](./repository/src/stories/Page.svelte.md) - Storybook 페이지 컴포넌트
-- [src/stories/Page.stories.svelte.md](./repository/src/stories/Page.stories.svelte.md) - 페이지 스토리
+#### 7. 테스트
+- **E2E 테스트**: `e2e/*.test.ts.md` (1개)
+- **유닛 테스트**: `src/**/*.spec.ts.md` (2개)
+- **Functions 테스트**: `firebase/functions/test/**/*.test.ts.md` (6개)
 
-### 2. Firebase Cloud Functions (10개)
+### 🔍 스펙 문서 찾기
 
-#### 메인 진입점
-- [firebase/functions/src/index.ts.md](./repository/firebase/functions/src/index.ts.md) - Cloud Functions 메인 진입점
+#### 방법 1: 직접 경로 접근
+원본 파일 경로에 `.md`를 추가하여 스펙 문서를 찾을 수 있습니다.
 
-#### 핸들러
-- [firebase/functions/src/handlers/user.handler.ts.md](./repository/firebase/functions/src/handlers/user.handler.ts.md) - 사용자 프로필 동기화
-- [firebase/functions/src/handlers/chat.handler.ts.md](./repository/firebase/functions/src/handlers/chat.handler.ts.md) - 채팅 메시지 관리
+**예시:**
+- 원본: `src/lib/components/ui/button/button.svelte`
+- 스펙: `specs/repository/src/lib/components/ui/button/button.svelte.md`
 
-#### 유틸리티
-- [firebase/functions/src/utils/post.utils.ts.md](./repository/firebase/functions/src/utils/post.utils.ts.md) - 게시글 유틸리티
-- [firebase/functions/src/utils/comment.utils.ts.md](./repository/firebase/functions/src/utils/comment.utils.ts.md) - 댓글 유틸리티
-- [firebase/functions/src/utils/like.utils.ts.md](./repository/firebase/functions/src/utils/like.utils.ts.md) - 좋아요 유틸리티
-- [firebase/functions/src/utils/report.utils.ts.md](./repository/firebase/functions/src/utils/report.utils.ts.md) - 신고 유틸리티
+#### 방법 2: 명령어로 검색
+```bash
+# 특정 파일 스펙 찾기
+find specs/repository -name "button.svelte.md"
 
-#### 타입 정의
-- [firebase/functions/src/types/index.ts.md](./repository/firebase/functions/src/types/index.ts.md) - TypeScript 타입 정의
+# 카테고리별 스펙 개수 확인
+find specs/repository/src/routes -name "*.md" | wc -l
 
-#### 스크립트
-- [firebase/functions/scripts/generate-sample-posts.ts.md](./repository/firebase/functions/scripts/generate-sample-posts.ts.md) - 샘플 게시글 생성 스크립트
+# 모든 스펙 파일 목록
+find specs/repository -name "*.md" | sort
+```
 
-### 3. 설정 파일 (18개)
+### 📖 스펙 문서 형식
 
-#### 루트 설정
-- [package.json.md](./repository/package.json.md) - 프로젝트 패키지 설정
-- [tsconfig.json.md](./repository/tsconfig.json.md) - TypeScript 설정
-- [components.json.md](./repository/components.json.md) - shadcn-svelte 컴포넌트 설정
-- [svelte.config.js.md](./repository/svelte.config.js.md) - SvelteKit 설정
-- [vite.config.ts.md](./repository/vite.config.ts.md) - Vite 빌드 도구 설정
-- [eslint.config.js.md](./repository/eslint.config.js.md) - ESLint 코드 품질 설정
-- [playwright.config.ts.md](./repository/playwright.config.ts.md) - Playwright E2E 테스트 설정
-
-#### Firebase 설정
-- [firebase/firebase.json.md](./repository/firebase/firebase.json.md) - Firebase 프로젝트 설정
-- [firebase/cors.json.md](./repository/firebase/cors.json.md) - CORS 설정
-- [firebase/database.rules.json.md](./repository/firebase/database.rules.json.md) - Realtime Database 보안 규칙
-
-#### Firebase Functions 설정
-- [firebase/functions/package.json.md](./repository/firebase/functions/package.json.md) - Functions 패키지 설정
-- [firebase/functions/tsconfig.json.md](./repository/firebase/functions/tsconfig.json.md) - Functions TypeScript 설정
-- [firebase/functions/tsconfig.dev.json.md](./repository/firebase/functions/tsconfig.dev.json.md) - Functions 개발 설정
-- [firebase/functions/eslint.config.mjs.md](./repository/firebase/functions/eslint.config.mjs.md) - Functions ESLint 설정
-
-#### 다국어 메시지
-- [messages/ko.json.md](./repository/messages/ko.json.md) - 한국어 번역
-- [messages/en.json.md](./repository/messages/en.json.md) - 영어 번역
-- [messages/ja.json.md](./repository/messages/ja.json.md) - 일본어 번역
-- [messages/zh.json.md](./repository/messages/zh.json.md) - 중국어 번역
-
-#### 기타 설정
-- [.mcp.json.md](./repository/.mcp.json.md) - MCP 설정
-
-### 4. CSS 파일 (4개)
-- [src/app.css.md](./repository/src/app.css.md) - 메인 CSS 스타일시트
-- [src/stories/button.css.md](./repository/src/stories/button.css.md) - Storybook 버튼 스타일
-- [src/stories/header.css.md](./repository/src/stories/header.css.md) - Storybook 헤더 스타일
-- [src/stories/page.css.md](./repository/src/stories/page.css.md) - Storybook 페이지 스타일
-
-### 5. HTML 파일 (1개)
-- [src/app.html.md](./repository/src/app.html.md) - 메인 HTML 템플릿
-
-### 6. Pure Functions (2개)
-- [shared/chat.pure-functions.ts.md](./repository/shared/chat.pure-functions.ts.md) - 채팅 순수 함수
-- [shared/date.pure-functions.ts.md](./repository/shared/date.pure-functions.ts.md) - 날짜 순수 함수
-
-### 7. 라이브러리 함수 (2개)
-- [src/lib/functions/chat.functions.ts.md](./repository/src/lib/functions/chat.functions.ts.md) - 채팅 기능 함수
-- [src/lib/functions/date.functions.ts.md](./repository/src/lib/functions/date.functions.ts.md) - 날짜 기능 함수
-
-### 8. Svelte 스토어 (3개)
-- [src/lib/stores/auth.svelte.ts.md](./repository/src/lib/stores/auth.svelte.ts.md) - 인증 상태 관리
-- [src/lib/stores/database.svelte.ts.md](./repository/src/lib/stores/database.svelte.ts.md) - 데이터베이스 유틸리티
-- [src/lib/stores/user-profile.svelte.ts.md](./repository/src/lib/stores/user-profile.svelte.ts.md) - 사용자 프로필 캐시
-
-### 9. 유틸리티 (4개)
-- [src/lib/utils.ts.md](./repository/src/lib/utils.ts.md) - 공통 유틸리티
-- [src/lib/utils/auth-helpers.ts.md](./repository/src/lib/utils/auth-helpers.ts.md) - 인증 헬퍼
-- [src/lib/utils/admin-service.ts.md](./repository/src/lib/utils/admin-service.ts.md) - 관리자 서비스
-- [src/lib/utils/test-user-generator.ts.md](./repository/src/lib/utils/test-user-generator.ts.md) - 테스트 사용자 생성기
-
-### 10. 기타 소스 파일 (5개)
-- [src/lib/firebase.ts.md](./repository/src/lib/firebase.ts.md) - Firebase 초기화
-- [src/lib/index.ts.md](./repository/src/lib/index.ts.md) - 라이브러리 인덱스
-- [src/lib/version.ts.md](./repository/src/lib/version.ts.md) - 빌드 버전 정보
-- [src/app.d.ts.md](./repository/src/app.d.ts.md) - 앱 타입 정의
-- [src/hooks.server.ts.md](./repository/src/hooks.server.ts.md) - SvelteKit 서버 훅
-
-### 11. 테스트 파일 (3개)
-- [src/demo.spec.ts.md](./repository/src/demo.spec.ts.md) - 데모 테스트
-- [src/routes/page.svelte.spec.ts.md](./repository/src/routes/page.svelte.spec.ts.md) - 페이지 컴포넌트 테스트
-- [e2e/demo.test.ts.md](./repository/e2e/demo.test.ts.md) - E2E 테스트
-
----
-
-### 스펙 문서 사용 가이드
-
-#### 스펙 문서 구조
-모든 소스 코드 스펙 문서는 다음과 같은 SED 형식을 따릅니다:
+모든 스펙 문서는 다음과 같은 SED 형식을 따릅니다:
 
 ```markdown
 ---
 name: [파일명]
 description: [파일의 목적과 역할]
 version: 1.0.0
-type: [svelte-component | firebase-function | configuration | css | html | typescript | etc]
+type: [svelte-component | firebase-function | configuration | css | etc]
 category: [세부 카테고리]
-tags: [관련 태그들]
+original_path: [원본 파일 경로]
 ---
 
 # [파일명]
@@ -994,26 +896,88 @@ tags: [관련 태그들]
 
 ## 소스 코드
 ```[언어]
-[실제 소스 코드 전체]
+[실제 소스 코드 전체 - 100% 원본 그대로]
 ```
 
 ## 주요 기능
-[핵심 기능 목록]
+(수동으로 업데이트 필요)
 
-## 사용 예시
-[코드 사용 예제]
+## 관련 파일
+(수동으로 업데이트 필요)
 ```
 
-#### 스펙 문서 활용 방법
-1. **프로젝트 재현**: 스펙 문서의 소스 코드를 그대로 사용하여 프로젝트를 재현할 수 있습니다.
-2. **AI 기반 개발**: 스펙 문서를 AI에게 제공하여 바이브 코딩(Vibe Coding)을 수행할 수 있습니다.
-3. **문서화**: 각 파일의 목적과 기능을 명확히 이해할 수 있습니다.
-4. **버전 관리**: 스펙 문서를 통해 소스 코드의 변경 이력을 추적할 수 있습니다.
+### 💡 스펙 문서 활용 방법
 
-#### 인코딩 및 형식
-- **인코딩**: 모든 스펙 문서는 UTF-8 (BOM 제외) 인코딩을 사용합니다.
-- **언어**: 모든 설명과 주석은 한국어로 작성되어 있습니다.
-- **소스 코드**: 원본 소스 코드의 전체 내용이 포함되어 있습니다.
+#### 1. **AI 기반 바이브 코딩 (Vibe Coding)**
+스펙 문서를 AI에게 제공하여 프로젝트를 자동으로 생성하거나 재현할 수 있습니다.
+
+```bash
+# 예: AI에게 전체 프로젝트 스펙 제공
+cat specs/repository/src/**/*.md | ai-coder --output ./new-project
+```
+
+#### 2. **프로젝트 완전 재현**
+스펙 문서의 소스 코드를 그대로 사용하여 프로젝트를 재현할 수 있습니다.
+
+```python
+# 스펙 문서에서 소스 코드를 추출하는 스크립트 예시
+import re
+from pathlib import Path
+
+def extract_source_from_spec(spec_file):
+    content = spec_file.read_text(encoding='utf-8')
+    # ```언어 블록에서 소스 코드 추출
+    matches = re.findall(r'```(\w+)\n(.*?)\n```', content, re.DOTALL)
+    return matches[0][1] if matches else None
+```
+
+#### 3. **문서화 및 이해**
+각 파일의 목적과 기능을 명확히 이해할 수 있습니다.
+
+#### 4. **버전 관리**
+스펙 문서를 통해 소스 코드의 변경 이력을 추적할 수 있습니다.
+
+### 🔄 스펙 업데이트
+
+소스 코드가 변경되면 다음 명령어로 스펙을 업데이트할 수 있습니다:
+
+```bash
+# 스펙 재생성 스크립트 실행
+python3 tmp/generate-specs.py
+```
+
+이 스크립트는:
+- 기존 `specs/repository/` 폴더를 삭제하지 않음
+- 모든 소스 파일을 다시 스캔
+- 각 파일의 스펙 문서를 재생성
+- UTF-8 인코딩으로 저장
+
+### ⚠️ 주의사항
+
+1. **인코딩**: 모든 스펙 문서는 UTF-8 (BOM 제외) 인코딩을 사용합니다.
+2. **언어**: 모든 설명과 주석은 한국어로 작성되어 있습니다.
+3. **완전성**: 각 스펙 문서는 원본 소스 코드의 전체 내용을 포함합니다.
+4. **자동 생성**: 스펙 문서는 자동으로 생성되므로, 수동으로 편집하지 마세요. 대신 원본 소스 코드를 수정하고 스펙을 재생성하세요.
+
+### 🎯 사용 예시
+
+#### 예시 1: 특정 컴포넌트 스펙 확인
+```bash
+# Button 컴포넌트 스펙 보기
+cat specs/repository/src/lib/components/ui/button/button.svelte.md
+```
+
+#### 예시 2: 모든 라우트 페이지 스펙 찾기
+```bash
+# 모든 라우트 페이지 스펙 목록
+find specs/repository/src/routes -name "+page.svelte.md"
+```
+
+#### 예시 3: Firebase Functions 스펙 확인
+```bash
+# 모든 Cloud Functions 스펙 목록
+find specs/repository/firebase/functions/src -name "*.ts.md"
+```
 
 ---
 

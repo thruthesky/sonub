@@ -1,27 +1,39 @@
 ---
 name: demo.spec.ts
-description: Vitest 기본 테스트 파일
+description: demo.spec 파일
 version: 1.0.0
 type: test
-category: unit-test
-tags: [vitest, test, demo]
+category: other
+original_path: src/demo.spec.ts
 ---
 
 # demo.spec.ts
 
 ## 개요
-Vitest 설정을 확인하기 위한 기본 테스트 파일입니다.
 
-## 테스트 내용
+**파일 경로**: `src/demo.spec.ts`
+**파일 타입**: test
+**카테고리**: other
+
+demo.spec 파일
+
+## 소스 코드
+
 ```typescript
+import { describe, it, expect } from 'vitest';
+
 describe('sum test', () => {
-  it('adds 1 + 2 to equal 3', () => {
-    expect(1 + 2).toBe(3);
-  });
+	it('adds 1 + 2 to equal 3', () => {
+		expect(1 + 2).toBe(3);
+	});
 });
+
 ```
 
-## 실행 방법
-```bash
-npm run test
-```
+## 주요 기능
+
+(이 섹션은 수동으로 업데이트 필요)
+
+## 관련 파일
+
+(이 섹션은 수동으로 업데이트 필요)

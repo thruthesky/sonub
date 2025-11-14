@@ -1,16 +1,21 @@
 ---
 name: +page.svelte
-description: 게시판 목록 페이지
+description: +page 페이지
 version: 1.0.0
 type: svelte-component
 category: route-page
-tags: [svelte5, sveltekit]
+original_path: src/routes/post/list/+page.svelte
 ---
 
 # +page.svelte
 
 ## 개요
-게시판 목록 페이지
+
+**파일 경로**: `src/routes/post/list/+page.svelte`
+**파일 타입**: svelte-component
+**카테고리**: route-page
+
++page 페이지
 
 ## 소스 코드
 
@@ -76,6 +81,8 @@ tags: [svelte5, sveltekit]
 </section>
 
 <style>
+	@import 'tailwindcss' reference;
+
 	.tab-button {
 		@apply cursor-pointer rounded-full text-sm font-medium text-gray-500 transition-colors duration-150;
 	}
@@ -92,20 +99,9 @@ tags: [svelte5, sveltekit]
 ```
 
 ## 주요 기능
-- 자유토론/질문답변/회원장터 탭을 토글하여 게시판 카테고리를 선택할 수 있는 상단 탭바 표시
-- 글쓰기 버튼을 우측에 고정 배치하여 향후 게시글 작성 기능을 위한 진입점을 제공 (현재는 공사중 안내와 함께 비활성화)
-- 전체 콘텐츠 영역은 공사중 컴포넌트로 대체되어 향후 개발 예정임을 명확히 전달
 
-## Props/Parameters
-없음
+(이 섹션은 수동으로 업데이트 필요)
 
-## 사용 예시
-```svelte
-<!-- 사용 예시는 필요에 따라 추가하세요 -->
-<+page />
-```
+## 관련 파일
 
----
-
-> 이 문서는 자동 생성되었습니다.
-> 수정이 필요한 경우 직접 편집하세요.
+(이 섹션은 수동으로 업데이트 필요)

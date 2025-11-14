@@ -1,16 +1,21 @@
 ---
 name: user-login.svelte
-description: 사용자 로그인 컴포넌트
+description: user-login 컴포넌트
 version: 1.0.0
 type: svelte-component
-category: feature-component
-tags: [svelte5, sveltekit]
+category: component
+original_path: src/lib/components/user-login.svelte
 ---
 
 # user-login.svelte
 
 ## 개요
-사용자 로그인 컴포넌트
+
+**파일 경로**: `src/lib/components/user-login.svelte`
+**파일 타입**: svelte-component
+**카테고리**: component
+
+user-login 컴포넌트
 
 ## 소스 코드
 
@@ -238,18 +243,9 @@ tags: [svelte5, sveltekit]
 ```
 
 ## 주요 기능
--  * 사용자 로그인 컴포넌트 * * Google 및 Apple 소셜 로그인 기능을 제공하는 컴포넌트입니다. * shadcn-svelte UI 컴포넌트를 사용하여 일관된 디자인을 제공합니다.
 
-## Props/Parameters
-State variables: googleLoading, appleLoading, errorMessage
+(이 섹션은 수동으로 업데이트 필요)
 
-## 사용 예시
-```svelte
-<!-- 사용 예시는 필요에 따라 추가하세요 -->
-<user-login />
-```
+## 관련 파일
 
----
-
-> 이 문서는 자동 생성되었습니다.
-> 수정이 필요한 경우 직접 편집하세요.
+(이 섹션은 수동으로 업데이트 필요)

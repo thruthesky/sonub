@@ -1,16 +1,21 @@
 ---
 name: DatabaseListView.svelte
-description: 아이템 데이터 타입
+description: DatabaseListView 컴포넌트
 version: 1.0.0
 type: svelte-component
-category: feature-component
-tags: [svelte5, sveltekit]
+category: component
+original_path: src/lib/components/DatabaseListView.svelte
 ---
 
 # DatabaseListView.svelte
 
 ## 개요
-아이템 데이터 타입
+
+**파일 경로**: `src/lib/components/DatabaseListView.svelte`
+**파일 타입**: svelte-component
+**카테고리**: component
+
+DatabaseListView 컴포넌트
 
 ## 소스 코드
 
@@ -261,6 +266,12 @@ tags: [svelte5, sveltekit]
    */
   let isLoadingMore = $state<boolean>(false);
 
+  /**
+   * 각 아이템의 이전 orderBy 값을 추적하는 맵
+   * orderBy 필드 변경 감지 및 재정렬을 위해 사용
+   */
+  let previousOrderByValues = new Map<string, any>();
+
   // ============================================================================
   // Lifecycle (생명주기)
   // ============================================================================
@@ -306,6 +317,9 @@ tags: [svelte5, sveltekit]
         unsubscribe();
       });
       unsubscribers.clear();
+
+      // orderBy 값 추적 맵 초기화
+      previousOrderByValues.clear();
 
       console.log('DatabaseListView: All listeners cleaned up');
     };
@@ -369,6 +383,63 @@ tags: [svelte5, sveltekit]
   // ============================================================================
 
   /**
+   * Firebase Realtime Database의 정렬 규칙에 따라 두 값을 비교합니다.
+   *
+   * Firebase 정렬 순서:
+   * 1. null (또는 undefined)
+   * 2. false
+   * 3. true
+   * 4. 숫자 (오름차순)
+   * 5. 문자열 (사전순, 대소문자 구분)
+   *
+   * @param a 첫 번째 값
+   * @param b 두 번째 값
+   * @param reverseOrder 역순 정렬 여부 (기본값: false)
+   * @returns -1 (a < b), 0 (a === b), 1 (a > b)
+   */
+  function compareOrderByValues(a: any, b: any, reverseOrder: boolean = false): number {
+    // null/undefined 처리
+    const aIsNull = a === null || a === undefined;
+    const bIsNull = b === null || b === undefined;
+
+    if (aIsNull && bIsNull) return 0;
+    if (aIsNull) return reverseOrder ? 1 : -1;
+    if (bIsNull) return reverseOrder ? -1 : 1;
+
+    // 타입 우선순위: boolean < number < string
+    const aType = typeof a;
+    const bType = typeof b;
+
+    // boolean 처리
+    if (aType === 'boolean' && bType === 'boolean') {
+      const result = a === b ? 0 : (a ? 1 : -1);
+      return reverseOrder ? -result : result;
+    }
+    if (aType === 'boolean') return reverseOrder ? 1 : -1;
+    if (bType === 'boolean') return reverseOrder ? -1 : 1;
+
+    // number 처리
+    if (aType === 'number' && bType === 'number') {
+      const result = a - b;
+      return reverseOrder ? -result : result;
+    }
+    if (aType === 'number') return reverseOrder ? 1 : -1;
+    if (bType === 'number') return reverseOrder ? -1 : 1;
+
+    // string 처리 (사전순)
+    if (aType === 'string' && bType === 'string') {
+      const result = a < b ? -1 : (a > b ? 1 : 0);
+      return reverseOrder ? -result : result;
+    }
+
+    // 기타 타입 (Object 등) - 문자열로 변환하여 비교
+    const aStr = String(a);
+    const bStr = String(b);
+    const result = aStr < bStr ? -1 : (aStr > bStr ? 1 : 0);
+    return reverseOrder ? -result : result;
+  }
+
+  /**
    * 아이템 목록의 마지막 항목에서 orderBy 필드 값 추출
    *
    * 페이지 커서를 위해 마지막 항목의 orderBy 필드 값이 필요합니다.
@@ -408,9 +479,90 @@ tags: [svelte5, sveltekit]
   }
 
   /**
+   * orderBy 필드 값이 변경된 아이템을 올바른 위치로 재배치합니다.
+   *
+   * @param itemKey 재배치할 아이템의 키
+   * @param newData 업데이트된 아이템 데이터
+   * @param newOrderByValue 새로운 orderBy 필드 값
+   */
+  function repositionItem(itemKey: string, newData: any, newOrderByValue: any): void {
+    console.log(`[repositionItem] 아이템 재배치 시작: ${itemKey}`, {
+      newOrderByValue,
+      orderBy,
+      reverse
+    });
+
+    // 1. items 배열에서 현재 아이템 찾기
+    const currentIndex = items.findIndex(item => item.key === itemKey);
+    if (currentIndex === -1) {
+      console.warn(`[repositionItem] 아이템을 찾을 수 없음: ${itemKey}`);
+      return;
+    }
+
+    const currentItem = items[currentIndex];
+    const oldOrderByValue = currentItem.data[orderBy];
+
+    console.log(`[repositionItem] 현재 위치: ${currentIndex}, 이전 값: ${oldOrderByValue}, 새 값: ${newOrderByValue}`);
+
+    // 2. items 배열에서 해당 아이템 제거
+    const updatedItem: ItemData = {
+      key: itemKey,
+      data: newData
+    };
+    const itemsWithoutCurrent = items.filter(item => item.key !== itemKey);
+
+    // 3. 새로운 orderBy 값에 따라 올바른 삽입 위치 찾기
+    let insertIndex = 0;
+    const reverseOrder = reverse && scrollTrigger !== 'top';
+
+    for (let i = 0; i < itemsWithoutCurrent.length; i++) {
+      const compareValue = itemsWithoutCurrent[i].data[orderBy];
+      const comparison = compareOrderByValues(newOrderByValue, compareValue, reverseOrder);
+
+      if (comparison < 0) {
+        // newOrderByValue가 더 작음 (또는 reverse에서 더 큰 값)
+        insertIndex = i;
+        break;
+      }
+      insertIndex = i + 1;
+    }
+
+    console.log(`[repositionItem] 새 위치: ${insertIndex} (전체 ${itemsWithoutCurrent.length + 1}개 중)`);
+
+    // 4. 해당 위치에 아이템 삽입
+    const newItems = [
+      ...itemsWithoutCurrent.slice(0, insertIndex),
+      updatedItem,
+      ...itemsWithoutCurrent.slice(insertIndex)
+    ];
+
+    // 5. items 배열 업데이트 (반응성 트리거)
+    items = newItems;
+
+    // 6. 모든 아이템의 인덱스가 변경되었으므로 리스너 재설정
+    // 기존 리스너 모두 해제
+    unsubscribers.forEach((unsubscribe) => unsubscribe());
+    unsubscribers.clear();
+
+    // 새로운 인덱스로 리스너 재설정
+    items.forEach((item, index) => {
+      setupItemListener(item.key, index);
+    });
+
+    console.log(`[repositionItem] 재배치 완료. 아이템 순서:`,
+      items.map((item, idx) => ({
+        index: idx,
+        key: item.key,
+        [orderBy]: item.data[orderBy]
+      }))
+    );
+  }
+
+  /**
    * 각 아이템에 onValue 리스너 설정 (실시간 업데이트)
    *
    * Firebase의 onValue()를 사용하여 각 아이템의 변경사항을 실시간으로 감지합니다.
+   * orderBy 필드 값이 변경되면 자동으로 재배치합니다.
    */
   function setupItemListener(itemKey: string, index: number): void {
     // database null 체크
@@ -425,19 +577,51 @@ tags: [svelte5, sveltekit]
       return;
     }
 
+    // 현재 아이템의 orderBy 값을 previousOrderByValues에 저장
+    const currentItem = items.find(item => item.key === itemKey);
+    if (currentItem) {
+      const currentOrderByValue = currentItem.data[orderBy];
+      previousOrderByValues.set(itemKey, currentOrderByValue);
+      console.log(`[setupItemListener] 초기 orderBy 값 저장: ${itemKey} = ${currentOrderByValue}`);
+    }
+
     const itemRef = dbRef(database, `${path}/${itemKey}`);
     const unsubscribe = onValue(
       itemRef,
       (snapshot) => {
         if (snapshot.exists()) {
           const updatedData = snapshot.val();
-          // items 배열 업데이트
-          items[index] = {
-            key: itemKey,
-            data: updatedData
-          };
-          items = [...items]; // 반응성을 위해 배열 재할당
-          console.log(`DatabaseListView: Item updated ${itemKey}`, updatedData);
+          const newOrderByValue = updatedData[orderBy];
+          const previousOrderByValue = previousOrderByValues.get(itemKey);
+
+          console.log(`[setupItemListener] 아이템 업데이트 감지: ${itemKey}`, {
+            orderBy,
+            previousValue: previousOrderByValue,
+            newValue: newOrderByValue
+          });
+
+          // orderBy 필드 값이 변경되었는지 확인
+          if (previousOrderByValue !== undefined && previousOrderByValue !== newOrderByValue) {
+            console.log(`[setupItemListener] orderBy 필드 변경 감지! ${itemKey}: ${previousOrderByValue} → ${newOrderByValue}`);
+
+            // 이전 값 업데이트
+            previousOrderByValues.set(itemKey, newOrderByValue);
+
+            // 아이템 재배치
+            repositionItem(itemKey, updatedData, newOrderByValue);
+          } else {
+            // orderBy 필드가 변경되지 않았으면 기존 방식대로 업데이트
+            // ⚠️ index가 아닌 itemKey로 찾아서 업데이트 (재배치 후 index가 바뀔 수 있음)
+            const itemIndex = items.findIndex(item => item.key === itemKey);
+            if (itemIndex !== -1) {
+              items[itemIndex] = {
+                key: itemKey,
+                data: updatedData
+              };
+              items = [...items]; // 반응성을 위해 배열 재할당
+              console.log(`DatabaseListView: Item updated ${itemKey} at index ${itemIndex}`, updatedData);
+            }
+          }
         }
       },
       (error) => {
@@ -712,6 +896,10 @@ tags: [svelte5, sveltekit]
     // 기존 리스너들 정리
     unsubscribers.forEach((unsubscribe) => unsubscribe());
     unsubscribers.clear();
+
+    // orderBy 값 추적 맵 초기화
+    previousOrderByValues.clear();
+    console.log('DatabaseListView: previousOrderByValues cleared');
 
     // child_added 리스너 해제
     if (childAddedUnsubscribe) {
@@ -1688,18 +1876,9 @@ tags: [svelte5, sveltekit]
 ```
 
 ## 주요 기능
--  * 스크롤 컨테이너 DOM 요소 참조 * autoScrollToEnd 기능을 위해 사용 * HTMLElement로 타입 지정 (부모 요소가 div가 아닐 수도 있음) 
 
-## Props/Parameters
-State variables: items, loading, initialLoading, hasMore, lastLoadedValue, lastLoadedKey, currentPage, error, childAddedListenerReady, isLoadingMore
+(이 섹션은 수동으로 업데이트 필요)
 
-## 사용 예시
-```svelte
-<!-- 사용 예시는 필요에 따라 추가하세요 -->
-<DatabaseListView />
-```
+## 관련 파일
 
----
-
-> 이 문서는 자동 생성되었습니다.
-> 수정이 필요한 경우 직접 편집하세요.
+(이 섹션은 수동으로 업데이트 필요)

@@ -1,16 +1,21 @@
 ---
 name: +layout.svelte
-description: 사용자 페이지 공통 레이아웃
+description: +layout 페이지
 version: 1.0.0
 type: svelte-component
 category: route-page
-tags: [svelte5, sveltekit]
+original_path: src/routes/my/+layout.svelte
 ---
 
 # +layout.svelte
 
 ## 개요
-사용자 페이지 공통 레이아웃
+
+**파일 경로**: `src/routes/my/+layout.svelte`
+**파일 타입**: svelte-component
+**카테고리**: route-page
+
++layout 페이지
 
 ## 소스 코드
 
@@ -184,18 +189,9 @@ tags: [svelte5, sveltekit]
 ```
 
 ## 주요 기능
-- 코드 분석 필요
 
-## Props/Parameters
-children
+(이 섹션은 수동으로 업데이트 필요)
 
-## 사용 예시
-```svelte
-<!-- 사용 예시는 필요에 따라 추가하세요 -->
-<+layout />
-```
+## 관련 파일
 
----
-
-> 이 문서는 자동 생성되었습니다.
-> 수정이 필요한 경우 직접 편집하세요.
+(이 섹션은 수동으로 업데이트 필요)

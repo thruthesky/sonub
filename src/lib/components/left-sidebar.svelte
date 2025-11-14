@@ -22,9 +22,9 @@
 	};
 
 const devHighlights = [
-	{ order: '8', label: () => m.sidebarDevHighlightAttachment() },
-	{ order: '9', label: () => m.sidebarDevHighlightPassword() },
-	{ order: '10', label: () => m.sidebarDevHighlightPostType() }
+	{ order: '8', label: () => m.sidebarDevHighlightWrapUp() },
+	{ order: '9', label: () => m.sidebarDevHighlightAttachment() },
+	{ order: '10', label: () => m.sidebarDevHighlightPassword() }
 ];
 
 	/**

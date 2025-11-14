@@ -1,19 +1,21 @@
 ---
 name: database.rules.json
-description: Firebase Realtime Database 보안 규칙 파일. 읽기/쓰기 권한 및 데이터 검증 규칙을 정의합니다.
+description: database.rules 파일
 version: 1.0.0
 type: configuration
-category: firebase-config
-tags: [configuration, firebase, database, security, rules]
+category: other
+original_path: firebase/database.rules.json
 ---
 
 # database.rules.json
 
 ## 개요
-Firebase Realtime Database의 보안 규칙 파일입니다. 이 파일은:
-- 사용자, 채팅, 시스템 데이터의 접근 권한 정의
-- 데이터 검증 및 무결성 보장
-- 관리자 권한 및 테스트 데이터 처리
+
+**파일 경로**: `firebase/database.rules.json`
+**파일 타입**: configuration
+**카테고리**: other
+
+database.rules 파일
 
 ## 소스 코드
 
@@ -32,7 +34,10 @@ Firebase Realtime Database의 보안 규칙 파일입니다. 이 파일은:
       },
       ".indexOn": [
         "createdAt",
-        "displayNameLowerCase"
+        "displayNameLowerCase",
+        "sort_recentWithPhoto",
+        "sort_recentFemaleWithPhoto",
+        "sort_recentMaleWithPhoto"
       ]
     },
     "system": {
@@ -136,6 +141,63 @@ Firebase Realtime Database의 보안 규칙 파일입니다. 이 파일은:
         "roomOrder"
       ]
     },
+    "chat-invitations": {
+      // 채팅 초대 관리
+      // 구조: /chat-invitations/{inviteeUid}/{roomId}
+      "$uid": {
+        // 본인만 자신의 초대 목록을 읽을 수 있음
+        ".read": "$uid === auth.uid",
+        "$roomId": {
+          // 쓰기 규칙: 본인이 삭제하거나, 채팅방 멤버가 초대 생성 가능
+          ".write": "auth != null && (($uid === auth.uid && newData.val() === null) || (newData.val() !== null && root.child('chat-rooms').child($roomId).child('members').child(auth.uid).exists()))"
+        },
+        ".indexOn": [
+          "invitationOrder"
+        ]
+      }
+    },
+    "chat-favorites": {
+      // 즐겨찾기 폴더 관리
+      // 사용자별로 채팅방을 폴더로 분류하여 관리
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
+        "$favoriteId": {
+          "name": {
+            // 폴더 이름: 필수, 1-30자
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 30"
+          },
+          "description": {
+            // 폴더 설명: 선택, 최대 100자
+            ".validate": "newData.isString() && newData.val().length <= 100"
+          },
+          "createdAt": {
+            // 생성 시간: 필수, 숫자 (timestamp)
+            ".validate": "newData.isNumber()"
+          },
+          "folderOrder": {
+            // 정렬 순서: 필수, 문자열 (500 prefix = 상단 고정)
+            ".validate": "newData.isString()"
+          },
+          "roomList": {
+            // 폴더에 포함된 채팅방 목록 (roomId -> true)
+            "$roomId": {
+              ".validate": "newData.isBoolean()"
+            }
+          }
+        },
+        ".indexOn": [
+          "folderOrder"
+        ]
+      }
+    },
+    "fcm-tokens": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": [
+        "uid"
+      ]
+    },
     "test": {
       "data": {
         // QA 전용 테스트 데이터 노드 - 누구나 읽고 쓰기 가능
@@ -154,51 +216,10 @@ Firebase Realtime Database의 보안 규칙 파일입니다. 이 파일은:
 }
 ```
 
-## 주요 설정
+## 주요 기능
 
-### 사용자 데이터 (users)
-- **읽기**: 모든 사용자 가능
-- **쓰기**:
-  - 2025-12-12까지: 무제한 (테스트용)
-  - 이후: 본인만 가능
-- **인덱스**: `createdAt`, `displayNameLowerCase`
-
-### 시스템 설정 (system)
-- **admins**:
-  - 읽기: 로그인한 모든 사용자
-  - 쓰기: 관리자만
-
-### 통계 (stats)
-- **읽기**: 모든 사용자
-- **쓰기**: 차단 (Cloud Functions만 수정 가능)
-
-### 채팅방 (chat-rooms)
-- **읽기**: 모든 사용자
-- **owner**: 채팅방 생성 시 본인 UID로만 설정 가능
-- **createdAt**: Cloud Functions만 설정 가능
-- **name**: 1~50자, owner만 수정 가능
-- **description**: 0~200자, owner만 수정 가능
-- **type**: `group`, `open`, `single` 중 하나
-- **members**: 본인 UID만 추가/수정 가능
-- **인덱스**: `openListOrder`
-
-### 채팅 참여 (chat-joins)
-- **읽기/쓰기**: 본인 데이터만 접근
-- **인덱스**: 5개의 listOrder 필드
-
-### 채팅 메시지 (chat-messages)
-- **읽기/쓰기**: 모든 로그인 사용자
-- **인덱스**: `roomOrder`
-
-### 테스트 데이터 (test)
-- **읽기/쓰기**: 모두 허용 (QA 전용)
-- **인덱스**: 5개의 order 필드
-
-## 보안 고려사항
-- 사용자 쓰기 권한은 2025-12-12 이후 본인만 가능
-- Cloud Functions 전용 필드: `createdAt`, `memberCount`
-- 채팅방 생성 후 불변 필드: `type`, `open`, `groupListOrder`, `openListOrder`
+(이 섹션은 수동으로 업데이트 필요)
 
 ## 관련 파일
-- [firebase.json](./firebase.json.md) - Firebase 프로젝트 설정
-- [sonub-firebase-database-structure.md](../../specs/sonub-firebase-database-structure.md) - Database 구조 문서
+
+(이 섹션은 수동으로 업데이트 필요)
