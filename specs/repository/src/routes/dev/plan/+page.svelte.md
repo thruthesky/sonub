@@ -208,7 +208,7 @@ original_path: src/routes/dev/plan/+page.svelte
 					<span class="todo-number">7</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">채팅 초대 수락/거절 흐름</Card.Title>
-						<span class="todo-badge todo-badge--pending">📋 예정</span>
+						<span class="todo-badge todo-badge--done">✅ 완료</span>
 					</div>
 				</div>
 			</Card.Header>
@@ -310,6 +310,8 @@ original_path: src/routes/dev/plan/+page.svelte
 					<li>메시지 좋아요/리액션 기능 제공</li>
 					<li>@멘션 기능으로 특정 사용자 호출 및 알림 발송</li>
 					<li>읽음 표시: 상대방이 메시지를 읽었는지 상태 표시</li>
+					<li>채팅 알림음 설정 페이지에서 사용자별 기본 알림음 on/off 제어</li>
+					<li>채팅방별 알림음 토글 및 중요 채팅방 강조음 선택 기능 제공</li>
 				</ul>
 			</Card.Content>
 		</Card.Root>

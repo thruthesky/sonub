@@ -106,6 +106,10 @@
 	let fileInputRef: HTMLInputElement | null = $state(null);
 	let uploadingFiles: FileUploadStatus[] = $state([]);
 
+	// v1.2.0: 드래그 앤 드롭 상태
+	let isDragging = $state(false);
+	let dragCounter = $state(0); // dragenter/dragleave 카운터
+
 	// 최대 파일 크기
 	const MAX_FILE_SIZE = 10 * 1024 * 1024; // 일반 파일: 10MB
 	const MAX_VIDEO_SIZE = 24 * 1024 * 1024; // 동영상 파일 (.mp4): 24MB
@@ -614,58 +618,8 @@
 
 		console.log(`📂 ${files.length}개 파일 선택됨 - 즉시 업로드 시작`);
 
-		// 파일별 상태 초기화 및 즉시 업로드
-		for (const file of files) {
-			// 파일 크기 체크 (동영상 .mp4는 24MB, 그 외는 10MB)
-			const isMP4Video = file.type === 'video/mp4' || file.name.toLowerCase().endsWith('.mp4');
-			const maxSize = isMP4Video ? MAX_VIDEO_SIZE : MAX_FILE_SIZE;
-
-			if (file.size > maxSize) {
-				console.error(
-					`❌ 파일 크기 초과: ${file.name} (${formatFileSize(file.size)}, 최대 ${formatFileSize(maxSize)})`
-				);
-				alert(
-					`파일 "${file.name}"의 크기가 너무 큽니다. 최대 ${formatFileSize(maxSize)}까지 업로드 가능합니다.`
-				);
-				continue;
-			}
-
-			// 파일 상태 초기화
-			const fileStatus: FileUploadStatus = {
-				file,
-				progress: 0,
-				completed: false
-			};
-
-			// 배열에 추가 (UI에 즉시 표시)
-			uploadingFiles = [...uploadingFiles, fileStatus];
-			const currentIndex = uploadingFiles.length - 1;
-
-			// 즉시 업로드 시작 (비동기)
-			uploadChatFile(
-				file,
-				authStore.user.uid,
-				activeRoomId,
-				(progress) => {
-					// 업로드 진행률 업데이트
-					uploadingFiles[currentIndex].progress = progress;
-					uploadingFiles = [...uploadingFiles]; // 반응성 트리거
-				}
-			)
-				.then((downloadUrl) => {
-					// 업로드 성공: downloadUrl 저장
-					uploadingFiles[currentIndex].downloadUrl = downloadUrl;
-					uploadingFiles[currentIndex].completed = true;
-					uploadingFiles = [...uploadingFiles]; // 반응성 트리거
-					console.log(`✅ 파일 업로드 완료: ${file.name}`);
-				})
-				.catch((error) => {
-					// 업로드 실패: 에러 메시지 저장
-					console.error(`❌ 파일 업로드 실패: ${file.name}`, error);
-					uploadingFiles[currentIndex].error = '업로드 실패';
-					uploadingFiles = [...uploadingFiles]; // 반응성 트리거
-				});
-		}
+		// v1.2.0: 공통 processFiles 함수 사용
+		await processFiles(files);
 
 		// input 초기화 (같은 파일 다시 선택 가능하도록)
 		input.value = '';
@@ -692,6 +646,129 @@
 
 		// 로컬 목록에서 제거
 		uploadingFiles = uploadingFiles.filter((_, i) => i !== index);
+	}
+
+	/**
+	 * v1.2.0: 드래그 앤 드롭 이벤트 핸들러
+	 */
+
+	/**
+	 * 드래그 진입 (dragenter)
+	 * - 파일을 드래그하여 영역에 진입할 때 호출
+	 */
+	function handleDragEnter(event: DragEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+
+		dragCounter++;
+
+		// 파일이 포함되어 있는지 확인
+		if (event.dataTransfer?.types.includes('Files')) {
+			isDragging = true;
+		}
+	}
+
+	/**
+	 * 드래그 오버 (dragover)
+	 * - 파일을 드래그하여 영역 위에 있을 때 지속적으로 호출
+	 */
+	function handleDragOver(event: DragEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+
+		// dropEffect 설정 (복사 아이콘 표시)
+		if (event.dataTransfer) {
+			event.dataTransfer.dropEffect = 'copy';
+		}
+	}
+
+	/**
+	 * 드래그 이탈 (dragleave)
+	 * - 파일을 드래그하여 영역을 벗어날 때 호출
+	 */
+	function handleDragLeave(event: DragEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+
+		dragCounter--;
+
+		// 카운터가 0이 되면 드래그 상태 해제
+		if (dragCounter === 0) {
+			isDragging = false;
+		}
+	}
+
+	/**
+	 * 드롭 (drop)
+	 * - 파일을 드롭할 때 호출
+	 */
+	async function handleDrop(event: DragEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+
+		isDragging = false;
+		dragCounter = 0;
+
+		const files = event.dataTransfer?.files;
+		if (!files || files.length === 0) {
+			return;
+		}
+
+		console.log(`📦 드롭된 파일 개수: ${files.length}`);
+
+		// 파일 처리 (handleFileSelect와 동일한 로직)
+		await processFiles(Array.from(files));
+	}
+
+	/**
+	 * 파일 처리 공통 함수
+	 * - 파일 선택 및 드래그 앤 드롭에서 공통으로 사용
+	 */
+	async function processFiles(files: File[]) {
+		for (const file of files) {
+			// 파일 크기 체크
+			const isVideo = file.type === 'video/mp4' || file.name.toLowerCase().endsWith('.mp4');
+			const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_FILE_SIZE;
+			const maxSizeMB = (maxSize / (1024 * 1024)).toFixed(0);
+
+			if (file.size > maxSize) {
+				alert(`파일 크기가 ${maxSizeMB}MB를 초과합니다: ${file.name}`);
+				continue;
+			}
+
+			console.log(`📎 파일 선택됨: ${file.name} (${formatFileSize(file.size)})`);
+
+			// 파일 업로드 상태 추가 (progress: 0, completed: false)
+			const fileStatus: FileUploadStatus = {
+				file,
+				progress: 0,
+				completed: false
+			};
+
+			uploadingFiles = [...uploadingFiles, fileStatus];
+			const currentIndex = uploadingFiles.length - 1;
+
+			// Firebase Storage에 즉시 업로드 시작
+			try {
+				const downloadUrl = await uploadChatFile(
+					file,
+					authStore.user!.uid,
+					activeRoomId,
+					(progress) => {
+						// 진행률 업데이트
+						uploadingFiles[currentIndex].progress = progress;
+					}
+				);
+
+				// 업로드 완료
+				uploadingFiles[currentIndex].completed = true;
+				uploadingFiles[currentIndex].downloadUrl = downloadUrl;
+				console.log(`✅ 파일 업로드 완료: ${file.name}`);
+			} catch (error) {
+				console.error('❌ 파일 업로드 실패:', error);
+				uploadingFiles[currentIndex].error = '업로드 실패';
+			}
+		}
 	}
 
 	/**
@@ -845,8 +922,14 @@
 			</p>
 		</section>
 	{:else}
-		<!-- 메시지 목록: flex-1로 남은 공간 모두 차지 -->
-		<div class="message-list-section">
+		<!-- v1.2.0: 드래그 앤 드롭 지원 메시지 목록 -->
+		<div
+			class="message-list-section"
+			ondragenter={handleDragEnter}
+			ondragover={handleDragOver}
+			ondragleave={handleDragLeave}
+			ondrop={handleDrop}
+		>
 			{#if canRenderMessages}
 				{#key roomOrderPrefix}
 					<DatabaseListView
@@ -981,6 +1064,26 @@
 					</button>
 				</div>
 			{/if}
+
+			<!-- v1.2.0: 드래그 앤 드롭 오버레이 -->
+			{#if isDragging}
+				<div class="drag-drop-overlay">
+					<div class="drag-drop-content">
+						<!-- 파일 아이콘 애니메이션 -->
+						<svg class="drag-drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+							/>
+						</svg>
+						<!-- 안내 텍스트 -->
+						<p class="drag-drop-title">파일을 여기에 놓으세요</p>
+						<p class="drag-drop-subtitle">이미지, 동영상, 문서 등 다양한 파일을 업로드할 수 있습니다</p>
+					</div>
+				</div>
+			{/if}
 		</div>
 
 		<!-- 파일 미리보기 Grid -->
@@ -1004,9 +1107,31 @@
 										<div class="preview-placeholder"></div>
 									{/if}
 
-									<!-- 업로드 진행률 오버레이 (숫자로 표시) -->
+									<!-- v1.2.0: 원형 프로그레스바와 퍼센티지 표시 -->
 									{#if !fileStatus.completed && !fileStatus.error}
 										<div class="upload-progress-overlay">
+											<!-- SVG 원형 프로그레스바 -->
+											<svg class="progress-ring" width="80" height="80">
+												<!-- 배경 원 -->
+												<circle
+													class="progress-ring-bg"
+													cx="40"
+													cy="40"
+													r="32"
+													stroke-width="6"
+												/>
+												<!-- 진행률 원 -->
+												<circle
+													class="progress-ring-circle"
+													cx="40"
+													cy="40"
+													r="32"
+													stroke-width="6"
+													stroke-dasharray="201.06"
+													stroke-dashoffset={201.06 - (201.06 * fileStatus.progress) / 100}
+												/>
+											</svg>
+											<!-- 퍼센티지 숫자 -->
 											<span class="upload-percentage">{fileStatus.progress}%</span>
 										</div>
 									{/if}
@@ -1019,9 +1144,31 @@
 										>{getExtensionFromFilename(fileStatus.file.name).replace('.', '').toUpperCase()}</span
 									>
 
-									<!-- 업로드 진행률 (일반 파일) -->
+									<!-- v1.2.0: 원형 프로그레스바와 퍼센티지 표시 (일반 파일) -->
 									{#if !fileStatus.completed && !fileStatus.error}
 										<div class="upload-progress-overlay">
+											<!-- SVG 원형 프로그레스바 -->
+											<svg class="progress-ring" width="80" height="80">
+												<!-- 배경 원 -->
+												<circle
+													class="progress-ring-bg"
+													cx="40"
+													cy="40"
+													r="32"
+													stroke-width="6"
+												/>
+												<!-- 진행률 원 -->
+												<circle
+													class="progress-ring-circle"
+													cx="40"
+													cy="40"
+													r="32"
+													stroke-width="6"
+													stroke-dasharray="201.06"
+													stroke-dashoffset={201.06 - (201.06 * fileStatus.progress) / 100}
+												/>
+											</svg>
+											<!-- 퍼센티지 숫자 -->
 											<span class="upload-percentage">{fileStatus.progress}%</span>
 										</div>
 									{/if}
@@ -1307,16 +1454,35 @@
 		@apply text-4xl md:text-5xl font-bold uppercase text-gray-600;
 	}
 
-	/* 업로드 진행률 오버레이 */
+	/* v1.2.0: 업로드 진행률 오버레이 - 원형 프로그레스바 */
 	.upload-progress-overlay {
 		@apply absolute inset-0 flex items-center justify-center;
-		@apply bg-black/40 backdrop-blur-sm;
+		@apply bg-black/50 backdrop-blur-sm;
 	}
 
-	/* 퍼센티지 숫자 (크고 굵게) */
+	/* v1.2.0: SVG 원형 프로그레스바 */
+	.progress-ring {
+		@apply absolute;
+		transform: rotate(-90deg); /* 12시 방향부터 시작 */
+	}
+
+	/* 배경 원 (회색) */
+	.progress-ring-bg {
+		@apply fill-none stroke-white/30;
+	}
+
+	/* 진행률 원 (애니메이션) */
+	.progress-ring-circle {
+		@apply fill-none stroke-blue-400;
+		transition: stroke-dashoffset 0.3s ease-in-out;
+		stroke-linecap: round;
+	}
+
+	/* 퍼센티지 숫자 (원형 프로그레스바 중앙) */
 	.upload-percentage {
-		@apply text-5xl md:text-6xl font-bold text-white;
+		@apply absolute text-2xl md:text-3xl font-bold text-white;
 		@apply drop-shadow-lg;
+		z-index: 10;
 	}
 
 	/* 에러 오버레이 */
@@ -1445,5 +1611,58 @@
 
 	.scroll-button:active {
 		@apply scale-95 bg-gray-950;
+	}
+
+	/* v1.2.0: 드래그 앤 드롭 오버레이 스타일 */
+	.drag-drop-overlay {
+		@apply absolute inset-0 z-50;
+		@apply flex items-center justify-center;
+		@apply bg-blue-500/20 backdrop-blur-sm;
+		@apply border-4 border-dashed border-blue-500;
+		animation: pulse-border 1.5s ease-in-out infinite;
+	}
+
+	/* 드래그 앤 드롭 컨텐츠 */
+	.drag-drop-content {
+		@apply flex flex-col items-center gap-4;
+		@apply rounded-2xl bg-white/95 p-8 shadow-2xl;
+		@apply border-2 border-blue-400;
+	}
+
+	/* 파일 아이콘 */
+	.drag-drop-icon {
+		@apply h-24 w-24 text-blue-500;
+		animation: bounce-gentle 1s ease-in-out infinite;
+	}
+
+	/* 안내 텍스트 */
+	.drag-drop-title {
+		@apply text-2xl font-bold text-gray-900;
+	}
+
+	.drag-drop-subtitle {
+		@apply text-sm text-gray-600;
+	}
+
+	/* 펄스 애니메이션 (테두리) */
+	@keyframes pulse-border {
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.6;
+		}
+	}
+
+	/* 부드러운 바운스 애니메이션 (아이콘) */
+	@keyframes bounce-gentle {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-10px);
+		}
 	}
 </style>

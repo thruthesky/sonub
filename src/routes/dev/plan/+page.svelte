@@ -207,7 +207,7 @@
 					<span class="todo-number">9</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">채팅 메시지 첨부파일 업로드</Card.Title>
-						<span class="todo-badge todo-badge--pending">📋 예정</span>
+						<span class="todo-badge todo-badge--done">✅ 완료</span>
 					</div>
 				</div>
 			</Card.Header>
@@ -288,6 +288,8 @@
 					<li>메시지에 좋아요(리액션) 기능으로 간단한 피드백 제공</li>
 					<li>@멘션 기능으로 특정 사용자를 호출하고 알림 트리거</li>
 					<li>상대방 읽음 여부(1:1 및 그룹) 표시: 마지막 읽음 타임스탬프 기반 배지</li>
+					<li>채팅 알림음 설정 페이지에서 사용자별 기본 알림음 on/off 제어</li>
+					<li>채팅방별 알림음 토글 및 중요 채팅방 강조음 선택 기능 제공</li>
 				</ul>
 			</Card.Content>
 		</Card.Root>

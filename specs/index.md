@@ -1036,7 +1036,7 @@ find specs/repository/firebase/functions/src -name "*.ts.md"
 - **File**: [sonub-chat-file-attachment.md](./sonub-chat-file-attachment.md)
 - **Title**: 채팅 파일 첨부 기능 (Chat File Attachment)
 - **Description**: 채팅 메시지에 파일 첨부 기능 - 이미지, 동영상, 문서 등 다중 파일 업로드 및 표시
-- **Version**: 1.1.4
+- **Version**: 1.2.0
 - **Step**: 55
 - **Priority**: **
 - **Dependencies**:
@@ -1044,7 +1044,7 @@ find specs/repository/firebase/functions/src -name "*.ts.md"
   - sonub-setup-firebase.md
   - sonub-firebase-database-structure.md
   - sonub-design-workflow.md
-- **Tags**: chat, file-upload, firebase-storage, attachment, svelte5, realtime, instant-upload, video-controls, file-size-limit, file-extension-display, filename-extension-extraction
+- **Tags**: chat, file-upload, firebase-storage, attachment, svelte5, realtime, instant-upload, video-controls, file-size-limit, file-extension-display, filename-extension-extraction, circular-progress, drag-drop, animation
 - **Files**:
   - `src/lib/types/chat.types.ts` - 채팅 메시지 및 파일 업로드 타입
   - `src/lib/functions/storage.functions.ts` - Firebase Storage 업로드 함수
@@ -1056,14 +1056,45 @@ find specs/repository/firebase/functions/src -name "*.ts.md"
   - **파일 타입별 크기 제한** (v1.1.2) - .mp4 동영상은 24MB, 그 외 파일은 10MB까지 허용
   - **파일 확장자 중앙 표시** (v1.1.3) - PDF, TXT, DOC 등 확장자를 크게 중앙에 표시
   - **파일명 확장자 추출 함수** (v1.1.4) - `getExtensionFromFilename()` 함수로 버그 수정
+  - **원형 프로그레스바 진행률** (v1.2.0) - SVG 원형 프로그레스바와 부드러운 애니메이션
+  - **드래그 앤 드롭 업로드** (v1.2.0) - 파일을 채팅창에 드래그하여 간편하게 업로드
   - 다중 파일 업로드 (이미지, 동영상, 문서, 압축파일)
   - 파일 미리보기 Grid UI (반응형, 정사각형 비율)
-  - 실시간 업로드 진행률 표시 (큰 퍼센티지 숫자)
   - 파일 삭제 기능 (Firebase Storage에서 실제 삭제)
   - RTDB에 URL만 저장하여 용량 최소화 (60-70% 절감)
   - 메시지 버블 내 첨부파일 표시 (이미지/동영상/일반파일)
   - Firebase Storage 경로: `/users/{uid}/chat-files/{roomId}/{timestamp}-{filename}`
   - 최대 파일 크기: .mp4 동영상 24MB, 그 외 10MB
+- **구현 완료**: ✅ 2025-11-14
+
+### Sonub Chat Notification Sound
+- **File**: [sonub-chat-notification-sound.md](./sonub-chat-notification-sound.md)
+- **Title**: 채팅 새 메시지 알림음 시스템
+- **Description**: 사용자별 읽지 않은 채팅 메시지 개수 집계 및 실시간 알림음 재생 시스템
+- **Version**: 1.0.0
+- **Step**: 52
+- **Priority**: **
+- **Dependencies**:
+  - sonub-chat-overview.md
+  - sonub-setup-firebase.md
+  - sonub-firebase-database-structure.md
+  - sonub-firebase-realtime-database.md
+  - sonub-store-database.md
+- **Tags**: chat, notification, sound, realtime, firebase-rtdb, cloud-functions, svelte5, broadcast-channel
+- **Files**:
+  - `firebase/functions/src/handlers/chat.new-message.handler.ts` - newMessageCount 집계 Cloud Function
+  - `src/lib/components/top-bar.svelte` - 새 메시지 배지 UI
+  - `src/routes/+layout.svelte` - 전역 알림음 시스템
+  - `static/sound/new-message.mp3` - 알림음 파일
+- **주요 기능**:
+  - `/chat-joins/{uid}/{roomId}/newMessageCount` 자동 집계 → `/users/{uid}/newMessageCount`
+  - Cloud Functions로 증가/감소/재계산 처리 (데이터 일관성 보장)
+  - TopBar에 빨간색 배지로 읽지 않은 메시지 수 실시간 표시 (99+ 제한)
+  - newMessageCount 증가 시 알림음 자동 재생
+  - 채팅방 페이지에서는 알림음 재생 안 함
+  - BroadcastChannel로 다중 탭 중복 재생 방지
+  - 500ms 디바운스로 빠른 연속 재생 방지
+  - rtdbStore()를 통한 실시간 구독 및 Svelte 5 runes 기반 반응형 UI
 - **구현 완료**: ✅ 2025-11-14
 
 ## Deployment

@@ -1,7 +1,7 @@
 ---
 name: sonub-chat-file-attachment
 description: 채팅 메시지에 파일 첨부 기능 - 이미지, 동영상, 문서 등 다중 파일 업로드 및 표시
-version: 1.1.4
+version: 1.2.0
 step: 55
 priority: "**"
 dependencies:
@@ -9,7 +9,7 @@ dependencies:
   - sonub-setup-firebase.md
   - sonub-firebase-database-structure.md
   - sonub-design-workflow.md
-tags: chat, file-upload, firebase-storage, attachment, svelte5, realtime, instant-upload, video-controls, file-size-limit, file-extension-display, filename-extension-extraction
+tags: chat, file-upload, firebase-storage, attachment, svelte5, realtime, instant-upload, video-controls, file-size-limit, file-extension-display, filename-extension-extraction, circular-progress, drag-drop, animation
 ---
 
 # 채팅 파일 첨부 기능 (Chat File Attachment)
@@ -25,7 +25,8 @@ tags: chat, file-upload, firebase-storage, attachment, svelte5, realtime, instan
 - ✅ **파일 선택 즉시 업로드** (사용자가 업로드 성공 즉시 확인 가능)
 - ✅ 다중 파일 선택 및 업로드 (이미지, 동영상, 문서, 압축파일)
 - ✅ 파일 미리보기 Grid UI (Storage URL로 실시간 표시)
-- ✅ 실시간 업로드 진행률 표시 (큰 퍼센티지 숫자)
+- ✅ **원형 프로그레스바 진행률 표시** (v1.2.0) - SVG 원형 프로그레스바와 부드러운 애니메이션
+- ✅ **드래그 앤 드롭 파일 업로드** (v1.2.0) - 파일을 채팅창에 드래그하여 간편하게 업로드
 - ✅ 파일 삭제 기능 (Firebase Storage에서 실제 삭제)
 - ✅ Firebase Storage에 파일 저장
 - ✅ RTDB에 URL만 저장하여 용량 최소화
@@ -986,10 +987,29 @@ svelte-check found 0 errors and 1170 warnings in 19 files
 - [x] `npm run check` 실행 및 통과 (0 errors)
 - [x] SED 스펙 문서 업데이트 (v1.1.4)
 
+### v1.2.0 (2025-11-14)
+- [x] **원형 프로그레스바 진행률 표시**: SVG 기반 원형 프로그레스바로 업로드 진행률 시각화 개선
+- [x] SVG `<circle>` 요소 활용 (배경 원 + 진행률 원)
+- [x] `stroke-dashoffset` 속성으로 진행률 계산 (원주: 201.06)
+- [x] CSS 애니메이션 추가: `transition: stroke-dashoffset 0.3s ease-in-out`
+- [x] 12시 방향부터 시작하도록 SVG 회전: `transform: rotate(-90deg)`
+- [x] 퍼센티지 텍스트 크기 조정: `text-5xl` → `text-2xl`(프로그레스바 중앙 배치)
+- [x] **드래그 앤 드롭 파일 업로드**: 파일을 채팅창에 드래그하여 간편하게 업로드
+- [x] 드래그 앤 드롭 상태 관리: `isDragging`, `dragCounter`
+- [x] 이벤트 핸들러 구현: `dragenter`, `dragover`, `dragleave`, `drop`
+- [x] 드래그 오버레이 UI 추가: 파일 아이콘 + 안내 텍스트
+- [x] 펄스 애니메이션 (테두리) + 바운스 애니메이션 (아이콘)
+- [x] 드롭된 파일을 `processFiles()` 함수로 처리 (기존 파일 선택과 동일한 로직)
+- [x] **코드 리팩토링**: `handleFileSelect` 함수를 `processFiles` 공통 함수 사용하도록 변경
+- [x] `processFiles()` 함수로 파일 선택 및 드래그 앤 드롭 로직 통합
+- [x] 중복 코드 제거 및 유지보수성 향상
+- [x] `npm run check` 실행 및 통과 (0 errors)
+- [x] SED 스펙 문서 업데이트 (v1.2.0)
+
 ---
 
 **최초 작성일:** 2025-11-14
 **최종 수정일:** 2025-11-14
 **작성자:** Claude (AI Assistant)
-**버전:** 1.1.4
+**버전:** 1.2.0
 **상태:** ✅ 구현 완료

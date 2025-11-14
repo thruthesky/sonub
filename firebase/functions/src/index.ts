@@ -39,8 +39,8 @@ import {
   handleChatRoomPinCreate,
   handleChatRoomPinDelete,
   handleChatInvitationCreate,
-  handleNewMessageCountWritten,
 } from "./handlers/chat.handler";
+import { handleNewMessageCountWritten } from "./handlers/chat.new-message.handler";
 
 // 상수 정의
 const FIREBASE_REGION = "asia-southeast1";
