@@ -260,5 +260,6 @@
 	"homeSectionPopularOpenRoom": "Popular Open Chat Rooms",
 	"homeSectionPopularOpenRoomDesc": "We will highlight the most active open rooms for quick access.",
 	"homeSectionRecentPosts": "Latest Posts & Comments",
-	"homeSectionRecentPostsDesc": "A snapshot of the board’s newest posts and replies is coming here."
+	"homeSectionRecentPostsDesc": "A snapshot of the board’s newest posts and replies is coming here.",
+	"homeSectionRecentUsersCount": "{count} members just joined"
 }

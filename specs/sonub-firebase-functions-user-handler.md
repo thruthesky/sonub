@@ -316,6 +316,259 @@ export async function handleUserUpdate(
 
 ---
 
+### 3. handleUserDisplayNameUpdate
+
+**목적:** displayName 필드 생성/수정/삭제 시 관련 필드 자동 업데이트 및 동기화
+
+**시그니처:**
+
+```typescript
+export async function handleUserDisplayNameUpdate(
+  uid: string,
+  beforeValue: string | null,
+  afterValue: string | null
+): Promise<{success: boolean; uid: string}>
+```
+
+**파라미터:**
+- `uid` (string): 사용자 UID
+- `beforeValue` (string | null): 변경 전 displayName 값
+- `afterValue` (string | null): 변경 후 displayName 값 (null이면 삭제됨)
+
+**반환값:**
+```typescript
+{
+  success: boolean;  // 성공 여부
+  uid: string;       // 사용자 UID
+}
+```
+
+**수행 작업:**
+
+1. **삭제 케이스 처리** (`afterValue === null`)
+   - displayNameLowerCase도 null로 설정하여 삭제
+   - updatedAt 업데이트
+   - DB 반영 후 종료
+
+2. **생성/수정 케이스 처리**
+   - createdAt 확인 및 자동 생성 (`ensureCreatedAt()` 호출)
+   - displayNameLowerCase 자동 생성 (`afterValue.toLowerCase()`)
+   - updatedAt 업데이트
+   - DB 반영
+
+**로깅:**
+- "displayName 필드 변경 감지": uid, beforeValue, afterValue, action (생성/수정/삭제)
+- "displayName 삭제, displayNameLowerCase도 삭제": uid (삭제 시)
+
+---
+
+### 4. handleUserPhotoUrlUpdate
+
+**목적:** photoUrl 필드 생성/수정/삭제 시 관련 필드 자동 업데이트 및 정렬 필드 생성
+
+**시그니처:**
+
+```typescript
+export async function handleUserPhotoUrlUpdate(
+  uid: string,
+  beforeValue: string | null,
+  afterValue: string | null
+): Promise<{success: boolean; uid: string}>
+```
+
+**파라미터:**
+- `uid` (string): 사용자 UID
+- `beforeValue` (string | null): 변경 전 photoUrl 값
+- `afterValue` (string | null): 변경 후 photoUrl 값 (null이면 삭제됨)
+
+**반환값:**
+```typescript
+{
+  success: boolean;  // 성공 여부
+  uid: string;       // 사용자 UID
+}
+```
+
+**수행 작업:**
+
+1. **삭제 케이스 처리** (`afterValue === null`)
+   - 모든 정렬 필드 삭제:
+     - `sort_recentWithPhoto` = null
+     - `sort_recentFemaleWithPhoto` = null
+     - `sort_recentMaleWithPhoto` = null
+   - updatedAt 업데이트
+   - DB 반영 후 종료
+
+2. **생성/수정 케이스 처리**
+   - createdAt 확인 및 자동 생성 (`ensureCreatedAt()` 호출)
+   - 사용자 데이터 읽기 (gender, createdAt 필요)
+   - **정렬 필드 생성** ⭐ 핵심 기능
+     - `sort_recentWithPhoto`: photoUrl이 있으면 항상 createdAt 값 복사
+     - `sort_recentFemaleWithPhoto`: gender=F인 경우만 createdAt 값 복사, 아니면 null
+     - `sort_recentMaleWithPhoto`: gender=M인 경우만 createdAt 값 복사, 아니면 null
+   - updatedAt 업데이트
+   - DB 반영
+
+**로깅:**
+- "photoUrl 필드 변경 감지": uid, beforeValue, afterValue, action (생성/수정/삭제)
+- "photoUrl 삭제, 모든 정렬 필드도 삭제": uid (삭제 시)
+- "sort_recentWithPhoto 생성": uid, value (생성/수정 시)
+- "sort_recentFemaleWithPhoto 생성": uid, value (gender=F일 때)
+- "sort_recentMaleWithPhoto 생성": uid, value (gender=M일 때)
+
+**특징:**
+
+1. **정렬 필드 자동 생성** ⭐ 핵심
+   - 회원 목록 시 사진이 있는 회원을 효율적으로 필터링 및 정렬
+   - 성별(gender)에 따라 분리된 정렬 필드 생성
+   - createdAt 순서로 정렬 가능
+
+2. **데이터 동기화**
+   - photoUrl 삭제 시 모든 정렬 필드도 자동 삭제
+   - gender 변경 시 해당 성별 정렬 필드만 유지 (다른 필드는 null)
+
+3. **쿼리 최적화**
+   - Firebase Database 쿼리 시 `sort_recentWithPhoto`로 orderBy하여 사진 있는 회원만 효율적으로 로드
+   - 남자만: `sort_recentMaleWithPhoto`로 orderBy
+   - 여자만: `sort_recentFemaleWithPhoto`로 orderBy
+
+---
+
+### 5. handleUserBirthYearMonthDayUpdate
+
+**목적:** birthYearMonthDay 필드 생성/수정/삭제 시 파생 필드 자동 생성/삭제
+
+**시그니처:**
+
+```typescript
+export async function handleUserBirthYearMonthDayUpdate(
+  uid: string,
+  beforeValue: string | null,
+  afterValue: string | null
+): Promise<{success: boolean; uid: string}>
+```
+
+**파라미터:**
+- `uid` (string): 사용자 UID
+- `beforeValue` (string | null): 변경 전 birthYearMonthDay 값
+- `afterValue` (string | null): 변경 후 birthYearMonthDay 값 (null이면 삭제됨)
+
+**반환값:**
+```typescript
+{
+  success: boolean;  // 성공 여부
+  uid: string;       // 사용자 UID
+}
+```
+
+**수행 작업:**
+
+1. **삭제 케이스 처리** (`afterValue === null`)
+   - 모든 파생 필드를 null로 설정하여 삭제:
+     - birthYear
+     - birthMonth
+     - birthDay
+     - birthMonthDay
+   - DB 반영 후 종료
+
+2. **생성/수정 케이스 처리**
+   - YYYY-MM-DD 형식 검증 (정규식)
+   - 파생 필드 자동 생성:
+     - `birthYear` (number): 생년
+     - `birthMonth` (number): 생월
+     - `birthDay` (number): 생일
+     - `birthMonthDay` (string): 생월일 (MM-DD)
+   - DB 반영
+
+**로깅:**
+- "birthYearMonthDay 필드 변경 감지": uid, beforeValue, afterValue, action (생성/수정/삭제)
+- "birthYearMonthDay 삭제, 모든 파생 필드도 삭제": uid (삭제 시)
+- "birthYearMonthDay 파싱 및 파생 필드 생성": uid, birthYearMonthDay, birthYear, birthMonth, birthDay, birthMonthDay (생성/수정 시)
+
+---
+
+### 6. handleUserGenderUpdate
+
+**목적:** gender 필드 생성/수정/삭제 시 정렬 필드 자동 업데이트
+
+**시그니처:**
+
+```typescript
+export async function handleUserGenderUpdate(
+  uid: string,
+  beforeValue: string | null,
+  afterValue: string | null
+): Promise<{success: boolean; uid: string}>
+```
+
+**파라미터:**
+- `uid` (string): 사용자 UID
+- `beforeValue` (string | null): 변경 전 gender 값
+- `afterValue` (string | null): 변경 후 gender 값 ("F" | "M" | null)
+
+**반환값:**
+```typescript
+{
+  success: boolean;  // 성공 여부
+  uid: string;       // 사용자 UID
+}
+```
+
+**수행 작업:**
+
+1. **삭제 케이스 처리** (`afterValue === null`)
+   - 성별 관련 정렬 필드 삭제:
+     - `sort_recentFemaleWithPhoto` = null
+     - `sort_recentMaleWithPhoto` = null
+   - updatedAt 업데이트
+   - DB 반영 후 종료
+
+2. **생성/수정 케이스 처리**
+   - 사용자 데이터 읽기 (photoUrl, createdAt 필요)
+   - **photoUrl 존재 여부 확인** ⭐ 핵심 조건
+     - photoUrl이 **있는 경우**:
+       - gender=F: `sort_recentFemaleWithPhoto`에 createdAt 설정, `sort_recentMaleWithPhoto` = null
+       - gender=M: `sort_recentMaleWithPhoto`에 createdAt 설정, `sort_recentFemaleWithPhoto` = null
+       - gender가 F/M이 아닌 경우: 두 필드 모두 null
+     - photoUrl이 **없는 경우**:
+       - 두 정렬 필드 모두 null
+   - updatedAt 업데이트
+   - DB 반영
+
+**로깅:**
+- "gender 필드 변경 감지": uid, beforeValue, afterValue, action (생성/수정/삭제)
+- "gender 삭제, 성별 관련 정렬 필드도 삭제": uid (삭제 시)
+- "photoUrl 존재, gender에 따라 정렬 필드 업데이트": uid, gender, photoUrl (생성/수정 시)
+- "sort_recentFemaleWithPhoto 생성, sort_recentMaleWithPhoto 삭제": uid, value (gender=F일 때)
+- "sort_recentMaleWithPhoto 생성, sort_recentFemaleWithPhoto 삭제": uid, value (gender=M일 때)
+- "photoUrl 없음, 두 정렬 필드 모두 삭제": uid (photoUrl이 없을 때)
+
+**특징:**
+
+1. **조건부 정렬 필드 생성** ⭐ 핵심
+   - photoUrl이 있는 경우에만 성별 정렬 필드 생성
+   - photoUrl이 없으면 정렬 필드 생성하지 않음
+
+2. **상호 배타적 필드 관리**
+   - 여성(F): sort_recentFemaleWithPhoto만 생성, sort_recentMaleWithPhoto는 null
+   - 남성(M): sort_recentMaleWithPhoto만 생성, sort_recentFemaleWithPhoto는 null
+   - 동시에 두 필드가 값을 가질 수 없음
+
+3. **데이터 동기화**
+   - gender 변경 시 성별 정렬 필드 자동 재생성
+   - photoUrl이 있으면 즉시 반영, 없으면 필드 삭제
+
+4. **photoUrl 트리거와의 협업**
+   - `handleUserPhotoUrlUpdate`가 photoUrl 변경 시 정렬 필드 생성
+   - `handleUserGenderUpdate`가 gender 변경 시 정렬 필드 업데이트
+   - 두 함수가 함께 작동하여 완전한 데이터 동기화 보장
+
+**무한 루프 방지:**
+- gender 필드만 트리거하므로 다른 필드 업데이트 시 재트리거 안 됨
+- gender 값 자체는 이 함수에서 수정하지 않음
+
+---
+
 ## 전체 소스 코드
 
 **파일 경로:** `firebase/functions/src/handlers/user.handler.ts`
@@ -600,7 +853,7 @@ interface UserData {
   displayNameLowerCase?: string;
 
   // 추가 필드
-  gender?: string;
+  gender?: string;  // "M" (남자) | "F" (여자)
 
   // 생년월일 관련 (클라이언트/서버 역할 분리)
   birthYearMonthDay?: string;  // 클라이언트가 저장 (YYYY-MM-DD)
@@ -609,9 +862,267 @@ interface UserData {
   birthDay?: number;           // Cloud Functions가 자동 생성
   birthMonthDay?: string;      // Cloud Functions가 자동 생성 (MM-DD)
 
+  // 정렬 필드 (Cloud Functions가 자동 생성)
+  sort_recentWithPhoto?: number;        // photoUrl이 있으면 createdAt 복사
+  sort_recentFemaleWithPhoto?: number;  // photoUrl이 있고 gender=F이면 createdAt 복사
+  sort_recentMaleWithPhoto?: number;    // photoUrl이 있고 gender=M이면 createdAt 복사
+
   // 기타 필드...
 }
 ```
+
+## 무한 루프 방지 전략
+
+### 문제점
+
+Firebase Cloud Functions의 트리거를 사용할 때, 전체 노드를 감지하면 무한 루프에 빠질 위험이 있습니다.
+
+**예시: 위험한 패턴**
+```typescript
+// ❌ 위험: /users/{uid} 전체 노드 감지
+export const onUserUpdate = onValueWritten(
+  { ref: "/users/{uid}", region: FIREBASE_REGION },
+  async (event) => {
+    // displayName 변경 감지
+    // → displayNameLowerCase 업데이트
+    // → /users/{uid} 노드가 다시 변경됨
+    // → onUserUpdate 다시 트리거 (무한 루프!)
+  }
+);
+```
+
+**무한 루프 발생 시나리오:**
+
+1. 사용자가 `/users/{uid}/displayName` 업데이트
+2. Cloud Function이 트리거되어 `/users/{uid}/displayNameLowerCase` 업데이트
+3. `/users/{uid}` 노드가 다시 변경되어 Cloud Function 다시 트리거
+4. 2-3 단계 무한 반복 → **비용 폭증 및 성능 저하**
+
+### 해결 방법
+
+**개별 필드별로 이벤트 트리거를 분리하고, `onValueWritten`을 사용하여 생성/수정/삭제를 모두 처리합니다.**
+
+```typescript
+// ✅ 안전: 개별 필드만 감지하고 생성/수정/삭제 모두 처리
+export const onUserDisplayNameWrite = onValueWritten(
+  { ref: "/users/{uid}/displayName", region: FIREBASE_REGION },
+  async (event) => {
+    // displayName이 생성/수정/삭제될 때만 트리거
+    // displayNameLowerCase를 업데이트해도
+    // displayName 값은 변경되지 않으므로 재트리거 안 됨
+
+    // 삭제 케이스: afterValue === null
+    // → displayNameLowerCase도 함께 삭제하여 데이터 동기화
+  }
+);
+
+export const onUserPhotoUrlWrite = onValueWritten(
+  { ref: "/users/{uid}/photoUrl", region: FIREBASE_REGION },
+  async (event) => {
+    // photoUrl이 생성/수정/삭제될 때만 트리거
+  }
+);
+
+export const onUserBirthYearMonthDayWrite = onValueWritten(
+  { ref: "/users/{uid}/birthYearMonthDay", region: FIREBASE_REGION },
+  async (event) => {
+    // birthYearMonthDay가 생성/수정/삭제될 때만 트리거
+    // 파생 필드(birthYear, birthMonth 등)를 업데이트해도
+    // birthYearMonthDay 값은 변경되지 않으므로 재트리거 안 됨
+
+    // 삭제 케이스: afterValue === null
+    // → 모든 파생 필드(birthYear, birthMonth, birthDay, birthMonthDay)도 함께 삭제
+  }
+);
+
+export const onUserGenderWrite = onValueWritten(
+  { ref: "/users/{uid}/gender", region: FIREBASE_REGION },
+  async (event) => {
+    // gender가 생성/수정/삭제될 때만 트리거
+    // 정렬 필드(sort_recentFemaleWithPhoto, sort_recentMaleWithPhoto)를 업데이트해도
+    // gender 값은 변경되지 않으므로 재트리거 안 됨
+
+    // 삭제 케이스: afterValue === null
+    // → 성별 관련 정렬 필드(sort_recentFemaleWithPhoto, sort_recentMaleWithPhoto) 삭제
+  }
+);
+```
+
+### 장점
+
+1. **무한 루프 방지** ⭐ 핵심
+   - 트리거 필드와 업데이트 필드가 분리되어 재트리거 방지
+   - 예: displayName 트리거 → displayNameLowerCase 업데이트 (displayName은 변경 안 됨)
+
+2. **완전한 데이터 동기화** ⭐ 중요
+   - `onValueWritten` 사용으로 생성/수정/삭제 모두 감지
+   - 필드 삭제 시 파생 필드도 함께 삭제하여 데이터 일관성 보장
+   - 예: displayName 삭제 → displayNameLowerCase도 자동 삭제
+   - 예: birthYearMonthDay 삭제 → 모든 파생 필드(birthYear, birthMonth, birthDay, birthMonthDay) 자동 삭제
+
+3. **성능 최적화**
+   - 필요한 필드만 변경될 때만 트리거
+   - 불필요한 함수 실행 방지
+
+4. **비용 절감**
+   - Cloud Functions 실행 횟수 감소
+   - 데이터베이스 읽기/쓰기 작업 최소화
+
+5. **명확한 책임 분리**
+   - 각 트리거가 담당하는 필드가 명확
+   - 디버깅 및 유지보수 용이
+
+### 구현 예시
+
+#### 1. displayName 생성/수정/삭제 시
+```typescript
+export const onUserDisplayNameWrite = onValueWritten(
+  { ref: "/users/{uid}/displayName", region: FIREBASE_REGION },
+  async (event) => {
+    const uid = event.params.uid as string;
+    const beforeValue = event.data.before.val() as string | null;
+    const afterValue = event.data.after.val() as string | null;
+
+    logger.info("displayName 필드 변경 감지 (생성/수정/삭제)", {
+      uid,
+      beforeValue,
+      afterValue,
+      action: afterValue === null ? "삭제" : beforeValue === null ? "생성" : "수정",
+    });
+
+    // 삭제 케이스: displayNameLowerCase도 함께 삭제
+    // 생성/수정 케이스: displayNameLowerCase 자동 생성, createdAt 없으면 추가, updatedAt 업데이트
+    return await handleUserDisplayNameUpdate(uid, beforeValue, afterValue);
+  }
+);
+```
+
+#### 2. photoUrl 생성/수정/삭제 시
+```typescript
+export const onUserPhotoUrlWrite = onValueWritten(
+  { ref: "/users/{uid}/photoUrl", region: FIREBASE_REGION },
+  async (event) => {
+    const uid = event.params.uid as string;
+    const beforeValue = event.data.before.val() as string | null;
+    const afterValue = event.data.after.val() as string | null;
+
+    logger.info("photoUrl 필드 변경 감지 (생성/수정/삭제)", {
+      uid,
+      beforeValue,
+      afterValue,
+      action: afterValue === null ? "삭제" : beforeValue === null ? "생성" : "수정",
+    });
+
+    // createdAt 없으면 추가
+    // updatedAt 업데이트
+    return await handleUserPhotoUrlUpdate(uid, beforeValue, afterValue);
+  }
+);
+```
+
+#### 3. birthYearMonthDay 생성/수정/삭제 시
+```typescript
+export const onUserBirthYearMonthDayWrite = onValueWritten(
+  { ref: "/users/{uid}/birthYearMonthDay", region: FIREBASE_REGION },
+  async (event) => {
+    const uid = event.params.uid as string;
+    const beforeValue = event.data.before.val() as string | null;
+    const afterValue = event.data.after.val() as string | null;
+
+    logger.info("birthYearMonthDay 필드 변경 감지 (생성/수정/삭제)", {
+      uid,
+      beforeValue,
+      afterValue,
+      action: afterValue === null ? "삭제" : beforeValue === null ? "생성" : "수정",
+    });
+
+    // 삭제 케이스: 모든 파생 필드(birthYear, birthMonth, birthDay, birthMonthDay) 삭제
+    // 생성/수정 케이스: YYYY-MM-DD 파싱 및 파생 필드 생성, createdAt 없으면 추가
+    return await handleUserBirthYearMonthDayUpdate(uid, beforeValue, afterValue);
+  }
+);
+```
+
+### 데이터 흐름
+
+#### 생성/수정 케이스
+```
+사용자 액션: displayName 생성 또는 업데이트
+   ↓
+/users/{uid}/displayName 변경
+   ↓
+onUserDisplayNameWrite 트리거
+   ↓
+handleUserDisplayNameUpdate 실행
+   ↓
+/users/{uid}/displayNameLowerCase 업데이트
+/users/{uid}/updatedAt 업데이트
+   ↓
+displayName 값은 변경 안 됨 → 재트리거 안 됨 ✅
+```
+
+#### 삭제 케이스
+```
+사용자 액션: displayName 삭제
+   ↓
+/users/{uid}/displayName = null
+   ↓
+onUserDisplayNameWrite 트리거
+   ↓
+handleUserDisplayNameUpdate 실행 (afterValue === null)
+   ↓
+/users/{uid}/displayNameLowerCase = null (삭제)
+/users/{uid}/updatedAt 업데이트
+   ↓
+데이터 동기화 완료, displayName 값은 변경 안 됨 → 재트리거 안 됨 ✅
+```
+
+#### birthYearMonthDay 삭제 케이스 (다중 파생 필드)
+```
+사용자 액션: birthYearMonthDay 삭제
+   ↓
+/users/{uid}/birthYearMonthDay = null
+   ↓
+onUserBirthYearMonthDayWrite 트리거
+   ↓
+handleUserBirthYearMonthDayUpdate 실행 (afterValue === null)
+   ↓
+모든 파생 필드 삭제:
+  - /users/{uid}/birthYear = null
+  - /users/{uid}/birthMonth = null
+  - /users/{uid}/birthDay = null
+  - /users/{uid}/birthMonthDay = null
+   ↓
+데이터 동기화 완료, birthYearMonthDay 값은 변경 안 됨 → 재트리거 안 됨 ✅
+```
+
+### 주의사항
+
+1. **트리거 필드와 업데이트 필드 분리 필수**
+   - 트리거되는 필드는 핸들러 내에서 수정하지 않음
+   - 예: displayName 트리거 → displayName 수정 금지
+
+2. **onValueWritten 사용 필수** ⭐ 중요
+   - `onValueUpdated` 대신 `onValueWritten` 사용
+   - 생성/수정/삭제 모두 감지하여 완전한 데이터 동기화 보장
+   - 삭제 케이스를 놓치면 파생 필드가 남아 데이터 불일치 발생
+
+3. **삭제 케이스 처리 필수** ⭐ 중요
+   - `afterValue === null` 체크로 삭제 감지
+   - 파생 필드도 함께 삭제 (`null` 설정)하여 데이터 동기화
+   - 예: displayName 삭제 시 displayNameLowerCase도 삭제
+   - 예: birthYearMonthDay 삭제 시 모든 파생 필드 삭제
+
+4. **여러 필드 동시 변경 시**
+   - 각 필드별 트리거가 독립적으로 실행됨
+   - 예: displayName + photoUrl 동시 변경 → 2개 트리거 모두 실행
+
+5. **createdAt 처리**
+   - 모든 핸들러에서 createdAt 체크 필요
+   - 한 번만 생성되므로 중복 실행 시에도 안전
+   - 삭제 케이스에서는 createdAt 처리하지 않음 (불필요)
+
+---
 
 ## 주의사항
 
@@ -642,6 +1153,145 @@ interface UserData {
    - birthYearMonthDay 형식 검증 (정규식)
    - 형식 오류 시 경고 로그만 출력 (함수 실패 안 함)
    - 다른 에러는 함수 실패로 처리되며 Firebase Functions가 자동 재시도
+
+## 정렬 필드 사용 예시
+
+### 목적
+
+photoUrl이 있는 회원을 효율적으로 필터링 및 정렬하기 위한 정렬 필드 사용 방법
+
+### 사용 시나리오
+
+#### 1. 사진이 있는 모든 회원 목록 (가입일 역순)
+
+```typescript
+const usersRef = admin.database().ref('users');
+const snapshot = await usersRef
+  .orderByChild('sort_recentWithPhoto')
+  .limitToLast(20)  // 최근 20명
+  .once('value');
+
+const users = [];
+snapshot.forEach((child) => {
+  users.push({
+    uid: child.key,
+    ...child.val()
+  });
+});
+
+// 역순 정렬 (최신 → 과거)
+users.reverse();
+```
+
+#### 2. 사진이 있는 여성 회원만 목록
+
+```typescript
+const usersRef = admin.database().ref('users');
+const snapshot = await usersRef
+  .orderByChild('sort_recentFemaleWithPhoto')
+  .limitToLast(20)
+  .once('value');
+
+const femaleUsers = [];
+snapshot.forEach((child) => {
+  const user = child.val();
+  // null이 아닌 값만 필터링 (gender=F인 경우만)
+  if (user.sort_recentFemaleWithPhoto) {
+    femaleUsers.push({
+      uid: child.key,
+      ...user
+    });
+  }
+});
+
+femaleUsers.reverse();
+```
+
+#### 3. 사진이 있는 남성 회원만 목록
+
+```typescript
+const usersRef = admin.database().ref('users');
+const snapshot = await usersRef
+  .orderByChild('sort_recentMaleWithPhoto')
+  .limitToLast(20)
+  .once('value');
+
+const maleUsers = [];
+snapshot.forEach((child) => {
+  const user = child.val();
+  // null이 아닌 값만 필터링 (gender=M인 경우만)
+  if (user.sort_recentMaleWithPhoto) {
+    maleUsers.push({
+      uid: child.key,
+      ...user
+    });
+  }
+});
+
+maleUsers.reverse();
+```
+
+#### 4. 특정 기간의 사진 있는 회원 목록
+
+```typescript
+// 2024년 1월 1일 이후 가입한 사진 있는 회원
+const startDate = new Date('2024-01-01').getTime();
+
+const usersRef = admin.database().ref('users');
+const snapshot = await usersRef
+  .orderByChild('sort_recentWithPhoto')
+  .startAt(startDate)
+  .limitToLast(20)
+  .once('value');
+
+const recentUsers = [];
+snapshot.forEach((child) => {
+  recentUsers.push({
+    uid: child.key,
+    ...child.val()
+  });
+});
+
+recentUsers.reverse();
+```
+
+### 장점
+
+1. **성능 최적화**
+   - Firebase Database의 인덱싱을 활용한 빠른 쿼리
+   - photoUrl 필드를 직접 체크하지 않고 정렬 필드만 확인
+
+2. **비용 절감**
+   - 필요한 데이터만 효율적으로 로드
+   - 불필요한 읽기 작업 최소화
+
+3. **유연한 필터링**
+   - 성별별로 분리된 필드로 다양한 쿼리 가능
+   - 조합 쿼리로 복잡한 조건 처리 가능
+
+### 주의사항
+
+1. **Firebase Database 인덱싱 필요**
+   ```json
+   {
+     "rules": {
+       "users": {
+         ".indexOn": ["sort_recentWithPhoto", "sort_recentFemaleWithPhoto", "sort_recentMaleWithPhoto"]
+       }
+     }
+   }
+   ```
+
+2. **null 값 필터링**
+   - `sort_recentFemaleWithPhoto`와 `sort_recentMaleWithPhoto`는 조건에 맞지 않으면 null
+   - 쿼리 결과에서 null 값을 필터링해야 함
+
+3. **데이터 동기화** ⭐ 자동 업데이트
+   - photoUrl 업데이트 시 자동으로 정렬 필드 업데이트됨
+   - **gender 변경 시에도 자동으로 정렬 필드 갱신됨** (`onUserGenderWrite` 트리거)
+   - photoUrl과 gender 중 하나라도 변경되면 즉시 정렬 필드가 동기화됨
+
+---
 
 ## 향후 개선 사항
 

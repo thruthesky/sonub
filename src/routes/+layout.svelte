@@ -17,18 +17,34 @@
 	import DevIcon from '$lib/components/dev/dev-icon.svelte';
 	import FcmPermissionGate from '$lib/components/FcmPermissionGate.svelte';
 	import { dev } from '$app/environment';
-	import { Toaster } from 'svelte-sonner';
+	import { Toaster, toast } from 'svelte-sonner';
 	import { onMount } from 'svelte';
-	import { registerServiceWorker } from '$lib/fcm';
+	import { registerServiceWorker, subscribeOnMessage } from '$lib/fcm';
 
 	let { children } = $props();
 
 	/**
-	 * 앱 시작 시 서비스 워커 미리 등록
-	 * FCM 권한 요청 시 서비스 워커가 이미 활성화되어 있어야 토큰 발급이 성공합니다.
+	 * 앱 시작 시 초기화
+	 * 1. 서비스 워커 미리 등록 (FCM 토큰 발급을 위해 필요)
+	 * 2. 포그라운드 메시지 리스너 등록 (Toast 알림 표시)
 	 */
 	onMount(async () => {
+		// 서비스 워커 등록
 		await registerServiceWorker();
+
+		// 포그라운드 메시지 수신 리스너 등록
+		subscribeOnMessage((payload) => {
+			console.log('[Layout] 포그라운드 메시지 수신:', payload);
+
+			// Toast 알림 표시
+			const title = payload.notification?.title ?? payload.data?.title ?? '새 알림';
+			const body = payload.notification?.body ?? payload.data?.body ?? '';
+
+			toast.success(title, {
+				description: body,
+				duration: 5000 // 5초 동안 표시
+			});
+		});
 	});
 </script>
 

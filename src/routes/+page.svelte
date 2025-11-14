@@ -5,11 +5,21 @@
 	 * Sonub 프로젝트의 메인 랜딩 페이지입니다.
 	 */
 
+	import { onMount } from 'svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import Avatar from '$lib/components/user/avatar.svelte';
 	import { m } from '$lib/paraglide/messages';
+	import { rtdb } from '$lib/firebase';
+	import { get, limitToLast, orderByChild, query, ref, type DatabaseReference } from 'firebase/database';
+
+	type UserPreview = {
+		uid: string;
+		displayName: string;
+		photoUrl: string | null;
+		sortRecentWithPhoto: number;
+	};
 
 	const dashboardCards = [
 		{
@@ -33,6 +43,46 @@
 			description: () => m.homeSectionRecentPostsDesc()
 		}
 	];
+
+	let recentUsers = $state<UserPreview[]>([]);
+	let isLoadingRecentUsers = $state(true);
+
+	onMount(() => {
+		fetchRecentUsers();
+	});
+
+	async function fetchRecentUsers() {
+		if (!rtdb) {
+			isLoadingRecentUsers = false;
+			return;
+		}
+
+		try {
+			const usersRef: DatabaseReference = ref(rtdb, 'users');
+			const recentQuery = query(usersRef, orderByChild('sort_recentWithPhoto'), limitToLast(5));
+			const snapshot = await get(recentQuery);
+
+			const users: UserPreview[] = [];
+
+			snapshot.forEach((child) => {
+				const value = child.val();
+				users.push({
+					uid: child.key ?? '',
+					displayName: value?.displayName ?? '',
+					photoUrl: value?.photoUrl ?? null,
+					sortRecentWithPhoto: value?.sort_recentWithPhoto ?? 0
+				});
+			});
+
+			users.sort((a, b) => (b.sortRecentWithPhoto ?? 0) - (a.sortRecentWithPhoto ?? 0));
+			recentUsers = users.filter((user) => Boolean(user.photoUrl));
+		} catch (error) {
+			console.error('[Home] 최근 사용자 로드 실패:', error);
+			recentUsers = [];
+		} finally {
+			isLoadingRecentUsers = false;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -95,16 +145,45 @@
 					</Card.Description>
 				</Card.Header>
 				<Card.Content>
-					<div class="placeholder-panel">
-						<div class="placeholder-indicators">
-							<span class="indicator-dot" aria-hidden="true"></span>
-							<span class="indicator-dot" aria-hidden="true"></span>
-							<span class="indicator-dot" aria-hidden="true"></span>
+					{#if card.id === 'recent-users'}
+						{#if isLoadingRecentUsers}
+							<div class="placeholder-panel">
+								<p class="placeholder-text">{m.commonLoading()}</p>
+							</div>
+						{:else if recentUsers.length === 0}
+							<div class="placeholder-panel">
+								<p class="placeholder-text">{m.homeSectionRecentUsersDesc()}</p>
+							</div>
+						{:else}
+							<div class="stacked-wrapper">
+								<div class="stacked-avatars" aria-label={m.homeSectionRecentUsers()}>
+									{#each recentUsers as user, index (user.uid)}
+										<img
+											src={user.photoUrl ?? ''}
+											alt={user.displayName || 'recent user'}
+											class="stacked-avatar"
+											style={`z-index: ${recentUsers.length - index};`}
+											loading="lazy"
+										/>
+									{/each}
+								</div>
+								<p class="stacked-caption">
+									{m.homeSectionRecentUsersCount({ count: recentUsers.length })}
+								</p>
+							</div>
+						{/if}
+					{:else}
+						<div class="placeholder-panel">
+							<div class="placeholder-indicators">
+								<span class="indicator-dot" aria-hidden="true"></span>
+								<span class="indicator-dot" aria-hidden="true"></span>
+								<span class="indicator-dot" aria-hidden="true"></span>
+							</div>
+							<p class="placeholder-text">
+								Coming soon
+							</p>
 						</div>
-						<p class="placeholder-text">
-							Coming soon
-						</p>
-					</div>
+					{/if}
 				</Card.Content>
 			</Card.Root>
 		{/each}
@@ -132,5 +211,26 @@
 
 	.placeholder-text {
 		@apply text-sm font-medium text-gray-500;
+	}
+
+	.stacked-wrapper {
+		@apply flex flex-col items-start gap-3;
+	}
+
+	.stacked-avatars {
+		@apply flex items-center;
+	}
+
+	.stacked-avatar {
+		@apply h-12 w-12 rounded-full border-2 border-white object-cover shadow ring-1 ring-gray-200;
+		margin-left: -0.75rem;
+	}
+
+	.stacked-avatar:first-child {
+		margin-left: 0;
+	}
+
+	.stacked-caption {
+		@apply text-sm font-medium text-gray-800;
 	}
 </style>

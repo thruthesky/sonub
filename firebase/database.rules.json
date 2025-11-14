@@ -12,7 +12,10 @@
       },
       ".indexOn": [
         "createdAt",
-        "displayNameLowerCase"
+        "displayNameLowerCase",
+        "sort_recentWithPhoto",
+        "sort_recentFemaleWithPhoto",
+        "sort_recentMaleWithPhoto"
       ]
     },
     "system": {

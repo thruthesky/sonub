@@ -13,8 +13,8 @@
 import {setGlobalOptions} from "firebase-functions/v2";
 import {
   onValueCreated,
-  onValueUpdated,
   onValueDeleted,
+  onValueWritten,
 } from "firebase-functions/v2/database";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
@@ -23,7 +23,13 @@ import * as admin from "firebase-admin";
 import {UserData, ChatMessage} from "./types";
 
 // 비즈니스 로직 핸들러 임포트
-import {handleUserCreate, handleUserUpdate} from "./handlers/user.handler";
+import {
+  handleUserCreate,
+  handleUserDisplayNameUpdate,
+  handleUserPhotoUrlUpdate,
+  handleUserBirthYearMonthDayUpdate,
+  handleUserGenderUpdate,
+} from "./handlers/user.handler";
 import {
   handleChatMessageCreate,
   handleChatJoinCreate,
@@ -88,34 +94,169 @@ export const onUserCreate = onValueCreated(
 
 
 /**
- * 사용자 정보 수정
+ * 사용자 displayName 필드 생성/수정/삭제 시 트리거
  *
- * 트리거 경로: /users/{uid}
+ * 트리거 경로: /users/{uid}/displayName
+ * 트리거 이벤트: onValueWritten (생성, 수정, 삭제 모두 감지)
  *
  * 수행 작업:
- * 1. createdAt 필드가 없으면 자동 생성
- * 2. 주의: updatedAt 은 모든 업데이트에서 수정하는 것이 아니라, `displayName`, `photoUrl` 이 업데이트 된 경우에만, updatedAt 을 새로운 timestamp 로 업데이트 합니다.
+ * - 생성/수정 시:
+ *   1. createdAt 필드가 없으면 자동 생성
+ *   2. displayNameLowerCase 자동 생성 (대소문자 구분 없는 검색용)
+ *   3. updatedAt 업데이트
+ * - 삭제 시:
+ *   1. displayNameLowerCase 삭제 (동기화)
+ *   2. updatedAt 업데이트
+ *
+ * 무한 루프 방지:
+ * - displayName 필드만 감지하므로 displayNameLowerCase 업데이트 시 재트리거 안 됨
  */
-export const onUserUpdate = onValueUpdated(
+export const onUserDisplayNameWrite = onValueWritten(
   {
-    ref: "/users/{uid}",
+    ref: "/users/{uid}/displayName",
     region: FIREBASE_REGION,
   },
   async (event) => {
     const uid = event.params.uid as string;
+    const beforeValue = event.data.before.val() as string | null;
+    const afterValue = event.data.after.val() as string | null;
 
-    // onValueUpdated는 before와 after 데이터를 모두 제공
-    const beforeData = (event.data.before.val() || {}) as UserData;
-    const afterData = (event.data.after.val() || {}) as UserData;
-
-    logger.info("사용자 정보 수정 감지", {
+    logger.info("displayName 필드 변경 감지 (생성/수정/삭제)", {
       uid,
-      beforeDisplayName: beforeData.displayName ?? null,
-      afterDisplayName: afterData.displayName ?? null,
+      beforeValue,
+      afterValue,
+      action: afterValue === null ? "삭제" : beforeValue === null ? "생성" : "수정",
     });
 
-    // 비즈니스 로직 핸들러 호출 (before/after 데이터 전달)
-    return await handleUserUpdate(uid, beforeData, afterData);
+    // 비즈니스 로직 핸들러 호출
+    return await handleUserDisplayNameUpdate(uid, beforeValue, afterValue);
+  }
+);
+
+/**
+ * 사용자 photoUrl 필드 생성/수정/삭제 시 트리거
+ *
+ * 트리거 경로: /users/{uid}/photoUrl
+ * 트리거 이벤트: onValueWritten (생성, 수정, 삭제 모두 감지)
+ *
+ * 수행 작업:
+ * - 생성/수정 시:
+ *   1. createdAt 필드가 없으면 자동 생성
+ *   2. updatedAt 업데이트
+ * - 삭제 시:
+ *   1. updatedAt 업데이트
+ *
+ * 무한 루프 방지:
+ * - photoUrl 필드만 감지하므로 다른 필드 업데이트 시 재트리거 안 됨
+ */
+export const onUserPhotoUrlWrite = onValueWritten(
+  {
+    ref: "/users/{uid}/photoUrl",
+    region: FIREBASE_REGION,
+  },
+  async (event) => {
+    const uid = event.params.uid as string;
+    const beforeValue = event.data.before.val() as string | null;
+    const afterValue = event.data.after.val() as string | null;
+
+    logger.info("photoUrl 필드 변경 감지 (생성/수정/삭제)", {
+      uid,
+      beforeValue,
+      afterValue,
+      action: afterValue === null ? "삭제" : beforeValue === null ? "생성" : "수정",
+    });
+
+    // 비즈니스 로직 핸들러 호출
+    return await handleUserPhotoUrlUpdate(uid, beforeValue, afterValue);
+  }
+);
+
+/**
+ * 사용자 birthYearMonthDay 필드 생성/수정/삭제 시 트리거
+ *
+ * 트리거 경로: /users/{uid}/birthYearMonthDay
+ * 트리거 이벤트: onValueWritten (생성, 수정, 삭제 모두 감지)
+ *
+ * 수행 작업:
+ * - 생성/수정 시:
+ *   1. createdAt 필드가 없으면 자동 생성
+ *   2. YYYY-MM-DD 형식 파싱 및 유효성 검증
+ *   3. 파생 필드 자동 생성:
+ *      - birthYear (number): 생년
+ *      - birthMonth (number): 생월
+ *      - birthDay (number): 생일
+ *      - birthMonthDay (string): 생월일 (MM-DD 형식)
+ * - 삭제 시:
+ *   1. 모든 파생 필드 삭제 (동기화)
+ *
+ * 무한 루프 방지:
+ * - birthYearMonthDay 필드만 감지하므로 파생 필드 업데이트 시 재트리거 안 됨
+ *
+ * 참고:
+ * - updatedAt은 업데이트하지 않음 (내부 속성 변경으로 간주)
+ */
+export const onUserBirthYearMonthDayWrite = onValueWritten(
+  {
+    ref: "/users/{uid}/birthYearMonthDay",
+    region: FIREBASE_REGION,
+  },
+  async (event) => {
+    const uid = event.params.uid as string;
+    const beforeValue = event.data.before.val() as string | null;
+    const afterValue = event.data.after.val() as string | null;
+
+    logger.info("birthYearMonthDay 필드 변경 감지 (생성/수정/삭제)", {
+      uid,
+      beforeValue,
+      afterValue,
+      action: afterValue === null ? "삭제" : beforeValue === null ? "생성" : "수정",
+    });
+
+    // 비즈니스 로직 핸들러 호출
+    return await handleUserBirthYearMonthDayUpdate(uid, beforeValue, afterValue);
+  }
+);
+
+/**
+ * 사용자 gender 필드 생성/수정/삭제 시 트리거
+ *
+ * 트리거 경로: /users/{uid}/gender
+ * 트리거 이벤트: onValueWritten (생성, 수정, 삭제 모두 감지)
+ *
+ * 수행 작업:
+ * - 생성/수정 시:
+ *   1. photoUrl 존재 여부 확인
+ *   2. photoUrl이 있는 경우:
+ *      - gender=F: sort_recentFemaleWithPhoto에 createdAt 설정, sort_recentMaleWithPhoto는 null
+ *      - gender=M: sort_recentMaleWithPhoto에 createdAt 설정, sort_recentFemaleWithPhoto는 null
+ *   3. photoUrl이 없는 경우: 두 정렬 필드 모두 null
+ *   4. updatedAt 업데이트
+ * - 삭제 시:
+ *   1. sort_recentFemaleWithPhoto와 sort_recentMaleWithPhoto 삭제
+ *   2. updatedAt 업데이트
+ *
+ * 무한 루프 방지:
+ * - gender 필드만 감지하므로 다른 필드 업데이트 시 재트리거 안 됨
+ */
+export const onUserGenderWrite = onValueWritten(
+  {
+    ref: "/users/{uid}/gender",
+    region: FIREBASE_REGION,
+  },
+  async (event) => {
+    const uid = event.params.uid as string;
+    const beforeValue = event.data.before.val() as string | null;
+    const afterValue = event.data.after.val() as string | null;
+
+    logger.info("gender 필드 변경 감지 (생성/수정/삭제)", {
+      uid,
+      beforeValue,
+      afterValue,
+      action: afterValue === null ? "삭제" : beforeValue === null ? "생성" : "수정",
+    });
+
+    // 비즈니스 로직 핸들러 호출
+    return await handleUserGenderUpdate(uid, beforeValue, afterValue);
   }
 );
 

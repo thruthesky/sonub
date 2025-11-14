@@ -19,25 +19,28 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// 백그라운드 메시지 수신 처리
-messaging.onBackgroundMessage((payload) => {
-	console.log('[firebase-messaging-sw.js] 백그라운드 메시지 수신:', payload);
+/**
+ * 백그라운드 메시지 수신 처리
+ * Notification 필드가 있으면, FCM 이 운영체제에 자동 알림하므로, 직접 처리할 필요 없음
+ */
+// messaging.onBackgroundMessage((payload) => {
+// 	console.log('[firebase-messaging-sw.js] 백그라운드 메시지 수신:', payload);
 
-	// 알림 제목 및 옵션 설정
-	const notificationTitle = payload.notification?.title ?? '새 알림';
-	const notificationOptions = {
-		body: payload.notification?.body ?? '',
-		icon: '/favicon-512.png', // static 폴더의 아이콘 경로
-		badge: '/favicon-64.png',
-		data: payload.data, // 커스텀 데이터 전달
-		tag: payload.data?.tag ?? 'default', // 중복 알림 방지
-		requireInteraction: false, // 자동으로 사라지도록 설정
-		vibrate: [200, 100, 200] // 진동 패턴 (모바일)
-	};
+// 	// 알림 제목 및 옵션 설정
+// 	const notificationTitle = payload.notification?.title ?? '새 알림';
+// 	const notificationOptions = {
+// 		body: payload.notification?.body ?? '',
+// 		icon: '/favicon-512.png', // static 폴더의 아이콘 경로
+// 		badge: '/favicon-64.png',
+// 		data: payload.data, // 커스텀 데이터 전달
+// 		tag: payload.data?.tag ?? 'default', // 중복 알림 방지
+// 		requireInteraction: false, // 자동으로 사라지도록 설정
+// 		vibrate: [200, 100, 200] // 진동 패턴 (모바일)
+// 	};
 
-	// 브라우저 알림 표시
-	self.registration.showNotification(notificationTitle, notificationOptions);
-});
+// 	// 브라우저 알림 표시
+// 	self.registration.showNotification(notificationTitle, notificationOptions);
+// });
 
 // 알림 클릭 이벤트 처리
 self.addEventListener('notificationclick', (event) => {
