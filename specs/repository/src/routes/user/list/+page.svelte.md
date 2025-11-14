@@ -141,7 +141,7 @@ original_path: src/routes/user/list/+page.svelte
       <article class="user-card">
         <a
           class="user-card-main"
-          href={`/user/profile/${itemData.key}`}
+          href={`/user/profile?uid=${itemData.key}`}
           aria-label={m.userProfileDetail()}
         >
           <div class="user-avatar">
@@ -576,3 +576,9 @@ original_path: src/routes/user/list/+page.svelte
 ## 관련 파일
 
 (이 섹션은 수동으로 업데이트 필요)
+
+## 작업 이력 (SED Log)
+
+| 날짜 | 작업자 | 변경 내용 |
+| ---- | ------ | -------- |
+| 2025-11-14 | Codex Agent | 사용자 카드 링크를 `/user/profile?uid=...` 쿼리 방식으로 변경 |

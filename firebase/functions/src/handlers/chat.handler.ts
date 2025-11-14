@@ -11,7 +11,7 @@ import * as admin from "firebase-admin";
 import {ChatMessage} from "../types";
 import {
   isSingleChat,
-  extractUidsFromSingleRoomId,
+  getPartnerUidFromSingleRoomId,
 } from "../../../../shared/chat.pure-functions";
 import {
   sendChatMessageNotification,
@@ -80,15 +80,16 @@ export async function handleChatMessageCreate(
     // === 1:1 채팅 처리 ===
     logger.info("1:1 채팅 메시지 처리", {messageId, roomId});
 
-    // 1:1 채팅 roomId에서 두 사용자의 UID 추출
-    const uids = extractUidsFromSingleRoomId(roomId);
-    if (!uids) {
-      logger.error("잘못된 1:1 채팅 roomId 형식", {messageId, roomId});
+    // 1:1 채팅 roomId에서 상대방 UID 추출
+    const partnerUid = getPartnerUidFromSingleRoomId(roomId, senderUid);
+    if (!partnerUid) {
+      logger.error("잘못된 1:1 채팅 roomId 또는 partnerUid 추출 실패", {
+        messageId,
+        roomId,
+        senderUid,
+      });
       return;
     }
-
-    const [uid1, uid2] = uids;
-    const partnerUid = senderUid === uid1 ? uid2 : uid1;
 
     // singleChatListOrder 계산
     // - 발신자: 읽음 상태이므로 그냥 timestamp
@@ -107,7 +108,8 @@ export async function handleChatMessageCreate(
     updates[`chat-joins/${senderUid}/${roomId}/updatedAt`] = timestamp;
     updates[`chat-joins/${senderUid}/${roomId}/singleChatListOrder`] =
       senderSingleListOrder;
-    updates[`chat-joins/${senderUid}/${roomId}/allChatListOrder`] = timestamp;
+    updates[`chat-joins/${senderUid}/${roomId}/allChatListOrder`] =
+      senderSingleListOrder;
 
     // 수신자의 chat-join 업데이트 (읽지 않은 상태, 200 prefix 추가)
     updates[`chat-joins/${partnerUid}/${roomId}/roomId`] = roomId;
@@ -118,7 +120,8 @@ export async function handleChatMessageCreate(
     updates[`chat-joins/${partnerUid}/${roomId}/updatedAt`] = timestamp;
     updates[`chat-joins/${partnerUid}/${roomId}/singleChatListOrder`] =
       partnerSingleListOrder;
-    updates[`chat-joins/${partnerUid}/${roomId}/allChatListOrder`] = timestamp;
+    updates[`chat-joins/${partnerUid}/${roomId}/allChatListOrder`] =
+      partnerSingleListOrder;
 
     // 수신자의 읽지 않은 메시지 카운터 증가
     updates[`chat-joins/${partnerUid}/${roomId}/newMessageCount`] =
@@ -169,9 +172,30 @@ export async function handleChatMessageCreate(
 
     const updates: {[key: string]: unknown} = {};
 
+    // 각 member의 기존 chat-joins 데이터를 먼저 읽기 (병렬 처리)
+    const chatJoinReads = Object.keys(members).map(async (memberUid) => {
+      const chatJoinRef = admin.database().ref(
+        `chat-joins/${memberUid}/${roomId}`
+      );
+      const snapshot = await chatJoinRef.once("value");
+      return {
+        memberUid,
+        existingData: snapshot.val() as Record<string, unknown> | null,
+      };
+    });
+
+    const chatJoinResults = await Promise.all(chatJoinReads);
+
+    logger.info("기존 chat-joins 데이터 읽기 완료", {
+      messageId,
+      roomId,
+      memberCount: chatJoinResults.length,
+    });
+
     // 각 member의 chat-joins 업데이트
-    for (const memberUid of Object.keys(members)) {
+    for (const {memberUid, existingData} of chatJoinResults) {
       const basePath = `chat-joins/${memberUid}/${roomId}`;
+      const isSender = memberUid === senderUid;
 
       // 공통 필드
       updates[`${basePath}/roomId`] = roomId;
@@ -180,27 +204,104 @@ export async function handleChatMessageCreate(
       updates[`${basePath}/lastMessageText`] = messageText;
       updates[`${basePath}/lastMessageAt`] = timestamp;
       updates[`${basePath}/updatedAt`] = timestamp;
-      updates[`${basePath}/allChatListOrder`] = timestamp;
+
+      // allChatListOrder 계산
+      // - 기존 필드가 있고, "500"으로 시작하면 유지 (핀 설정된 채팅방)
+      // - 기존 필드가 있고, 발신자인 경우: timestamp (읽음)
+      // - 기존 필드가 있고, 수신자인 경우: 200 + timestamp (읽지 않음)
+      // - 기존 필드가 없는 경우: timestamp (새로 생성)
+      const existingAllChatListOrder = existingData?.allChatListOrder as
+        | string
+        | number
+        | undefined;
+
+      if (
+        existingAllChatListOrder !== undefined &&
+        String(existingAllChatListOrder).startsWith("500")
+      ) {
+        // 핀 설정된 채팅방: 기존 값 유지
+        updates[`${basePath}/allChatListOrder`] = existingAllChatListOrder;
+      } else if (existingAllChatListOrder !== undefined) {
+        // 기존 필드가 있는 경우
+        updates[`${basePath}/allChatListOrder`] = isSender ?
+          `${timestamp}` :
+          `200${timestamp}`;
+      } else {
+        // 기존 필드가 없는 경우: 새로 생성 (timestamp만)
+        updates[`${basePath}/allChatListOrder`] = `${timestamp}`;
+      }
 
       // 채팅방 타입에 따른 정렬 필드
       if (roomType === "group") {
         // 그룹 채팅인 경우
-        // 발신자: 읽음 상태, 수신자: 읽지 않은 상태 (200 prefix)
-        const groupListOrder =
-          memberUid === senderUid ? `${timestamp}` : `200${timestamp}`;
-        updates[`${basePath}/groupChatListOrder`] = groupListOrder;
+        const existingGroupListOrder = existingData?.groupChatListOrder as
+          | string
+          | number
+          | undefined;
+
+        if (
+          existingGroupListOrder !== undefined &&
+          String(existingGroupListOrder).startsWith("500")
+        ) {
+          // 핀 설정된 채팅방: 기존 값 유지
+          updates[`${basePath}/groupChatListOrder`] = existingGroupListOrder;
+        } else if (existingGroupListOrder !== undefined) {
+          // 기존 필드가 있는 경우
+          const groupListOrder = isSender ? `${timestamp}` : `200${timestamp}`;
+          updates[`${basePath}/groupChatListOrder`] = groupListOrder;
+        } else {
+          // 기존 필드가 없는 경우: 새로 생성
+          updates[`${basePath}/groupChatListOrder`] = `${timestamp}`;
+        }
       } else if (roomType === "open") {
         // 오픈 채팅인 경우
-        const openListOrder =
-          memberUid === senderUid ? `${timestamp}` : `200${timestamp}`;
-        updates[`${basePath}/openChatListOrder`] = openListOrder;
+        const existingOpenListOrder = existingData?.openChatListOrder as
+          | string
+          | number
+          | undefined;
+
+        if (
+          existingOpenListOrder !== undefined &&
+          String(existingOpenListOrder).startsWith("500")
+        ) {
+          // 핀 설정된 채팅방: 기존 값 유지
+          updates[`${basePath}/openChatListOrder`] = existingOpenListOrder;
+        } else if (existingOpenListOrder !== undefined) {
+          // 기존 필드가 있는 경우
+          const openListOrder = isSender ? `${timestamp}` : `200${timestamp}`;
+          updates[`${basePath}/openChatListOrder`] = openListOrder;
+        } else {
+          // 기존 필드가 없는 경우: 새로 생성
+          updates[`${basePath}/openChatListOrder`] = `${timestamp}`;
+        }
       }
 
       // 그룹/오픈 통합 정렬 필드
-      updates[`${basePath}/openAndGroupChatListOrder`] = timestamp;
+      const existingOpenAndGroupListOrder =
+        existingData?.openAndGroupChatListOrder as
+          | string
+          | number
+          | undefined;
+
+      if (
+        existingOpenAndGroupListOrder !== undefined &&
+        String(existingOpenAndGroupListOrder).startsWith("500")
+      ) {
+        // 핀 설정된 채팅방: 기존 값 유지
+        updates[`${basePath}/openAndGroupChatListOrder`] =
+          existingOpenAndGroupListOrder;
+      } else if (existingOpenAndGroupListOrder !== undefined) {
+        // 기존 필드가 있는 경우
+        updates[`${basePath}/openAndGroupChatListOrder`] = isSender ?
+          `${timestamp}` :
+          `200${timestamp}`;
+      } else {
+        // 기존 필드가 없는 경우: 새로 생성
+        updates[`${basePath}/openAndGroupChatListOrder`] = `${timestamp}`;
+      }
 
       // newMessageCount 증가 (발신자 제외)
-      if (memberUid !== senderUid) {
+      if (!isSender) {
         updates[`${basePath}/newMessageCount`] =
           admin.database.ServerValue.increment(1);
       }
@@ -244,11 +345,8 @@ export async function handleChatMessageCreate(
 
     if (isSingleChat(roomId)) {
       // 1:1 채팅: 상대방만 수신자
-      const uids = extractUidsFromSingleRoomId(roomId);
-      if (uids) {
-        const [uid1, uid2] = uids;
-        const partnerUid = senderUid === uid1 ? uid2 : uid1;
-
+      const partnerUid = getPartnerUidFromSingleRoomId(roomId, senderUid);
+      if (partnerUid) {
         // 구독 상태 확인
         const isSubscribed = await isChatSubscribed(roomId, partnerUid, true);
         if (isSubscribed) {
@@ -489,14 +587,14 @@ export async function handleChatJoinCreate(
     logger.info("1:1 채팅 참여 정보 처리", {uid, roomId});
 
     // 1:1 채팅 roomId에서 상대방 UID 추출
-    const uids = extractUidsFromSingleRoomId(roomId);
-    if (!uids) {
-      logger.error("잘못된 1:1 채팅 roomId 형식", {uid, roomId});
+    const partnerUid = getPartnerUidFromSingleRoomId(roomId, uid);
+    if (!partnerUid) {
+      logger.error("잘못된 1:1 채팅 roomId 또는 partnerUid 추출 실패", {
+        uid,
+        roomId,
+      });
       return;
     }
-
-    const [uid1, uid2] = uids;
-    const partnerUid = uid === uid1 ? uid2 : uid1;
 
     // 필수 필드 설정
     updates.roomId = roomId;
@@ -1217,4 +1315,126 @@ export async function handleChatInvitationCreate(
   });
 
   return {success: true, inviteeUid, roomId};
+}
+
+/**
+ * newMessageCount 필드 변경 시 비즈니스 로직 처리
+ *
+ * @param uid - 사용자 UID
+ * @param roomId - 채팅방 ID
+ * @param beforeValue - 변경 전 값
+ * @param afterValue - 변경 후 값
+ * @returns Promise<void>
+ *
+ * 주요 처리 로직:
+ * 1. newMessageCount가 0으로 변경되었는지 확인
+ * 2. 0이 아니면 처리하지 않음 (읽지 않은 메시지가 있는 경우)
+ * 3. 0이면 chat-joins 데이터 읽기
+ * 4. xxxListOrder로 끝나는 모든 필드 찾기
+ * 5. "200"으로 시작하는 필드에서 "200" prefix 제거
+ * 6. "500"으로 시작하는 필드는 유지 (핀 설정된 채팅방)
+ * 7. 존재하지 않는 필드는 무시
+ *
+ * 참고:
+ * - Prefix 규칙: "500" (핀됨) > "200" (읽지 않음) > "" (읽음)
+ * - 사용자가 채팅방에 입장하여 메시지를 읽으면 newMessageCount가 0이 됨
+ * - 이때 모든 order 필드에서 "200" prefix를 제거하여 "읽음" 상태로 전환
+ */
+export async function handleNewMessageCountWritten(
+  uid: string,
+  roomId: string,
+  beforeValue: number | null,
+  afterValue: number | null
+): Promise<void> {
+  logger.info("newMessageCount 필드 변경 감지", {
+    uid,
+    roomId,
+    beforeValue,
+    afterValue,
+  });
+
+  // afterValue가 0이 아니면 처리하지 않음
+  const newCount = Number(afterValue ?? 0);
+  if (newCount !== 0) {
+    logger.info("newMessageCount가 0이 아님, 처리 건너뜀", {
+      uid,
+      roomId,
+      newMessageCount: newCount,
+    });
+    return;
+  }
+
+  // chat-joins 데이터 읽기
+  const chatJoinRef = admin.database().ref(`chat-joins/${uid}/${roomId}`);
+  const snapshot = await chatJoinRef.once("value");
+
+  if (!snapshot.exists()) {
+    logger.error("chat-joins 노드가 존재하지 않음", {uid, roomId});
+    return;
+  }
+
+  const data = snapshot.val();
+
+  // xxxListOrder 필드 찾기
+  const updates: Record<string, string> = {};
+
+  for (const key of Object.keys(data)) {
+    // order 필드만 처리 (ListOrder로 끝나는 필드)
+    if (!key.endsWith("ListOrder")) {
+      continue;
+    }
+
+    const currentValue = String(data[key]);
+
+    // "500"으로 시작하면 건드리지 않음 (핀 설정된 채팅방)
+    if (currentValue.startsWith("500")) {
+      logger.info("핀 설정된 채팅방, 건너뜀", {
+        uid,
+        roomId,
+        field: key,
+        currentValue,
+      });
+      continue;
+    }
+
+    // "200"으로 시작하는 경우에만 처리
+    if (currentValue.startsWith("200")) {
+      const baseTimestamp = currentValue.slice(3); // "200" 제거
+      const newValue = baseTimestamp;
+
+      updates[key] = newValue;
+      logger.info("Order 필드 업데이트 예정 (200 prefix 제거)", {
+        uid,
+        roomId,
+        field: key,
+        from: currentValue,
+        to: newValue,
+      });
+    } else {
+      // "200"으로 시작하지 않으면 이미 읽음 상태, 건너뜀
+      logger.info("이미 읽음 상태, 건너뜀", {
+        uid,
+        roomId,
+        field: key,
+        currentValue,
+      });
+    }
+  }
+
+  // 업데이트할 필드가 있는 경우에만 실행
+  if (Object.keys(updates).length > 0) {
+    await chatJoinRef.update(updates);
+
+    logger.info("newMessageCount 0으로 변경에 따른 order 필드 업데이트 완료", {
+      uid,
+      roomId,
+      updatedFields: Object.keys(updates),
+      updatesCount: Object.keys(updates).length,
+    });
+  } else {
+    logger.info("업데이트할 order 필드가 없음 (newMessageCount 0으로 변경)", {
+      uid,
+      roomId,
+    });
+  }
 }

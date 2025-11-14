@@ -119,7 +119,7 @@
       <article class="user-card">
         <a
           class="user-card-main"
-          href={`/user/profile/${itemData.key}`}
+          href={`/user/profile?uid=${itemData.key}`}
           aria-label={m.userProfileDetail()}
         >
           <div class="user-avatar">

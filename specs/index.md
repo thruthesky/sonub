@@ -1032,6 +1032,40 @@ find specs/repository/firebase/functions/src -name "*.ts.md"
 - **File**: [sonub-chat-message.md](./sonub-chat-message.md)
 - **Status**: ⚠️ 작성되지 않은 문서입니다. 채팅 메시지 세부 명세가 필요하면 개발자에게 추가 지시를 요청하세요.
 
+### Sonub Chat File Attachment
+- **File**: [sonub-chat-file-attachment.md](./sonub-chat-file-attachment.md)
+- **Title**: 채팅 파일 첨부 기능 (Chat File Attachment)
+- **Description**: 채팅 메시지에 파일 첨부 기능 - 이미지, 동영상, 문서 등 다중 파일 업로드 및 표시
+- **Version**: 1.1.4
+- **Step**: 55
+- **Priority**: **
+- **Dependencies**:
+  - sonub-chat-room.md
+  - sonub-setup-firebase.md
+  - sonub-firebase-database-structure.md
+  - sonub-design-workflow.md
+- **Tags**: chat, file-upload, firebase-storage, attachment, svelte5, realtime, instant-upload, video-controls, file-size-limit, file-extension-display, filename-extension-extraction
+- **Files**:
+  - `src/lib/types/chat.types.ts` - 채팅 메시지 및 파일 업로드 타입
+  - `src/lib/functions/storage.functions.ts` - Firebase Storage 업로드 함수
+  - `src/routes/chat/room/+page.svelte` - 채팅방 페이지 (파일 첨부 UI)
+  - `firebase/storage.rules` - Firebase Storage 보안 규칙
+- **주요 기능**:
+  - **파일 선택 즉시 업로드** (v1.1.0) - 사용자가 업로드 성공 즉시 확인 가능
+  - **동영상 재생 컨트롤러** (v1.1.1) - 미리보기에서 동영상 재생/일시정지/볼륨 조절 가능
+  - **파일 타입별 크기 제한** (v1.1.2) - .mp4 동영상은 24MB, 그 외 파일은 10MB까지 허용
+  - **파일 확장자 중앙 표시** (v1.1.3) - PDF, TXT, DOC 등 확장자를 크게 중앙에 표시
+  - **파일명 확장자 추출 함수** (v1.1.4) - `getExtensionFromFilename()` 함수로 버그 수정
+  - 다중 파일 업로드 (이미지, 동영상, 문서, 압축파일)
+  - 파일 미리보기 Grid UI (반응형, 정사각형 비율)
+  - 실시간 업로드 진행률 표시 (큰 퍼센티지 숫자)
+  - 파일 삭제 기능 (Firebase Storage에서 실제 삭제)
+  - RTDB에 URL만 저장하여 용량 최소화 (60-70% 절감)
+  - 메시지 버블 내 첨부파일 표시 (이미지/동영상/일반파일)
+  - Firebase Storage 경로: `/users/{uid}/chat-files/{roomId}/{timestamp}-{filename}`
+  - 최대 파일 크기: .mp4 동영상 24MB, 그 외 10MB
+- **구현 완료**: ✅ 2025-11-14
+
 ## Deployment
 
 ### Sonub Deploy Workflow

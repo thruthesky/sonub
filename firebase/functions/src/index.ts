@@ -39,6 +39,7 @@ import {
   handleChatRoomPinCreate,
   handleChatRoomPinDelete,
   handleChatInvitationCreate,
+  handleNewMessageCountWritten,
 } from "./handlers/chat.handler";
 
 // 상수 정의
@@ -615,5 +616,47 @@ export const onChatInvitationCreate = onValueCreated(
 
     // 비즈니스 로직 핸들러 호출
     return await handleChatInvitationCreate(inviteeUid, roomId, invitationData);
+  }
+);
+
+/**
+ * newMessageCount 필드 변경 시 트리거되는 Cloud Function
+ *
+ * 트리거 경로: /chat-joins/{uid}/{roomId}/newMessageCount
+ * 트리거 이벤트: onValueWritten (생성, 수정, 삭제 모두 감지)
+ *
+ * 수행 작업:
+ * 1. newMessageCount가 0으로 변경되었는지 확인
+ * 2. 0이면 모든 xxxListOrder 필드에서 "200" prefix 제거
+ * 3. "500" prefix는 유지 (핀 설정된 채팅방)
+ * 4. 존재하지 않는 필드는 무시
+ *
+ * 참고:
+ * - 사용자가 채팅방에 입장하여 메시지를 읽으면 newMessageCount가 0이 됨
+ * - 이때 모든 order 필드를 "읽음" 상태로 전환
+ * - Prefix 규칙: "500" (핀됨) > "200" (읽지 않음) > "" (읽음)
+ *
+ * 비즈니스 로직은 handlers/chat.handler.ts의 handleNewMessageCountWritten() 참조
+ */
+export const onNewMessageCountWrite = onValueWritten(
+  {
+    ref: "/chat-joins/{uid}/{roomId}/newMessageCount",
+    region: FIREBASE_REGION,
+  },
+  async (event) => {
+    const uid = event.params.uid as string;
+    const roomId = event.params.roomId as string;
+    const beforeValue = event.data.before.val() as number | null;
+    const afterValue = event.data.after.val() as number | null;
+
+    logger.info("newMessageCount 필드 변경 감지", {
+      uid,
+      roomId,
+      beforeValue,
+      afterValue,
+    });
+
+    // 비즈니스 로직 핸들러 호출
+    return await handleNewMessageCountWritten(uid, roomId, beforeValue, afterValue);
   }
 );

@@ -113,8 +113,11 @@
       }
     },
     "chat-messages": {
-      ".read": true,
-      ".write": true,
+      ".read": "auth != null",
+      "$messageId": {
+        ".read": "auth != null && (data.child('roomId').val().contains(auth.uid) || root.child('chat-rooms').child(data.child('roomId').val()).child('type').val() == 'open' || root.child('chat-rooms').child(data.child('roomId').val()).child('members').child(auth.uid).exists())",
+        ".write": "auth != null && (newData.child('roomId').val().contains(auth.uid) || root.child('chat-rooms').child(newData.child('roomId').val()).child('members').child(auth.uid).exists())"
+      },
       ".indexOn": [
         "roomOrder"
       ]

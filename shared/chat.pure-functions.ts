@@ -41,6 +41,27 @@ export function extractUidsFromSingleRoomId(roomId: string): [string, string] | 
 }
 
 /**
+ * 1:1 채팅방에서 상대방의 UID를 추출한다.
+ *
+ * @param roomId - 1:1 채팅방 ID (형식: "single-uid1-uid2")
+ * @param myUid - 현재 사용자의 UID
+ * @returns 상대방의 UID, 찾을 수 없으면 null
+ *
+ * @example
+ * ```typescript
+ * const roomId = 'single-alice-bob';
+ * const partnerUid = getPartnerUidFromSingleRoomId(roomId, 'alice');
+ * // 결과: 'bob'
+ * ```
+ */
+export function getPartnerUidFromSingleRoomId(roomId: string, myUid: string): string | null {
+	const uids = extractUidsFromSingleRoomId(roomId);
+	if (!uids) return null;
+
+	return uids.find((uid) => uid !== myUid) || null;
+}
+
+/**
  * 채팅방 유형 문자열을 배지 텍스트로 변환한다.
  *
  * @param roomType - DB에 저장된 채팅방 유형 문자열

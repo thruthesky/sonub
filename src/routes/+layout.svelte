@@ -20,8 +20,15 @@
 	import { Toaster, toast } from 'svelte-sonner';
 	import { onMount } from 'svelte';
 	import { registerServiceWorker, subscribeOnMessage } from '$lib/fcm';
+	import { page } from '$app/stores';
 
 	let { children } = $props();
+
+	/**
+	 * 현재 페이지가 채팅방인지 확인
+	 * 채팅방 페이지에서는 모바일에서 TopBar를 숨김
+	 */
+	const isChatRoom = $derived($page.url.pathname.startsWith('/chat/room'));
 
 	/**
 	 * 앱 시작 시 초기화
@@ -58,20 +65,28 @@
 </svelte:head>
 
 <div class="min-h-screen bg-gray-50">
-	<TopBar />
-	<div class="pt-20">
-		<div class="container mx-auto px-4 py-8">
-			<div class="flex gap-6">
-				<!-- 좌측 사이드바 (데스크톱만) -->
-				<LeftSidebar />
+	<!-- TopBar: 채팅방 페이지에서는 모바일에서 숨김 -->
+	<div class:hidden={isChatRoom} class="md:block">
+		<TopBar />
+	</div>
+
+	<div class="pt-20" class:pt-0={isChatRoom} class:md:pt-16={isChatRoom}>
+		<div class="container mx-auto px-4 py-8" class:p-0={isChatRoom}>
+			<div class="flex gap-6" class:gap-0={isChatRoom}>
+				<!-- 좌측 사이드바 (데스크톱만, 채팅방에서는 숨김) -->
+				{#if !isChatRoom}
+					<LeftSidebar />
+				{/if}
 
 				<!-- 메인 콘텐츠 -->
 				<main class="min-w-0 flex-1">
 					{@render children()}
 				</main>
 
-				<!-- 우측 사이드바 (데스크톱만) -->
-				<RightSidebar />
+				<!-- 우측 사이드바 (데스크톱만, 채팅방에서는 숨김) -->
+				{#if !isChatRoom}
+					<RightSidebar />
+				{/if}
 			</div>
 		</div>
 	</div>

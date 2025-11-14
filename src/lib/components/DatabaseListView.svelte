@@ -1654,6 +1654,31 @@
   <!-- 데이터 목록 -->
   {:else}
     <div class="items-container">
+      <!-- scrollTrigger="top"일 때: 더 이상 데이터 없음 표시를 맨 위에 -->
+      {#if scrollTrigger === 'top' && !hasMore && !loading}
+        <div class="no-more">
+          {#if noMore}
+            {@render noMore()}
+          {:else}
+            <p class="no-more-text">더 이상 데이터가 없습니다</p>
+          {/if}
+        </div>
+      {/if}
+
+      <!-- scrollTrigger="top"일 때: 더 로드 중 표시를 맨 위에 -->
+      {#if scrollTrigger === 'top' && loading}
+        <div class="loading-more">
+          {#if loadingMore}
+            {@render loadingMore()}
+          {:else}
+            <div class="loading-spinner small">
+              <div class="spinner"></div>
+              <p>더 불러오는 중...</p>
+            </div>
+          {/if}
+        </div>
+      {/if}
+
       {#each items as itemData, index (itemData.key)}
         <div class="item-wrapper" data-key={itemData.key}>
           {#if item}
@@ -1667,8 +1692,8 @@
         </div>
       {/each}
 
-      <!-- 더 로드 중 표시 -->
-      {#if loading}
+      <!-- scrollTrigger="bottom"일 때: 더 로드 중 표시를 맨 아래에 -->
+      {#if scrollTrigger === 'bottom' && loading}
         <div class="loading-more">
           {#if loadingMore}
             {@render loadingMore()}
@@ -1681,8 +1706,8 @@
         </div>
       {/if}
 
-      <!-- 더 이상 데이터 없음 표시 -->
-      {#if !hasMore && !loading}
+      <!-- scrollTrigger="bottom"일 때: 더 이상 데이터 없음 표시를 맨 아래에 -->
+      {#if scrollTrigger === 'bottom' && !hasMore && !loading}
         <div class="no-more">
           {#if noMore}
             {@render noMore()}

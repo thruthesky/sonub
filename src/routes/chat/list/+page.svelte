@@ -6,15 +6,14 @@
 	 */
 
 	import DatabaseListView from '$lib/components/DatabaseListView.svelte';
-	import Avatar from '$lib/components/user/avatar.svelte';
 	import UserSearchDialog from '$lib/components/user/UserSearchDialog.svelte';
 	import ChatCreateDialog from '$lib/components/chat/ChatCreateDialog.svelte';
 	import ChatInvitationList from '$lib/components/chat/ChatInvitationList.svelte';
+	import ChatListItem from '$lib/components/chat/ChatListItem.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
-	import { formatLongDate } from '$lib/functions/date.functions';
-	import { resolveRoomTypeLabel, togglePinChatRoom } from '$lib/functions/chat.functions';
+	import { togglePinChatRoom } from '$lib/functions/chat.functions';
 	import ChatListMenu from '$lib/components/chat/ChatListMenu.svelte';
 	import ChatFavoritesDialog from '$lib/components/chat/ChatFavoritesDialog.svelte';
 	import { rtdb } from '$lib/firebase';
@@ -154,29 +153,6 @@
 	});
 
 	/**
-	 * 채팅방 제목을 계산
-	 */
-	function resolveRoomTitle(join: ChatJoinData, fallback: string) {
-		if (typeof join.roomTitle === 'string' && join.roomTitle.trim()) return join.roomTitle;
-		if (typeof join.roomName === 'string' && join.roomName.trim()) return join.roomName;
-		if (typeof join.title === 'string' && join.title.trim()) return join.title;
-		if (typeof join.displayName === 'string' && join.displayName.trim()) return join.displayName;
-		if (typeof join.partnerDisplayName === 'string' && join.partnerDisplayName.trim())
-			return join.partnerDisplayName;
-
-		const partnerUid: string | undefined =
-			typeof join.partnerUid === 'string' ? join.partnerUid
-			: typeof join.targetUid === 'string' ? join.targetUid
-			: undefined;
-
-		if (partnerUid) {
-			return `@${partnerUid.slice(0, 8)}`;
-		}
-
-		return fallback;
-	}
-
-	/**
 	 * 채팅방 열기
 	 */
 	function openConversation(join: ChatJoinData, roomId: string) {
@@ -270,95 +246,15 @@
 					reverse={true}
 				>
 					{#snippet item(itemData, index)}
-						{console.log('🔍 [Chat List Debug] Item received:', {
-							index,
-							key: itemData.key,
-							hasData: !!itemData.data,
-							data: itemData.data
-						})}
 						{@const join = (itemData.data ?? {}) as ChatJoinData}
 						{@const roomId = (join.roomId ?? itemData.key ?? '') as string}
 						{@const roomType = (join.roomType ?? join.type ?? 'single').toString()}
-						{@const singleChatListOrder = join.singleChatListOrder ?? null}
-						{console.log('🔍 [Chat List Debug] Join data:', {
-							roomId,
-							roomType,
-							singleChatListOrder,
-							partnerUid: join.partnerUid,
-							lastMessageText: join.lastMessageText,
-							lastMessageAt: join.lastMessageAt,
-							newMessageCount: join.newMessageCount,
-							allFields: Object.keys(join)
-						})}
-						{@const partnerUid: string | null =
-							typeof join.partnerUid === 'string' ? join.partnerUid
-							: typeof join.targetUid === 'string' ? join.targetUid
-							: null}
-						{@const lastMessage =
-							typeof join.lastMessageText === 'string' && join.lastMessageText.trim()
-								? join.lastMessageText
-								: typeof join.lastMessage === 'string' && join.lastMessage.trim()
-									? join.lastMessage
-									: typeof join.preview === 'string'
-										? join.preview
-										: ''}
-						{@const timestamp = Number(join.lastMessageAt ?? join.updatedAt ?? join.joinedAt ?? 0) || null}
-						{@const unreadCount = Number(join.newMessageCount ?? join.unreadCount ?? join.unread ?? 0) || 0}
-						{@const roomTitle = resolveRoomTitle(join, roomId || m.chatChatRoom())}
-						{@const isPinned = join.pin === true}
-						<div class="flex w-full items-start border-b border-gray-100">
-							<button
-								type="button"
-								class="flex flex-1 items-start gap-4 p-4 text-left transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-								onclick={() => openConversation(join, roomId)}
-							>
-								{#if partnerUid}
-									<Avatar uid={partnerUid} size={48} class="shadow-sm" />
-								{:else}
-									<div class="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-gray-600">
-										{roomTitle.slice(0, 2)}
-									</div>
-								{/if}
-
-								<div class="flex-1 space-y-1">
-									<div class="flex flex-wrap items-center gap-x-2 text-sm text-gray-500">
-										<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-gray-600">
-											{resolveRoomTypeLabel(roomType)}
-										</span>
-										<span class="text-xs text-gray-400">#{roomId}</span>
-										{#if unreadCount > 0}
-											<span class="rounded-full bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white">
-												{unreadCount}
-											</span>
-										{/if}
-									</div>
-
-									<h2 class="text-lg font-semibold text-gray-900">{roomTitle}</h2>
-
-									<p class="text-sm text-gray-500">
-										<span class="font-medium text-gray-600">{m.chatLastMessageLabel()}:</span>
-										<span class="ml-1 line-clamp-1">{lastMessage || m.chatNoMessages()}</span>
-									</p>
-
-									{#if timestamp}
-										<p class="text-xs text-gray-400">{formatLongDate(timestamp)}</p>
-									{/if}
-								</div>
-							</button>
-
-							<div class="flex flex-col items-center gap-2 p-4">
-								<!-- 핀 버튼 -->
-								<button
-									type="button"
-									onclick={(e) => handleTogglePin(e, roomId, roomType)}
-									class="rounded-full p-1.5 transition hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-									title={isPinned ? '핀 해제' : '핀 설정'}
-								>
-									<span class="text-xl">{isPinned ? '📌' : '📍'}</span>
-								</button>
-								<span class="text-sm font-medium text-blue-600">{m.chatOpenRoom()}</span>
-							</div>
-						</div>
+						<ChatListItem
+							{join}
+							{roomId}
+							onclick={() => openConversation(join, roomId)}
+							onTogglePin={(e) => handleTogglePin(e, roomId, roomType)}
+						/>
 					{/snippet}
 
 					{#snippet loading()}

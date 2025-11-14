@@ -258,13 +258,20 @@
 	"homeSectionRecentUsersDesc": "新しく参加したユーザーをここで確認できるようにします。",
 	"homeSectionRecentOpenChat": "最近のオープンチャットメッセージ",
 	"homeSectionRecentOpenChatDesc": "リアルタイムのオープンチャットをこの領域に表示予定です。",
+	"homeSectionRecentOpenChatEmpty": "最近のオープンチャットメッセージはありません。",
+	"homeSectionRecentOpenChatLogin": "ログインすると参加中のオープンチャットの最新メッセージを確認できます。",
 	"homeSectionPopularOpenRoom": "人気オープンチャットルーム",
 	"homeSectionPopularOpenRoomDesc": "参加者が多いルームをおすすめとして表示します。",
 	"homeSectionRecentPosts": "最新の投稿＆コメント",
 	"homeSectionRecentPostsDesc": "掲示板の最新投稿とコメントをまとめて確認できるよう準備中です。",
 	"homeSectionRecentUsersCount": "直近で参加したユーザー {count}人",
+	"homeOpenChatNoMessage": "まだメッセージがありません。",
 	"sidebarDevHighlightAttachment": "9. 添付ファイルアップロード",
 	"sidebarDevHighlightPassword": "10. チャットパスワード機能",
 	"sidebarDevHighlightPostType": "11. Postタイプメッセージ",
-	"sidebarDevHighlightWrapUp": "8. チャットルーム終了機能"
+	"sidebarDevHighlightWrapUp": "8. チャットルーム終了機能",
+	"chatNoMoreMessages": "これ以上メッセージはありません。",
+	"chatRoomList": "マイチャット",
+	"chatRoomListEmpty": "参加しているチャットルームがありません。",
+	"chatRoomListLoading": "チャットルームを読み込み中..."
 }

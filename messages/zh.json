@@ -309,12 +309,19 @@
 	"homeSectionRecentUsersDesc": "最新加入的成员将很快在这里显示。",
 	"homeSectionRecentOpenChat": "最新开放聊天室消息",
 	"homeSectionRecentOpenChatDesc": "实时开放聊天室对话即将展示在此区域。",
+	"homeSectionRecentOpenChatEmpty": "最近没有开放聊天室消息。",
+	"homeSectionRecentOpenChatLogin": "登录后即可查看你参与的开放聊天室最新消息。",
 	"homeSectionPopularOpenRoom": "热门开放聊天室",
 	"homeSectionPopularOpenRoomDesc": "我们会推荐参与度最高的开放聊天室。",
 	"homeSectionRecentPosts": "最新帖子与评论",
 	"homeSectionRecentPostsDesc": "稍后将在此展示论坛最新的帖子和评论概览。",
+	"homeOpenChatNoMessage": "暂无消息。",
 	"sidebarDevHighlightWrapUp": "8. 聊天室收尾功能",
 	"sidebarDevHighlightAttachment": "9. 文件附件上传",
 	"sidebarDevHighlightPassword": "10. 聊天密码功能",
-	"sidebarDevHighlightPostType": "11. 帖子类型消息"
+	"sidebarDevHighlightPostType": "11. 帖子类型消息",
+	"chatNoMoreMessages": "没有更多消息了。",
+	"chatRoomList": "我的聊天",
+	"chatRoomListEmpty": "还没有加入任何聊天室。",
+	"chatRoomListLoading": "正在加载聊天室..."
 }

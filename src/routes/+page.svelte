@@ -12,13 +12,22 @@
 	import Avatar from '$lib/components/user/avatar.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { rtdb } from '$lib/firebase';
-	import { get, limitToLast, orderByChild, query, ref, type DatabaseReference } from 'firebase/database';
+	import { formatShortDate } from '$lib/functions/date.functions';
+import { get, limitToLast, onValue, orderByChild, query, ref, type DatabaseReference } from 'firebase/database';
 
 	type UserPreview = {
 		uid: string;
 		displayName: string;
 		photoUrl: string | null;
 		sortRecentWithPhoto: number;
+	};
+
+	type OpenChatPreview = {
+		roomId: string;
+		roomName: string;
+		lastMessageText: string;
+		lastMessageAt: number;
+		orderValue: number;
 	};
 
 	const dashboardCards = [
@@ -44,12 +53,65 @@
 		}
 	];
 
-	let recentUsers = $state<UserPreview[]>([]);
-	let isLoadingRecentUsers = $state(true);
+let recentUsers = $state<UserPreview[]>([]);
+let isLoadingRecentUsers = $state(true);
+let recentOpenChats = $state<OpenChatPreview[]>([]);
+let isLoadingRecentOpenChats = $state(true);
 
-	onMount(() => {
-		fetchRecentUsers();
-	});
+onMount(() => {
+	fetchRecentUsers();
+});
+
+$effect(() => {
+	const uid = authStore.user?.uid ?? null;
+
+	if (!uid || !rtdb) {
+		recentOpenChats = [];
+		isLoadingRecentOpenChats = false;
+		return;
+	}
+
+	isLoadingRecentOpenChats = true;
+
+	const joinsRef = ref(rtdb, `chat-joins/${uid}`);
+	const openQuery = query(joinsRef, orderByChild('openChatListOrder'), limitToLast(5));
+
+	return onValue(
+		openQuery,
+		(snapshot) => {
+			const items: OpenChatPreview[] = [];
+
+			snapshot.forEach((child) => {
+				const value = child.val() ?? {};
+
+				if (value?.roomType !== 'open') {
+					return;
+				}
+
+				const orderValue = resolveOrderValue(value?.openChatListOrder);
+				const roomId = child.key ?? '';
+
+				items.push({
+					roomId,
+					roomName: (value?.roomName as string) || roomId || 'Open Chat',
+					lastMessageText: (value?.lastMessageText as string) || '',
+					lastMessageAt: Number(value?.lastMessageAt) || 0,
+					orderValue
+				});
+			});
+
+			items.sort((a, b) => b.orderValue - a.orderValue);
+
+			recentOpenChats = items.slice(0, 5);
+			isLoadingRecentOpenChats = false;
+		},
+		(error) => {
+			console.error('[Home] 최근 오픈 채팅 메시지 실시간 구독 실패:', error);
+			recentOpenChats = [];
+			isLoadingRecentOpenChats = false;
+		}
+	);
+});
 
 	async function fetchRecentUsers() {
 		if (!rtdb) {
@@ -82,6 +144,30 @@
 		} finally {
 			isLoadingRecentUsers = false;
 		}
+	}
+
+function resolveOrderValue(value: unknown): number {
+		if (typeof value === 'number') {
+			return value;
+		}
+
+		if (typeof value === 'string') {
+			let boost = 0;
+			let normalized = value;
+
+			if (value.startsWith('500')) {
+				boost = 2;
+				normalized = value.slice(3);
+			} else if (value.startsWith('200')) {
+				boost = 1;
+				normalized = value.slice(3);
+			}
+
+			const base = Number.parseInt(normalized, 10);
+			return boost * 1e15 + (Number.isFinite(base) ? base : 0);
+		}
+
+		return 0;
 	}
 </script>
 
@@ -172,6 +258,36 @@
 								</p>
 							</div>
 						{/if}
+					{:else if card.id === 'recent-open-chat'}
+						{#if !authStore.isAuthenticated}
+							<div class="placeholder-panel">
+								<p class="placeholder-text">{m.homeSectionRecentOpenChatLogin()}</p>
+							</div>
+						{:else if isLoadingRecentOpenChats}
+							<div class="placeholder-panel">
+								<p class="placeholder-text">{m.commonLoading()}</p>
+							</div>
+						{:else if recentOpenChats.length === 0}
+							<div class="placeholder-panel">
+								<p class="placeholder-text">{m.homeSectionRecentOpenChatEmpty()}</p>
+							</div>
+						{:else}
+							<ul class="open-chat-list">
+								{#each recentOpenChats as chat}
+									<li class="open-chat-item">
+										<div class="open-chat-head">
+											<span class="open-chat-room">{chat.roomName}</span>
+											{#if chat.lastMessageAt}
+												<span class="open-chat-time">{formatShortDate(chat.lastMessageAt)}</span>
+											{/if}
+										</div>
+										<p class="open-chat-body">
+											{chat.lastMessageText || m.homeOpenChatNoMessage()}
+										</p>
+									</li>
+								{/each}
+							</ul>
+						{/if}
 					{:else}
 						<div class="placeholder-panel">
 							<div class="placeholder-indicators">
@@ -232,5 +348,29 @@
 
 	.stacked-caption {
 		@apply text-sm font-medium text-gray-800;
+	}
+
+	.open-chat-list {
+		@apply space-y-3;
+	}
+
+	.open-chat-item {
+		@apply rounded-lg border border-blue-100 bg-blue-50/80 p-3 shadow-sm;
+	}
+
+	.open-chat-head {
+		@apply flex items-center justify-between gap-2;
+	}
+
+	.open-chat-room {
+		@apply text-sm font-semibold text-blue-900;
+	}
+
+	.open-chat-time {
+		@apply text-xs text-gray-500;
+	}
+
+	.open-chat-body {
+		@apply mt-1 text-sm text-gray-700;
 	}
 </style>

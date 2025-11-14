@@ -52,6 +52,273 @@ function buildSingleRoomId(a: string, b: string) {
 
 ## 주요 기능
 
+### 0. 채팅방 목록 사이드바 (데스크톱 전용)
+
+데스크톱 화면에서 채팅방 왼쪽에 채팅 목록을 표시하여 빠른 채팅방 전환을 지원합니다.
+
+#### 레이아웃 구조
+
+```typescript
+// /src/routes/chat/room/+layout.svelte
+<div class="chat-room-layout">
+  <!-- 좌측 사이드바 (데스크톱만) -->
+  <aside class="chat-room-sidebar">
+    <DatabaseListView path="chat-joins/{authStore.user.uid}" ... />
+  </aside>
+
+  <!-- 메인 콘텐츠 -->
+  <main class="chat-room-main">
+    {@render children()}
+  </main>
+</div>
+```
+
+**반응형 동작**:
+- **모바일** (768px 미만): 사이드바 숨김 (`hidden`), 메인 콘텐츠만 표시
+- **데스크톱** (768px 이상): 2-column 레이아웃, 사이드바 320px + 메인 콘텐츠
+
+#### Firebase 데이터 구조
+
+```typescript
+// 채팅방 참여 정보 경로
+const path = `chat-joins/${authStore.user.uid}`;
+
+// 데이터 구조
+{
+  "{roomId}": {
+    "roomType": "single" | "group" | "open",
+    "name": "채팅방 이름",
+    "lastMessage": "마지막 메시지 내용",
+    "newMessageCount": 3,           // 읽지 않은 메시지 수
+    "allChatListOrder": -1234567890, // 정렬 순서 (음수 timestamp)
+    "joinedAt": 1234567890
+  }
+}
+```
+
+#### DatabaseListView 설정
+
+```typescript
+<DatabaseListView
+  path="chat-joins/{authStore.user.uid}"
+  orderBy="allChatListOrder"
+  pageSize={20}
+  reverse={true}
+  scrollTrigger="bottom"
+>
+```
+
+- **path**: 사용자의 참여 채팅방 목록 경로
+- **orderBy**: `allChatListOrder` 필드로 정렬 (음수 timestamp로 최신 메시지 우선)
+- **pageSize**: 한 번에 로드할 채팅방 수 (20개)
+- **reverse**: 역순 정렬 (true)
+- **scrollTrigger**: 아래로 스크롤 시 더 로드
+
+#### 채팅방 아이템 UI
+
+각 채팅방 아이템은 다음 정보를 포함합니다:
+
+- **1:1 채팅** (`roomId.startsWith('single-')`):
+  - **상대방 프로필 실시간 표시**: Avatar 컴포넌트 + userProfileStore
+  - **상대방 이름**: displayName (없으면 `@{uid.slice(0,6)}`)
+  - **상대방 사진**: photoUrl을 Avatar 컴포넌트로 표시
+- **그룹 채팅** (`group`):
+  - **아이콘**: 👥
+  - **채팅방 이름**: `name` 필드 (없으면 roomId)
+- **오픈 채팅** (`open`):
+  - **아이콘**: 🌐
+  - **채팅방 이름**: `name` 필드 (없으면 roomId)
+- **공통 표시 항목**:
+  - **마지막 메시지**: `lastMessage` 필드 (미리보기)
+  - **읽지 않은 메시지 배지**: `newMessageCount > 0`이면 빨간 원형 배지 표시
+
+#### ChatRoomListItem 컴포넌트
+
+각 채팅방 아이템은 독립적인 컴포넌트([src/routes/chat/room/ChatRoomListItem.svelte](../src/routes/chat/room/ChatRoomListItem.svelte))로 구현되어 있습니다.
+
+**Props**:
+```typescript
+type Props = {
+  roomId: string;      // 채팅방 ID
+  roomData: any;       // 채팅방 데이터
+  activeRoomId: string; // 현재 활성 채팅방 ID
+  onclick: () => void;  // 클릭 핸들러
+};
+```
+
+**주요 로직**:
+```typescript
+// 1:1 채팅 여부 판단 (roomId 패턴 기반)
+const isSingle = $derived(roomId.startsWith('single-'));
+
+// 상대방 UID 추출
+const partnerUid = $derived.by(() => {
+  if (!isSingle) return '';
+  const parts = roomId.replace('single-', '').split('-');
+  return parts.find((uid) => uid !== authStore.user?.uid) || '';
+});
+
+// 실시간 프로필 구독 ($effect 사용)
+$effect(() => {
+  if (isSingle && partnerUid) {
+    userProfileStore.ensureSubscribed(partnerUid);
+  }
+});
+
+// 캐시된 프로필 데이터 가져오기
+const profile = $derived(
+  isSingle && partnerUid ? userProfileStore.getCachedProfile(partnerUid) : null
+);
+
+// 표시할 이름 (displayName 또는 fallback)
+const displayName = $derived(
+  profile?.displayName || (partnerUid ? `@${partnerUid.slice(0, 6)}` : '')
+);
+```
+
+**반응성 보장**:
+- `$effect`를 사용하여 partnerUid 변경 시 자동으로 프로필 구독
+- profile 데이터가 로드되거나 업데이트되면 컴포넌트 자동 재렌더링
+- snippet 내 side effect 안티패턴 제거 (이전 방식의 문제점 해결)
+
+**1:1 채팅 렌더링**:
+```svelte
+{#if isSingle}
+  <button class="room-item" {onclick}>
+    <div class="room-avatar">
+      <Avatar uid={partnerUid} size={48} />
+    </div>
+    <div class="room-info">
+      <div class="room-name">{displayName}</div>
+      {#if roomData.lastMessage}
+        <div class="room-last-message">{roomData.lastMessage}</div>
+      {/if}
+    </div>
+    {#if roomData.newMessageCount > 0}
+      <div class="room-badge">{roomData.newMessageCount}</div>
+    {/if}
+  </button>
+{/if}
+```
+
+#### 활성 채팅방 하이라이팅
+
+```typescript
+// URL 파라미터에서 현재 활성 채팅방 ID 계산
+const activeRoomId = $derived.by(() => {
+  const urlRoomId = $page.url.searchParams.get('roomId');
+  const urlUid = $page.url.searchParams.get('uid');
+
+  if (urlRoomId) return urlRoomId;
+
+  if (urlUid && authStore.user?.uid) {
+    // 1:1 채팅방 ID 생성 (uid 정렬)
+    const uids = [authStore.user.uid, urlUid].sort();
+    return `single-${uids[0]}-${uids[1]}`;
+  }
+
+  return '';
+});
+
+// 활성 채팅방 여부 확인
+const isActive = roomId === activeRoomId;
+```
+
+**스타일링**:
+- 일반 채팅방: 흰색 배경, 호버 시 회색 (`hover:bg-gray-50`)
+- 활성 채팅방: 파란색 배경 (`bg-blue-50`), 호버 시 더 진한 파란색 (`hover:bg-blue-100`)
+
+#### 채팅방 클릭 네비게이션
+
+```typescript
+function handleRoomClick(roomId: string, type: string) {
+  if (type === 'single') {
+    // 1:1 채팅방: roomId에서 상대 uid 추출
+    const parts = roomId.replace('single-', '').split('-');
+    const partnerUid = parts.find((uid) => uid !== authStore.user?.uid);
+    if (partnerUid) {
+      void goto(`/chat/room?uid=${partnerUid}`);
+    }
+  } else {
+    // 그룹/오픈 채팅방
+    void goto(`/chat/room?roomId=${roomId}`);
+  }
+}
+```
+
+**네비게이션 전략**:
+1. **1:1 채팅**: roomId (`single-{uidA}-{uidB}`)에서 상대방 UID 추출 → `?uid={partnerUid}`로 이동
+2. **그룹/오픈 채팅**: roomId 그대로 → `?roomId={roomId}`로 이동
+
+#### 다국어 지원
+
+| 키 | 한국어 | 영어 | 일본어 | 중국어 |
+|---|---|---|---|---|
+| `chatRoomList` | 내 채팅방 | My Chats | マイチャット | 我的聊天 |
+| `chatRoomListEmpty` | 참여한 채팅방이 없습니다. | No chat rooms joined yet. | 参加しているチャットルームがありません。 | 还没有加入任何聊天室。 |
+| `chatRoomListLoading` | 채팅방 목록을 불러오는 중... | Loading chat rooms... | チャットルームを読み込み中... | 正在加载聊天室... |
+
+```svelte
+<h2>{m.chatRoomList()}</h2>
+<div class="empty-state">{m.chatRoomListEmpty()}</div>
+<div class="loading-state">{m.chatRoomListLoading()}</div>
+```
+
+#### CSS 스타일링
+
+```css
+/* 메인 레이아웃 */
+.chat-room-layout {
+  /* 모바일: single column, 전체 화면 */
+  @apply fixed top-0 left-0 h-[100dvh] w-full bg-gray-50 flex flex-col;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* 데스크톱: 2-column layout */
+@media (min-width: 768px) {
+  .chat-room-layout {
+    height: calc(100vh - 4rem); /* TopBar 높이 제외 */
+    @apply relative flex-row;
+  }
+}
+
+/* 사이드바 */
+.chat-room-sidebar {
+  @apply hidden; /* 모바일에서 숨김 */
+}
+
+@media (min-width: 768px) {
+  .chat-room-sidebar {
+    @apply flex flex-col w-80 border-r border-gray-200 bg-white overflow-hidden;
+  }
+}
+
+/* 채팅방 아이템 */
+.room-item {
+  @apply flex items-center gap-3 w-full px-4 py-3;
+  @apply border-b border-gray-100 transition-colors duration-150;
+  @apply cursor-pointer hover:bg-gray-50;
+}
+
+.room-item--active {
+  @apply bg-blue-50 hover:bg-blue-100;
+}
+
+/* 읽지 않은 메시지 배지 */
+.room-badge {
+  @apply flex items-center justify-center min-w-[20px] h-5 px-1.5;
+  @apply bg-red-500 text-white text-xs font-bold rounded-full;
+}
+```
+
+**디자인 특징**:
+- 깔끔한 흰색 배경
+- 우측 테두리로 메인 콘텐츠와 구분
+- 호버 효과로 클릭 가능성 표시
+- 활성 채팅방은 파란색으로 강조
+- 읽지 않은 메시지는 빨간 배지로 명확히 표시
+
 ### 1. 사용자 프로필 실시간 구독
 
 채팅 상대방의 프로필 정보를 실시간으로 구독하여 표시합니다.
@@ -593,6 +860,136 @@ onChildRemoved(dataQuery, (snapshot) => {
 - [messages/*.json](../messages/) - 다국어 메시지 파일
 
 ## 변경 이력
+
+- **2025-11-14 (저녁)**: Cloud Functions - allChatListOrder 우선순위 수정
+  - **문제점**: 새 채팅 메시지가 있음에도 채팅방 목록에서 상단에 표시되지 않음
+    - `allChatListOrder` 필드에 `200` prefix가 추가되지 않아 우선순위가 올라가지 않음
+    - `singleChatListOrder`, `groupChatListOrder`, `openChatListOrder`는 정상 작동
+    - 하지만 `allChatListOrder`를 기준으로 정렬하는 목록에서는 문제 발생
+
+  - **해결책**: Firebase Cloud Functions `handleChatMessageCreate` 로직 개선 ([firebase/functions/src/handlers/chat.handler.ts](../firebase/functions/src/handlers/chat.handler.ts))
+
+    **1:1 채팅 수정** (라인 110-123):
+    - 발신자: `allChatListOrder` = `senderSingleListOrder` (= `${timestamp}`)
+    - 수신자: `allChatListOrder` = `partnerSingleListOrder` (= `200${timestamp}`)
+    - 이전에는 무조건 `timestamp`만 설정되었음
+
+    **그룹/오픈 채팅 수정** (라인 174-307):
+    - 각 멤버의 기존 `chat-joins` 데이터를 먼저 읽음 (병렬 처리로 성능 최적화)
+    - `allChatListOrder`, `groupChatListOrder`, `openChatListOrder`, `openAndGroupChatListOrder` 모두에 대해:
+      - **기존 값이 "500"으로 시작**: 유지 (핀 설정된 채팅방, 건드리지 않음)
+      - **기존 값이 있고 발신자**: `${timestamp}` (읽음 상태)
+      - **기존 값이 있고 수신자**: `200${timestamp}` (새 메시지, 우선순위 UP)
+      - **기존 값이 없음**: `${timestamp}` (새로 생성)
+    - 이전에는 무조건 `timestamp`만 설정되어 우선순위가 변경되지 않았음
+
+  - **우선순위 규칙**:
+    - **500 prefix** (핀 설정): 항상 최상단
+    - **200 prefix** (읽지 않은 메시지): 일반 채팅방보다 위
+    - **prefix 없음** (읽은 메시지): 일반 우선순위
+
+  - **배포 완료**:
+    - `npm run deploy` 명령으로 Firebase Cloud Functions 배포 완료
+    - 13개의 Functions 업데이트 완료 (asia-southeast1 리전)
+    - 배포 시간: ~2분
+
+  - **영향**:
+    - `/chat/room/+layout.svelte`의 채팅방 목록이 `allChatListOrder` 기준으로 정렬될 때 정상 작동
+    - 새 메시지가 있는 채팅방이 자동으로 목록 상단으로 이동
+    - 핀 설정된 채팅방은 항상 최상단 유지
+    - 기존 다른 정렬 필드들(`singleChatListOrder` 등)도 동일한 로직 적용
+
+- **2025-11-14 (오후)**: 1:1 채팅방 목록에 상대방 프로필 실시간 표시 기능 추가
+  - **문제점**: snippet 내 side effect로 `userProfileStore.ensureSubscribed()` 호출 시 반응성이 작동하지 않음
+    - profile이 로드된 후에도 컴포넌트가 재렌더링되지 않음
+    - 1:1 채팅방에서 상대방 이름과 사진 대신 roomId가 계속 표시됨
+
+  - **해결책**: ChatRoomListItem 컴포넌트 분리 및 $effect 활용
+    - **새 컴포넌트 생성** ([src/routes/chat/room/ChatRoomListItem.svelte](../src/routes/chat/room/ChatRoomListItem.svelte)):
+      - 각 채팅방 아이템을 독립적인 컴포넌트로 분리
+      - `$effect(() => { userProfileStore.ensureSubscribed(partnerUid) })` 사용으로 반응성 보장
+      - profile 데이터 변경 시 자동 재렌더링
+
+    - **1:1 채팅 판단 로직 개선**:
+      - `roomData.type === 'single'` 대신 `roomId.startsWith('single-')` 사용
+      - Firebase 데이터의 `type` 필드 의존도 제거 (더 견고한 로직)
+
+    - **상대방 UID 추출**:
+      ```typescript
+      const partnerUid = $derived.by(() => {
+        if (!isSingle) return '';
+        const parts = roomId.replace('single-', '').split('-');
+        return parts.find((uid) => uid !== authStore.user?.uid) || '';
+      });
+      ```
+
+    - **실시간 프로필 구독**:
+      - `userProfileStore.ensureSubscribed(partnerUid)`: Firebase RTDB `/users/{uid}` 경로 구독
+      - `userProfileStore.getCachedProfile(partnerUid)`: 캐시된 프로필 데이터 가져오기
+      - displayName, photoUrl 실시간 반영
+
+    - **UI 컴포넌트**:
+      - 1:1 채팅: `<Avatar uid={partnerUid} size={48} />` 컴포넌트로 상대방 사진 표시
+      - displayName 표시 (없으면 `@{uid.slice(0,6)}` fallback)
+      - 그룹/오픈 채팅: 기존 이모지 아이콘 유지 (👥, 🌐)
+
+    - **레이아웃 파일 리팩토링** ([src/routes/chat/room/+layout.svelte](../src/routes/chat/room/+layout.svelte)):
+      - `ChatRoomListItem` import 추가
+      - snippet 내용 간소화: `<ChatRoomListItem {...props} />` 렌더링만 담당
+      - CSS 스타일을 ChatRoomListItem.svelte로 이동 (캡슐화)
+      - Avatar, userProfileStore import 제거 (ChatRoomListItem에서 처리)
+
+  - **기술적 개선 사항**:
+    - **반응성 보장**: snippet 내 side effect 안티패턴 제거, $effect 사용
+    - **컴포넌트 분리**: 관심사의 분리 (Separation of Concerns)
+    - **재사용성 향상**: ChatRoomListItem 컴포넌트 독립적으로 재사용 가능
+    - **유지보수성**: 각 채팅방 아이템 로직이 독립적으로 관리됨
+
+  - **TypeScript 검증**: 0 errors, 950 warnings (기존 Tailwind CSS 관련, 기능 영향 없음)
+
+- **2025-11-14 (오전)**: 데스크톱 채팅방 좌측 사이드바에 채팅 목록 표시 기능 추가
+  - **레이아웃 구조 개선** ([src/routes/chat/room/+layout.svelte](../src/routes/chat/room/+layout.svelte)):
+    - 데스크톱 화면에서 2-column 레이아웃 구현 (사이드바 320px + 메인 콘텐츠)
+    - 모바일 화면에서는 기존 single-column 레이아웃 유지 (사이드바 숨김)
+    - Flexbox 기반 반응형 레이아웃 (`flex-row` on desktop, `flex-col` on mobile)
+
+  - **채팅방 목록 사이드바 구현**:
+    - DatabaseListView 컴포넌트를 사용하여 `/chat-joins/{uid}` 경로의 채팅방 목록 표시
+    - `allChatListOrder` 필드 기준으로 정렬 (최신 메시지 우선)
+    - 무한 스크롤 지원 (페이지당 20개 항목, bottom trigger)
+    - 채팅방 타입별 아이콘 표시 (👤 1:1, 👥 그룹, 🌐 오픈)
+    - 읽지 않은 메시지 수 배지 표시 (`newMessageCount`)
+    - 채팅방 이름과 마지막 메시지 미리보기
+
+  - **활성 채팅방 감지 및 하이라이팅**:
+    - URL 파라미터(`roomId`, `uid`)에서 현재 활성 채팅방 ID 추출
+    - 1:1 채팅의 경우 `buildSingleRoomId()` 함수로 roomId 생성
+    - 활성 채팅방에 파란색 배경 (`bg-blue-50`) 적용
+
+  - **채팅방 클릭 네비게이션**:
+    - 1:1 채팅: roomId에서 상대방 UID 추출 후 `/chat/room?uid={partnerUid}`로 이동
+    - 그룹/오픈 채팅: `/chat/room?roomId={roomId}`로 이동
+    - SvelteKit의 `goto()` 함수 사용
+
+  - **다국어 메시지 추가** (4개 언어):
+    - `chatRoomList`: "내 채팅방" / "My Chats" / "マイチャット" / "我的聊天"
+    - `chatRoomListEmpty`: "참여한 채팅방이 없습니다." / "No chat rooms joined yet." / "参加しているチャットルームがありません。" / "还没有加入任何聊天室。"
+    - `chatRoomListLoading`: "채팅방 목록을 불러오는 중..." / "Loading chat rooms..." / "チャットルームを読み込み中..." / "正在加载聊天室..."
+
+  - **CSS 스타일링**:
+    - `.chat-room-layout`: Flexbox 컨테이너, 모바일(`h-[100dvh]`)/데스크톱(`calc(100vh - 4rem)`) 높이 조정
+    - `.chat-room-sidebar`: 데스크톱에서만 표시(`@media (min-width: 768px)`), 320px 고정 너비
+    - `.room-item`: 채팅방 리스트 아이템, 호버 효과 및 활성 상태 스타일링
+    - `.room-item--active`: 활성 채팅방 파란색 배경
+    - Safe area insets 지원 (모바일 노치 대응)
+
+  - **TypeScript 검증**: 0 errors, 950 warnings (기존 Tailwind CSS 관련, 기능 영향 없음)
+
+  - **UX 개선 효과**:
+    - 데스크톱에서 채팅방 전환이 매우 빠르고 직관적
+    - 읽지 않은 메시지 수를 한눈에 확인 가능
+    - 마지막 메시지 미리보기로 대화 내용 파악
+    - 모바일에서는 기존 UX 유지 (사이드바 숨김)
 
 - **2025-11-13**: 채팅방 입장 상태에서 새 메시지 자동 읽음 처리 기능 추가
   - **DatabaseListView 새 아이템 콜백 활용** ([src/routes/chat/room/+page.svelte](../src/routes/chat/room/+page.svelte)):

@@ -1877,7 +1877,50 @@ DatabaseListView 컴포넌트
 
 ## 주요 기능
 
-(이 섹션은 수동으로 업데이트 필요)
+### 무한 스크롤 및 페이지네이션
+
+- Firebase Realtime Database의 데이터를 페이지 단위로 로드
+- `scrollTrigger` 설정에 따라 스크롤 방향 제어:
+  - `"bottom"` (기본값): 아래로 스크롤하면 다음 페이지 로드 (일반 목록)
+  - `"top"`: 위로 스크롤하면 이전 페이지 로드 (채팅방 스타일)
+- `threshold` 값으로 스크롤 감지 민감도 조절 가능
+
+### scrollTrigger별 UI 배치
+
+**2025-11-14 업데이트**: `scrollTrigger` 설정에 따라 로딩 및 완료 메시지 위치가 자동으로 조정됩니다.
+
+- **`scrollTrigger="top"` (채팅방 스타일)**:
+  - `loadingMore`: 목록 **맨 위**에 표시 (위로 스크롤하여 과거 메시지 로드 중)
+  - `noMore`: 목록 **맨 위**에 표시 (더 이상 과거 메시지 없음)
+  - 사용 예: 채팅 메시지, 타임라인 (최신 항목이 아래)
+
+- **`scrollTrigger="bottom"` (일반 목록)**:
+  - `loadingMore`: 목록 **맨 아래**에 표시 (아래로 스크롤하여 다음 페이지 로드 중)
+  - `noMore`: 목록 **맨 아래**에 표시 (더 이상 데이터 없음)
+  - 사용 예: 게시글 목록, 사용자 목록
+
+### 실시간 업데이트
+
+- 각 아이템의 데이터 변경을 실시간으로 감지 (`onValue`)
+- 새로운 아이템 추가를 실시간으로 감지 (`onChildAdded`)
+- 아이템 삭제를 실시간으로 감지 (`onChildRemoved`)
+- `orderBy` 필드 값 변경 시 자동 재정렬
+
+### 커스터마이징 가능한 UI
+
+Svelte 5의 snippet을 사용하여 각 상태별 UI를 커스터마이징할 수 있습니다:
+
+- `item`: 각 아이템 렌더링
+- `loading`: 초기 로딩 상태
+- `empty`: 데이터 없음 상태
+- `error`: 에러 상태
+- `loadingMore`: 추가 로드 중 상태 (scrollTrigger에 따라 위치 자동 조정)
+- `noMore`: 더 이상 데이터 없음 상태 (scrollTrigger에 따라 위치 자동 조정)
+
+### 자동 스크롤
+
+- `autoScrollToEnd`: 초기 로드 후 자동으로 맨 아래로 스크롤 (채팅방에 유용)
+- `autoScrollOnNewData`: 새 데이터 추가 시 자동 스크롤 (사용자가 하단 근처에 있을 때만)
 
 ## 관련 파일
 

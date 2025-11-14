@@ -1,0 +1,29 @@
+rules_version = '2';
+
+/**
+ * Firebase Storage Security Rules
+ *
+ * 이 파일은 Firebase Storage의 보안 규칙을 정의합니다.
+ * 사용자별 디렉토리 구조를 사용하여 파일 접근 권한을 제어합니다.
+ */
+service firebase.storage {
+  match /b/{bucket}/o {
+    // 사용자별 디렉토리
+    match /users/{userId} {
+      // 채팅 파일: 본인만 업로드 가능, 모든 인증된 사용자 읽기 가능
+      match /chat-files/{roomId}/{filename} {
+        // 본인만 업로드 가능
+        allow write: if request.auth != null && request.auth.uid == userId;
+
+        // 모든 인증된 사용자 읽기 가능 (채팅방 멤버 확인은 복잡하므로 생략)
+        allow read: if request.auth != null;
+      }
+
+      // 프로필 사진 등 기타 파일
+      match /{allPaths=**} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+  }
+}

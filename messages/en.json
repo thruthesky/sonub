@@ -257,13 +257,20 @@
 	"homeSectionRecentUsersDesc": "Newly joined members will appear here soon.",
 	"homeSectionRecentOpenChat": "Recent Open Chat Messages",
 	"homeSectionRecentOpenChatDesc": "Live open chat conversations will be streamed in this space.",
+	"homeSectionRecentOpenChatEmpty": "No recent open chat messages yet.",
+	"homeSectionRecentOpenChatLogin": "Sign in to see the latest messages from the open chats you joined.",
 	"homeSectionPopularOpenRoom": "Popular Open Chat Rooms",
 	"homeSectionPopularOpenRoomDesc": "We will highlight the most active open rooms for quick access.",
 	"homeSectionRecentPosts": "Latest Posts & Comments",
 	"homeSectionRecentPostsDesc": "A snapshot of the board’s newest posts and replies is coming here.",
 	"homeSectionRecentUsersCount": "{count} members just joined",
+	"homeOpenChatNoMessage": "No messages yet.",
 	"sidebarDevHighlightAttachment": "9. File attachments",
 	"sidebarDevHighlightPassword": "10. Chat password protection",
 	"sidebarDevHighlightPostType": "11. Post-type messages",
-	"sidebarDevHighlightWrapUp": "8. Chat room wrap-up"
+	"sidebarDevHighlightWrapUp": "8. Chat room wrap-up",
+	"chatNoMoreMessages": "No more messages.",
+	"chatRoomList": "My Chats",
+	"chatRoomListEmpty": "No chat rooms joined yet.",
+	"chatRoomListLoading": "Loading chat rooms..."
 }

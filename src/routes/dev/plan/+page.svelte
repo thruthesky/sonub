@@ -186,7 +186,7 @@
 					<span class="todo-number">7</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">채팅 초대 수락/거절 흐름</Card.Title>
-						<span class="todo-badge todo-badge--pending">📋 예정</span>
+						<span class="todo-badge todo-badge--done">✅ 완료</span>
 					</div>
 				</div>
 			</Card.Header>
@@ -226,11 +226,33 @@
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 10. 비밀번호 기능 -->
+		<!-- 10. 새 채팅 메시지 카운트 및 화면 표시 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
 					<span class="todo-number">10</span>
+					<div class="flex flex-col gap-1">
+						<Card.Title class="text-xl">새 채팅 메시지 카운트 및 화면 표시</Card.Title>
+						<span class="todo-badge todo-badge--pending">📋 예정</span>
+					</div>
+				</div>
+			</Card.Header>
+			<Card.Content>
+				<ul class="todo-list">
+					<li>실시간으로 <code>/chat-joins/{'{uid}'}/{'{roomId}'}/newMessageCount</code>를 구독하여 각 채팅방의 읽지 않은 메시지 수를 추적</li>
+					<li>채팅방 목록 카드와 탭에 숫자 뱃지를 표시하고 99개 초과 시 `99+`로 축약하여 노출</li>
+					<li>채팅방 화면 상단에 "새 메시지 X개" 안내 배너를 보여주어 마지막 읽은 위치를 빠르게 파악</li>
+					<li>사용자가 최신 메시지까지 읽으면 newMessageCount를 0으로 초기화하고 강조 효과를 제거</li>
+					<li>새 메시지가 도착하면 목록 항목에 하이라이트 애니메이션을 적용해 즉시 인지 가능하도록 처리</li>
+				</ul>
+			</Card.Content>
+		</Card.Root>
+
+		<!-- 11. 비밀번호 기능 -->
+		<Card.Root class="todo-card">
+			<Card.Header>
+				<div class="flex items-start gap-3">
+					<span class="todo-number">11</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">그룹 채팅 비밀번호 기능</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -247,11 +269,34 @@
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 11. Post 타입 메시지 -->
+		<!-- 12. 채팅 마무리 기능 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
-					<span class="todo-number">11</span>
+					<span class="todo-number">12</span>
+					<div class="flex flex-col gap-1">
+						<Card.Title class="text-xl">채팅 마무리 기능</Card.Title>
+						<span class="todo-badge todo-badge--pending">📋 예정</span>
+					</div>
+				</div>
+			</Card.Header>
+			<Card.Content>
+				<ul class="todo-list">
+					<li>채팅방 내 단일 메시지를 삭제할 수 있는 옵션 제공 (소프트 삭제 + Cloud Functions 정합성 유지)</li>
+					<li>메시지 수정 UI와 수정 이력 표시</li>
+					<li>특정 메시지에 답장(quote) 기능 추가하여 원문 일부를 함께 표시</li>
+					<li>메시지에 좋아요(리액션) 기능으로 간단한 피드백 제공</li>
+					<li>@멘션 기능으로 특정 사용자를 호출하고 알림 트리거</li>
+					<li>상대방 읽음 여부(1:1 및 그룹) 표시: 마지막 읽음 타임스탬프 기반 배지</li>
+				</ul>
+			</Card.Content>
+		</Card.Root>
+
+		<!-- 13. Post 타입 메시지 -->
+		<Card.Root class="todo-card">
+			<Card.Header>
+				<div class="flex items-start gap-3">
+					<span class="todo-number">13</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">채팅 메시지 "Post" 타입 선택</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -261,7 +306,7 @@
 			<Card.Content>
 				<div class="space-y-4">
 					<div>
-						<h4 class="todo-subtitle">11-1. 카테고리 선택</h4>
+						<h4 class="todo-subtitle">13-1. 카테고리 선택</h4>
 						<ul class="todo-list">
 							<li>메시지 입력창 옆 드롭다운에서 타입 선택: "message" 또는 "post"</li>
 							<li>"post" 선택 시 카테고리 선택 UI 표시</li>
@@ -269,7 +314,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">11-2. 제목, 내용, 사진 업로드</h4>
+						<h4 class="todo-subtitle">13-2. 제목, 내용, 사진 업로드</h4>
 						<ul class="todo-list">
 							<li>제목 입력 필드 추가 (필수)</li>
 							<li>내용 입력 (rich text editor 또는 마크다운)</li>
@@ -279,7 +324,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">11-3. 카테고리별 게시판 메뉴</h4>
+						<h4 class="todo-subtitle">13-3. 카테고리별 게시판 메뉴</h4>
 						<ul class="todo-list">
 							<li>홈페이지 메뉴에 카테고리별 페이지 추가</li>
 							<li>DatabaseListView 사용하여 실시간 목록 표시</li>
@@ -288,7 +333,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">11-4. 댓글 기능 (게시판처럼 보이게)</h4>
+						<h4 class="todo-subtitle">13-4. 댓글 기능 (게시판처럼 보이게)</h4>
 						<ul class="todo-list">
 							<li>게시글 상세 페이지에서 댓글 목록 표시</li>
 							<li>댓글 작성, 수정, 삭제 기능</li>
@@ -298,7 +343,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">11-5. 게시판 통계 (post/comment/like)</h4>
+						<h4 class="todo-subtitle">13-5. 게시판 통계 (post/comment/like)</h4>
 						<ul class="todo-list">
 							<li>카테고리 및 전체 게시판에 대해 <code>postCount</code>, <code>commentCount</code>, <code>likeCount</code> 통계를 표시</li>
 							<li>Cloud Functions가 게시글/댓글/좋아요 이벤트 발생 시 대응 카운터를 업데이트 (<code>/stats/board</code> 트리)</li>
@@ -310,11 +355,11 @@
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 12. 게시판 글이 채팅방 메시지 목록에 표시 -->
+		<!-- 14. 게시판 글이 채팅방 메시지 목록에 표시 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
-					<span class="todo-number">12</span>
+					<span class="todo-number">14</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">게시판 글이 채팅방 메시지 목록에 표시</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -340,13 +385,13 @@
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 13. 남/여 찾기 기능 (콕 포인트 시스템) -->
+		<!-- 15. 남/여 회원 찾기 기능 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
-					<span class="todo-number">13</span>
+					<span class="todo-number">15</span>
 					<div class="flex flex-col gap-1">
-						<Card.Title class="text-xl">남/여 찾기 기능 (콕 포인트 시스템)</Card.Title>
+						<Card.Title class="text-xl">남/여 회원 찾기 기능</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
 					</div>
 				</div>
@@ -354,52 +399,41 @@
 			<Card.Content>
 				<div class="space-y-4">
 					<div>
-						<h4 class="todo-subtitle">13-1. 콕(Coke) 가상 포인트 시스템</h4>
+						<h4 class="todo-subtitle">15-1. 성별/기본 필터 옵션</h4>
 						<ul class="todo-list">
-							<li>콕은 채팅에 사용하는 가상 포인트 (연료/코크스 의미)</li>
-							<li>1콕 = 1원</li>
-							<li><code>/user-points/{'{uid}'}/coke</code>에 보유 콕 수 저장</li>
-							<li>콕 구매 히스토리 기록: <code>/coke-purchases/{'{uid}'}/{'{purchaseId}'}</code></li>
+							<li><code>/users/{'{uid}'}/gender</code> 필드를 활용한 남/여/전체 필터 노출</li>
+							<li>사진 보유 여부, 최근 접속 여부 등 기본 필터 조합 제공</li>
+							<li>정렬: 최신 가입순, 최근 활동순, 사진 있는 사용자 우선</li>
+							<li>필터 값 변경 시 DatabaseListView를 재구독하여 실시간 반영</li>
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">13-2. 무료 채팅 한도</h4>
+						<h4 class="todo-subtitle">15-2. 추천/탐색 UX</h4>
 						<ul class="todo-list">
-							<li>모르는 사람과 총 50명까지 무료 채팅 가능</li>
-							<li>총 채팅 메시지 200번까지 무료 (모르는 사람 대상)</li>
-							<li><code>/user-chat-limits/{'{uid}'}/freePeopleCount</code>: 무료로 채팅한 사람 수</li>
-							<li><code>/user-chat-limits/{'{uid}'}/freeMessageCount</code>: 무료 메시지 전송 횟수</li>
+							<li>랜덤 매칭 버튼으로 조건에 맞는 사용자 한 명을 즉시 제안</li>
+							<li>그리드/리스트 전환 토글 제공 (모바일/데스크톱 대응)</li>
+							<li>프로필 카드에는 프로필 사진, 닉네임, 연령대/지역 등의 핵심 정보 표시</li>
+							<li>즐겨찾기(핀) 기능으로 관심 사용자를 빠르게 다시 찾기</li>
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">13-3. 콕 소비 규칙</h4>
+						<h4 class="todo-subtitle">15-3. 채팅 연결 플로우</h4>
 						<ul class="todo-list">
-							<li>모르는 사람에게 처음 채팅 시작: 30콕 소모</li>
-							<li>20단어 이하 메시지: 10콕 소모</li>
-							<li>20단어 초과 메시지: 20콕 소모</li>
-							<li>친구 또는 이미 채팅 중인 사람: 무료</li>
-							<li>Cloud Functions에서 메시지 전송 시 콕 차감 처리</li>
-						</ul>
-					</div>
-					<div>
-						<h4 class="todo-subtitle">13-4. 남/여 찾기 UI</h4>
-						<ul class="todo-list">
-							<li>성별 필터링 옵션 (남성/여성/전체)</li>
-							<li>랜덤 매칭 기능</li>
-							<li>사용자 프로필 미리보기 (프로필 사진, 닉네임, 간단한 소개)</li>
-							<li>채팅 시작 전 콕 소모량 안내</li>
-							<li><code>/users/{'{uid}'}/gender</code> 기반 검색</li>
+							<li>카드 CTA → `/chat/room?uid={'{targetUid}'}` 경로로 이동하여 1:1 채팅 시작</li>
+							<li>채팅 시작 전 상대방이 온라인인지 여부를 인디케이터로 표시</li>
+							<li>차단/신고 사용자에 대해서는 결과에서 제외하거나 경고 메시지 표시</li>
+							<li>Cloud Functions에서 채팅방 생성과 기본 멤버 등록 로직 재사용</li>
 						</ul>
 					</div>
 				</div>
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 14. 토스/페이팔 결제 기능 -->
+		<!-- 16. 토스/페이팔 결제 기능 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
-					<span class="todo-number">14</span>
+					<span class="todo-number">16</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">토스 페이먼츠 & 페이팔 결제 기능</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -409,7 +443,7 @@
 			<Card.Content>
 				<div class="space-y-4">
 					<div>
-						<h4 class="todo-subtitle">14-1. 토스 페이먼츠 연동 (국내 결제)</h4>
+						<h4 class="todo-subtitle">16-1. 토스 페이먼츠 연동 (국내 결제)</h4>
 						<ul class="todo-list">
 							<li>토스 페이먼츠 SDK 클라이언트 통합</li>
 							<li>결제 수단: 카드, 계좌이체, 간편결제 등</li>
@@ -419,7 +453,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">14-2. 페이팔 연동 (해외 결제)</h4>
+						<h4 class="todo-subtitle">16-2. 페이팔 연동 (해외 결제)</h4>
 						<ul class="todo-list">
 							<li>PayPal JavaScript SDK 통합</li>
 							<li>전세계 사용자를 위한 다국가 결제 지원</li>
@@ -429,7 +463,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">14-3. 광고 구좌 등록 및 광고 등록</h4>
+						<h4 class="todo-subtitle">16-3. 광고 구좌 등록 및 광고 등록</h4>
 						<ul class="todo-list">
 							<li>
 								<strong>광고 구좌 등록:</strong> 관리자가 광고를 게시할 수 있는 광고 구좌(슬롯)를
@@ -459,11 +493,11 @@
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 15. 다음 버전 기능 -->
+		<!-- 17. 다음 버전 기능 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
-					<span class="todo-number">15</span>
+					<span class="todo-number">17</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">다음 버전 기능</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -473,7 +507,7 @@
 			<Card.Content>
 				<div class="space-y-4">
 					<div>
-						<h4 class="todo-subtitle">15-1. 서브 채팅방 (Sub Chat Room)</h4>
+						<h4 class="todo-subtitle">17-1. 서브 채팅방 (Sub Chat Room)</h4>
 						<ul class="todo-list">
 							<li>
 								<strong>용도:</strong> 내가 운영 중인 여러 개의 채팅방을 하나로 묶어서 하나의
@@ -500,7 +534,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">15-2. 관리자 페이지 (Dashboard) 및 관리자 기능</h4>
+						<h4 class="todo-subtitle">17-2. 관리자 페이지 (Dashboard) 및 관리자 기능</h4>
 						<ul class="todo-list">
 							<li>관리자 권한 시스템 구현 (<code>/users/{'{uid}'}/isAdmin: boolean</code>)</li>
 							<li>
