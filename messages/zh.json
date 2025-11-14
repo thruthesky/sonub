@@ -307,11 +307,13 @@
 	"sidebarTodoBoardStatsDesc": "实时展示帖子/评论/点赞的计数。",
 	"homeSectionRecentUsers": "最近用户",
 	"homeSectionRecentUsersDesc": "最新加入的成员将很快在这里显示。",
-	"homeSectionRecentUsersCount": "最近加入的 {count} 位会员",
 	"homeSectionRecentOpenChat": "最新开放聊天室消息",
 	"homeSectionRecentOpenChatDesc": "实时开放聊天室对话即将展示在此区域。",
 	"homeSectionPopularOpenRoom": "热门开放聊天室",
 	"homeSectionPopularOpenRoomDesc": "我们会推荐参与度最高的开放聊天室。",
 	"homeSectionRecentPosts": "最新帖子与评论",
-	"homeSectionRecentPostsDesc": "稍后将在此展示论坛最新的帖子和评论概览。"
+	"homeSectionRecentPostsDesc": "稍后将在此展示论坛最新的帖子和评论概览。",
+	"sidebarDevHighlightAttachment": "8. 文件附件上传",
+	"sidebarDevHighlightPassword": "9. 聊天密码功能",
+	"sidebarDevHighlightPostType": "10. 帖子类型消息"
 }

@@ -259,5 +259,14 @@
 	"homeSectionPopularOpenRoomDesc": "참여자가 많은 오픈 채팅방을 추천해 드립니다.",
 	"homeSectionRecentPosts": "최근 글 & 댓글",
 	"homeSectionRecentPostsDesc": "게시판의 최신 글과 댓글을 한눈에 볼 수 있도록 준비 중입니다.",
-	"homeSectionRecentUsersCount": "최근 가입한 회원 {count}명"
+	"homeSectionRecentUsersCount": "최근 가입한 회원 {count}명",
+	"sidebarDevHighlightAttachment": "8. 첨부파일 업로드",
+	"sidebarDevHighlightPassword": "9. 채팅 비밀번호 기능",
+	"sidebarDevHighlightPostType": "10. Post 타입 메시지",
+	"chatAccept": "수락",
+	"chatReject": "거절",
+	"chatInviteFriend": "친구 초대",
+	"chatInviteToRoom": "이 채팅방에 친구를 초대하세요",
+	"chatSearchUserToInvite": "초대할 친구를 검색하세요",
+	"chatInvitationSent": "초대를 보냈습니다"
 }

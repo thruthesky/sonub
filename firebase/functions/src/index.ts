@@ -38,6 +38,7 @@ import {
   handleChatRoomMemberLeave,
   handleChatRoomPinCreate,
   handleChatRoomPinDelete,
+  handleChatInvitationCreate,
 } from "./handlers/chat.handler";
 
 // 상수 정의
@@ -568,5 +569,51 @@ export const onChatRoomPinDelete = onValueDeleted(
 
     // 비즈니스 로직 핸들러 호출
     return await handleChatRoomPinDelete(uid, roomId);
+  }
+);
+
+/**
+ * 채팅 초대장 생성 시 트리거되는 Cloud Function
+ *
+ * 트리거 경로: /chat-invitations/{uid}/{roomId}
+ * 트리거 조건: 초대장이 생성될 때
+ *
+ * 수행 작업:
+ * 1. 채팅방 정보 조회 (roomName, roomType)
+ * 2. 초대한 사람 정보 조회 (displayName)
+ * 3. 초대받은 사람의 언어 코드 조회
+ * 4. 초대 메시지 생성 (i18n 사용, 언어별)
+ * 5. 초대장 정보 업데이트 (roomName, inviterName, message)
+ * 6. FCM 푸시 알림 전송 (초대받은 사람의 언어로)
+ *
+ * 참고:
+ * - 클라이언트는 최소한의 정보만 저장 (roomId, inviterUid, createdAt, invitationOrder)
+ * - Cloud Functions가 나머지 정보를 자동으로 채움 (많은 작업을 백엔드에서 수행)
+ * - 1:1 채팅방에 대한 초대는 자동으로 무시됨
+ * - 이미 참여 중인 멤버에 대한 초대도 자동으로 무시됨
+ *
+ * 비즈니스 로직은 handlers/chat.handler.ts의 handleChatInvitationCreate() 참조
+ */
+export const onChatInvitationCreate = onValueCreated(
+  {
+    ref: "/chat-invitations/{uid}/{roomId}",
+    region: FIREBASE_REGION,
+  },
+  async (event) => {
+    const inviteeUid = event.params.uid as string;
+    const roomId = event.params.roomId as string;
+    const invitationData = (event.data.val() || {}) as {
+      inviterUid?: string;
+      createdAt?: number;
+    };
+
+    logger.info("채팅 초대장 생성 감지", {
+      inviteeUid,
+      roomId,
+      inviterUid: invitationData.inviterUid,
+    });
+
+    // 비즈니스 로직 핸들러 호출
+    return await handleChatInvitationCreate(inviteeUid, roomId, invitationData);
   }
 );

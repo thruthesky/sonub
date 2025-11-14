@@ -15,16 +15,27 @@
 
   const DEFAULT_PAGE_SIZE = 15;
 
+  // 정렬 필드 옵션
+  type SortField = 'createdAt' | 'sort_recentWithPhoto' | 'sort_recentFemaleWithPhoto' | 'sort_recentMaleWithPhoto';
+
+  const sortOptions = [
+    { value: 'createdAt' as SortField, label: '전체 회원' },
+    { value: 'sort_recentWithPhoto' as SortField, label: '사진있는 회원' },
+    { value: 'sort_recentFemaleWithPhoto' as SortField, label: '사진있는 여성' },
+    { value: 'sort_recentMaleWithPhoto' as SortField, label: '사진있는 남성' }
+  ];
+
   let searchDialogOpen = $state(false);
   let dialogKeyword = $state('');
   let activeSearch = $state('');
+  let selectedSortField = $state<SortField>('createdAt');
 
   const normalizedSearch = $derived.by(() => activeSearch.trim());
   const isSearching = $derived.by(() => normalizedSearch.length > 0);
   const listKey = $derived.by(() =>
-    isSearching ? `users-search-${normalizedSearch}` : 'users-default'
+    isSearching ? `users-search-${normalizedSearch}` : `users-${selectedSortField}`
   );
-  const listOrderBy = $derived.by(() => (isSearching ? 'displayNameLowerCase' : 'createdAt'));
+  const listOrderBy = $derived.by(() => (isSearching ? 'displayNameLowerCase' : selectedSortField));
   const listPageSize = $derived.by(() => (isSearching ? 50 : DEFAULT_PAGE_SIZE));
 
   function openSearchDialog() {
@@ -60,20 +71,32 @@
   </div>
 
   <div class="search-toolbar">
+    <div class="toolbar-left">
+      <select
+        class="sort-select"
+        bind:value={selectedSortField}
+      >
+        {#each sortOptions as option}
+          <option value={option.value}>{option.label}</option>
+        {/each}
+      </select>
+
+      {#if isSearching}
+        <div class="search-chip">
+          <span>"{normalizedSearch}" 검색 결과</span>
+          <button type="button" onclick={clearSearch}>초기화</button>
+        </div>
+      {/if}
+    </div>
+
     <Button
       type="button"
       variant="default"
-      class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg"
+      class="search-button bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg"
       onclick={openSearchDialog}
     >
       사용자 검색
     </Button>
-    {#if isSearching}
-      <div class="search-chip">
-        <span>"{normalizedSearch}" 검색 결과</span>
-        <button type="button" onclick={clearSearch}>초기화</button>
-      </div>
-    {/if}
   </div>
 
   <UserSearchDialog
@@ -198,7 +221,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    align-items: flex-start;
+    align-items: stretch;
     margin-bottom: 1.5rem;
   }
 
@@ -207,6 +230,59 @@
       flex-direction: row;
       justify-content: space-between;
       align-items: center;
+    }
+  }
+
+  .toolbar-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+
+  @media (min-width: 640px) {
+    .toolbar-left {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+
+  .sort-select {
+    min-width: 180px;
+    padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: #1f2937;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    transition: background-color 0.2s, border-color 0.2s;
+  }
+
+  .sort-select:hover {
+    background-color: #f9fafb;
+    border-color: #d1d5db;
+  }
+
+  .sort-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  :global(.search-button) {
+    white-space: nowrap;
+  }
+
+  @media (max-width: 640px) {
+    :global(.search-button) {
+      width: 100%;
     }
   }
 

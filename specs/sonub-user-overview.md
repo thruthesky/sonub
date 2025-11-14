@@ -62,15 +62,34 @@ SNS 웹 프로젝트에서 사용자의 프로필 정보는 다음과 같이 구
 - **Firebase Cloud Storage**: 프로필 사진 파일 저장소
 - **Svelte 5 Runes**: 반응형 상태 관리
 
-## 사용자 목록 검색 UX (2025-11-11 갱신)
+## 사용자 목록 검색 및 필터링 UX (2025-11-14 갱신)
 
-- `/user/list` 상단에 **"사용자 검색"** 버튼을 추가하고, 버튼은 `svelte-shadcn`의 `Button` 컴포넌트로 구현한다.
+### 정렬 필드 드롭다운 (2025-11-14 추가)
+
+- `/user/list` 상단 좌측에 **정렬 필드 선택 드롭다운**을 추가하여 사용자가 관심 있는 사용자 그룹을 필터링할 수 있도록 한다.
+- 드롭다운은 네이티브 HTML `<select>` 요소를 사용하되, Tailwind CSS로 커스텀 스타일링(SVG 화살표, hover/focus 상태)을 적용한다.
+- 정렬 필드 옵션:
+  - **전체 회원** (`createdAt`): 가입일 기준 전체 사용자 목록
+  - **사진있는 회원** (`sort_recentWithPhoto`): 프로필 사진이 있는 사용자만 표시
+  - **사진있는 여성** (`sort_recentFemaleWithPhoto`): 프로필 사진이 있는 여성 사용자만 표시
+  - **사진있는 남성** (`sort_recentMaleWithPhoto`): 프로필 사진이 있는 남성 사용자만 표시
+- 정렬 필드 변경 시 `DatabaseListView`의 `orderBy` prop이 자동으로 업데이트되며, `{#key users-${selectedSortField}}` 패턴으로 컴포넌트를 재구독한다.
+- Cloud Functions에서 자동 생성한 `sort_recent*` 필드를 활용하여 서버 측 필터링을 수행한다.
+
+### 검색 기능
+
+- `/user/list` 상단 우측에 **"사용자 검색"** 버튼을 추가하고, 버튼은 `svelte-shadcn`의 `Button` 컴포넌트로 구현한다.
 - 버튼 클릭 시 `Dialog`(shadcn-svelte) + Tailwind CSS 조합으로 만든 모달이 열리며, 입력 필드는 `displayNameLowerCase` 값을 그대로 받을 수 있도록 소문자 안내 문구를 포함한다.
 - 검색어는 소문자로 정규화되어 `DatabaseListView`의 `equalToValue` Prop으로 전달된다. `orderBy="displayNameLowerCase"`와 함께 사용하여 **정확히 일치하는 사용자만** 서버 쿼리에서 가져온다.
 - 검색 중에는 DatabaseListView를 `{#key users-search-${keyword}}`로 래핑해 컴포넌트를 재구독하며, 결과 배지는 "검색 결과" 문구와 초기화 버튼을 함께 제공한다.
 - 모달 하단에는 `검색 초기화` 버튼을 두어 입력값과 활성 검색 상태를 동시에 초기화한다. 이 버튼 또한 shadcn-svelte `Button` 컴포넌트를 사용한다.
-- 검색이 비활성화되면 기본 목록(정렬 기준: `createdAt`)으로 자동 복귀하며, 실시간 listener는 기존과 동일하게 유지된다.
+- 검색이 비활성화되면 선택된 정렬 필드 기준으로 자동 복귀하며, 실시간 listener는 기존과 동일하게 유지된다.
 - 사용자 검색 다이얼로그는 `src/lib/components/user/UserSearchDialog.svelte` 컴포넌트를 공통으로 사용하여 관리자 페이지, 채팅 목록 등 다른 화면에서도 동일한 UX와 로직을 재사용한다.
+
+### 반응형 레이아웃
+
+- 툴바는 모바일에서 세로 방향(column), 데스크톱(640px 이상)에서 가로 방향(row)으로 표시된다.
+- 좌측 영역(드롭다운 + 검색 결과 배지)과 우측 버튼(사용자 검색)이 분리되어 있으며, 모바일에서는 전체 너비로 표시된다.
 
 ---
 
@@ -109,4 +128,5 @@ SNS 웹 프로젝트에서 사용자의 프로필 정보는 다음과 같이 구
 
 | 날짜 | 작업자 | 내용 |
 | ---- | ------ | ---- |
+| 2025-11-14 | Claude Code | 사용자 목록 페이지에 정렬 필드 드롭다운 추가 (전체 회원, 사진있는 회원, 사진있는 여성, 사진있는 남성). 검색 버튼을 우측으로 이동하고 반응형 레이아웃 구현. Cloud Functions의 `sort_recent*` 필드를 활용한 서버 측 필터링 적용. |
 | 2025-11-12 | Codex Agent | 사용자 검색 모달을 `src/lib/components/user/UserSearchDialog.svelte`로 분리하고 `/user/list` 명세에 재사용 기준을 명시. |

@@ -77,11 +77,42 @@ class AuthStore {
 	}
 
 	/**
+	 * 브라우저의 언어 설정을 감지하여 언어 코드 반환
+	 *
+	 * 지원 언어: en, ko, ja, zh
+	 * 기본값: en
+	 *
+	 * @returns 언어 코드 (예: "ko", "en", "ja", "zh")
+	 */
+	private detectBrowserLanguage(): string {
+		const SUPPORTED_LANGUAGES = ['en', 'ko', 'ja', 'zh'];
+		const DEFAULT_LANGUAGE = 'en';
+
+		if (typeof navigator === 'undefined') {
+			return DEFAULT_LANGUAGE;
+		}
+
+		// navigator.language 예: "ko-KR", "en-US", "ja-JP", "zh-CN"
+		const browserLang = navigator.language || navigator.languages?.[0] || DEFAULT_LANGUAGE;
+
+		// 첫 2글자만 추출 (예: "ko-KR" -> "ko")
+		const langCode = browserLang.substring(0, 2).toLowerCase();
+
+		// 지원하는 언어인지 확인
+		if (SUPPORTED_LANGUAGES.includes(langCode)) {
+			return langCode;
+		}
+
+		return DEFAULT_LANGUAGE;
+	}
+
+	/**
 	 * Firebase Auth 사용자 프로필을 RTDB에 동기화
 	 *
 	 * 동기화 규칙:
 	 * - photoUrl: RTDB에 값이 없거나 null이거나 공백일 때만 Auth의 photoURL 저장
 	 * - displayName: RTDB에 값이 없을 때만 Auth의 displayName 저장
+	 * - languageCode: RTDB에 값이 없을 때만 브라우저 언어 저장
 	 * - email, phoneNumber는 동기화하지 않음
 	 * - createdAt, updatedAt은 Cloud Functions가 자동 처리
 	 *
@@ -113,6 +144,13 @@ class AuthStore {
 			if (!existingData.displayName && user.displayName) {
 				updates.displayName = user.displayName;
 				console.log('displayName 동기화:', user.displayName);
+			}
+
+			// languageCode: 없을 때만 브라우저 언어로 동기화
+			if (!existingData.languageCode) {
+				const browserLang = this.detectBrowserLanguage();
+				updates.languageCode = browserLang;
+				console.log('languageCode 동기화:', browserLang);
 			}
 
 			// 업데이트할 항목이 있으면 RTDB에 저장

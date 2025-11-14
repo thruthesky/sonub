@@ -19,7 +19,8 @@
 		enterSingleChatRoom,
 		joinChatRoom,
 		leaveChatRoom,
-		togglePinChatRoom
+		togglePinChatRoom,
+		inviteUserToChatRoom
 	} from '$lib/functions/chat.functions';
 	import { formatLongDate } from '$lib/functions/date.functions';
 	import { tick } from 'svelte';
@@ -28,6 +29,7 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { Button } from '$lib/components/ui/button';
 	import ChatFavoritesDialog from '$lib/components/chat/ChatFavoritesDialog.svelte';
+	import UserSearchDialog from '$lib/components/user/UserSearchDialog.svelte';
 
 	// GET 파라미터 추출
 	const uidParam = $derived.by(() => $page.url.searchParams.get('uid') ?? '');
@@ -91,6 +93,9 @@
 
 	// ChatFavoritesDialog 상태
 	let favoritesDialogOpen = $state(false);
+
+	// UserSearchDialog 상태 (친구 초대용)
+	let inviteDialogOpen = $state(false);
 
 	// 핀 상태 관리
 	let isPinned = $state(false);
@@ -330,6 +335,36 @@
 	function handleReportAndLeave() {
 		console.log('신고하고 탈퇴하기 클릭');
 		// TODO: 신고 다이얼로그 표시 후 탈퇴
+	}
+
+	/**
+	 * 친구 초대 메뉴 클릭 핸들러
+	 * UserSearchDialog를 열어서 초대할 친구를 검색합니다.
+	 */
+	function handleInviteFriend() {
+		inviteDialogOpen = true;
+	}
+
+	/**
+	 * 사용자 선택 핸들러 (초대 실행)
+	 * UserSearchDialog에서 사용자를 선택하면 채팅방에 초대합니다.
+	 */
+	async function handleUserSelect(event: CustomEvent<{ user: any; uid: string }>) {
+		const { uid } = event.detail;
+
+		if (!activeRoomId || !authStore.user?.uid || !rtdb) {
+			console.error('채팅방 또는 사용자 정보 없음');
+			return;
+		}
+
+		try {
+			await inviteUserToChatRoom(rtdb, activeRoomId, uid, authStore.user.uid);
+			console.log('✅ 초대 성공:', uid);
+			alert(m.chatInvitationSent());
+		} catch (error) {
+			console.error('❌ 초대 실패:', error);
+			alert('초대를 보내지 못했습니다.');
+		}
 	}
 
 	/**
@@ -584,6 +619,14 @@
 					URL 복사
 				</DropdownMenu.Item>
 				<DropdownMenu.Separator />
+				{#if !isSingleChat}
+					<!-- 그룹/오픈 채팅방에서만 친구 초대 기능 표시 -->
+					<DropdownMenu.Item onclick={handleInviteFriend} class="bg-green-50 hover:bg-green-100">
+						<span class="mr-2">👤</span>
+						{m.chatInviteFriend()}
+					</DropdownMenu.Item>
+					<DropdownMenu.Separator />
+				{/if}
 				<DropdownMenu.Item onclick={handleMemberList} class="bg-blue-50 hover:bg-blue-100">
 					<span class="mr-2">👥</span>
 					멤버 목록
@@ -737,6 +780,16 @@
 	bind:open={favoritesDialogOpen}
 	currentRoomId={activeRoomId}
 	on:roomSelected={handleRoomSelected}
+/>
+
+<!-- 친구 초대 다이얼로그 -->
+<UserSearchDialog
+	bind:open={inviteDialogOpen}
+	title={m.chatInviteFriend()}
+	description={m.chatInviteToRoom()}
+	submitLabel={m.chatInviteFriend()}
+	showResults={true}
+	on:userSelect={handleUserSelect}
 />
 
 <style>

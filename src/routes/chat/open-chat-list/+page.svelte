@@ -7,6 +7,7 @@
 
 	import DatabaseListView from '$lib/components/DatabaseListView.svelte';
 	import ChatCreateDialog from '$lib/components/chat/ChatCreateDialog.svelte';
+	import ChatInvitationList from '$lib/components/chat/ChatInvitationList.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
@@ -205,6 +206,13 @@
 			<p>{m.chatLoadingRooms()}</p>
 		</section>
 	{:else}
+		<!-- 채팅 초대 목록 -->
+		{#if authStore.isAuthenticated}
+			<section class="rounded-2xl border border-blue-200 bg-white shadow-sm">
+				<ChatInvitationList />
+			</section>
+		{/if}
+
 		<section class="rounded-2xl border border-gray-200 bg-white p-0 shadow-sm">
 			{#key CHAT_ROOMS_PATH}
 				{@const dbListViewProps = {

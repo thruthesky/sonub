@@ -261,5 +261,8 @@
 	"homeSectionPopularOpenRoomDesc": "We will highlight the most active open rooms for quick access.",
 	"homeSectionRecentPosts": "Latest Posts & Comments",
 	"homeSectionRecentPostsDesc": "A snapshot of the board’s newest posts and replies is coming here.",
-	"homeSectionRecentUsersCount": "{count} members just joined"
+	"homeSectionRecentUsersCount": "{count} members just joined",
+	"sidebarDevHighlightAttachment": "8. File attachments",
+	"sidebarDevHighlightPassword": "9. Chat password protection",
+	"sidebarDevHighlightPostType": "10. Post-type messages"
 }

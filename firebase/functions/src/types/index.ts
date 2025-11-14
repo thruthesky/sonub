@@ -246,3 +246,26 @@ export interface ChatJoin {
   /** 모든 채팅방(1:1, 그룹, 오픈) 통합 정렬용 필드: timestamp */
   allChatListOrder?: number;
 }
+
+/**
+ * 채팅 초대 데이터 인터페이스
+ * Firebase Realtime Database의 /chat-invitations/{uid}/{roomId} 노드에 저장되는 데이터 구조
+ */
+export interface ChatInvitationData {
+  /** 채팅방 ID */
+  roomId?: string;
+  /** 채팅방 이름 (Cloud Functions에서 자동 설정) */
+  roomName?: string;
+  /** 채팅방 타입 (group | open) */
+  roomType?: "group" | "open";
+  /** 초대한 사람 UID */
+  inviterUid?: string;
+  /** 초대한 사람 이름 (Cloud Functions에서 자동 설정) */
+  inviterName?: string;
+  /** 초대 메시지 (Cloud Functions에서 자동 생성) */
+  message?: string;
+  /** 생성 시간 (Unix timestamp, 밀리초) */
+  createdAt?: number;
+  /** 정렬용 필드: "-{timestamp}" (최신순) */
+  invitationOrder?: string;
+}

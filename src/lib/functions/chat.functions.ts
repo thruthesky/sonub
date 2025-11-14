@@ -5,7 +5,7 @@
  * shared 폴더의 pure functions에 대한 re-export를 포함합니다.
  */
 
-import { ref, set, update, get, type Database } from 'firebase/database';
+import { ref, set, update, get, remove, type Database } from 'firebase/database';
 
 // Pure functions를 shared 폴더에서 import하고 re-export
 export {
@@ -188,4 +188,125 @@ export async function togglePinChatRoom(
 
 	// 새로운 핀 상태 반환
 	return !isPinned;
+}
+
+/**
+ * 사용자를 그룹/오픈 채팅방에 초대합니다.
+ *
+ * 이 함수는 채팅방 멤버가 다른 사용자를 초대할 때 호출됩니다.
+ * 클라이언트는 최소한의 정보만 저장하여 Cloud Functions를 트리거합니다.
+ * Cloud Functions(onChatInvitationCreate)가 자동으로 다음 필드들을 추가합니다:
+ * - createdAt: 초대 생성 시간 (타임스탬프)
+ * - invitationOrder: 정렬용 필드 (-createdAt 값)
+ * - roomName: 채팅방 이름
+ * - roomType: 채팅방 타입 (group | open)
+ * - inviterName: 초대한 사람 이름
+ * - message: 다국어 초대 메시지
+ *
+ * 또한 Cloud Functions는 다음을 자동으로 처리합니다:
+ * - 초대받은 사용자의 언어 코드에 맞는 FCM 푸시 알림 전송
+ * - 이미 채팅방에 참여 중인 사용자는 초대하지 않음
+ * - 1:1 채팅방은 초대 불가
+ *
+ * @param db - Firebase Realtime Database 인스턴스
+ * @param roomId - 채팅방 ID
+ * @param inviteeUid - 초대받는 사용자 UID
+ * @param inviterUid - 초대하는 사용자 UID
+ * @returns Promise<void>
+ *
+ * @example
+ * ```typescript
+ * import { rtdb } from '$lib/firebase';
+ * import { inviteUserToChatRoom } from '$lib/functions/chat.functions';
+ *
+ * // 사용자를 채팅방에 초대
+ * await inviteUserToChatRoom(rtdb, roomId, inviteeUid, currentUser.uid);
+ * ```
+ */
+export async function inviteUserToChatRoom(
+	db: Database,
+	roomId: string,
+	inviteeUid: string,
+	inviterUid: string
+): Promise<void> {
+	const invitationRef = ref(db, `chat-invitations/${inviteeUid}/${roomId}`);
+
+	// 클라이언트는 최소한의 데이터만 저장 (roomId, inviterUid)
+	// Cloud Functions가 나머지 필드들을 자동으로 추가합니다
+	await set(invitationRef, {
+		roomId,
+		inviterUid
+		// Cloud Functions가 자동으로 추가하는 필드들:
+		// - createdAt: 초대 생성 시간
+		// - invitationOrder: 정렬용 필드
+		// - roomName: 채팅방 이름
+		// - roomType: 채팅방 타입
+		// - inviterName: 초대한 사람 이름
+		// - message: 다국어 초대 메시지
+	});
+}
+
+/**
+ * 채팅 초대를 수락합니다.
+ *
+ * 이 함수는 사용자가 초대를 수락할 때 호출됩니다.
+ * 다음 작업을 순차적으로 수행합니다:
+ * 1. joinChatRoom() 함수를 호출하여 채팅방에 입장
+ * 2. chat-invitations/{uid}/{roomId}에서 초대 정보 삭제
+ *
+ * @param db - Firebase Realtime Database 인스턴스
+ * @param roomId - 채팅방 ID
+ * @param uid - 사용자 UID
+ * @returns Promise<void>
+ *
+ * @example
+ * ```typescript
+ * import { rtdb } from '$lib/firebase';
+ * import { acceptInvitation } from '$lib/functions/chat.functions';
+ *
+ * // 초대 수락
+ * await acceptInvitation(rtdb, roomId, currentUser.uid);
+ * ```
+ */
+export async function acceptInvitation(
+	db: Database,
+	roomId: string,
+	uid: string
+): Promise<void> {
+	// 1. 채팅방에 입장 (기존 함수 재사용)
+	joinChatRoom(db, roomId, uid);
+
+	// 2. 초대 정보 삭제
+	const invitationRef = ref(db, `chat-invitations/${uid}/${roomId}`);
+	await remove(invitationRef);
+}
+
+/**
+ * 채팅 초대를 거절합니다.
+ *
+ * 이 함수는 사용자가 초대를 거절할 때 호출됩니다.
+ * chat-invitations/{uid}/{roomId}에서 초대 정보만 삭제하며,
+ * 채팅방에는 입장하지 않습니다.
+ *
+ * @param db - Firebase Realtime Database 인스턴스
+ * @param roomId - 채팅방 ID
+ * @param uid - 사용자 UID
+ * @returns Promise<void>
+ *
+ * @example
+ * ```typescript
+ * import { rtdb } from '$lib/firebase';
+ * import { rejectInvitation } from '$lib/functions/chat.functions';
+ *
+ * // 초대 거절
+ * await rejectInvitation(rtdb, roomId, currentUser.uid);
+ * ```
+ */
+export async function rejectInvitation(
+	db: Database,
+	roomId: string,
+	uid: string
+): Promise<void> {
+	const invitationRef = ref(db, `chat-invitations/${uid}/${roomId}`);
+	await remove(invitationRef);
 }

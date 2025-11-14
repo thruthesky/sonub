@@ -262,5 +262,8 @@
 	"homeSectionPopularOpenRoomDesc": "参加者が多いルームをおすすめとして表示します。",
 	"homeSectionRecentPosts": "最新の投稿＆コメント",
 	"homeSectionRecentPostsDesc": "掲示板の最新投稿とコメントをまとめて確認できるよう準備中です。",
-	"homeSectionRecentUsersCount": "直近で参加したユーザー {count}人"
+	"homeSectionRecentUsersCount": "直近で参加したユーザー {count}人",
+	"sidebarDevHighlightAttachment": "8. 添付ファイルアップロード",
+	"sidebarDevHighlightPassword": "9. チャットパスワード機能",
+	"sidebarDevHighlightPostType": "10. Postタイプメッセージ"
 }

@@ -119,6 +119,21 @@
         "roomOrder"
       ]
     },
+    "chat-invitations": {
+      // 채팅 초대 관리
+      // 구조: /chat-invitations/{inviteeUid}/{roomId}
+      "$uid": {
+        // 본인만 자신의 초대 목록을 읽을 수 있음
+        ".read": "$uid === auth.uid",
+        "$roomId": {
+          // 쓰기 규칙: 본인이 삭제하거나, 채팅방 멤버가 초대 생성 가능
+          ".write": "auth != null && (($uid === auth.uid && newData.val() === null) || (newData.val() !== null && root.child('chat-rooms').child($roomId).child('members').child(auth.uid).exists()))"
+        },
+        ".indexOn": [
+          "invitationOrder"
+        ]
+      }
+    },
     "chat-favorites": {
       // 즐겨찾기 폴더 관리
       // 사용자별로 채팅방을 폴더로 분류하여 관리

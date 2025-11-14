@@ -21,26 +21,11 @@
 		zh: '中文'
 	};
 
-	const upcomingTodos = [
-		{
-			order: '7',
-			id: 'chat-invites',
-			title: () => m.sidebarTodoChatInvites(),
-			description: () => m.sidebarTodoChatInvitesDesc()
-		},
-		{
-			order: '8',
-			id: 'post-type',
-			title: () => m.sidebarTodoPostType(),
-			description: () => m.sidebarTodoPostTypeDesc()
-		},
-		{
-			order: '9',
-			id: 'board-stats',
-			title: () => m.sidebarTodoBoardStats(),
-			description: () => m.sidebarTodoBoardStatsDesc()
-		}
-	];
+const devHighlights = [
+	{ order: '8', label: () => m.sidebarDevHighlightAttachment() },
+	{ order: '9', label: () => m.sidebarDevHighlightPassword() },
+	{ order: '10', label: () => m.sidebarDevHighlightPostType() }
+];
 
 	/**
 	 * 현재 경로가 주어진 경로와 일치하는지 확인
@@ -117,7 +102,7 @@
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 개발일지 카드 -->
+		<!-- 개발일지 & TODO 카드 -->
 		<Card.Root class="sidebar-card">
 			<Card.Header>
 				<Card.Title class="flex items-center gap-2 text-base">
@@ -156,51 +141,17 @@
 								d="M12 4v16m8-8H4"
 							/>
 						</svg>
-						<span>최근 추가 기능</span>
+						<span>{m.sidebarUpcomingTodos()}</span>
 					</div>
 					<ul class="dev-feature-list">
-						<li>
-							<span class="feature-number">10</span>
-							<span class="feature-name">남/여 찾기 (콕 포인트)</span>
-						</li>
-						<li>
-							<span class="feature-number">11</span>
-							<span class="feature-name">토스/페이팔 결제</span>
-						</li>
+						{#each devHighlights as highlight}
+							<li>
+								<span class="feature-number">{highlight.order}</span>
+								<span class="feature-name">{highlight.label()}</span>
+							</li>
+						{/each}
 					</ul>
 				</div>
-			</Card.Content>
-		</Card.Root>
-
-		<!-- TODO 요약 카드 -->
-		<Card.Root class="sidebar-card">
-			<Card.Header>
-				<Card.Title class="flex items-center gap-2 text-base">
-					<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M12 6v6l4 2"
-						/>
-					</svg>
-					{m.sidebarUpcomingTodos()}
-				</Card.Title>
-			</Card.Header>
-			<Card.Content>
-				<ul class="todo-summary">
-					{#each upcomingTodos as todo}
-						<li class="todo-summary-item">
-							<div class="todo-summary-title">
-								<span class="todo-order">{todo.order}</span>
-								{todo.title()}
-							</div>
-							<p class="todo-summary-desc">
-								{todo.description()}
-							</p>
-						</li>
-					{/each}
-				</ul>
 			</Card.Content>
 		</Card.Root>
 
@@ -313,26 +264,6 @@
 	}
 
 	/* TODO 요약 카드 */
-	.todo-summary {
-		@apply space-y-3;
-	}
-
-	.todo-summary-item {
-		@apply rounded-lg border border-indigo-100 bg-white/80 p-3 shadow-sm;
-	}
-
-	.todo-summary-title {
-		@apply flex items-center gap-2 text-sm font-semibold text-gray-900;
-	}
-
-	.todo-summary-desc {
-		@apply mt-1 text-xs leading-relaxed text-gray-600;
-	}
-
-	.todo-order {
-		@apply flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white shadow;
-	}
-
 	/* 활동 텍스트 스타일 */
 	.activity-text {
 		@apply text-sm text-gray-500 italic;

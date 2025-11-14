@@ -8,6 +8,7 @@
 	import DatabaseListView from '$lib/components/DatabaseListView.svelte';
 	import Avatar from '$lib/components/user/avatar.svelte';
 	import ChatCreateDialog from '$lib/components/chat/ChatCreateDialog.svelte';
+	import ChatInvitationList from '$lib/components/chat/ChatInvitationList.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
@@ -202,6 +203,11 @@
 			<p class="text-sm text-gray-500">{m.chatSelectConversation()}</p>
 		</section>
 	{:else}
+		<!-- 채팅 초대 목록 -->
+		<section class="rounded-2xl border border-blue-200 bg-white shadow-sm">
+			<ChatInvitationList />
+		</section>
+
 		<section class="rounded-2xl border border-gray-200 bg-white p-0 shadow-sm">
 			{#key chatJoinPath}
 				{@const dbListViewProps = {
