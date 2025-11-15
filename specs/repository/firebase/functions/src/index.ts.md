@@ -1,21 +1,15 @@
 ---
-name: index.ts
-description: index Cloud Function
+title: index.ts
+type: typescript
+path: firebase/functions/src/index.ts
+status: active
 version: 1.0.0
-type: firebase-function
-category: cloud-function
-original_path: firebase/functions/src/index.ts
+last_updated: 2025-11-15
 ---
-
-# index.ts
 
 ## 개요
 
-**파일 경로**: `firebase/functions/src/index.ts`
-**파일 타입**: firebase-function
-**카테고리**: cloud-function
-
-index Cloud Function
+이 파일은 `firebase/functions/src/index.ts`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -62,6 +56,7 @@ import {
   handleChatRoomPinDelete,
   handleChatInvitationCreate,
 } from "./handlers/chat.handler";
+import { handleNewMessageCountWritten } from "./handlers/chat.new-message-count.handler";
 
 // 상수 정의
 const FIREBASE_REGION = "asia-southeast1";
@@ -640,12 +635,64 @@ export const onChatInvitationCreate = onValueCreated(
   }
 );
 
+/**
+ * newMessageCount 필드 변경 시 트리거되는 Cloud Function
+ *
+ * 트리거 경로: /chat-joins/{uid}/{roomId}/newMessageCount
+ * 트리거 이벤트: onValueWritten (생성, 수정, 삭제 모두 감지)
+ *
+ * 수행 작업:
+ * 1. newMessageCount가 0으로 변경되었는지 확인
+ * 2. 0이면 모든 xxxListOrder 필드에서 "200" prefix 제거
+ * 3. "500" prefix는 유지 (핀 설정된 채팅방)
+ * 4. 존재하지 않는 필드는 무시
+ *
+ * 참고:
+ * - 사용자가 채팅방에 입장하여 메시지를 읽으면 newMessageCount가 0이 됨
+ * - 이때 모든 order 필드를 "읽음" 상태로 전환
+ * - Prefix 규칙: "500" (핀됨) > "200" (읽지 않음) > "" (읽음)
+ *
+ * 비즈니스 로직은 handlers/chat.handler.ts의 handleNewMessageCountWritten() 참조
+ */
+export const onNewMessageCountWrite = onValueWritten(
+  {
+    ref: "/chat-joins/{uid}/{roomId}/newMessageCount",
+    region: FIREBASE_REGION,
+  },
+  async (event) => {
+    const uid = event.params.uid as string;
+    const roomId = event.params.roomId as string;
+    const beforeValue = event.data.before.val() as number | null;
+    const afterValue = event.data.after.val() as number | null;
+
+    logger.info("newMessageCount 필드 변경 감지", {
+      uid,
+      roomId,
+      beforeValue,
+      afterValue,
+    });
+
+    // 비즈니스 로직 핸들러 호출
+    return await handleNewMessageCountWritten(uid, roomId, beforeValue, afterValue);
+  }
+);
+
+/**
+ * 채팅방 비밀번호 검증 트리거
+ *
+ * 트리거 경로: /chat-room-passwords/{roomId}/try/{uid}
+ * 트리거 이벤트: onValueWritten
+ *
+ * 수행 작업:
+ * 1. try 경로에 기록된 비밀번호 읽기
+ * 2. 실제 비밀번호와 비교 (Plain Text)
+ * 3. 일치 시 members에 추가, 불일치 시 에러 로그
+ * 4. try 경로 즉시 삭제 (보안)
+ */
+export { onPasswordTry } from "./handlers/chat.password-verification.handler";
+
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

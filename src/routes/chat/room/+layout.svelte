@@ -67,7 +67,7 @@
 							roomId={itemData.key}
 							roomData={itemData.data ?? {}}
 							{activeRoomId}
-							onclick={() => handleRoomClick(itemData.key, (itemData.data?.type || 'group'))}
+							onclick={() => handleRoomClick(itemData.key, itemData.data?.type || 'group')}
 						/>
 					{/snippet}
 
@@ -126,6 +126,7 @@
 	/* 데스크톱: TopBar 높이(4rem) 제외, 2-column 레이아웃 */
 	@media (min-width: 768px) {
 		.chat-room-layout {
+			/* TopBar 높이(4rem) 제외 + 채팅방 상하 여백 (4rem) */
 			height: calc(100vh - 8rem);
 			@apply relative;
 			/* 2-column: 사이드바 + 메인 */

@@ -1,21 +1,15 @@
 ---
-name: en.js
-description: en 파일
-version: 1.0.0
+title: en.js
 type: javascript
-category: other
-original_path: src/lib/paraglide/messages/en.js
+path: src/lib/paraglide/messages/en.js
+status: active
+version: 1.0.0
+last_updated: 2025-11-15
 ---
-
-# en.js
 
 ## 개요
 
-**파일 경로**: `src/lib/paraglide/messages/en.js`
-**파일 타입**: javascript
-**카테고리**: other
-
-en 파일
+이 파일은 `src/lib/paraglide/messages/en.js`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -1051,6 +1045,14 @@ export const homesectionrecentopenchatdesc5 = /** @type {(inputs: {}) => string}
 	return `Live open chat conversations will be streamed in this space.`
 };
 
+export const homesectionrecentopenchatempty5 = /** @type {(inputs: {}) => string} */ () => {
+	return `No recent open chat messages yet.`
+};
+
+export const homesectionrecentopenchatlogin5 = /** @type {(inputs: {}) => string} */ () => {
+	return `Sign in to see the latest messages from the open chats you joined.`
+};
+
 export const homesectionpopularopenroom4 = /** @type {(inputs: {}) => string} */ () => {
 	return `Popular Open Chat Rooms`
 };
@@ -1071,16 +1073,112 @@ export const homesectionrecentuserscount4 = /** @type {(inputs: { count: NonNull
 	return `${i.count} members just joined`
 };
 
+export const homeopenchatnomessage4 = /** @type {(inputs: {}) => string} */ () => {
+	return `No messages yet.`
+};
+
 export const sidebardevhighlightattachment3 = /** @type {(inputs: {}) => string} */ () => {
-	return `8. File attachments`
+	return `9. File attachments`
 };
 
 export const sidebardevhighlightpassword3 = /** @type {(inputs: {}) => string} */ () => {
-	return `9. Chat password protection`
+	return `10. Chat password protection`
 };
 
 export const sidebardevhighlightposttype4 = /** @type {(inputs: {}) => string} */ () => {
-	return `10. Post-type messages`
+	return `11. Post-type messages`
+};
+
+export const sidebardevhighlightwrapup4 = /** @type {(inputs: {}) => string} */ () => {
+	return `8. Chat room wrap-up`
+};
+
+export const chatnomoremessages3 = /** @type {(inputs: {}) => string} */ () => {
+	return `No more messages.`
+};
+
+export const chatroomlist2 = /** @type {(inputs: {}) => string} */ () => {
+	return `My Chats`
+};
+
+export const chatroomlistempty3 = /** @type {(inputs: {}) => string} */ () => {
+	return `No chat rooms joined yet.`
+};
+
+export const chatroomlistloading3 = /** @type {(inputs: {}) => string} */ () => {
+	return `Loading chat rooms...`
+};
+
+export const chatpasswordsaving2 = /** @type {(inputs: {}) => string} */ () => {
+	return `Saving...`
+};
+
+export const chatpasswordenabletoggle3 = /** @type {(inputs: {}) => string} */ () => {
+	return `Enable Password`
+};
+
+export const chatpasswordinputplaceholder3 = /** @type {(inputs: {}) => string} */ () => {
+	return `Password (at least 4 characters)`
+};
+
+export const chatpasswordconfirmplaceholder3 = /** @type {(inputs: {}) => string} */ () => {
+	return `Confirm Password`
+};
+
+export const chatpasswordminlengtherror4 = /** @type {(inputs: {}) => string} */ () => {
+	return `Password must be at least 4 characters`
+};
+
+export const chatpasswordmismatcherror3 = /** @type {(inputs: {}) => string} */ () => {
+	return `Passwords do not match`
+};
+
+export const chatpasswordsetsuccess3 = /** @type {(inputs: {}) => string} */ () => {
+	return `Password has been set`
+};
+
+export const chatpasswordremovesuccess3 = /** @type {(inputs: {}) => string} */ () => {
+	return `Password has been removed`
+};
+
+export const chatpasswordsavefailure3 = /** @type {(inputs: {}) => string} */ () => {
+	return `Failed to save password`
+};
+
+export const chatpasswordsettings2 = /** @type {(inputs: {}) => string} */ () => {
+	return `Password Settings`
+};
+
+export const chatpasswordrequired2 = /** @type {(inputs: {}) => string} */ () => {
+	return `This chat room requires a password.`
+};
+
+export const chatpasswordenterprompt3 = /** @type {(inputs: {}) => string} */ () => {
+	return `Enter password`
+};
+
+export const chatpasswordverifying2 = /** @type {(inputs: { countdown: NonNullable<unknown> }) => string} */ (i) => {
+	return `Verifying... (${i.countdown} seconds left)`
+};
+
+export const chatpasswordverifysuccess3 = /** @type {(inputs: {}) => string} */ () => {
+	return `Password verified`
+};
+
+export const chatpasswordincorrect2 = /** @type {(inputs: {}) => string} */ () => {
+	return `Incorrect password`
+};
+
+export const chatpasswordverifyfailure3 = /** @type {(inputs: {}) => string} */ () => {
+	return `Password verification failed`
+};
+
+export const chatpassworddelete2 = /** @type {(inputs: {}) => string} */ () => {
+	return `Delete Password`
+};
+
+export const chatpassworddeletesuccess3 = /** @type {(inputs: {}) => string} */ () => {
+	return `Password has been deleted`
 };
 /** @type {(inputs: {}) => string} */
 export const chataccept1 = () => 'chatAccept'
@@ -1268,10 +1366,6 @@ export const testuserdeleteallconfirmation4 = () => 'testUserDeleteAllConfirmati
 export const testuserprogressindicator3 = () => 'testUserProgressIndicator'
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

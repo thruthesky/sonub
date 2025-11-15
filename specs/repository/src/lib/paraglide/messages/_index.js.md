@@ -1,21 +1,15 @@
 ---
-name: _index.js
-description: _index 파일
-version: 1.0.0
+title: _index.js
 type: javascript
-category: other
-original_path: src/lib/paraglide/messages/_index.js
+path: src/lib/paraglide/messages/_index.js
+status: active
+version: 1.0.0
+last_updated: 2025-11-15
 ---
-
-# _index.js
 
 ## 개요
 
-**파일 경로**: `src/lib/paraglide/messages/_index.js`
-**파일 타입**: javascript
-**카테고리**: other
-
-_index 파일
+이 파일은 `src/lib/paraglide/messages/_index.js`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -6464,6 +6458,56 @@ export { homesectionrecentopenchatdesc5 as "homeSectionRecentOpenChatDesc" }
 * @returns {string}
 */
 /* @__NO_SIDE_EFFECTS__ */
+const homesectionrecentopenchatempty5 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.homesectionrecentopenchatempty5(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("homesectionrecentopenchatempty5", locale)
+	if (locale === "en") return en.homesectionrecentopenchatempty5(inputs)
+	if (locale === "ko") return ko.homesectionrecentopenchatempty5(inputs)
+	if (locale === "ja") return ja.homesectionrecentopenchatempty5(inputs)
+	return zh.homesectionrecentopenchatempty5(inputs)
+};
+export { homesectionrecentopenchatempty5 as "homeSectionRecentOpenChatEmpty" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const homesectionrecentopenchatlogin5 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.homesectionrecentopenchatlogin5(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("homesectionrecentopenchatlogin5", locale)
+	if (locale === "en") return en.homesectionrecentopenchatlogin5(inputs)
+	if (locale === "ko") return ko.homesectionrecentopenchatlogin5(inputs)
+	if (locale === "ja") return ja.homesectionrecentopenchatlogin5(inputs)
+	return zh.homesectionrecentopenchatlogin5(inputs)
+};
+export { homesectionrecentopenchatlogin5 as "homeSectionRecentOpenChatLogin" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
 const homesectionpopularopenroom4 = (inputs = {}, options = {}) => {
 	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
 		return /** @type {any} */ (globalThis).__paraglide_ssr.homesectionpopularopenroom4(inputs) 
@@ -6589,6 +6633,31 @@ export { homesectionrecentuserscount4 as "homeSectionRecentUsersCount" }
 * @returns {string}
 */
 /* @__NO_SIDE_EFFECTS__ */
+const homeopenchatnomessage4 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.homeopenchatnomessage4(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("homeopenchatnomessage4", locale)
+	if (locale === "en") return en.homeopenchatnomessage4(inputs)
+	if (locale === "ko") return ko.homeopenchatnomessage4(inputs)
+	if (locale === "ja") return ja.homeopenchatnomessage4(inputs)
+	return zh.homeopenchatnomessage4(inputs)
+};
+export { homeopenchatnomessage4 as "homeOpenChatNoMessage" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
 const sidebardevhighlightattachment3 = (inputs = {}, options = {}) => {
 	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
 		return /** @type {any} */ (globalThis).__paraglide_ssr.sidebardevhighlightattachment3(inputs) 
@@ -6651,6 +6720,581 @@ const sidebardevhighlightposttype4 = (inputs = {}, options = {}) => {
 	return zh.sidebardevhighlightposttype4(inputs)
 };
 export { sidebardevhighlightposttype4 as "sidebarDevHighlightPostType" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const sidebardevhighlightwrapup4 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.sidebardevhighlightwrapup4(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("sidebardevhighlightwrapup4", locale)
+	if (locale === "en") return en.sidebardevhighlightwrapup4(inputs)
+	if (locale === "ko") return ko.sidebardevhighlightwrapup4(inputs)
+	if (locale === "ja") return ja.sidebardevhighlightwrapup4(inputs)
+	return zh.sidebardevhighlightwrapup4(inputs)
+};
+export { sidebardevhighlightwrapup4 as "sidebarDevHighlightWrapUp" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatnomoremessages3 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatnomoremessages3(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatnomoremessages3", locale)
+	if (locale === "en") return en.chatnomoremessages3(inputs)
+	if (locale === "ko") return ko.chatnomoremessages3(inputs)
+	if (locale === "ja") return ja.chatnomoremessages3(inputs)
+	return zh.chatnomoremessages3(inputs)
+};
+export { chatnomoremessages3 as "chatNoMoreMessages" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatroomlist2 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatroomlist2(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatroomlist2", locale)
+	if (locale === "en") return en.chatroomlist2(inputs)
+	if (locale === "ko") return ko.chatroomlist2(inputs)
+	if (locale === "ja") return ja.chatroomlist2(inputs)
+	return zh.chatroomlist2(inputs)
+};
+export { chatroomlist2 as "chatRoomList" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatroomlistempty3 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatroomlistempty3(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatroomlistempty3", locale)
+	if (locale === "en") return en.chatroomlistempty3(inputs)
+	if (locale === "ko") return ko.chatroomlistempty3(inputs)
+	if (locale === "ja") return ja.chatroomlistempty3(inputs)
+	return zh.chatroomlistempty3(inputs)
+};
+export { chatroomlistempty3 as "chatRoomListEmpty" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatroomlistloading3 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatroomlistloading3(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatroomlistloading3", locale)
+	if (locale === "en") return en.chatroomlistloading3(inputs)
+	if (locale === "ko") return ko.chatroomlistloading3(inputs)
+	if (locale === "ja") return ja.chatroomlistloading3(inputs)
+	return zh.chatroomlistloading3(inputs)
+};
+export { chatroomlistloading3 as "chatRoomListLoading" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatpasswordsaving2 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatpasswordsaving2(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatpasswordsaving2", locale)
+	if (locale === "en") return en.chatpasswordsaving2(inputs)
+	if (locale === "ko") return ko.chatpasswordsaving2(inputs)
+	if (locale === "ja") return ja.chatpasswordsaving2(inputs)
+	return zh.chatpasswordsaving2(inputs)
+};
+export { chatpasswordsaving2 as "chatPasswordSaving" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatpasswordenabletoggle3 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatpasswordenabletoggle3(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatpasswordenabletoggle3", locale)
+	if (locale === "en") return en.chatpasswordenabletoggle3(inputs)
+	if (locale === "ko") return ko.chatpasswordenabletoggle3(inputs)
+	if (locale === "ja") return ja.chatpasswordenabletoggle3(inputs)
+	return zh.chatpasswordenabletoggle3(inputs)
+};
+export { chatpasswordenabletoggle3 as "chatPasswordEnableToggle" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatpasswordinputplaceholder3 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatpasswordinputplaceholder3(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatpasswordinputplaceholder3", locale)
+	if (locale === "en") return en.chatpasswordinputplaceholder3(inputs)
+	if (locale === "ko") return ko.chatpasswordinputplaceholder3(inputs)
+	if (locale === "ja") return ja.chatpasswordinputplaceholder3(inputs)
+	return zh.chatpasswordinputplaceholder3(inputs)
+};
+export { chatpasswordinputplaceholder3 as "chatPasswordInputPlaceholder" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatpasswordconfirmplaceholder3 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatpasswordconfirmplaceholder3(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatpasswordconfirmplaceholder3", locale)
+	if (locale === "en") return en.chatpasswordconfirmplaceholder3(inputs)
+	if (locale === "ko") return ko.chatpasswordconfirmplaceholder3(inputs)
+	if (locale === "ja") return ja.chatpasswordconfirmplaceholder3(inputs)
+	return zh.chatpasswordconfirmplaceholder3(inputs)
+};
+export { chatpasswordconfirmplaceholder3 as "chatPasswordConfirmPlaceholder" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatpasswordminlengtherror4 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatpasswordminlengtherror4(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatpasswordminlengtherror4", locale)
+	if (locale === "en") return en.chatpasswordminlengtherror4(inputs)
+	if (locale === "ko") return ko.chatpasswordminlengtherror4(inputs)
+	if (locale === "ja") return ja.chatpasswordminlengtherror4(inputs)
+	return zh.chatpasswordminlengtherror4(inputs)
+};
+export { chatpasswordminlengtherror4 as "chatPasswordMinLengthError" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatpasswordmismatcherror3 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatpasswordmismatcherror3(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatpasswordmismatcherror3", locale)
+	if (locale === "en") return en.chatpasswordmismatcherror3(inputs)
+	if (locale === "ko") return ko.chatpasswordmismatcherror3(inputs)
+	if (locale === "ja") return ja.chatpasswordmismatcherror3(inputs)
+	return zh.chatpasswordmismatcherror3(inputs)
+};
+export { chatpasswordmismatcherror3 as "chatPasswordMismatchError" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatpasswordsetsuccess3 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatpasswordsetsuccess3(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatpasswordsetsuccess3", locale)
+	if (locale === "en") return en.chatpasswordsetsuccess3(inputs)
+	if (locale === "ko") return ko.chatpasswordsetsuccess3(inputs)
+	if (locale === "ja") return ja.chatpasswordsetsuccess3(inputs)
+	return zh.chatpasswordsetsuccess3(inputs)
+};
+export { chatpasswordsetsuccess3 as "chatPasswordSetSuccess" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatpasswordremovesuccess3 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatpasswordremovesuccess3(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatpasswordremovesuccess3", locale)
+	if (locale === "en") return en.chatpasswordremovesuccess3(inputs)
+	if (locale === "ko") return ko.chatpasswordremovesuccess3(inputs)
+	if (locale === "ja") return ja.chatpasswordremovesuccess3(inputs)
+	return zh.chatpasswordremovesuccess3(inputs)
+};
+export { chatpasswordremovesuccess3 as "chatPasswordRemoveSuccess" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatpasswordsavefailure3 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatpasswordsavefailure3(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatpasswordsavefailure3", locale)
+	if (locale === "en") return en.chatpasswordsavefailure3(inputs)
+	if (locale === "ko") return ko.chatpasswordsavefailure3(inputs)
+	if (locale === "ja") return ja.chatpasswordsavefailure3(inputs)
+	return zh.chatpasswordsavefailure3(inputs)
+};
+export { chatpasswordsavefailure3 as "chatPasswordSaveFailure" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatpasswordsettings2 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatpasswordsettings2(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatpasswordsettings2", locale)
+	if (locale === "en") return en.chatpasswordsettings2(inputs)
+	if (locale === "ko") return ko.chatpasswordsettings2(inputs)
+	if (locale === "ja") return ja.chatpasswordsettings2(inputs)
+	return zh.chatpasswordsettings2(inputs)
+};
+export { chatpasswordsettings2 as "chatPasswordSettings" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatpasswordrequired2 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatpasswordrequired2(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatpasswordrequired2", locale)
+	if (locale === "en") return en.chatpasswordrequired2(inputs)
+	if (locale === "ko") return ko.chatpasswordrequired2(inputs)
+	if (locale === "ja") return ja.chatpasswordrequired2(inputs)
+	return zh.chatpasswordrequired2(inputs)
+};
+export { chatpasswordrequired2 as "chatPasswordRequired" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatpasswordenterprompt3 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatpasswordenterprompt3(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatpasswordenterprompt3", locale)
+	if (locale === "en") return en.chatpasswordenterprompt3(inputs)
+	if (locale === "ko") return ko.chatpasswordenterprompt3(inputs)
+	if (locale === "ja") return ja.chatpasswordenterprompt3(inputs)
+	return zh.chatpasswordenterprompt3(inputs)
+};
+export { chatpasswordenterprompt3 as "chatPasswordEnterPrompt" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{ countdown: NonNullable<unknown> }} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatpasswordverifying2 = (inputs, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatpasswordverifying2(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatpasswordverifying2", locale)
+	if (locale === "en") return en.chatpasswordverifying2(inputs)
+	if (locale === "ko") return ko.chatpasswordverifying2(inputs)
+	if (locale === "ja") return ja.chatpasswordverifying2(inputs)
+	return zh.chatpasswordverifying2(inputs)
+};
+export { chatpasswordverifying2 as "chatPasswordVerifying" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatpasswordverifysuccess3 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatpasswordverifysuccess3(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatpasswordverifysuccess3", locale)
+	if (locale === "en") return en.chatpasswordverifysuccess3(inputs)
+	if (locale === "ko") return ko.chatpasswordverifysuccess3(inputs)
+	if (locale === "ja") return ja.chatpasswordverifysuccess3(inputs)
+	return zh.chatpasswordverifysuccess3(inputs)
+};
+export { chatpasswordverifysuccess3 as "chatPasswordVerifySuccess" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatpasswordincorrect2 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatpasswordincorrect2(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatpasswordincorrect2", locale)
+	if (locale === "en") return en.chatpasswordincorrect2(inputs)
+	if (locale === "ko") return ko.chatpasswordincorrect2(inputs)
+	if (locale === "ja") return ja.chatpasswordincorrect2(inputs)
+	return zh.chatpasswordincorrect2(inputs)
+};
+export { chatpasswordincorrect2 as "chatPasswordIncorrect" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatpasswordverifyfailure3 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatpasswordverifyfailure3(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatpasswordverifyfailure3", locale)
+	if (locale === "en") return en.chatpasswordverifyfailure3(inputs)
+	if (locale === "ko") return ko.chatpasswordverifyfailure3(inputs)
+	if (locale === "ja") return ja.chatpasswordverifyfailure3(inputs)
+	return zh.chatpasswordverifyfailure3(inputs)
+};
+export { chatpasswordverifyfailure3 as "chatPasswordVerifyFailure" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatpassworddelete2 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatpassworddelete2(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatpassworddelete2", locale)
+	if (locale === "en") return en.chatpassworddelete2(inputs)
+	if (locale === "ko") return ko.chatpassworddelete2(inputs)
+	if (locale === "ja") return ja.chatpassworddelete2(inputs)
+	return zh.chatpassworddelete2(inputs)
+};
+export { chatpassworddelete2 as "chatPasswordDelete" }
+/**
+* This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
+*
+* - Changing this function will be over-written by the next build.
+*
+* - If you want to change the translations, you can either edit the source files e.g. `en.json`, or
+* use another inlang app like [Fink](https://inlang.com/m/tdozzpar) or the [VSCode extension Sherlock](https://inlang.com/m/r7kp499g).
+* 
+* @param {{}} inputs
+* @param {{ locale?: "en" | "ko" | "ja" | "zh" }} options
+* @returns {string}
+*/
+/* @__NO_SIDE_EFFECTS__ */
+const chatpassworddeletesuccess3 = (inputs = {}, options = {}) => {
+	if (experimentalMiddlewareLocaleSplitting && isServer === false) {
+		return /** @type {any} */ (globalThis).__paraglide_ssr.chatpassworddeletesuccess3(inputs) 
+	}
+	const locale = options.locale ?? getLocale()
+	trackMessageCall("chatpassworddeletesuccess3", locale)
+	if (locale === "en") return en.chatpassworddeletesuccess3(inputs)
+	if (locale === "ko") return ko.chatpassworddeletesuccess3(inputs)
+	if (locale === "ja") return ja.chatpassworddeletesuccess3(inputs)
+	return zh.chatpassworddeletesuccess3(inputs)
+};
+export { chatpassworddeletesuccess3 as "chatPasswordDeleteSuccess" }
 /**
 * This function has been compiled by [Paraglide JS](https://inlang.com/m/gerre34r).
 *
@@ -8931,10 +9575,6 @@ const testuserprogressindicator3 = (inputs, options = {}) => {
 export { testuserprogressindicator3 as "testUserProgressIndicator" }
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

@@ -78,17 +78,17 @@
 
 	// 프로필 데이터 변경 추적 (디버깅용)
 	$effect(() => {
-		console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-		console.log('[Avatar 컴포넌트] 프로필 상태 변경');
-		console.log('  uid:', uid);
-		console.log('  profile:', profile);
-		console.log('  photoUrl:', photoUrl);
-		console.log('  displayName:', displayName);
-		console.log('  shouldShowImage:', shouldShowImage);
-		console.log('  initial:', initial);
-		console.log('  imageLoadFailed:', imageLoadFailed);
-		console.log('  size:', size);
-		console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+		// console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+		// console.log('[Avatar 컴포넌트] 프로필 상태 변경');
+		// console.log('  uid:', uid);
+		// console.log('  profile:', profile);
+		// console.log('  photoUrl:', photoUrl);
+		// console.log('  displayName:', displayName);
+		// console.log('  shouldShowImage:', shouldShowImage);
+		// console.log('  initial:', initial);
+		// console.log('  imageLoadFailed:', imageLoadFailed);
+		// console.log('  size:', size);
+		// console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 	});
 
 	/**

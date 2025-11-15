@@ -1,21 +1,15 @@
 ---
-name: +page.svelte
-description: +page 페이지
+title: +page.svelte
+type: component
+path: src/routes/user/list/+page.svelte
+status: active
 version: 1.0.0
-type: svelte-component
-category: route-page
-original_path: src/routes/user/list/+page.svelte
+last_updated: 2025-11-15
 ---
-
-# +page.svelte
 
 ## 개요
 
-**파일 경로**: `src/routes/user/list/+page.svelte`
-**파일 타입**: svelte-component
-**카테고리**: route-page
-
-+page 페이지
+이 파일은 `src/routes/user/list/+page.svelte`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -569,16 +563,6 @@ original_path: src/routes/user/list/+page.svelte
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
-
-## 작업 이력 (SED Log)
-
-| 날짜 | 작업자 | 변경 내용 |
-| ---- | ------ | -------- |
-| 2025-11-14 | Codex Agent | 사용자 카드 링크를 `/user/profile?uid=...` 쿼리 방식으로 변경 |
+- 2025-11-15: 스펙 문서 생성

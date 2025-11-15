@@ -1,21 +1,15 @@
 ---
-name: dev-icon.svelte
-description: dev-icon 컴포넌트
+title: dev-icon.svelte
+type: component
+path: src/lib/components/dev/dev-icon.svelte
+status: active
 version: 1.0.0
-type: svelte-component
-category: component
-original_path: src/lib/components/dev/dev-icon.svelte
+last_updated: 2025-11-15
 ---
-
-# dev-icon.svelte
 
 ## 개요
 
-**파일 경로**: `src/lib/components/dev/dev-icon.svelte`
-**파일 타입**: svelte-component
-**카테고리**: component
-
-dev-icon 컴포넌트
+이 파일은 `src/lib/components/dev/dev-icon.svelte`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -106,7 +100,7 @@ dev-icon 컴포넌트
 	 * 컴포넌트 마운트 시 초기화
 	 */
 	onMount(() => {
-		console.log('[DevIcon] 개발자 도구가 마운트되었습니다.');
+		// console.log('[DevIcon] 개발자 도구가 마운트되었습니다.');
 
 		if (!auth) {
 			console.error('[DevIcon] Firebase Auth가 초기화되지 않았습니다.');
@@ -116,10 +110,10 @@ dev-icon 컴포넌트
 		// Firebase Auth 상태 변경 리스너 등록
 		const unsubscribe = onAuthStateChanged(auth, (user) => {
 			currentUser = user;
-			console.log(
-				'[DevIcon] Auth 상태 변경:',
-				user ? `로그인됨 (UID: ${user.uid})` : '로그아웃됨'
-			);
+			// console.log(
+			// 	'[DevIcon] Auth 상태 변경:',
+			// 	user ? `로그인됨 (UID: ${user.uid})` : '로그아웃됨'
+			// );
 		});
 
 		// 컴포넌트 언마운트 시 리스너 해제
@@ -140,21 +134,21 @@ dev-icon 컴포넌트
 		if (isLoading || !auth) return;
 
 		isLoading = true;
-		console.log(`[DevIcon] ${account.name} (${account.label}) 계정으로 로그인을 시도합니다...`);
+		// console.log(`[DevIcon] ${account.name} (${account.label}) 계정으로 로그인을 시도합니다...`);
 
 		try {
 			// 먼저 로그인 시도
 			let userCredential: UserCredential;
 			try {
 				userCredential = await signInWithEmailAndPassword(auth, account.email, TEST_PASSWORD);
-				console.log(`[DevIcon] ${account.name} 계정으로 로그인 성공!`);
+				// console.log(`[DevIcon] ${account.name} 계정으로 로그인 성공!`);
 			} catch (signInError: any) {
 				// 로그인 실패 시 회원가입 시도
 				if (
 					signInError.code === 'auth/user-not-found' ||
 					signInError.code === 'auth/invalid-credential'
 				) {
-					console.log(`[DevIcon] ${account.name} 계정이 없습니다. 회원가입을 진행합니다...`);
+					// console.log(`[DevIcon] ${account.name} 계정이 없습니다. 회원가입을 진행합니다...`);
 
 					// 회원가입
 					userCredential = await createUserWithEmailAndPassword(
@@ -168,7 +162,7 @@ dev-icon 컴포넌트
 						displayName: account.name
 					});
 
-					console.log(`[DevIcon] ${account.name} 계정 회원가입 및 로그인 성공!`);
+					// console.log(`[DevIcon] ${account.name} 계정 회원가입 및 로그인 성공!`);
 				} else {
 					throw signInError;
 				}
@@ -663,10 +657,6 @@ dev-icon 컴포넌트
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

@@ -1,21 +1,15 @@
 ---
-name: version.ts
-description: version 파일
-version: 1.0.0
+title: version.ts
 type: typescript
-category: other
-original_path: src/lib/version.ts
+path: src/lib/version.ts
+status: active
+version: 1.0.0
+last_updated: 2025-11-15
 ---
-
-# version.ts
 
 ## 개요
 
-**파일 경로**: `src/lib/version.ts`
-**파일 타입**: typescript
-**카테고리**: other
-
-version 파일
+이 파일은 `src/lib/version.ts`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -35,10 +29,6 @@ export const BUILD_VERSION = '25. 11. 09. 8:49PM';
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

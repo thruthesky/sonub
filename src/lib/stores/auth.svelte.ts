@@ -69,7 +69,7 @@ class AuthStore {
 				this._state.adminList = [];
 			}
 
-			console.log('관리자 목록 로드됨:', this._state.adminList);
+			// console.log('관리자 목록 로드됨:', this._state.adminList);
 		} catch (error) {
 			console.error('관리자 목록 로드 실패:', error);
 			this._state.adminList = [];
@@ -137,28 +137,28 @@ class AuthStore {
 			// trim() 전에 undefined 체크를 위해 옵셔널 체이닝 사용
 			if (!existingData.photoUrl?.trim() && user.photoURL) {
 				updates.photoUrl = user.photoURL;
-				console.log('photoUrl 동기화:', user.photoURL);
+				// console.log('photoUrl 동기화:', user.photoURL);
 			}
 
 			// displayName: 없을 때만 동기화
 			if (!existingData.displayName && user.displayName) {
 				updates.displayName = user.displayName;
-				console.log('displayName 동기화:', user.displayName);
+				// console.log('displayName 동기화:', user.displayName);
 			}
 
 			// languageCode: 없을 때만 브라우저 언어로 동기화
 			if (!existingData.languageCode) {
 				const browserLang = this.detectBrowserLanguage();
 				updates.languageCode = browserLang;
-				console.log('languageCode 동기화:', browserLang);
+				// console.log('languageCode 동기화:', browserLang);
 			}
 
 			// 업데이트할 항목이 있으면 RTDB에 저장
 			if (Object.keys(updates).length > 0) {
 				await update(userRef, updates);
-				console.log('사용자 프로필 동기화 완료:', updates);
+				// console.log('사용자 프로필 동기화 완료:', updates);
 			} else {
-				console.log('동기화할 프로필 정보 없음');
+				// console.log('동기화할 프로필 정보 없음');
 			}
 		} catch (error) {
 			console.error('사용자 프로필 동기화 실패:', error);
@@ -181,7 +181,7 @@ class AuthStore {
 
 			// 사용자 로그인 시 프로필 동기화 및 관리자 목록 로드
 			if (user) {
-				console.log('사용자 로그인됨:', user.uid);
+				// console.log('사용자 로그인됨:', user.uid);
 
 				// Firebase Auth의 photoURL, displayName을 RTDB에 동기화
 				await this.syncUserProfile(user);
@@ -200,7 +200,7 @@ class AuthStore {
 						});
 				}
 			} else {
-				console.log('사용자 로그아웃됨');
+				// console.log('사용자 로그아웃됨');
 				this._state.adminList = [];
 			}
 

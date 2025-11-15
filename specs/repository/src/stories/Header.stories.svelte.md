@@ -1,21 +1,15 @@
 ---
-name: Header.stories.svelte
-description: Header.stories 파일
+title: Header.stories.svelte
+type: component
+path: src/stories/Header.stories.svelte
+status: active
 version: 1.0.0
-type: svelte-component
-category: other
-original_path: src/stories/Header.stories.svelte
+last_updated: 2025-11-15
 ---
-
-# Header.stories.svelte
 
 ## 개요
 
-**파일 경로**: `src/stories/Header.stories.svelte`
-**파일 타입**: svelte-component
-**카테고리**: other
-
-Header.stories 파일
+이 파일은 `src/stories/Header.stories.svelte`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -49,10 +43,6 @@ Header.stories 파일
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

@@ -1,21 +1,15 @@
 ---
-name: firebase.ts
-description: firebase 파일
-version: 1.0.0
+title: firebase.ts
 type: typescript
-category: other
-original_path: src/lib/firebase.ts
+path: src/lib/firebase.ts
+status: active
+version: 1.0.0
+last_updated: 2025-11-15
 ---
-
-# firebase.ts
 
 ## 개요
 
-**파일 경로**: `src/lib/firebase.ts`
-**파일 타입**: typescript
-**카테고리**: other
-
-firebase 파일
+이 파일은 `src/lib/firebase.ts`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -75,13 +69,13 @@ const firebaseConfig = {
 
 // 디버깅: Firebase 설정 확인
 if (browser) {
-	console.log('✅ Firebase 환경 변수 로드 성공');
-	console.log('Firebase Config:', {
-		apiKey: firebaseConfig.apiKey ? '✓ Loaded' : '✗ Missing',
-		authDomain: firebaseConfig.authDomain ? '✓ Loaded' : '✗ Missing',
-		projectId: firebaseConfig.projectId ? '✓ Loaded' : '✗ Missing',
-		appId: firebaseConfig.appId ? '✓ Loaded' : '✗ Missing'
-	});
+	// console.log('✅ Firebase 환경 변수 로드 성공');
+	// console.log('Firebase Config:', {
+	// 	apiKey: firebaseConfig.apiKey ? '✓ Loaded' : '✗ Missing',
+	// 	authDomain: firebaseConfig.authDomain ? '✓ Loaded' : '✗ Missing',
+	// 	projectId: firebaseConfig.projectId ? '✓ Loaded' : '✗ Missing',
+	// 	appId: firebaseConfig.appId ? '✓ Loaded' : '✗ Missing'
+	// });
 }
 
 /**
@@ -175,7 +169,7 @@ export async function getFirebaseMessaging(): Promise<Messaging | null> {
 
 		// Messaging 인스턴스 생성
 		messaging = getMessaging(app);
-		console.log('✅ Firebase Messaging 초기화 완료');
+		// console.log('✅ Firebase Messaging 초기화 완료');
 
 		return messaging;
 	} catch (error) {
@@ -186,10 +180,6 @@ export async function getFirebaseMessaging(): Promise<Messaging | null> {
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

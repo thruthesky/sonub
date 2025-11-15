@@ -1,21 +1,15 @@
 ---
-name: zh.js
-description: zh 파일
-version: 1.0.0
+title: zh.js
 type: javascript
-category: other
-original_path: src/lib/paraglide/messages/zh.js
+path: src/lib/paraglide/messages/zh.js
+status: active
+version: 1.0.0
+last_updated: 2025-11-15
 ---
-
-# zh.js
 
 ## 개요
 
-**파일 경로**: `src/lib/paraglide/messages/zh.js`
-**파일 타입**: javascript
-**카테고리**: other
-
-zh 파일
+이 파일은 `src/lib/paraglide/messages/zh.js`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -952,6 +946,14 @@ export const homesectionrecentopenchatdesc5 = /** @type {(inputs: {}) => string}
 	return `实时开放聊天室对话即将展示在此区域。`
 };
 
+export const homesectionrecentopenchatempty5 = /** @type {(inputs: {}) => string} */ () => {
+	return `最近没有开放聊天室消息。`
+};
+
+export const homesectionrecentopenchatlogin5 = /** @type {(inputs: {}) => string} */ () => {
+	return `登录后即可查看你参与的开放聊天室最新消息。`
+};
+
 export const homesectionpopularopenroom4 = /** @type {(inputs: {}) => string} */ () => {
 	return `热门开放聊天室`
 };
@@ -969,16 +971,112 @@ export const homesectionrecentpostsdesc4 = /** @type {(inputs: {}) => string} */
 };
 export { homesectionrecentuserscount4 } from "./en.js"
 
+export const homeopenchatnomessage4 = /** @type {(inputs: {}) => string} */ () => {
+	return `暂无消息。`
+};
+
 export const sidebardevhighlightattachment3 = /** @type {(inputs: {}) => string} */ () => {
-	return `8. 文件附件上传`
+	return `9. 文件附件上传`
 };
 
 export const sidebardevhighlightpassword3 = /** @type {(inputs: {}) => string} */ () => {
-	return `9. 聊天密码功能`
+	return `10. 聊天密码功能`
 };
 
 export const sidebardevhighlightposttype4 = /** @type {(inputs: {}) => string} */ () => {
-	return `10. 帖子类型消息`
+	return `11. 帖子类型消息`
+};
+
+export const sidebardevhighlightwrapup4 = /** @type {(inputs: {}) => string} */ () => {
+	return `8. 聊天室收尾功能`
+};
+
+export const chatnomoremessages3 = /** @type {(inputs: {}) => string} */ () => {
+	return `没有更多消息。`
+};
+
+export const chatroomlist2 = /** @type {(inputs: {}) => string} */ () => {
+	return `我的聊天`
+};
+
+export const chatroomlistempty3 = /** @type {(inputs: {}) => string} */ () => {
+	return `尚未加入任何聊天室。`
+};
+
+export const chatroomlistloading3 = /** @type {(inputs: {}) => string} */ () => {
+	return `正在加载聊天室...`
+};
+
+export const chatpasswordsaving2 = /** @type {(inputs: {}) => string} */ () => {
+	return `保存中...`
+};
+
+export const chatpasswordenabletoggle3 = /** @type {(inputs: {}) => string} */ () => {
+	return `启用密码`
+};
+
+export const chatpasswordinputplaceholder3 = /** @type {(inputs: {}) => string} */ () => {
+	return `密码（至少4个字符）`
+};
+
+export const chatpasswordconfirmplaceholder3 = /** @type {(inputs: {}) => string} */ () => {
+	return `确认密码`
+};
+
+export const chatpasswordminlengtherror4 = /** @type {(inputs: {}) => string} */ () => {
+	return `密码必须至少4个字符`
+};
+
+export const chatpasswordmismatcherror3 = /** @type {(inputs: {}) => string} */ () => {
+	return `密码不匹配`
+};
+
+export const chatpasswordsetsuccess3 = /** @type {(inputs: {}) => string} */ () => {
+	return `密码已设置`
+};
+
+export const chatpasswordremovesuccess3 = /** @type {(inputs: {}) => string} */ () => {
+	return `密码已移除`
+};
+
+export const chatpasswordsavefailure3 = /** @type {(inputs: {}) => string} */ () => {
+	return `保存密码失败`
+};
+
+export const chatpasswordsettings2 = /** @type {(inputs: {}) => string} */ () => {
+	return `密码设置`
+};
+
+export const chatpasswordrequired2 = /** @type {(inputs: {}) => string} */ () => {
+	return `此聊天室需要密码。`
+};
+
+export const chatpasswordenterprompt3 = /** @type {(inputs: {}) => string} */ () => {
+	return `请输入密码`
+};
+
+export const chatpasswordverifying2 = /** @type {(inputs: { countdown: NonNullable<unknown> }) => string} */ (i) => {
+	return `验证中...（剩余${i.countdown}秒）`
+};
+
+export const chatpasswordverifysuccess3 = /** @type {(inputs: {}) => string} */ () => {
+	return `密码已确认`
+};
+
+export const chatpasswordincorrect2 = /** @type {(inputs: {}) => string} */ () => {
+	return `密码不正确`
+};
+
+export const chatpasswordverifyfailure3 = /** @type {(inputs: {}) => string} */ () => {
+	return `密码验证失败`
+};
+
+export const chatpassworddelete2 = /** @type {(inputs: {}) => string} */ () => {
+	return `删除密码`
+};
+
+export const chatpassworddeletesuccess3 = /** @type {(inputs: {}) => string} */ () => {
+	return `密码已删除`
 };
 export { chataccept1 } from "./en.js"
 export { chatreject1 } from "./en.js"
@@ -1329,10 +1427,6 @@ export const testuserprogressindicator3 = /** @type {(inputs: { current: NonNull
 };
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

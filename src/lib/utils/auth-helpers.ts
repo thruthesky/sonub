@@ -59,7 +59,7 @@ export async function signInWithGoogle(): Promise<UserCredential> {
 		// 팝업 방식으로 로그인
 		const result = await signInWithPopup(auth, provider);
 
-		console.log('Google 로그인 성공:', result.user.uid);
+		// console.log('Google 로그인 성공:', result.user.uid);
 		return result;
 	} catch (error: any) {
 		console.error('Google 로그인 실패:', error);
@@ -98,7 +98,7 @@ export async function signInWithApple(): Promise<UserCredential> {
 		// 팝업 방식으로 로그인
 		const result = await signInWithPopup(auth, provider);
 
-		console.log('Apple 로그인 성공:', result.user.uid);
+		// console.log('Apple 로그인 성공:', result.user.uid);
 		return result;
 	} catch (error: any) {
 		console.error('Apple 로그인 실패:', error);
@@ -121,7 +121,7 @@ export async function signOut(): Promise<void> {
 
 	try {
 		await firebaseSignOut(auth);
-		console.log('로그아웃 성공');
+		// console.log('로그아웃 성공');
 	} catch (error: any) {
 		console.error('로그아웃 실패:', error);
 		throw error;

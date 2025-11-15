@@ -1,21 +1,15 @@
 ---
-name: +page.svelte
-description: +page 페이지
+title: +page.svelte
+type: component
+path: src/routes/chat/list/+page.svelte
+status: active
 version: 1.0.0
-type: svelte-component
-category: route-page
-original_path: src/routes/chat/list/+page.svelte
+last_updated: 2025-11-15
 ---
-
-# +page.svelte
 
 ## 개요
 
-**파일 경로**: `src/routes/chat/list/+page.svelte`
-**파일 타입**: svelte-component
-**카테고리**: route-page
-
-+page 페이지
+이 파일은 `src/routes/chat/list/+page.svelte`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -28,15 +22,14 @@ original_path: src/routes/chat/list/+page.svelte
 	 */
 
 	import DatabaseListView from '$lib/components/DatabaseListView.svelte';
-	import Avatar from '$lib/components/user/avatar.svelte';
 	import UserSearchDialog from '$lib/components/user/UserSearchDialog.svelte';
 	import ChatCreateDialog from '$lib/components/chat/ChatCreateDialog.svelte';
 	import ChatInvitationList from '$lib/components/chat/ChatInvitationList.svelte';
+	import ChatListItem from '$lib/components/chat/ChatListItem.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
-	import { formatLongDate } from '$lib/functions/date.functions';
-	import { resolveRoomTypeLabel, togglePinChatRoom } from '$lib/functions/chat.functions';
+	import { togglePinChatRoom } from '$lib/functions/chat.functions';
 	import ChatListMenu from '$lib/components/chat/ChatListMenu.svelte';
 	import ChatFavoritesDialog from '$lib/components/chat/ChatFavoritesDialog.svelte';
 	import { rtdb } from '$lib/firebase';
@@ -62,7 +55,7 @@ original_path: src/routes/chat/list/+page.svelte
 	 * 방생성 버튼 클릭 핸들러
 	 */
 	function handleCreateRoom() {
-		console.log('방생성 버튼 클릭됨');
+		// console.log('방생성 버튼 클릭됨');
 		// TODO: 방생성 기능 구현
 	}
 
@@ -80,7 +73,7 @@ original_path: src/routes/chat/list/+page.svelte
 	 */
 	function handleUserSelect(event: CustomEvent<{ user: UserData; uid: string }>) {
 		const { uid } = event.detail;
-		console.log('선택된 사용자:', event.detail);
+		// console.log('선택된 사용자:', event.detail);
 		// 1:1 채팅방으로 이동
 		void goto(`/chat/room?uid=${uid}`);
 	}
@@ -113,7 +106,7 @@ original_path: src/routes/chat/list/+page.svelte
 	 * 검색 메뉴 클릭 핸들러
 	 */
 	function handleSearch() {
-		console.log('검색 메뉴 클릭됨');
+		// console.log('검색 메뉴 클릭됨');
 		// TODO: 검색 기능 구현
 	}
 
@@ -132,7 +125,7 @@ original_path: src/routes/chat/list/+page.svelte
 	 */
 	function handleRoomCreated(event: CustomEvent<{ roomId: string }>) {
 		const { roomId } = event.detail;
-		console.log('✅ 채팅방 생성 완료, 이동:', roomId);
+		// console.log('✅ 채팅방 생성 완료, 이동:', roomId);
 		void goto(`/chat/room?roomId=${roomId}`);
 	}
 
@@ -160,7 +153,7 @@ original_path: src/routes/chat/list/+page.svelte
 
 		try {
 			const isPinned = await togglePinChatRoom(rtdb, roomId, uid, roomType);
-			console.log(`✅ 채팅방 핀 ${isPinned ? '설정' : '해제'} 완료:`, roomId);
+			// console.log(`✅ 채팅방 핀 ${isPinned ? '설정' : '해제'} 완료:`, roomId);
 		} catch (error) {
 			console.error('채팅방 핀 토글 실패:', error);
 		}
@@ -170,33 +163,10 @@ original_path: src/routes/chat/list/+page.svelte
 	const chatJoinPath = $derived.by(() => {
 		const uid = authStore.user?.uid;
 		const path = uid ? `chat-joins/${uid}` : '';
-		console.log('🔍 [Chat List Debug] User UID:', uid);
-		console.log('🔍 [Chat List Debug] Chat join path:', path);
+		// console.log('🔍 [Chat List Debug] User UID:', uid);
+		// console.log('🔍 [Chat List Debug] Chat join path:', path);
 		return path;
 	});
-
-	/**
-	 * 채팅방 제목을 계산
-	 */
-	function resolveRoomTitle(join: ChatJoinData, fallback: string) {
-		if (typeof join.roomTitle === 'string' && join.roomTitle.trim()) return join.roomTitle;
-		if (typeof join.roomName === 'string' && join.roomName.trim()) return join.roomName;
-		if (typeof join.title === 'string' && join.title.trim()) return join.title;
-		if (typeof join.displayName === 'string' && join.displayName.trim()) return join.displayName;
-		if (typeof join.partnerDisplayName === 'string' && join.partnerDisplayName.trim())
-			return join.partnerDisplayName;
-
-		const partnerUid: string | undefined =
-			typeof join.partnerUid === 'string' ? join.partnerUid
-			: typeof join.targetUid === 'string' ? join.targetUid
-			: undefined;
-
-		if (partnerUid) {
-			return `@${partnerUid.slice(0, 8)}`;
-		}
-
-		return fallback;
-	}
 
 	/**
 	 * 채팅방 열기
@@ -282,7 +252,9 @@ original_path: src/routes/chat/list/+page.svelte
 					reverse: true
 				}}
 				{#if chatJoinPath}
-					{console.log('🔍 [Chat List Debug] DatabaseListView props:', dbListViewProps)}
+					<!--
+						// console.log('🔍 [Chat List Debug] DatabaseListView props:', dbListViewProps)
+					-->
 				{/if}
 				<DatabaseListView
 					path={chatJoinPath}
@@ -292,95 +264,15 @@ original_path: src/routes/chat/list/+page.svelte
 					reverse={true}
 				>
 					{#snippet item(itemData, index)}
-						{console.log('🔍 [Chat List Debug] Item received:', {
-							index,
-							key: itemData.key,
-							hasData: !!itemData.data,
-							data: itemData.data
-						})}
 						{@const join = (itemData.data ?? {}) as ChatJoinData}
 						{@const roomId = (join.roomId ?? itemData.key ?? '') as string}
 						{@const roomType = (join.roomType ?? join.type ?? 'single').toString()}
-						{@const singleChatListOrder = join.singleChatListOrder ?? null}
-						{console.log('🔍 [Chat List Debug] Join data:', {
-							roomId,
-							roomType,
-							singleChatListOrder,
-							partnerUid: join.partnerUid,
-							lastMessageText: join.lastMessageText,
-							lastMessageAt: join.lastMessageAt,
-							newMessageCount: join.newMessageCount,
-							allFields: Object.keys(join)
-						})}
-						{@const partnerUid: string | null =
-							typeof join.partnerUid === 'string' ? join.partnerUid
-							: typeof join.targetUid === 'string' ? join.targetUid
-							: null}
-						{@const lastMessage =
-							typeof join.lastMessageText === 'string' && join.lastMessageText.trim()
-								? join.lastMessageText
-								: typeof join.lastMessage === 'string' && join.lastMessage.trim()
-									? join.lastMessage
-									: typeof join.preview === 'string'
-										? join.preview
-										: ''}
-						{@const timestamp = Number(join.lastMessageAt ?? join.updatedAt ?? join.joinedAt ?? 0) || null}
-						{@const unreadCount = Number(join.newMessageCount ?? join.unreadCount ?? join.unread ?? 0) || 0}
-						{@const roomTitle = resolveRoomTitle(join, roomId || m.chatChatRoom())}
-						{@const isPinned = join.pin === true}
-						<div class="flex w-full items-start border-b border-gray-100">
-							<button
-								type="button"
-								class="flex flex-1 items-start gap-4 p-4 text-left transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-								onclick={() => openConversation(join, roomId)}
-							>
-								{#if partnerUid}
-									<Avatar uid={partnerUid} size={48} class="shadow-sm" />
-								{:else}
-									<div class="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-gray-600">
-										{roomTitle.slice(0, 2)}
-									</div>
-								{/if}
-
-								<div class="flex-1 space-y-1">
-									<div class="flex flex-wrap items-center gap-x-2 text-sm text-gray-500">
-										<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-gray-600">
-											{resolveRoomTypeLabel(roomType)}
-										</span>
-										<span class="text-xs text-gray-400">#{roomId}</span>
-										{#if unreadCount > 0}
-											<span class="rounded-full bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white">
-												{unreadCount}
-											</span>
-										{/if}
-									</div>
-
-									<h2 class="text-lg font-semibold text-gray-900">{roomTitle}</h2>
-
-									<p class="text-sm text-gray-500">
-										<span class="font-medium text-gray-600">{m.chatLastMessageLabel()}:</span>
-										<span class="ml-1 line-clamp-1">{lastMessage || m.chatNoMessages()}</span>
-									</p>
-
-									{#if timestamp}
-										<p class="text-xs text-gray-400">{formatLongDate(timestamp)}</p>
-									{/if}
-								</div>
-							</button>
-
-							<div class="flex flex-col items-center gap-2 p-4">
-								<!-- 핀 버튼 -->
-								<button
-									type="button"
-									onclick={(e) => handleTogglePin(e, roomId, roomType)}
-									class="rounded-full p-1.5 transition hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-									title={isPinned ? '핀 해제' : '핀 설정'}
-								>
-									<span class="text-xl">{isPinned ? '📌' : '📍'}</span>
-								</button>
-								<span class="text-sm font-medium text-blue-600">{m.chatOpenRoom()}</span>
-							</div>
-						</div>
+						<ChatListItem
+							{join}
+							{roomId}
+							onclick={() => openConversation(join, roomId)}
+							onTogglePin={(e) => handleTogglePin(e, roomId, roomType)}
+						/>
 					{/snippet}
 
 					{#snippet loading()}
@@ -429,10 +321,6 @@ original_path: src/routes/chat/list/+page.svelte
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

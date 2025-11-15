@@ -18,7 +18,7 @@ admin
   .messaging()
   .send(message)
   .then((response: unknown) => {
-    console.log("Successfully sent:", response);
+    // console.log("Successfully sent:", response);
   })
   .catch((error:unknown) => {
     console.error("Error sending message:", error);

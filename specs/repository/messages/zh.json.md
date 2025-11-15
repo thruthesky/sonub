@@ -1,21 +1,15 @@
 ---
-name: zh.json
-description: zh 다국어 메시지
+title: zh.json
+type: config
+path: messages/zh.json
+status: active
 version: 1.0.0
-type: configuration
-category: i18n-message
-original_path: messages/zh.json
+last_updated: 2025-11-15
 ---
-
-# zh.json
 
 ## 개요
 
-**파일 경로**: `messages/zh.json`
-**파일 타입**: configuration
-**카테고리**: i18n-message
-
-zh 다국어 메시지
+이 파일은 `messages/zh.json`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -331,21 +325,43 @@ zh 다국어 메시지
 	"homeSectionRecentUsersDesc": "最新加入的成员将很快在这里显示。",
 	"homeSectionRecentOpenChat": "最新开放聊天室消息",
 	"homeSectionRecentOpenChatDesc": "实时开放聊天室对话即将展示在此区域。",
+	"homeSectionRecentOpenChatEmpty": "最近没有开放聊天室消息。",
+	"homeSectionRecentOpenChatLogin": "登录后即可查看你参与的开放聊天室最新消息。",
 	"homeSectionPopularOpenRoom": "热门开放聊天室",
 	"homeSectionPopularOpenRoomDesc": "我们会推荐参与度最高的开放聊天室。",
 	"homeSectionRecentPosts": "最新帖子与评论",
 	"homeSectionRecentPostsDesc": "稍后将在此展示论坛最新的帖子和评论概览。",
-	"sidebarDevHighlightAttachment": "8. 文件附件上传",
-	"sidebarDevHighlightPassword": "9. 聊天密码功能",
-	"sidebarDevHighlightPostType": "10. 帖子类型消息"
+	"homeOpenChatNoMessage": "暂无消息。",
+	"sidebarDevHighlightWrapUp": "8. 聊天室收尾功能",
+	"sidebarDevHighlightAttachment": "9. 文件附件上传",
+	"sidebarDevHighlightPassword": "10. 聊天密码功能",
+	"sidebarDevHighlightPostType": "11. 帖子类型消息",
+	"chatNoMoreMessages": "没有更多消息。",
+	"chatRoomList": "我的聊天",
+	"chatRoomListEmpty": "尚未加入任何聊天室。",
+	"chatRoomListLoading": "正在加载聊天室...",
+	"chatPasswordSaving": "保存中...",
+	"chatPasswordEnableToggle": "启用密码",
+	"chatPasswordInputPlaceholder": "密码（至少4个字符）",
+	"chatPasswordConfirmPlaceholder": "确认密码",
+	"chatPasswordMinLengthError": "密码必须至少4个字符",
+	"chatPasswordMismatchError": "密码不匹配",
+	"chatPasswordSetSuccess": "密码已设置",
+	"chatPasswordRemoveSuccess": "密码已移除",
+	"chatPasswordSaveFailure": "保存密码失败",
+	"chatPasswordSettings": "密码设置",
+	"chatPasswordRequired": "此聊天室需要密码。",
+	"chatPasswordEnterPrompt": "请输入密码",
+	"chatPasswordVerifying": "验证中...（剩余{countdown}秒）",
+	"chatPasswordVerifySuccess": "密码已确认",
+	"chatPasswordIncorrect": "密码不正确",
+	"chatPasswordVerifyFailure": "密码验证失败",
+	"chatPasswordDelete": "删除密码",
+	"chatPasswordDeleteSuccess": "密码已删除"
 }
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

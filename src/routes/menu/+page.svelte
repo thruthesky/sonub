@@ -27,7 +27,7 @@
 		isSigningOut = true;
 		try {
 			await signOut(auth);
-			console.log('로그아웃 성공');
+			// console.log('로그아웃 성공');
 			await goto('/');
 		} catch (error) {
 			console.error('로그아웃 에러:', error);

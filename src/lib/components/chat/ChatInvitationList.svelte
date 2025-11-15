@@ -44,7 +44,7 @@
 
 		try {
 			await acceptInvitation(rtdb, roomId, uid);
-			console.log('✅ 초대 수락 완료:', roomId);
+			// console.log('✅ 초대 수락 완료:', roomId);
 
 			// 채팅방으로 자동 이동
 			await goto(`/chat/room?roomId=${roomId}`);
@@ -65,7 +65,7 @@
 
 		try {
 			await rejectInvitation(rtdb, roomId, uid);
-			console.log('✅ 초대 거절 완료:', roomId);
+			// console.log('✅ 초대 거절 완료:', roomId);
 		} catch (error) {
 			console.error('초대 거절 실패:', error);
 		}

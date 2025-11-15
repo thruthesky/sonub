@@ -39,7 +39,7 @@
 	 * 방생성 버튼 클릭 핸들러
 	 */
 	function handleCreateRoom() {
-		console.log('방생성 버튼 클릭됨');
+		// console.log('방생성 버튼 클릭됨');
 		// TODO: 방생성 기능 구현
 	}
 
@@ -57,7 +57,7 @@
 	 */
 	function handleUserSelect(event: CustomEvent<{ user: UserData; uid: string }>) {
 		const { uid } = event.detail;
-		console.log('선택된 사용자:', event.detail);
+		// console.log('선택된 사용자:', event.detail);
 		// 1:1 채팅방으로 이동
 		void goto(`/chat/room?uid=${uid}`);
 	}
@@ -90,7 +90,7 @@
 	 * 검색 메뉴 클릭 핸들러
 	 */
 	function handleSearch() {
-		console.log('검색 메뉴 클릭됨');
+		// console.log('검색 메뉴 클릭됨');
 		// TODO: 검색 기능 구현
 	}
 
@@ -109,7 +109,7 @@
 	 */
 	function handleRoomCreated(event: CustomEvent<{ roomId: string }>) {
 		const { roomId } = event.detail;
-		console.log('✅ 채팅방 생성 완료, 이동:', roomId);
+		// console.log('✅ 채팅방 생성 완료, 이동:', roomId);
 		void goto(`/chat/room?roomId=${roomId}`);
 	}
 
@@ -137,7 +137,7 @@
 
 		try {
 			const isPinned = await togglePinChatRoom(rtdb, roomId, uid, roomType);
-			console.log(`✅ 채팅방 핀 ${isPinned ? '설정' : '해제'} 완료:`, roomId);
+			// console.log(`✅ 채팅방 핀 ${isPinned ? '설정' : '해제'} 완료:`, roomId);
 		} catch (error) {
 			console.error('채팅방 핀 토글 실패:', error);
 		}
@@ -147,8 +147,8 @@
 	const chatJoinPath = $derived.by(() => {
 		const uid = authStore.user?.uid;
 		const path = uid ? `chat-joins/${uid}` : '';
-		console.log('🔍 [Chat List Debug] User UID:', uid);
-		console.log('🔍 [Chat List Debug] Chat join path:', path);
+		// console.log('🔍 [Chat List Debug] User UID:', uid);
+		// console.log('🔍 [Chat List Debug] Chat join path:', path);
 		return path;
 	});
 
@@ -236,7 +236,9 @@
 					reverse: true
 				}}
 				{#if chatJoinPath}
-					{console.log('🔍 [Chat List Debug] DatabaseListView props:', dbListViewProps)}
+					<!--
+						// console.log('🔍 [Chat List Debug] DatabaseListView props:', dbListViewProps)
+					-->
 				{/if}
 				<DatabaseListView
 					path={chatJoinPath}

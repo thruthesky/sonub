@@ -1,21 +1,15 @@
 ---
-name: page.css
-description: page 파일
+title: page.css
+type: stylesheet
+path: src/stories/page.css
+status: active
 version: 1.0.0
-type: css
-category: other
-original_path: src/stories/page.css
+last_updated: 2025-11-15
 ---
-
-# page.css
 
 ## 개요
 
-**파일 경로**: `src/stories/page.css`
-**파일 타입**: css
-**카테고리**: other
-
-page 파일
+이 파일은 `src/stories/page.css`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -91,10 +85,6 @@ page 파일
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

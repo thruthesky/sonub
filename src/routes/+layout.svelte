@@ -75,11 +75,11 @@
 		if (browser && authStore.isAuthenticated && authStore.user?.uid) {
 			const path = `users/${authStore.user.uid}/newMessageCount`;
 			newMessageCountStore = rtdbStore<number>(path);
-			console.log(`🔔 [알림음] 새 메시지 카운트 구독 시작: ${path}`);
+			// console.log(`🔔 [알림음] 새 메시지 카운트 구독 시작: ${path}`);
 		} else {
 			newMessageCountStore = null;
 			previousCount = 0;
-			console.log('🔔 [알림음] 새 메시지 카운트 구독 해제');
+			// console.log('🔔 [알림음] 새 메시지 카운트 구독 해제');
 		}
 	});
 
@@ -100,11 +100,11 @@
 
 			// 증가 감지
 			if (count > previousCount && previousCount >= 0) {
-				console.log(`🔔 [알림음] newMessageCount 증가 감지: ${previousCount} → ${count}`);
+				// console.log(`🔔 [알림음] newMessageCount 증가 감지: ${previousCount} → ${count}`);
 
 				// 채팅방에 있으면 알림음 재생 안 함
 				if (isChatRoom) {
-					console.log('🔇 [알림음] 채팅방 페이지에 있으므로 재생 안 함');
+					// console.log('🔇 [알림음] 채팅방 페이지에 있으므로 재생 안 함');
 					previousCount = count;
 					return;
 				}
@@ -112,7 +112,7 @@
 				// 디바운스 체크 (최소 500ms 간격)
 				const now = Date.now();
 				if (now - lastSoundPlayedAt < 500) {
-					console.log('🔇 [알림음] 디바운스 - 너무 빠른 재생 요청');
+					// console.log('🔇 [알림음] 디바운스 - 너무 빠른 재생 요청');
 					previousCount = count;
 					return;
 				}
@@ -150,7 +150,7 @@
 			notificationAudio
 				.play()
 				.then(() => {
-					console.log('🔊 [알림음] 재생 성공');
+					// console.log('🔊 [알림음] 재생 성공');
 				})
 				.catch((error) => {
 					console.warn('🔇 [알림음] 재생 실패 (사용자 인터랙션 필요):', error);
@@ -175,7 +175,7 @@
 
 			// 포그라운드 메시지 수신 리스너 등록
 			subscribeOnMessage((payload) => {
-				console.log('[Layout] 포그라운드 메시지 수신:', payload);
+				// console.log('[Layout] 포그라운드 메시지 수신:', payload);
 
 				// Toast 알림 표시
 				const title = payload.notification?.title ?? payload.data?.title ?? '새 알림';
@@ -192,7 +192,7 @@
 		try {
 			notificationAudio = new Audio('/sound/new-message.mp3');
 			notificationAudio.volume = 0.7; // 볼륨 70%
-			console.log('🔊 [알림음] Audio 객체 초기화 완료');
+			// console.log('🔊 [알림음] Audio 객체 초기화 완료');
 		} catch (error) {
 			console.error('🔇 [알림음] Audio 객체 초기화 실패:', error);
 		}
@@ -207,13 +207,13 @@
 						// 다른 탭에서 알림음을 재생 중이면 이 탭에서는 재생 안 함
 						const timestamp = event.data.timestamp;
 						if (Date.now() - timestamp < 500) {
-							console.log('🔇 [알림음] 다른 탭에서 재생 중 - 이 탭에서는 스킵');
+							// console.log('🔇 [알림음] 다른 탭에서 재생 중 - 이 탭에서는 스킵');
 							lastSoundPlayedAt = timestamp;
 						}
 					}
 				};
 
-				console.log('📡 [알림음] BroadcastChannel 초기화 완료');
+				// console.log('📡 [알림음] BroadcastChannel 초기화 완료');
 			}
 		} catch (error) {
 			console.warn('📡 [알림음] BroadcastChannel 초기화 실패 (브라우저 미지원):', error);
@@ -223,7 +223,7 @@
 		return () => {
 			if (broadcastChannel) {
 				broadcastChannel.close();
-				console.log('📡 [알림음] BroadcastChannel 종료');
+				// console.log('📡 [알림음] BroadcastChannel 종료');
 			}
 		};
 	});
@@ -244,7 +244,7 @@
 		<TopBar />
 	</div>
 
-	<div class="pt-20" class:pt-0={isChatRoom} class:md:pt-16={isChatRoom}>
+	<div class="pt-20 md:pt-16" class:pt-0={isChatRoom} class:md:pt-0={isChatRoom}>
 		<div class="container mx-auto px-4 py-8" class:p-0={isChatRoom}>
 			<div class="flex gap-6" class:gap-0={isChatRoom}>
 				<!-- 좌측 사이드바 (데스크톱만, 채팅방에서는 숨김) -->

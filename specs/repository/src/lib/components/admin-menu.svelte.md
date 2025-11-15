@@ -1,21 +1,15 @@
 ---
-name: admin-menu.svelte
-description: admin-menu 컴포넌트
+title: admin-menu.svelte
+type: component
+path: src/lib/components/admin-menu.svelte
+status: active
 version: 1.0.0
-type: svelte-component
-category: component
-original_path: src/lib/components/admin-menu.svelte
+last_updated: 2025-11-15
 ---
-
-# admin-menu.svelte
 
 ## 개요
 
-**파일 경로**: `src/lib/components/admin-menu.svelte`
-**파일 타입**: svelte-component
-**카테고리**: component
-
-admin-menu 컴포넌트
+이 파일은 `src/lib/components/admin-menu.svelte`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -78,10 +72,6 @@ admin-menu 컴포넌트
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

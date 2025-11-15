@@ -107,7 +107,7 @@ class UserProfileStore {
 		}
 
 		// 새로운 프로필 구독 시작
-		console.log(`[UserProfileStore] 🆕 새 프로필 구독 시작: ${uid}`);
+		// console.log(`[UserProfileStore] 🆕 새 프로필 구독 시작: ${uid}`);
 		this.subscribeToProfile(uid);
 	}
 
@@ -179,8 +179,8 @@ class UserProfileStore {
 	 * @param uid - 사용자 UID
 	 */
 	private subscribeToProfile(uid: string): void {
-		console.log(`[UserProfileStore] ✅ 프로필 구독 시작: ${uid}`);
-		console.log(`[UserProfileStore] 🔗 RTDB 경로: /users/${uid}`);
+		// console.log(`[UserProfileStore] ✅ 프로필 구독 시작: ${uid}`);
+		// console.log(`[UserProfileStore] 🔗 RTDB 경로: /users/${uid}`);
 
 		// 초기 캐시 항목 생성 (로딩 상태)
 		const cacheItem: ProfileCacheItem = {
@@ -204,13 +204,13 @@ class UserProfileStore {
 				// 데이터 로드 성공
 				const data = snapshot.val() as UserProfile | null;
 
-				console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-				console.log(`[UserProfileStore] 📥 프로필 데이터 수신: ${uid}`);
-				console.log('  수신 시간:', new Date().toISOString());
-				console.log('  데이터:', data);
-				console.log('  photoUrl:', data?.photoUrl);
-				console.log('  displayName:', data?.displayName);
-				console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+				// console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+				// console.log(`[UserProfileStore] 📥 프로필 데이터 수신: ${uid}`);
+				// console.log('  수신 시간:', new Date().toISOString());
+				// console.log('  데이터:', data);
+				// console.log('  photoUrl:', data?.photoUrl);
+				// console.log('  displayName:', data?.displayName);
+				// console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
 				// 🔥 중요: 반응성 트리거를 위해 새로운 객체 생성
 				const newCacheItem: ProfileCacheItem = {
@@ -223,8 +223,8 @@ class UserProfileStore {
 				// Map 자체를 재할당하여 반응성 트리거
 				this.cache = new Map(this.cache).set(uid, newCacheItem);
 
-				console.log(`[UserProfileStore] ✨ 캐시 업데이트 완료: ${uid}`);
-				console.log(`[UserProfileStore] 📊 현재 캐시 크기: ${this.cache.size}`);
+				// console.log(`[UserProfileStore] ✨ 캐시 업데이트 완료: ${uid}`);
+				// console.log(`[UserProfileStore] 📊 현재 캐시 크기: ${this.cache.size}`);
 			},
 			(error) => {
 				// 데이터 로드 실패
@@ -256,7 +256,7 @@ class UserProfileStore {
 			this.cache = new Map(this.cache).set(uid, updatedItem);
 		}
 
-		console.log(`[UserProfileStore] 🎧 RTDB 리스너 등록 완료: ${uid}`);
+		// console.log(`[UserProfileStore] 🎧 RTDB 리스너 등록 완료: ${uid}`);
 	}
 
 	/**
@@ -270,7 +270,7 @@ class UserProfileStore {
 	unsubscribeProfile(uid: string): void {
 		const cached = this.cache.get(uid);
 		if (cached?.unsubscribe) {
-			console.log(`[UserProfileStore] 🔌 프로필 구독 해제: ${uid}`);
+			// console.log(`[UserProfileStore] 🔌 프로필 구독 해제: ${uid}`);
 			cached.unsubscribe();
 			this.cache.delete(uid);
 		}
@@ -282,7 +282,7 @@ class UserProfileStore {
 	 * 모든 프로필 구독을 해제하고 캐시를 비웁니다.
 	 */
 	clearAll(): void {
-		console.log('[UserProfileStore] 🗑️ 전체 캐시 초기화');
+		// console.log('[UserProfileStore] 🗑️ 전체 캐시 초기화');
 
 		// 모든 리스너 구독 해제
 		this.cache.forEach((item, uid) => {
@@ -301,14 +301,14 @@ class UserProfileStore {
 	 * 개발 환경에서 캐시 상태를 확인할 때 사용합니다.
 	 */
 	debug(): void {
-		console.log('[UserProfileStore] 📊 캐시 상태:');
-		console.log(`  - 총 구독 수: ${this.cache.size}`);
+		// console.log('[UserProfileStore] 📊 캐시 상태:');
+		// console.log(`  - 총 구독 수: ${this.cache.size}`);
 		this.cache.forEach((item, uid) => {
-			console.log(`  - ${uid}:`, {
-				loading: item.loading,
-				hasData: !!item.data,
-				hasError: !!item.error
-			});
+			// console.log(`  - ${uid}:`, {
+			// 	loading: item.loading,
+			// 	hasData: !!item.data,
+			// 	hasError: !!item.error
+			// });
 		});
 	}
 }

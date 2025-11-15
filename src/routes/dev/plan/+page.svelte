@@ -233,7 +233,7 @@
 					<span class="todo-number">10</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">새 채팅 메시지 카운트 및 화면 표시</Card.Title>
-						<span class="todo-badge todo-badge--pending">📋 예정</span>
+						<span class="todo-badge todo-badge--done">✅ 완료</span>
 					</div>
 				</div>
 			</Card.Header>
@@ -284,12 +284,6 @@
 				<ul class="todo-list">
 					<li>채팅방 내 단일 메시지를 삭제할 수 있는 옵션 제공 (소프트 삭제 + Cloud Functions 정합성 유지)</li>
 					<li>메시지 수정 UI와 수정 이력 표시</li>
-					<li>특정 메시지에 답장(quote) 기능 추가하여 원문 일부를 함께 표시</li>
-					<li>메시지에 좋아요(리액션) 기능으로 간단한 피드백 제공</li>
-					<li>@멘션 기능으로 특정 사용자를 호출하고 알림 트리거</li>
-					<li>상대방 읽음 여부(1:1 및 그룹) 표시: 마지막 읽음 타임스탬프 기반 배지</li>
-					<li>채팅 알림음 설정 페이지에서 사용자별 기본 알림음 on/off 제어</li>
-					<li>채팅방별 알림음 토글 및 중요 채팅방 강조음 선택 기능 제공</li>
 				</ul>
 			</Card.Content>
 		</Card.Root>
@@ -495,11 +489,34 @@
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 17. 다음 버전 기능 -->
+		<!-- 17. 나중에 추가해야 할 기능 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
 					<span class="todo-number">17</span>
+					<div class="flex flex-col gap-1">
+						<Card.Title class="text-xl">나중에 추가해야 할 기능</Card.Title>
+						<span class="todo-badge todo-badge--pending">📋 예정</span>
+					</div>
+				</div>
+			</Card.Header>
+			<Card.Content>
+				<ul class="todo-list">
+					<li>특정 메시지에 답장(quote) 기능 추가하여 원문 일부를 함께 표시</li>
+					<li>메시지에 좋아요(리액션) 기능으로 간단한 피드백 제공</li>
+					<li>@멘션 기능으로 특정 사용자를 호출하고 알림 트리거</li>
+					<li>상대방 읽음 여부(1:1 및 그룹) 표시: 마지막 읽음 타임스탬프 기반 배지</li>
+					<li>채팅 알림음 설정 페이지에서 사용자별 기본 알림음 on/off 제어</li>
+					<li>채팅방별 알림음 토글 및 중요 채팅방 강조음 선택 기능 제공</li>
+				</ul>
+			</Card.Content>
+		</Card.Root>
+
+		<!-- 18. 다음 버전 기능 -->
+		<Card.Root class="todo-card">
+			<Card.Header>
+				<div class="flex items-start gap-3">
+					<span class="todo-number">18</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">다음 버전 기능</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -509,7 +526,7 @@
 			<Card.Content>
 				<div class="space-y-4">
 					<div>
-						<h4 class="todo-subtitle">17-1. 서브 채팅방 (Sub Chat Room)</h4>
+						<h4 class="todo-subtitle">18-1. 서브 채팅방 (Sub Chat Room)</h4>
 						<ul class="todo-list">
 							<li>
 								<strong>용도:</strong> 내가 운영 중인 여러 개의 채팅방을 하나로 묶어서 하나의
@@ -536,7 +553,7 @@
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">17-2. 관리자 페이지 (Dashboard) 및 관리자 기능</h4>
+						<h4 class="todo-subtitle">18-2. 관리자 페이지 (Dashboard) 및 관리자 기능</h4>
 						<ul class="todo-list">
 							<li>관리자 권한 시스템 구현 (<code>/users/{'{uid}'}/isAdmin: boolean</code>)</li>
 							<li>

@@ -1,21 +1,15 @@
 ---
-name: chat.functions.ts
-description: chat.functions 순수 함수
-version: 1.0.0
+title: chat.functions.ts
 type: typescript
-category: pure-function
-original_path: src/lib/functions/chat.functions.ts
+path: src/lib/functions/chat.functions.ts
+status: active
+version: 1.0.0
+last_updated: 2025-11-15
 ---
-
-# chat.functions.ts
 
 ## 개요
 
-**파일 경로**: `src/lib/functions/chat.functions.ts`
-**파일 타입**: typescript
-**카테고리**: pure-function
-
-chat.functions 순수 함수
+이 파일은 `src/lib/functions/chat.functions.ts`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -110,10 +104,23 @@ export function joinChatRoom(
 	uid: string
 ): void {
 	// 1. 채팅방 멤버로 등록
+	// 중요: 이미 members/{uid} 필드가 존재하면 수정하지 않습니다
+	// - 필드 존재 (true/false): 사용자의 알림 설정 유지
+	// - 필드 없음: 최초 입장이므로 true로 설정 (알림 구독)
 	const memberRef = ref(db, `chat-rooms/${roomId}/members/${uid}`);
-	set(memberRef, true).catch((error) => {
-		console.error('채팅방 멤버 등록 실패:', error);
-	});
+	get(memberRef)
+		.then((snapshot) => {
+			if (!snapshot.exists()) {
+				// 필드가 없을 때만 true로 설정 (최초 입장)
+				set(memberRef, true).catch((error) => {
+					console.error('채팅방 멤버 등록 실패:', error);
+				});
+			}
+			// 이미 필드가 존재하면 사용자의 알림 설정(true/false) 유지
+		})
+		.catch((error) => {
+			console.error('멤버 상태 확인 실패:', error);
+		});
 
 	// 2. newMessageCount를 0으로 초기화 (메시지를 모두 읽은 것으로 표시)
 	const chatJoinRef = ref(db, `chat-joins/${uid}/${roomId}`);
@@ -201,11 +208,11 @@ export async function togglePinChatRoom(
 	if (isPinned) {
 		// 핀 해제: pin 필드 삭제
 		await set(pinRef, null);
-		console.log('✅ 채팅방 핀 해제 완료:', roomId);
+		// console.log('✅ 채팅방 핀 해제 완료:', roomId);
 	} else {
 		// 핀 설정: pin: true 설정
 		await set(pinRef, true);
-		console.log('✅ 채팅방 핀 설정 완료:', roomId);
+		// console.log('✅ 채팅방 핀 설정 완료:', roomId);
 	}
 
 	// 새로운 핀 상태 반환
@@ -335,10 +342,6 @@ export async function rejectInvitation(
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

@@ -1,21 +1,15 @@
 ---
-name: database.rules.json
-description: database.rules 파일
+title: database.rules.json
+type: config
+path: firebase/database.rules.json
+status: active
 version: 1.0.0
-type: configuration
-category: other
-original_path: firebase/database.rules.json
+last_updated: 2025-11-15
 ---
-
-# database.rules.json
 
 ## 개요
 
-**파일 경로**: `firebase/database.rules.json`
-**파일 타입**: configuration
-**카테고리**: other
-
-database.rules 파일
+이 파일은 `firebase/database.rules.json`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -30,7 +24,8 @@ database.rules 파일
       "$uid": {
         // 2025-12-12 까지는 무조건 쓰기 통과 (테스트 데이터 생성용)
         // 그 이후는 본인만 쓰기 가능
-        ".write": "now < 1765555200000 || auth.uid == $uid"
+        ".write": "now < 1765555200000 ||
+          auth.uid == $uid"
       },
       ".indexOn": [
         "createdAt",
@@ -63,11 +58,10 @@ database.rules 파일
       // createdAt과 owner 필드는 Cloud Functions에서만 설정됨
       ".read": true,
       "$roomId": {
-        ".write": "auth != null",
         "owner": {
           // 채팅방이 존재하지 않으면 본인 UID로 설정 가능, 존재하면 수정 불가
-          ".write": "!root.child('chat-rooms').child($roomId).exists() && newData.val() === auth.uid",
-          ".validate": "newData.isString()"
+          ".write": "!root.child('chat-rooms').child($roomId).exists() &&
+            newData.val() === auth.uid",".validate": "newData.isString()"
         },
         "createdAt": {
           // Cloud Functions에서만 설정 가능 (클라이언트는 쓰기 불가)
@@ -76,20 +70,29 @@ database.rules 파일
         },
         "name": {
           // 채팅방이 존재하지 않으면 누구나 쓰기 가능, 존재하면 owner만 수정 가능
-          ".write": "!root.child('chat-rooms').child($roomId).exists() || root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",
-          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
+          ".write": "!root.child('chat-rooms').child($roomId).exists() ||
+            root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",".validate": "newData.isString() &&
+            newData.val().length > 0 &&
+            newData.val().length <= 50"
         },
         "description": {
           // 채팅방이 존재하지 않으면 누구나 쓰기 가능, 존재하면 owner만 수정 가능
-          ".write": "!root.child('chat-rooms').child($roomId).exists() || root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",
-          ".validate": "newData.isString() && newData.val().length <= 200"
+          ".write": "!root.child('chat-rooms').child($roomId).exists() ||
+            root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",".validate": "newData.isString() &&
+            newData.val().length <= 200"
         },
         "type": {
           ".write": "!data.exists()",
-          ".validate": "newData.val() === 'group' || newData.val() === 'open' || newData.val() === 'single'"
+          ".validate": "newData.val() === 'group' ||
+            newData.val() === 'open' ||
+            newData.val() === 'single'"
         },
         "open": {
           ".write": "!data.exists()",
+          ".validate": "newData.isBoolean()"
+        },
+        "password": {
+          ".write": "root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",
           ".validate": "newData.isBoolean()"
         },
         "groupListOrder": {
@@ -103,14 +106,25 @@ database.rules 파일
         "memberCount": {
           // Cloud Functions에서만 설정 가능 (자동 생성/증감)
           ".write": false,
-          ".validate": "newData.isNumber() && newData.val() >= 0"
+          ".validate": "newData.isNumber() &&
+            newData.val() >= 0"
         },
         "members": {
-          // 사용자는 자기 자신의 uid만 추가/수정 가능
-          // true = 메시지 알림 받기, false = 알림 받지 않기
           "$uid": {
-            ".write": "auth != null && $uid === auth.uid",
-            ".validate": "newData.isBoolean() || newData.val() === null"
+            // 쓰기 권한: 본인만 ($uid === auth.uid)
+            // 허용 조건 (OR):
+            //   1. data.exists(): 이미 멤버 → 퇴장/알림 설정 변경 가능
+            //   2. !password.exists(): 비밀번호 미설정 → 자유롭게 가입 가능
+            //   3. owner === auth.uid: Owner → 비밀번호 설정 시에도 가입 가능
+            // 비밀번호 설정 시: 일반 사용자는 Cloud Functions를 통해서만 가입 가능
+            ".write": "auth != null &&
+              $uid === auth.uid &&
+              (
+                data.exists() ||
+                !root.child('chat-rooms').child($roomId).child('password').exists() ||
+                root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid
+              )",".validate": "newData.isBoolean() ||
+              newData.val() === null"
           }
         },
         "$other": {
@@ -135,8 +149,19 @@ database.rules 파일
       }
     },
     "chat-messages": {
-      ".read": true,
-      ".write": true,
+      ".read": "auth != null",
+      "$messageId": {
+        ".read": "auth != null &&
+          (
+            data.child('roomId').val().contains(auth.uid) ||
+            root.child('chat-rooms').child(data.child('roomId').val()).child('type').val() == 'open' ||
+            root.child('chat-rooms').child(data.child('roomId').val()).child('members').child(auth.uid).exists()
+          )",".write": "auth != null &&
+          (
+            newData.child('roomId').val().contains(auth.uid) ||
+            root.child('chat-rooms').child(newData.child('roomId').val()).child('members').child(auth.uid).exists()
+          )"
+      },
       ".indexOn": [
         "roomOrder"
       ]
@@ -149,7 +174,11 @@ database.rules 파일
         ".read": "$uid === auth.uid",
         "$roomId": {
           // 쓰기 규칙: 본인이 삭제하거나, 채팅방 멤버가 초대 생성 가능
-          ".write": "auth != null && (($uid === auth.uid && newData.val() === null) || (newData.val() !== null && root.child('chat-rooms').child($roomId).child('members').child(auth.uid).exists()))"
+          ".write": "auth != null &&
+            (
+              ($uid === auth.uid && newData.val() === null) ||
+              (newData.val() !== null && root.child('chat-rooms').child($roomId).child('members').child(auth.uid).exists())
+            )"
         },
         ".indexOn": [
           "invitationOrder"
@@ -165,11 +194,14 @@ database.rules 파일
         "$favoriteId": {
           "name": {
             // 폴더 이름: 필수, 1-30자
-            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 30"
+            ".validate": "newData.isString() &&
+              newData.val().length > 0 &&
+              newData.val().length <= 30"
           },
           "description": {
             // 폴더 설명: 선택, 최대 100자
-            ".validate": "newData.isString() && newData.val().length <= 100"
+            ".validate": "newData.isString() &&
+              newData.val().length <= 100"
           },
           "createdAt": {
             // 생성 시간: 필수, 숫자 (timestamp)
@@ -198,6 +230,20 @@ database.rules 파일
         "uid"
       ]
     },
+    "chat-room-passwords": {
+      "$roomId": {
+        "password": {
+          ".read": "root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",
+          ".write": "root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid"
+        },
+        "try": {
+          "$uid": {
+            ".write": "auth != null &&
+              $uid === auth.uid"
+          }
+        }
+      }
+    },
     "test": {
       "data": {
         // QA 전용 테스트 데이터 노드 - 누구나 읽고 쓰기 가능
@@ -216,10 +262,6 @@ database.rules 파일
 }
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

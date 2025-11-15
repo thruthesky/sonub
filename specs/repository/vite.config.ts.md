@@ -1,21 +1,15 @@
 ---
-name: vite.config.ts
-description: vite.config 설정 파일
-version: 1.0.0
+title: vite.config.ts
 type: typescript
-category: root-configuration
-original_path: vite.config.ts
+path: vite.config.ts
+status: active
+version: 1.0.0
+last_updated: 2025-11-15
 ---
-
-# vite.config.ts
 
 ## 개요
 
-**파일 경로**: `vite.config.ts`
-**파일 타입**: typescript
-**카테고리**: root-configuration
-
-vite.config 설정 파일
+이 파일은 `vite.config.ts`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -75,10 +69,6 @@ export default defineConfig({
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

@@ -1,21 +1,15 @@
 ---
-name: +page.svelte
-description: +page 페이지
+title: +page.svelte
+type: component
+path: src/routes/+page.svelte
+status: active
 version: 1.0.0
-type: svelte-component
-category: route-page
-original_path: src/routes/+page.svelte
+last_updated: 2025-11-15
 ---
-
-# +page.svelte
 
 ## 개요
 
-**파일 경로**: `src/routes/+page.svelte`
-**파일 타입**: svelte-component
-**카테고리**: route-page
-
-+page 페이지
+이 파일은 `src/routes/+page.svelte`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -34,13 +28,22 @@ original_path: src/routes/+page.svelte
 	import Avatar from '$lib/components/user/avatar.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import { rtdb } from '$lib/firebase';
-	import { get, limitToLast, orderByChild, query, ref, type DatabaseReference } from 'firebase/database';
+	import { formatShortDate } from '$lib/functions/date.functions';
+import { get, limitToLast, onValue, orderByChild, query, ref, type DatabaseReference } from 'firebase/database';
 
 	type UserPreview = {
 		uid: string;
 		displayName: string;
 		photoUrl: string | null;
 		sortRecentWithPhoto: number;
+	};
+
+	type OpenChatPreview = {
+		roomId: string;
+		roomName: string;
+		lastMessageText: string;
+		lastMessageAt: number;
+		orderValue: number;
 	};
 
 	const dashboardCards = [
@@ -66,12 +69,65 @@ original_path: src/routes/+page.svelte
 		}
 	];
 
-	let recentUsers = $state<UserPreview[]>([]);
-	let isLoadingRecentUsers = $state(true);
+let recentUsers = $state<UserPreview[]>([]);
+let isLoadingRecentUsers = $state(true);
+let recentOpenChats = $state<OpenChatPreview[]>([]);
+let isLoadingRecentOpenChats = $state(true);
 
-	onMount(() => {
-		fetchRecentUsers();
-	});
+onMount(() => {
+	fetchRecentUsers();
+});
+
+$effect(() => {
+	const uid = authStore.user?.uid ?? null;
+
+	if (!uid || !rtdb) {
+		recentOpenChats = [];
+		isLoadingRecentOpenChats = false;
+		return;
+	}
+
+	isLoadingRecentOpenChats = true;
+
+	const joinsRef = ref(rtdb, `chat-joins/${uid}`);
+	const openQuery = query(joinsRef, orderByChild('openChatListOrder'), limitToLast(5));
+
+	return onValue(
+		openQuery,
+		(snapshot) => {
+			const items: OpenChatPreview[] = [];
+
+			snapshot.forEach((child) => {
+				const value = child.val() ?? {};
+
+				if (value?.roomType !== 'open') {
+					return;
+				}
+
+				const orderValue = resolveOrderValue(value?.openChatListOrder);
+				const roomId = child.key ?? '';
+
+				items.push({
+					roomId,
+					roomName: (value?.roomName as string) || roomId || 'Open Chat',
+					lastMessageText: (value?.lastMessageText as string) || '',
+					lastMessageAt: Number(value?.lastMessageAt) || 0,
+					orderValue
+				});
+			});
+
+			items.sort((a, b) => b.orderValue - a.orderValue);
+
+			recentOpenChats = items.slice(0, 5);
+			isLoadingRecentOpenChats = false;
+		},
+		(error) => {
+			console.error('[Home] 최근 오픈 채팅 메시지 실시간 구독 실패:', error);
+			recentOpenChats = [];
+			isLoadingRecentOpenChats = false;
+		}
+	);
+});
 
 	async function fetchRecentUsers() {
 		if (!rtdb) {
@@ -104,6 +160,30 @@ original_path: src/routes/+page.svelte
 		} finally {
 			isLoadingRecentUsers = false;
 		}
+	}
+
+function resolveOrderValue(value: unknown): number {
+		if (typeof value === 'number') {
+			return value;
+		}
+
+		if (typeof value === 'string') {
+			let boost = 0;
+			let normalized = value;
+
+			if (value.startsWith('500')) {
+				boost = 2;
+				normalized = value.slice(3);
+			} else if (value.startsWith('200')) {
+				boost = 1;
+				normalized = value.slice(3);
+			}
+
+			const base = Number.parseInt(normalized, 10);
+			return boost * 1e15 + (Number.isFinite(base) ? base : 0);
+		}
+
+		return 0;
 	}
 </script>
 
@@ -194,6 +274,36 @@ original_path: src/routes/+page.svelte
 								</p>
 							</div>
 						{/if}
+					{:else if card.id === 'recent-open-chat'}
+						{#if !authStore.isAuthenticated}
+							<div class="placeholder-panel">
+								<p class="placeholder-text">{m.homeSectionRecentOpenChatLogin()}</p>
+							</div>
+						{:else if isLoadingRecentOpenChats}
+							<div class="placeholder-panel">
+								<p class="placeholder-text">{m.commonLoading()}</p>
+							</div>
+						{:else if recentOpenChats.length === 0}
+							<div class="placeholder-panel">
+								<p class="placeholder-text">{m.homeSectionRecentOpenChatEmpty()}</p>
+							</div>
+						{:else}
+							<ul class="open-chat-list">
+								{#each recentOpenChats as chat}
+									<li class="open-chat-item">
+										<div class="open-chat-head">
+											<span class="open-chat-room">{chat.roomName}</span>
+											{#if chat.lastMessageAt}
+												<span class="open-chat-time">{formatShortDate(chat.lastMessageAt)}</span>
+											{/if}
+										</div>
+										<p class="open-chat-body">
+											{chat.lastMessageText || m.homeOpenChatNoMessage()}
+										</p>
+									</li>
+								{/each}
+							</ul>
+						{/if}
 					{:else}
 						<div class="placeholder-panel">
 							<div class="placeholder-indicators">
@@ -255,22 +365,34 @@ original_path: src/routes/+page.svelte
 	.stacked-caption {
 		@apply text-sm font-medium text-gray-800;
 	}
+
+	.open-chat-list {
+		@apply space-y-3;
+	}
+
+	.open-chat-item {
+		@apply rounded-lg border border-blue-100 bg-blue-50/80 p-3 shadow-sm;
+	}
+
+	.open-chat-head {
+		@apply flex items-center justify-between gap-2;
+	}
+
+	.open-chat-room {
+		@apply text-sm font-semibold text-blue-900;
+	}
+
+	.open-chat-time {
+		@apply text-xs text-gray-500;
+	}
+
+	.open-chat-body {
+		@apply mt-1 text-sm text-gray-700;
+	}
 </style>
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-- 홈페이지 상단에서 로그인 상태에 따라 환영 카드 또는 로그인 유도 버튼을 표시합니다.
-- `최근 사용자` 카드: `/users` 경로에서 `sort_recentWithPhoto` 기준으로 최신 5명의 프로필 이미지를 스택드 아바타로 보여줍니다.
-- `최근 오픈 채팅 메시지` 카드: 로그인한 사용자의 `/chat-joins/{uid}` 데이터를 `openChatListOrder` 기준 내림차순으로 조회해 최신 5개의 오픈 채팅 미리보기를 출력합니다.
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
-
-## 작업 이력 (SED Log)
-
-| 날짜 | 작업자 | 변경 내용 |
-| ---- | ------ | -------- |
-| 2025-11-14 | Codex Agent | `최근 오픈 채팅 메시지` 카드가 `/chat-joins/{uid}`의 `openChatListOrder` TOP 5를 실시간 구독하도록 명시 |
+- 2025-11-15: 스펙 문서 생성

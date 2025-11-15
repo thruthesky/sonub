@@ -1,21 +1,15 @@
 ---
-name: +layout.svelte
-description: +layout 페이지
+title: +layout.svelte
+type: component
+path: src/routes/+layout.svelte
+status: active
 version: 1.0.0
-type: svelte-component
-category: route-page
-original_path: src/routes/+layout.svelte
+last_updated: 2025-11-15
 ---
-
-# +layout.svelte
 
 ## 개요
 
-**파일 경로**: `src/routes/+layout.svelte`
-**파일 타입**: svelte-component
-**카테고리**: route-page
-
-+layout 페이지
+이 파일은 `src/routes/+layout.svelte`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -30,6 +24,12 @@ original_path: src/routes/+layout.svelte
 	 * Paraglide i18n:
 	 * - hooks.server.ts의 paraglideMiddleware가 서버에서 로케일 자동 감지/설정
 	 * - 클라이언트는 쿠키 기반으로 자동 감지되어 설정됨
+	 *
+	 * v1.0.0 - 새 메시지 알림음 시스템:
+	 * - /users/{uid}/newMessageCount 실시간 구독
+	 * - 값이 증가할 때만 알림음 재생
+	 * - 채팅방 페이지에서는 알림음 재생 안 함
+	 * - BroadcastChannel로 다중 탭 중복 재생 방지
 	 */
 
 	import '../app.css';
@@ -38,35 +38,210 @@ original_path: src/routes/+layout.svelte
 	import RightSidebar from '$lib/components/right-sidebar.svelte';
 	import DevIcon from '$lib/components/dev/dev-icon.svelte';
 	import FcmPermissionGate from '$lib/components/FcmPermissionGate.svelte';
-	import { dev } from '$app/environment';
+	import { dev, browser } from '$app/environment';
 	import { Toaster, toast } from 'svelte-sonner';
 	import { onMount } from 'svelte';
 	import { registerServiceWorker, subscribeOnMessage } from '$lib/fcm';
+	import { page } from '$app/stores';
+	import { authStore } from '$lib/stores/auth.svelte';
+	import { rtdbStore } from '$lib/stores/database.svelte';
+	import { rtdb } from '$lib/firebase';
 
 	let { children } = $props();
+
+	/**
+	 * 현재 페이지가 채팅방인지 확인
+	 * 채팅방 페이지에서는 모바일에서 TopBar를 숨김
+	 */
+	const isChatRoom = $derived($page.url.pathname.startsWith('/chat/room'));
+
+	// ========================================
+	// v1.0.0: 새 메시지 알림음 시스템
+	// ========================================
+
+	/**
+	 * v1.0.0: 새 메시지 카운트 실시간 구독
+	 */
+	let newMessageCountStore = $state<ReturnType<typeof rtdbStore<number>> | null>(null);
+
+	/**
+	 * v1.0.0: 알림음 객체 (클라이언트 사이드에서만 초기화)
+	 */
+	let notificationAudio: HTMLAudioElement | null = null;
+
+	/**
+	 * v1.0.0: BroadcastChannel (다중 탭 중복 방지)
+	 */
+	let broadcastChannel: BroadcastChannel | null = null;
+
+	/**
+	 * v1.0.0: 마지막 알림음 재생 시각 (디바운스)
+	 */
+	let lastSoundPlayedAt = 0;
+
+	/**
+	 * v1.0.0: 이전 newMessageCount 값 (증가 감지용)
+	 */
+	let previousCount = $state(0);
+
+	/**
+	 * v1.0.0: 로그인 상태에 따라 newMessageCount 구독
+	 */
+	$effect(() => {
+		if (browser && authStore.isAuthenticated && authStore.user?.uid) {
+			const path = `users/${authStore.user.uid}/newMessageCount`;
+			newMessageCountStore = rtdbStore<number>(path);
+			// console.log(`🔔 [알림음] 새 메시지 카운트 구독 시작: ${path}`);
+		} else {
+			newMessageCountStore = null;
+			previousCount = 0;
+			// console.log('🔔 [알림음] 새 메시지 카운트 구독 해제');
+		}
+	});
+
+	/**
+	 * v1.0.0: newMessageCount 증가 감지 및 알림음 재생
+	 * Svelte store를 구독하여 reactive 처리
+	 */
+	$effect(() => {
+		if (!browser || !newMessageCountStore) {
+			previousCount = 0;
+			return;
+		}
+
+		// Svelte store를 구독
+		const unsubscribe = newMessageCountStore.subscribe((state) => {
+			const currentCount = state.data ?? 0;
+			const count = typeof currentCount === 'number' ? currentCount : 0;
+
+			// 증가 감지
+			if (count > previousCount && previousCount >= 0) {
+				// console.log(`🔔 [알림음] newMessageCount 증가 감지: ${previousCount} → ${count}`);
+
+				// 채팅방에 있으면 알림음 재생 안 함
+				if (isChatRoom) {
+					// console.log('🔇 [알림음] 채팅방 페이지에 있으므로 재생 안 함');
+					previousCount = count;
+					return;
+				}
+
+				// 디바운스 체크 (최소 500ms 간격)
+				const now = Date.now();
+				if (now - lastSoundPlayedAt < 500) {
+					// console.log('🔇 [알림음] 디바운스 - 너무 빠른 재생 요청');
+					previousCount = count;
+					return;
+				}
+
+				// 다른 탭에서 재생 중인지 확인
+				if (broadcastChannel) {
+					// 다른 탭에 알림음 재생 시작을 알림
+					broadcastChannel.postMessage({ type: 'notification-sound-playing', timestamp: now });
+				}
+
+				// 알림음 재생
+				playNotificationSound();
+				lastSoundPlayedAt = now;
+			}
+
+			// 이전 값 업데이트
+			previousCount = count;
+		});
+
+		return () => unsubscribe();
+	});
+
+	/**
+	 * v1.0.0: 알림음 재생 함수
+	 */
+	function playNotificationSound() {
+		try {
+			if (!notificationAudio) {
+				console.warn('🔇 [알림음] Audio 객체가 초기화되지 않음');
+				return;
+			}
+
+			// 이미 재생 중이면 처음부터 다시 재생
+			notificationAudio.currentTime = 0;
+			notificationAudio
+				.play()
+				.then(() => {
+					// console.log('🔊 [알림음] 재생 성공');
+				})
+				.catch((error) => {
+					console.warn('🔇 [알림음] 재생 실패 (사용자 인터랙션 필요):', error);
+				});
+		} catch (error) {
+			console.error('🔇 [알림음] 재생 에러:', error);
+		}
+	}
 
 	/**
 	 * 앱 시작 시 초기화
 	 * 1. 서비스 워커 미리 등록 (FCM 토큰 발급을 위해 필요)
 	 * 2. 포그라운드 메시지 리스너 등록 (Toast 알림 표시)
+	 * 3. v1.0.0: 알림음 Audio 객체 초기화
+	 * 4. v1.0.0: BroadcastChannel 초기화 (다중 탭 중복 방지)
 	 */
-	onMount(async () => {
-		// 서비스 워커 등록
-		await registerServiceWorker();
+	onMount(() => {
+		// 비동기 초기화 작업 (즉시 실행)
+		(async () => {
+			// 서비스 워커 등록
+			await registerServiceWorker();
 
-		// 포그라운드 메시지 수신 리스너 등록
-		subscribeOnMessage((payload) => {
-			console.log('[Layout] 포그라운드 메시지 수신:', payload);
+			// 포그라운드 메시지 수신 리스너 등록
+			subscribeOnMessage((payload) => {
+				// console.log('[Layout] 포그라운드 메시지 수신:', payload);
 
-			// Toast 알림 표시
-			const title = payload.notification?.title ?? payload.data?.title ?? '새 알림';
-			const body = payload.notification?.body ?? payload.data?.body ?? '';
+				// Toast 알림 표시
+				const title = payload.notification?.title ?? payload.data?.title ?? '새 알림';
+				const body = payload.notification?.body ?? payload.data?.body ?? '';
 
-			toast.success(title, {
-				description: body,
-				duration: 5000 // 5초 동안 표시
+				toast.success(title, {
+					description: body,
+					duration: 5000 // 5초 동안 표시
+				});
 			});
-		});
+		})();
+
+		// v1.0.0: 알림음 Audio 객체 초기화
+		try {
+			notificationAudio = new Audio('/sound/new-message.mp3');
+			notificationAudio.volume = 0.7; // 볼륨 70%
+			// console.log('🔊 [알림음] Audio 객체 초기화 완료');
+		} catch (error) {
+			console.error('🔇 [알림음] Audio 객체 초기화 실패:', error);
+		}
+
+		// v1.0.0: BroadcastChannel 초기화 (다중 탭 중복 방지)
+		try {
+			if ('BroadcastChannel' in window) {
+				broadcastChannel = new BroadcastChannel('sonub-notifications');
+
+				broadcastChannel.onmessage = (event) => {
+					if (event.data?.type === 'notification-sound-playing') {
+						// 다른 탭에서 알림음을 재생 중이면 이 탭에서는 재생 안 함
+						const timestamp = event.data.timestamp;
+						if (Date.now() - timestamp < 500) {
+							// console.log('🔇 [알림음] 다른 탭에서 재생 중 - 이 탭에서는 스킵');
+							lastSoundPlayedAt = timestamp;
+						}
+					}
+				};
+
+				// console.log('📡 [알림음] BroadcastChannel 초기화 완료');
+			}
+		} catch (error) {
+			console.warn('📡 [알림음] BroadcastChannel 초기화 실패 (브라우저 미지원):', error);
+		}
+
+		// Cleanup on unmount (동기 함수로 반환)
+		return () => {
+			if (broadcastChannel) {
+				broadcastChannel.close();
+				// console.log('📡 [알림음] BroadcastChannel 종료');
+			}
+		};
 	});
 </script>
 
@@ -80,20 +255,28 @@ original_path: src/routes/+layout.svelte
 </svelte:head>
 
 <div class="min-h-screen bg-gray-50">
-	<TopBar />
-	<div class="pt-20">
-		<div class="container mx-auto px-4 py-8">
-			<div class="flex gap-6">
-				<!-- 좌측 사이드바 (데스크톱만) -->
-				<LeftSidebar />
+	<!-- TopBar: 채팅방 페이지에서는 모바일에서 숨김 -->
+	<div class:hidden={isChatRoom} class="md:block">
+		<TopBar />
+	</div>
+
+	<div class="pt-20 md:pt-16" class:pt-0={isChatRoom} class:md:pt-0={isChatRoom}>
+		<div class="container mx-auto px-4 py-8" class:p-0={isChatRoom}>
+			<div class="flex gap-6" class:gap-0={isChatRoom}>
+				<!-- 좌측 사이드바 (데스크톱만, 채팅방에서는 숨김) -->
+				{#if !isChatRoom}
+					<LeftSidebar />
+				{/if}
 
 				<!-- 메인 콘텐츠 -->
 				<main class="min-w-0 flex-1">
 					{@render children()}
 				</main>
 
-				<!-- 우측 사이드바 (데스크톱만) -->
-				<RightSidebar />
+				<!-- 우측 사이드바 (데스크톱만, 채팅방에서는 숨김) -->
+				{#if !isChatRoom}
+					<RightSidebar />
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -112,10 +295,6 @@ original_path: src/routes/+layout.svelte
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

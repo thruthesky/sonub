@@ -173,14 +173,14 @@ function generateSpecFile(sourceFilePath: string): void {
 
   // 소스 파일이 존재하는지 확인
   if (!fs.existsSync(absoluteSourcePath)) {
-    console.log(`⚠️  소스 파일이 존재하지 않습니다: ${sourceFilePath}`);
+    // console.log(`⚠️  소스 파일이 존재하지 않습니다: ${sourceFilePath}`);
     return;
   }
 
   // 디렉토리인 경우 건너뛰기
   const stats = fs.statSync(absoluteSourcePath);
   if (stats.isDirectory()) {
-    console.log(`⚠️  디렉토리는 건너뜁니다: ${sourceFilePath}`);
+    // console.log(`⚠️  디렉토리는 건너뜁니다: ${sourceFilePath}`);
     return;
   }
 
@@ -197,7 +197,7 @@ function generateSpecFile(sourceFilePath: string): void {
     // 기존 스펙 파일이 디렉토리인 경우 건너뛰기
     const specStats = fs.statSync(specFilePath);
     if (specStats.isDirectory()) {
-      console.log(`⚠️  스펙 파일이 디렉토리입니다. 건너뜁니다: ${specFilePath}`);
+      // console.log(`⚠️  스펙 파일이 디렉토리입니다. 건너뜁니다: ${specFilePath}`);
       return;
     }
 
@@ -229,12 +229,12 @@ function generateSpecFile(sourceFilePath: string): void {
     );
 
     fs.writeFileSync(specFilePath, updatedSpec, 'utf-8');
-    console.log(`✅ 업데이트됨: ${specFilePath}`);
+    // console.log(`✅ 업데이트됨: ${specFilePath}`);
   } else {
     // 새 스펙 파일 생성
     const newSpec = generateSpecContent(sourceFilePath, sourceContent, ext);
     fs.writeFileSync(specFilePath, newSpec, 'utf-8');
-    console.log(`🆕 생성됨: ${specFilePath}`);
+    // console.log(`🆕 생성됨: ${specFilePath}`);
   }
 }
 
@@ -324,13 +324,13 @@ function getCodeLanguage(ext: string): string {
  * 메인 함수
  */
 function main(): void {
-  console.log('🚀 SED 스펙 파일 생성 시작...\n');
+// console.log('🚀 SED 스펙 파일 생성 시작...\n');
 
   sourceFiles.forEach((sourceFile) => {
     generateSpecFile(sourceFile);
   });
 
-  console.log('\n✨ SED 스펙 파일 생성 완료!');
+// console.log('\n✨ SED 스펙 파일 생성 완료!');
 }
 
 // 스크립트 실행

@@ -1,21 +1,15 @@
 ---
-name: en.json
-description: en 다국어 메시지
+title: en.json
+type: config
+path: messages/en.json
+status: active
 version: 1.0.0
-type: configuration
-category: i18n-message
-original_path: messages/en.json
+last_updated: 2025-11-15
 ---
-
-# en.json
 
 ## 개요
 
-**파일 경로**: `messages/en.json`
-**파일 타입**: configuration
-**카테고리**: i18n-message
-
-en 다국어 메시지
+이 파일은 `messages/en.json`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -279,22 +273,44 @@ en 다국어 메시지
 	"homeSectionRecentUsersDesc": "Newly joined members will appear here soon.",
 	"homeSectionRecentOpenChat": "Recent Open Chat Messages",
 	"homeSectionRecentOpenChatDesc": "Live open chat conversations will be streamed in this space.",
+	"homeSectionRecentOpenChatEmpty": "No recent open chat messages yet.",
+	"homeSectionRecentOpenChatLogin": "Sign in to see the latest messages from the open chats you joined.",
 	"homeSectionPopularOpenRoom": "Popular Open Chat Rooms",
 	"homeSectionPopularOpenRoomDesc": "We will highlight the most active open rooms for quick access.",
 	"homeSectionRecentPosts": "Latest Posts & Comments",
 	"homeSectionRecentPostsDesc": "A snapshot of the board’s newest posts and replies is coming here.",
 	"homeSectionRecentUsersCount": "{count} members just joined",
-	"sidebarDevHighlightAttachment": "8. File attachments",
-	"sidebarDevHighlightPassword": "9. Chat password protection",
-	"sidebarDevHighlightPostType": "10. Post-type messages"
+	"homeOpenChatNoMessage": "No messages yet.",
+	"sidebarDevHighlightAttachment": "9. File attachments",
+	"sidebarDevHighlightPassword": "10. Chat password protection",
+	"sidebarDevHighlightPostType": "11. Post-type messages",
+	"sidebarDevHighlightWrapUp": "8. Chat room wrap-up",
+	"chatNoMoreMessages": "No more messages.",
+	"chatRoomList": "My Chats",
+	"chatRoomListEmpty": "No chat rooms joined yet.",
+	"chatRoomListLoading": "Loading chat rooms...",
+	"chatPasswordSaving": "Saving...",
+	"chatPasswordEnableToggle": "Enable Password",
+	"chatPasswordInputPlaceholder": "Password (at least 4 characters)",
+	"chatPasswordConfirmPlaceholder": "Confirm Password",
+	"chatPasswordMinLengthError": "Password must be at least 4 characters",
+	"chatPasswordMismatchError": "Passwords do not match",
+	"chatPasswordSetSuccess": "Password has been set",
+	"chatPasswordRemoveSuccess": "Password has been removed",
+	"chatPasswordSaveFailure": "Failed to save password",
+	"chatPasswordSettings": "Password Settings",
+	"chatPasswordRequired": "This chat room requires a password.",
+	"chatPasswordEnterPrompt": "Enter password",
+	"chatPasswordVerifying": "Verifying... ({countdown} seconds left)",
+	"chatPasswordVerifySuccess": "Password verified",
+	"chatPasswordIncorrect": "Incorrect password",
+	"chatPasswordVerifyFailure": "Password verification failed",
+	"chatPasswordDelete": "Delete Password",
+	"chatPasswordDeleteSuccess": "Password has been deleted"
 }
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

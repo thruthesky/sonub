@@ -777,8 +777,8 @@ This document provides a detailed index of all specifications related to the son
 
 ### 📊 통계
 
-- **총 스펙 문서**: 460개
-- **마지막 업데이트**: 2025-11-14
+- **총 스펙 문서**: 459개
+- **마지막 업데이트**: 2025-11-15
 - **경로**: `./specs/repository/`
 - **인코딩**: UTF-8 (BOM 제외)
 - **언어**: 한국어 (주석 및 설명)
@@ -979,6 +979,303 @@ find specs/repository/src/routes -name "+page.svelte.md"
 find specs/repository/firebase/functions/src -name "*.ts.md"
 ```
 
+### 📋 전체 파일 목록
+
+다음은 `./specs/repository/` 폴더에 생성된 **모든 459개 스펙 파일**의 전체 목록입니다.
+각 파일은 원본 소스 코드의 전체 내용을 포함하고 있습니다.
+
+#### 1. 루트 설정 파일 (7개)
+
+- [components.json](./repository/components.json.md) - shadcn-svelte 컴포넌트 설정
+- [eslint.config.js](./repository/eslint.config.js.md) - ESLint 설정
+- [package.json](./repository/package.json.md) - 프로젝트 종속성 및 스크립트
+- [playwright.config.ts](./repository/playwright.config.ts.md) - Playwright E2E 테스트 설정
+- [svelte.config.js](./repository/svelte.config.js.md) - SvelteKit 설정
+- [tsconfig.json](./repository/tsconfig.json.md) - TypeScript 컴파일러 설정
+- [vite.config.ts](./repository/vite.config.ts.md) - Vite 빌드 도구 설정
+
+#### 2. E2E 테스트 (1개)
+
+- [e2e/demo.test.ts](./repository/e2e/demo.test.ts.md) - Playwright E2E 데모 테스트
+
+#### 3. Firebase Admin (2개)
+
+- [firebase/admin/package.json](./repository/firebase/admin/package.json.md) - Admin SDK 패키지 설정
+- [firebase/admin/send-a-message.ts](./repository/firebase/admin/send-a-message.ts.md) - FCM 푸시 알림 전송 스크립트
+
+#### 4. Firebase 설정 (3개)
+
+- [firebase/cors.json](./repository/firebase/cors.json.md) - Firebase Storage CORS 설정
+- [firebase/database.rules.json](./repository/firebase/database.rules.json.md) - Realtime Database 보안 규칙
+- [firebase/firebase.json](./repository/firebase/firebase.json.md) - Firebase 프로젝트 설정
+
+#### 5. Firebase Cloud Functions (34개)
+
+**핸들러 (4개)**
+- [firebase/functions/src/handlers/chat.handler.ts](./repository/firebase/functions/src/handlers/chat.handler.ts.md) - 채팅 메시지 생성 핸들러
+- [firebase/functions/src/handlers/chat.new-message-count.handler.ts](./repository/firebase/functions/src/handlers/chat.new-message-count.handler.ts.md) - 새 메시지 개수 집계 핸들러
+- [firebase/functions/src/handlers/chat.password-verification.handler.ts](./repository/firebase/functions/src/handlers/chat.password-verification.handler.ts.md) - 채팅방 비밀번호 검증 핸들러
+- [firebase/functions/src/handlers/user.handler.ts](./repository/firebase/functions/src/handlers/user.handler.ts.md) - 사용자 생성/수정 핸들러
+
+**유틸리티 (6개)**
+- [firebase/functions/src/utils/comment.utils.ts](./repository/firebase/functions/src/utils/comment.utils.ts.md) - 댓글 유틸리티
+- [firebase/functions/src/utils/fcm.utils.ts](./repository/firebase/functions/src/utils/fcm.utils.ts.md) - FCM 푸시 알림 유틸리티
+- [firebase/functions/src/utils/like.utils.ts](./repository/firebase/functions/src/utils/like.utils.ts.md) - 좋아요 유틸리티
+- [firebase/functions/src/utils/post.utils.ts](./repository/firebase/functions/src/utils/post.utils.ts.md) - 게시글 유틸리티
+- [firebase/functions/src/utils/report.utils.ts](./repository/firebase/functions/src/utils/report.utils.ts.md) - 신고 유틸리티
+
+**테스트 (9개)**
+- [firebase/functions/test/integration/onLike.test.ts](./repository/firebase/functions/test/integration/onLike.test.ts.md) - 좋아요 통합 테스트
+- [firebase/functions/test/integration/onPostCreate.test.ts](./repository/firebase/functions/test/integration/onPostCreate.test.ts.md) - 게시글 생성 통합 테스트
+- [firebase/functions/test/integration/test-setup.ts](./repository/firebase/functions/test/integration/test-setup.ts.md) - 테스트 환경 설정
+- [firebase/functions/test/unit/comment.handler.test.ts](./repository/firebase/functions/test/unit/comment.handler.test.ts.md) - 댓글 핸들러 단위 테스트
+- [firebase/functions/test/unit/like.utils.test.ts](./repository/firebase/functions/test/unit/like.utils.test.ts.md) - 좋아요 유틸리티 단위 테스트
+- [firebase/functions/test/unit/user.handler.test.ts](./repository/firebase/functions/test/unit/user.handler.test.ts.md) - 사용자 핸들러 단위 테스트
+
+**설정 및 기타 (6개)**
+- [firebase/functions/package.json](./repository/firebase/functions/package.json.md) - Cloud Functions 패키지 설정
+- [firebase/functions/scripts/generate-sample-posts.ts](./repository/firebase/functions/scripts/generate-sample-posts.ts.md) - 샘플 게시글 생성 스크립트
+- [firebase/functions/src/i18n.ts](./repository/firebase/functions/src/i18n.ts.md) - Cloud Functions i18n 설정
+- [firebase/functions/src/index.ts](./repository/firebase/functions/src/index.ts.md) - Cloud Functions 메인 인덱스
+- [firebase/functions/src/types/index.ts](./repository/firebase/functions/src/types/index.ts.md) - Cloud Functions 타입 정의
+- [firebase/functions/tsconfig.dev.json](./repository/firebase/functions/tsconfig.dev.json.md) - 개발 TypeScript 설정
+- [firebase/functions/tsconfig.json](./repository/firebase/functions/tsconfig.json.md) - Cloud Functions TypeScript 설정
+
+#### 6. 다국어 메시지 (4개)
+
+- [messages/en.json](./repository/messages/en.json.md) - 영어 메시지
+- [messages/ja.json](./repository/messages/ja.json.md) - 일본어 메시지
+- [messages/ko.json](./repository/messages/ko.json.md) - 한국어 메시지
+- [messages/zh.json](./repository/messages/zh.json.md) - 중국어 메시지
+
+#### 7. Shared 순수 함수 (2개)
+
+- [shared/chat.pure-functions.ts](./repository/shared/chat.pure-functions.ts.md) - 채팅 순수 함수 (클라이언트/서버 공유)
+- [shared/date.pure-functions.ts](./repository/shared/date.pure-functions.ts.md) - 날짜 순수 함수 (클라이언트/서버 공유)
+
+#### 8. Source - App 코어 (6개)
+
+- [src/app.css](./repository/src/app.css.md) - 전역 CSS 스타일
+- [src/app.d.ts](./repository/src/app.d.ts.md) - SvelteKit 앱 타입 정의
+- [src/app.html](./repository/src/app.html.md) - HTML 템플릿
+- [src/demo.spec.ts](./repository/src/demo.spec.ts.md) - 데모 단위 테스트
+- [src/hooks.server.ts](./repository/src/hooks.server.ts.md) - 서버 훅 (paraglide 미들웨어)
+
+#### 9. Source - Components (약 110개)
+
+**레이아웃 컴포넌트 (4개)**
+- [src/lib/components/DatabaseListView.svelte](./repository/src/lib/components/DatabaseListView.svelte.md) - RTDB 무한 스크롤 리스트뷰 (모든 목록 표시에 사용)
+- [src/lib/components/FcmPermissionGate.svelte](./repository/src/lib/components/FcmPermissionGate.svelte.md) - FCM 권한 게이트 컴포넌트
+- [src/lib/components/left-sidebar.svelte](./repository/src/lib/components/left-sidebar.svelte.md) - 좌측 사이드바 (메뉴, 언어 선택)
+- [src/lib/components/right-sidebar.svelte](./repository/src/lib/components/right-sidebar.svelte.md) - 우측 사이드바
+- [src/lib/components/top-bar.svelte](./repository/src/lib/components/top-bar.svelte.md) - 탑바 (로고, 네비게이션, 로그인)
+
+**관리자 컴포넌트 (1개)**
+- [src/lib/components/admin-menu.svelte](./repository/src/lib/components/admin-menu.svelte.md) - 관리자 메뉴
+
+**채팅 컴포넌트 (8개)**
+- [src/lib/components/chat/ChatCreateDialog.svelte](./repository/src/lib/components/chat/ChatCreateDialog.svelte.md) - 채팅방 생성 다이얼로그
+- [src/lib/components/chat/ChatFavoritesDialog.svelte](./repository/src/lib/components/chat/ChatFavoritesDialog.svelte.md) - 즐겨찾기 채팅방 다이얼로그
+- [src/lib/components/chat/ChatInvitationList.svelte](./repository/src/lib/components/chat/ChatInvitationList.svelte.md) - 채팅 초대 목록
+- [src/lib/components/chat/ChatListItem.svelte](./repository/src/lib/components/chat/ChatListItem.svelte.md) - 채팅 목록 아이템
+- [src/lib/components/chat/ChatListMenu.svelte](./repository/src/lib/components/chat/ChatListMenu.svelte.md) - 채팅 목록 메뉴
+- [src/lib/components/chat/room-password-prompt.svelte](./repository/src/lib/components/chat/room-password-prompt.svelte.md) - 채팅방 비밀번호 입력 프롬프트
+- [src/lib/components/chat/room-password-setting.svelte](./repository/src/lib/components/chat/room-password-setting.svelte.md) - 채팅방 비밀번호 설정
+
+**개발자 컴포넌트 (1개)**
+- [src/lib/components/dev/dev-icon.svelte](./repository/src/lib/components/dev/dev-icon.svelte.md) - 개발자 아이콘
+
+**사용자 컴포넌트 (4개)**
+- [src/lib/components/under-construction.svelte](./repository/src/lib/components/under-construction.svelte.md) - 공사중 페이지
+- [src/lib/components/user-login.svelte](./repository/src/lib/components/user-login.svelte.md) - 로그인 컴포넌트
+- [src/lib/components/user/UserSearchDialog.svelte](./repository/src/lib/components/user/UserSearchDialog.svelte.md) - 사용자 검색 다이얼로그
+- [src/lib/components/user/avatar.svelte](./repository/src/lib/components/user/avatar.svelte.md) - 사용자 아바타
+
+**UI 컴포넌트 (45개 - shadcn-svelte 기반)**
+
+Alert 컴포넌트 (4개):
+- [src/lib/components/ui/alert/alert-description.svelte](./repository/src/lib/components/ui/alert/alert-description.svelte.md)
+- [src/lib/components/ui/alert/alert-title.svelte](./repository/src/lib/components/ui/alert/alert-title.svelte.md)
+- [src/lib/components/ui/alert/alert.svelte](./repository/src/lib/components/ui/alert/alert.svelte.md)
+- [src/lib/components/ui/alert/index.ts](./repository/src/lib/components/ui/alert/index.ts.md)
+
+Button 컴포넌트 (2개):
+- [src/lib/components/ui/button/button.svelte](./repository/src/lib/components/ui/button/button.svelte.md)
+- [src/lib/components/ui/button/index.ts](./repository/src/lib/components/ui/button/index.ts.md)
+
+Card 컴포넌트 (7개):
+- [src/lib/components/ui/card/card-content.svelte](./repository/src/lib/components/ui/card/card-content.svelte.md)
+- [src/lib/components/ui/card/card-description.svelte](./repository/src/lib/components/ui/card/card-description.svelte.md)
+- [src/lib/components/ui/card/card-footer.svelte](./repository/src/lib/components/ui/card/card-footer.svelte.md)
+- [src/lib/components/ui/card/card-header.svelte](./repository/src/lib/components/ui/card/card-header.svelte.md)
+- [src/lib/components/ui/card/card-title.svelte](./repository/src/lib/components/ui/card/card-title.svelte.md)
+- [src/lib/components/ui/card/card.svelte](./repository/src/lib/components/ui/card/card.svelte.md)
+- [src/lib/components/ui/card/index.ts](./repository/src/lib/components/ui/card/index.ts.md)
+
+Dialog 컴포넌트 (8개):
+- [src/lib/components/ui/dialog/context.ts](./repository/src/lib/components/ui/dialog/context.ts.md)
+- [src/lib/components/ui/dialog/dialog-content.svelte](./repository/src/lib/components/ui/dialog/dialog-content.svelte.md)
+- [src/lib/components/ui/dialog/dialog-description.svelte](./repository/src/lib/components/ui/dialog/dialog-description.svelte.md)
+- [src/lib/components/ui/dialog/dialog-footer.svelte](./repository/src/lib/components/ui/dialog/dialog-footer.svelte.md)
+- [src/lib/components/ui/dialog/dialog-header.svelte](./repository/src/lib/components/ui/dialog/dialog-header.svelte.md)
+- [src/lib/components/ui/dialog/dialog-title.svelte](./repository/src/lib/components/ui/dialog/dialog-title.svelte.md)
+- [src/lib/components/ui/dialog/dialog.svelte](./repository/src/lib/components/ui/dialog/dialog.svelte.md)
+- [src/lib/components/ui/dialog/index.ts](./repository/src/lib/components/ui/dialog/index.ts.md)
+
+Dropdown Menu 컴포넌트 (15개):
+- [src/lib/components/ui/dropdown-menu/dropdown-menu-checkbox-group.svelte](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-checkbox-group.svelte.md)
+- [src/lib/components/ui/dropdown-menu/dropdown-menu-checkbox-item.svelte](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-checkbox-item.svelte.md)
+- [src/lib/components/ui/dropdown-menu/dropdown-menu-content.svelte](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-content.svelte.md)
+- [src/lib/components/ui/dropdown-menu/dropdown-menu-group-heading.svelte](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-group-heading.svelte.md)
+- [src/lib/components/ui/dropdown-menu/dropdown-menu-group.svelte](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-group.svelte.md)
+- [src/lib/components/ui/dropdown-menu/dropdown-menu-item.svelte](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-item.svelte.md)
+- [src/lib/components/ui/dropdown-menu/dropdown-menu-label.svelte](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-label.svelte.md)
+- [src/lib/components/ui/dropdown-menu/dropdown-menu-radio-group.svelte](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-radio-group.svelte.md)
+- [src/lib/components/ui/dropdown-menu/dropdown-menu-radio-item.svelte](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-radio-item.svelte.md)
+- [src/lib/components/ui/dropdown-menu/dropdown-menu-separator.svelte](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-separator.svelte.md)
+- [src/lib/components/ui/dropdown-menu/dropdown-menu-shortcut.svelte](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-shortcut.svelte.md)
+- [src/lib/components/ui/dropdown-menu/dropdown-menu-sub-content.svelte](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-sub-content.svelte.md)
+- [src/lib/components/ui/dropdown-menu/dropdown-menu-sub-trigger.svelte](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-sub-trigger.svelte.md)
+- [src/lib/components/ui/dropdown-menu/dropdown-menu-trigger.svelte](./repository/src/lib/components/ui/dropdown-menu/dropdown-menu-trigger.svelte.md)
+- [src/lib/components/ui/dropdown-menu/index.ts](./repository/src/lib/components/ui/dropdown-menu/index.ts.md)
+
+Input 컴포넌트 (2개):
+- [src/lib/components/ui/input/index.ts](./repository/src/lib/components/ui/input/index.ts.md)
+- [src/lib/components/ui/input/input.svelte](./repository/src/lib/components/ui/input/input.svelte.md)
+
+Label 컴포넌트 (2개):
+- [src/lib/components/ui/label/index.ts](./repository/src/lib/components/ui/label/index.ts.md)
+- [src/lib/components/ui/label/label.svelte](./repository/src/lib/components/ui/label/label.svelte.md)
+
+Switch 컴포넌트 (2개):
+- [src/lib/components/ui/switch/index.ts](./repository/src/lib/components/ui/switch/index.ts.md)
+- [src/lib/components/ui/switch/switch.svelte](./repository/src/lib/components/ui/switch/switch.svelte.md)
+
+#### 10. Source - Functions (3개)
+
+- [src/lib/fcm.ts](./repository/src/lib/fcm.ts.md) - FCM (Firebase Cloud Messaging) 클라이언트 초기화 및 토큰 관리
+- [src/lib/firebase.ts](./repository/src/lib/firebase.ts.md) - Firebase 초기화 및 서비스 인스턴스
+- [src/lib/functions/chat.functions.ts](./repository/src/lib/functions/chat.functions.ts.md) - 채팅 순수 함수
+- [src/lib/functions/date.functions.ts](./repository/src/lib/functions/date.functions.ts.md) - 날짜 순수 함수
+- [src/lib/functions/storage.functions.ts](./repository/src/lib/functions/storage.functions.ts.md) - Firebase Storage 업로드 함수
+- [src/lib/index.ts](./repository/src/lib/index.ts.md) - 라이브러리 메인 인덱스
+- [src/lib/utils.ts](./repository/src/lib/utils.ts.md) - 공통 유틸리티 (cn 함수 등)
+
+#### 11. Source - Paraglide (자동 생성된 다국어 메시지 파일, 약 250개)
+
+**메인 파일 (6개)**
+- [src/lib/paraglide/messages.js](./repository/src/lib/paraglide/messages.js.md) - 메시지 메인 인덱스
+- [src/lib/paraglide/messages/_index.js](./repository/src/lib/paraglide/messages/_index.js.md) - 메시지 인덱스
+- [src/lib/paraglide/messages/en.js](./repository/src/lib/paraglide/messages/en.js.md) - 영어 메시지
+- [src/lib/paraglide/messages/ja.js](./repository/src/lib/paraglide/messages/ja.js.md) - 일본어 메시지
+- [src/lib/paraglide/messages/ko.js](./repository/src/lib/paraglide/messages/ko.js.md) - 한국어 메시지
+- [src/lib/paraglide/messages/zh.js](./repository/src/lib/paraglide/messages/zh.js.md) - 중국어 메시지
+- [src/lib/paraglide/registry.js](./repository/src/lib/paraglide/registry.js.md) - Paraglide 레지스트리
+- [src/lib/paraglide/runtime.js](./repository/src/lib/paraglide/runtime.js.md) - Paraglide 런타임
+- [src/lib/paraglide/server.js](./repository/src/lib/paraglide/server.js.md) - Paraglide 서버 유틸리티
+
+**개별 메시지 파일 (약 240개 - src/paraglide/messages/)**
+- 모든 다국어 메시지 키별 자동 생성 파일 (예: `about.js`, `helloworld1.js`, `authsignin2.js` 등)
+- 전체 목록은 `find specs/repository/src/paraglide/messages -name "*.js.md"` 명령으로 확인 가능
+
+#### 12. Source - Routes (31개)
+
+**메인 레이아웃 (2개)**
+- [src/routes/+layout.svelte](./repository/src/routes/+layout.svelte.md) - 전역 레이아웃 (3컬럼 구조)
+- [src/routes/+page.svelte](./repository/src/routes/+page.svelte.md) - 홈페이지
+
+**관리자 페이지 (6개)**
+- [src/routes/admin/+layout.svelte](./repository/src/routes/admin/+layout.svelte.md) - 관리자 레이아웃
+- [src/routes/admin/dashboard/+page.svelte](./repository/src/routes/admin/dashboard/+page.svelte.md) - 관리자 대시보드
+- [src/routes/admin/reports/+page.svelte](./repository/src/routes/admin/reports/+page.svelte.md) - 신고 관리 페이지
+- [src/routes/admin/test/+page.svelte](./repository/src/routes/admin/test/+page.svelte.md) - 테스트 관리 페이지
+- [src/routes/admin/test/create-test-data/+page.svelte](./repository/src/routes/admin/test/create-test-data/+page.svelte.md) - 테스트 데이터 생성 페이지
+- [src/routes/admin/users/+page.svelte](./repository/src/routes/admin/users/+page.svelte.md) - 사용자 관리 페이지
+
+**채팅 페이지 (5개)**
+- [src/routes/chat/group-chat-list/+page.svelte](./repository/src/routes/chat/group-chat-list/+page.svelte.md) - 그룹 채팅 목록
+- [src/routes/chat/list/+page.svelte](./repository/src/routes/chat/list/+page.svelte.md) - 전체 채팅 목록
+- [src/routes/chat/open-chat-list/+page.svelte](./repository/src/routes/chat/open-chat-list/+page.svelte.md) - 오픈 채팅 목록
+- [src/routes/chat/room/+layout.svelte](./repository/src/routes/chat/room/+layout.svelte.md) - 채팅방 레이아웃
+- [src/routes/chat/room/+page.svelte](./repository/src/routes/chat/room/+page.svelte.md) - 채팅방 페이지
+- [src/routes/chat/room/ChatRoomListItem.svelte](./repository/src/routes/chat/room/ChatRoomListItem.svelte.md) - 채팅방 메시지 아이템
+
+**데모 페이지 (2개)**
+- [src/routes/demo/+page.svelte](./repository/src/routes/demo/+page.svelte.md) - 데모 페이지
+- [src/routes/demo/paraglide/+page.svelte](./repository/src/routes/demo/paraglide/+page.svelte.md) - Paraglide 데모 페이지
+
+**개발자 페이지 (2개)**
+- [src/routes/dev/plan/+page.svelte](./repository/src/routes/dev/plan/+page.svelte.md) - 개발 계획 페이지
+- [src/routes/dev/test/database-list-view/+page.svelte](./repository/src/routes/dev/test/database-list-view/+page.svelte.md) - DatabaseListView 테스트 페이지
+
+**FCM 테스트 (1개)**
+- [src/routes/fcm-test/+page.svelte](./repository/src/routes/fcm-test/+page.svelte.md) - FCM 푸시 알림 테스트 페이지
+
+**메뉴 페이지 (1개)**
+- [src/routes/menu/+page.svelte](./repository/src/routes/menu/+page.svelte.md) - 메뉴 페이지
+
+**마이 페이지 (3개)**
+- [src/routes/my/+layout.svelte](./repository/src/routes/my/+layout.svelte.md) - 마이 레이아웃
+- [src/routes/my/profile/+page.svelte](./repository/src/routes/my/profile/+page.svelte.md) - 내 프로필 수정 페이지
+- [src/routes/my/reports/+page.svelte](./repository/src/routes/my/reports/+page.svelte.md) - 내 신고 목록 페이지
+
+**게시글 페이지 (1개)**
+- [src/routes/post/list/+page.svelte](./repository/src/routes/post/list/+page.svelte.md) - 게시글 목록
+
+**설정 페이지 (1개)**
+- [src/routes/settings/fcm/permission/+page.svelte](./repository/src/routes/settings/fcm/permission/+page.svelte.md) - FCM 권한 설정 페이지
+
+**통계 페이지 (1개)**
+- [src/routes/stats/+page.svelte](./repository/src/routes/stats/+page.svelte.md) - 통계 페이지
+
+**사용자 페이지 (3개)**
+- [src/routes/user/list/+page.svelte](./repository/src/routes/user/list/+page.svelte.md) - 사용자 목록
+- [src/routes/user/login/+page.svelte](./repository/src/routes/user/login/+page.svelte.md) - 로그인 페이지
+- [src/routes/user/profile/+page.svelte](./repository/src/routes/user/profile/+page.svelte.md) - 사용자 프로필 페이지
+
+**테스트 (1개)**
+- [src/routes/page.svelte.spec.ts](./repository/src/routes/page.svelte.spec.ts.md) - 페이지 단위 테스트
+
+#### 13. Source - Stores (3개)
+
+- [src/lib/stores/auth.svelte.ts](./repository/src/lib/stores/auth.svelte.ts.md) - 인증 상태 관리 스토어
+- [src/lib/stores/database.svelte.ts](./repository/src/lib/stores/database.svelte.ts.md) - Firebase RTDB 유틸리티 스토어
+- [src/lib/stores/user-profile.svelte.ts](./repository/src/lib/stores/user-profile.svelte.ts.md) - 사용자 프로필 중앙 캐시 스토어
+
+#### 14. Source - Utils (4개)
+
+- [src/lib/utils/admin-service.ts](./repository/src/lib/utils/admin-service.ts.md) - 관리자 서비스
+- [src/lib/utils/auth-helpers.ts](./repository/src/lib/utils/auth-helpers.ts.md) - 인증 헬퍼 함수
+- [src/lib/utils/test-user-generator.ts](./repository/src/lib/utils/test-user-generator.ts.md) - 테스트 사용자 생성 유틸리티
+- [src/lib/version.ts](./repository/src/lib/version.ts.md) - 빌드 버전 정보
+
+#### 15. Source - Types (1개)
+
+- [src/lib/types/chat.types.ts](./repository/src/lib/types/chat.types.ts.md) - 채팅 타입 정의
+
+#### 16. Static 파일 (1개)
+
+- [static/firebase-messaging-sw.js](./repository/static/firebase-messaging-sw.js.md) - Firebase Cloud Messaging 서비스 워커
+
+#### 17. Storybook (6개)
+
+- [src/stories/Button.stories.svelte](./repository/src/stories/Button.stories.svelte.md) - Button 스토리
+- [src/stories/Button.svelte](./repository/src/stories/Button.svelte.md) - Button 컴포넌트
+- [src/stories/Header.stories.svelte](./repository/src/stories/Header.stories.svelte.md) - Header 스토리
+- [src/stories/Header.svelte](./repository/src/stories/Header.svelte.md) - Header 컴포넌트
+- [src/stories/Page.stories.svelte](./repository/src/stories/Page.stories.svelte.md) - Page 스토리
+- [src/stories/Page.svelte](./repository/src/stories/Page.svelte.md) - Page 컴포넌트
+- [src/stories/button.css](./repository/src/stories/button.css.md) - Button CSS
+- [src/stories/header.css](./repository/src/stories/header.css.md) - Header CSS
+- [src/stories/page.css](./repository/src/stories/page.css.md) - Page CSS
+
+### 💡 파일 목록 활용 팁
+
+1. **특정 파일 빠르게 찾기**: Ctrl+F 또는 Cmd+F로 파일명 검색
+2. **카테고리별 탐색**: 위 목록의 카테고리를 참고하여 관련 파일 그룹 확인
+3. **링크 클릭**: 각 파일명을 클릭하면 해당 스펙 문서로 이동
+4. **AI 활용**: 전체 목록을 AI에게 제공하여 프로젝트 구조 이해 및 자동 생성 지원
+
 ---
 
 ## Firebase Functions
@@ -1095,6 +1392,40 @@ find specs/repository/firebase/functions/src -name "*.ts.md"
   - BroadcastChannel로 다중 탭 중복 재생 방지
   - 500ms 디바운스로 빠른 연속 재생 방지
   - rtdbStore()를 통한 실시간 구독 및 Svelte 5 runes 기반 반응형 UI
+- **구현 완료**: ✅ 2025-11-14
+
+### Sonub Chat Room Password
+- **File**: [sonub-chat-room-password.md](./sonub-chat-room-password.md)
+- **Title**: 채팅방 비밀번호 보호 기능
+- **Description**: 그룹/오픈 채팅방에 비밀번호를 설정하여 입장을 제한하는 기능
+- **Version**: 1.0.0
+- **Step**: 53
+- **Priority**: **
+- **Dependencies**:
+  - sonub-chat-overview.md
+  - sonub-setup-firebase.md
+  - sonub-firebase-database-structure.md
+  - sonub-firebase-realtime-database.md
+- **Tags**: chat, password, security, firebase-rtdb, cloud-functions, svelte5, authentication
+- **Files**:
+  - `firebase/functions/src/handlers/chat.password-verification.handler.ts` - 비밀번호 검증 Cloud Function
+  - `firebase/database.rules.json` - Firebase Security Rules (password 보호 로직)
+  - `src/lib/components/chat/room-password-setting.svelte` - 비밀번호 설정 UI (Owner 전용)
+  - `src/lib/components/chat/room-password-prompt.svelte` - 비밀번호 입력 모달
+  - `src/routes/chat/room/+page.svelte` - 채팅방 입장 로직 수정
+  - `messages/*.json` - 다국어 지원 (ko, en, ja, zh)
+- **주요 기능**:
+  - 채팅방 Owner만 비밀번호 설정/해제 가능
+  - Plain text 비밀번호 저장 (최소 4자)
+  - `/chat-room-passwords/{roomId}/password` 경로에 비밀번호 저장
+  - `/chat-rooms/{roomId}/password: true` 플래그로 비밀번호 활성화
+  - Cloud Functions를 통한 서버 측 비밀번호 검증
+  - `/chat-room-passwords/{roomId}/try/{uid}`에 비밀번호 입력 시 검증 트리거
+  - 검증 성공 시 `/chat-rooms/{roomId}/members/{uid}: true` 자동 추가
+  - 10초 폴링으로 검증 결과 실시간 확인
+  - Firebase Security Rules로 비밀번호 있는 방 입장 차단 (Owner 제외)
+  - shadcn-svelte Dialog, Input, Switch 컴포넌트 활용
+  - 다국어 지원 (chatPasswordSettings, chatPasswordVerifying 등)
 - **구현 완료**: ✅ 2025-11-14
 
 ## Deployment

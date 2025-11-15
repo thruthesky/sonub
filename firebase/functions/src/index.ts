@@ -40,7 +40,7 @@ import {
   handleChatRoomPinDelete,
   handleChatInvitationCreate,
 } from "./handlers/chat.handler";
-import { handleNewMessageCountWritten } from "./handlers/chat.new-message.handler";
+import { handleNewMessageCountWritten } from "./handlers/chat.new-message-count.handler";
 
 // 상수 정의
 const FIREBASE_REGION = "asia-southeast1";
@@ -660,3 +660,17 @@ export const onNewMessageCountWrite = onValueWritten(
     return await handleNewMessageCountWritten(uid, roomId, beforeValue, afterValue);
   }
 );
+
+/**
+ * 채팅방 비밀번호 검증 트리거
+ *
+ * 트리거 경로: /chat-room-passwords/{roomId}/try/{uid}
+ * 트리거 이벤트: onValueWritten
+ *
+ * 수행 작업:
+ * 1. try 경로에 기록된 비밀번호 읽기
+ * 2. 실제 비밀번호와 비교 (Plain Text)
+ * 3. 일치 시 members에 추가, 불일치 시 에러 로그
+ * 4. try 경로 즉시 삭제 (보안)
+ */
+export { onPasswordTry } from "./handlers/chat.password-verification.handler";

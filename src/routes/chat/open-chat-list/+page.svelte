@@ -44,7 +44,7 @@
 	 */
 	function handleRoomCreated(event: CustomEvent<{ roomId: string }>) {
 		const { roomId } = event.detail;
-		console.log('✅ 채팅방 생성 완료, 이동:', roomId);
+		// console.log('✅ 채팅방 생성 완료, 이동:', roomId);
 		void goto(`/chat/room?roomId=${roomId}`);
 	}
 
@@ -52,7 +52,7 @@
 	 * 친구 찾기 메뉴 클릭 핸들러
 	 */
 	function handleFindFriends() {
-		console.log('친구 찾기 메뉴 클릭됨');
+		// console.log('친구 찾기 메뉴 클릭됨');
 		// TODO: 친구 찾기 기능 구현
 	}
 
@@ -84,7 +84,7 @@
 	 * 검색 메뉴 클릭 핸들러
 	 */
 	function handleSearch() {
-		console.log('검색 메뉴 클릭됨');
+		// console.log('검색 메뉴 클릭됨');
 		// TODO: 검색 기능 구현
 	}
 
@@ -124,7 +124,7 @@
 
 		try {
 			const isPinned = await togglePinChatRoom(rtdb, roomId, uid, roomType);
-			console.log(`✅ 채팅방 핀 ${isPinned ? '설정' : '해제'} 완료:`, roomId);
+			// console.log(`✅ 채팅방 핀 ${isPinned ? '설정' : '해제'} 완료:`, roomId);
 		} catch (error) {
 			console.error('채팅방 핀 토글 실패:', error);
 			alert('이 기능은 참여한 채팅방에서만 사용할 수 있습니다');
@@ -222,7 +222,9 @@
 					threshold: 320,
 					reverse: true
 				}}
-				{console.log('🔍 [Open Chat List Debug] DatabaseListView props:', dbListViewProps)}
+				<!--
+					// console.log('🔍 [Open Chat List Debug] DatabaseListView props:', dbListViewProps)
+				-->
 				<DatabaseListView
 					path={CHAT_ROOMS_PATH}
 					pageSize={PAGE_SIZE}
@@ -231,24 +233,28 @@
 					reverse={true}
 				>
 				{#snippet item(itemData, index)}
-					{console.log('🔍 [Open Chat List Debug] Item received:', {
-						index,
-						key: itemData.key,
-						hasData: !!itemData.data,
-						data: itemData.data
-					})}
+					<!--
+						// console.log('🔍 [Open Chat List Debug] Item received:', {
+						// 	index,
+						// 	key: itemData.key,
+						// 	hasData: !!itemData.data,
+						// 	data: itemData.data
+						// })
+					-->
 					{@const room = (itemData.data ?? {}) as ChatRoomData}
 					{@const roomId = (itemData.key ?? '') as string}
 					{@const roomType = (room.type ?? 'open').toString()}
 					{@const isOpen = room.open === true}
-					{console.log('🔍 [Open Chat List Debug] Room data:', {
-						roomId,
-						roomType,
-						isOpen,
-						openListOrder: room.openListOrder,
-						name: room.name,
-						allFields: Object.keys(room)
-					})}
+					<!--
+						// console.log('🔍 [Open Chat List Debug] Room data:', {
+						// 	roomId,
+						// 	roomType,
+						// 	isOpen,
+						// 	openListOrder: room.openListOrder,
+						// 	name: room.name,
+						// 	allFields: Object.keys(room)
+						// })
+					-->
 					{@const lastMessage =
 						typeof room.lastMessageText === 'string' && room.lastMessageText.trim()
 							? room.lastMessageText

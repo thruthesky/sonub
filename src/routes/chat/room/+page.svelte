@@ -41,6 +41,14 @@
 	import { Button } from '$lib/components/ui/button';
 	import ChatFavoritesDialog from '$lib/components/chat/ChatFavoritesDialog.svelte';
 	import UserSearchDialog from '$lib/components/user/UserSearchDialog.svelte';
+	import RoomPasswordSetting from '$lib/components/chat/room-password-setting.svelte';
+	import RoomPasswordPrompt from '$lib/components/chat/room-password-prompt.svelte';
+	import {
+		Dialog,
+		DialogContent,
+		DialogHeader,
+		DialogTitle
+	} from '$lib/components/ui/dialog';
 
 	// GET 파라미터 추출
 	const uidParam = $derived.by(() => $page.url.searchParams.get('uid') ?? '');
@@ -70,21 +78,63 @@
 		}
 	});
 
-	// 채팅방 입장 처리
-	// 1:1 채팅과 그룹/오픈 채팅은 서로 다른 방식으로 처리합니다.
+	/**
+	 * 채팅방 입장 처리
+	 *
+	 * 1:1 채팅: 즉시 입장 (비밀번호 없음)
+	 * 그룹/오픈 채팅:
+	 * - 비밀번호 필요 여부 확인 (roomPasswordEnabled && !isRoomMember && !isRoomOwner)
+	 * - 비밀번호 필요: passwordPromptOpen = true
+	 * - 비밀번호 불필요: joinChatRoom 호출
+	 */
 	$effect(() => {
-		if (activeRoomId && authStore.user?.uid && rtdb) {
-			if (isSingleChat) {
-				// 1:1 채팅: chat-joins 노드에 최소 정보만 업데이트
-				// Cloud Functions(onChatJoinCreate)가 자동으로 필요한 필드들을 추가합니다.
-				enterSingleChatRoom(rtdb, activeRoomId, authStore.user.uid);
-			} else {
-				// 그룹/오픈 채팅: members 필드만 설정
-				// Cloud Functions가 자동으로 memberCount를 업데이트하고 chat-joins에 상세 정보를 추가합니다.
-				joinChatRoom(rtdb, activeRoomId, authStore.user.uid);
+		if (!activeRoomId || !authStore.user?.uid || !rtdb) return;
+
+		if (isSingleChat) {
+			// 1:1 채팅: chat-joins 노드에 최소 정보만 업데이트
+			// Cloud Functions(onChatJoinCreate)가 자동으로 필요한 필드들을 추가합니다.
+			enterSingleChatRoom(rtdb, activeRoomId, authStore.user.uid);
+		} else {
+			// 그룹/오픈 채팅: 비밀번호 확인 후 입장
+			// 채팅방 정보 로드 완료 확인 (roomOwner가 null이 아니면 로드 완료)
+			if (roomOwner !== null) {
+				const needsPassword = roomPasswordEnabled && !isRoomMember && !isRoomOwner;
+
+				if (needsPassword) {
+					// 비밀번호 필요: 모달 표시
+					passwordPromptOpen = true;
+				} else if (isRoomMember || isRoomOwner) {
+					// 이미 members이거나 owner인 경우: 입장 (chat-joins 업데이트)
+					joinChatRoom(rtdb, activeRoomId, authStore.user.uid);
+				} else {
+					// 비밀번호 불필요하지만 members도 아닌 경우: 자동으로 members에 추가
+					joinChatRoom(rtdb, activeRoomId, authStore.user.uid);
+				}
 			}
 		}
 	});
+
+	/**
+	 * 비밀번호 입력 성공 핸들러
+	 *
+	 * room-password-prompt.svelte에서 invalidate()를 호출하므로
+	 * isRoomMember가 true로 변경되어 위의 $effect가 다시 실행되고
+	 * joinChatRoom이 자동으로 호출됩니다.
+	 */
+	function handlePasswordSuccess() {
+		passwordPromptOpen = false;
+		// console.log('✅ 비밀번호 검증 성공 - 채팅방 입장');
+	}
+
+	/**
+	 * 비밀번호 입력 취소 핸들러
+	 *
+	 * 채팅 목록으로 이동
+	 */
+	function handlePasswordCancel() {
+		passwordPromptOpen = false;
+		goto('/chat/list');
+	}
 
 	const targetProfile = $derived(userProfileStore.getCachedProfile(uidParam));
 	const targetProfileLoading = $derived(userProfileStore.isLoading(uidParam));
@@ -119,6 +169,79 @@
 
 	// UserSearchDialog 상태 (친구 초대용)
 	let inviteDialogOpen = $state(false);
+
+	// 비밀번호 설정 Dialog 상태
+	let passwordSettingDialogOpen = $state(false);
+
+	// 비밀번호 입력 Prompt 모달 상태
+	let passwordPromptOpen = $state(false);
+
+	// 채팅방 정보 구독 (owner, password 등)
+	let roomOwner = $state<string | null>(null);
+	let roomPasswordEnabled = $state(false);
+	let roomPasswordValue = $state<string>('');
+	let isRoomMember = $state(false); // 현재 사용자가 members인지 여부
+
+	/**
+	 * 채팅방 정보 구독 (그룹/오픈 채팅방만)
+	 *
+	 * 구독 경로:
+	 * - /chat-rooms/{roomId}/owner: 채팅방 소유자 UID
+	 * - /chat-rooms/{roomId}/password: 비밀번호 활성화 여부 (true/false)
+	 * - /chat-rooms/{roomId}/members/{uid}: 현재 사용자의 멤버 상태
+	 * - /chat-room-passwords/{roomId}/password: 실제 비밀번호 (owner만 읽기 가능)
+	 */
+	$effect(() => {
+		if (!activeRoomId || !authStore.user?.uid || !rtdb || isSingleChat) {
+			roomOwner = null;
+			roomPasswordEnabled = false;
+			roomPasswordValue = '';
+			isRoomMember = false;
+			return;
+		}
+
+		// 채팅방 owner 구독
+		const ownerRef = ref(rtdb, `chat-rooms/${activeRoomId}/owner`);
+		const unsubscribeOwner = onValue(ownerRef, (snapshot) => {
+			roomOwner = snapshot.val() ?? null;
+		});
+
+		// 채팅방 password 플래그 구독
+		const passwordFlagRef = ref(rtdb, `chat-rooms/${activeRoomId}/password`);
+		const unsubscribePasswordFlag = onValue(passwordFlagRef, (snapshot) => {
+			roomPasswordEnabled = snapshot.val() === true;
+		});
+
+		// 현재 사용자의 members 상태 구독
+		// 중요: members/{uid} 필드는 true/false 값을 가질 수 있습니다
+		// - true: 멤버이며 알림 구독
+		// - false: 멤버이지만 알림 미구독
+		// - 필드 없음: 멤버가 아님
+		// 따라서 val() === true가 아닌 exists()로 필드 존재 여부만 확인해야 합니다
+		const memberRef = ref(rtdb, `chat-rooms/${activeRoomId}/members/${authStore.user.uid}`);
+		const unsubscribeMember = onValue(memberRef, (snapshot) => {
+			isRoomMember = snapshot.exists(); // 필드 존재 여부만 확인 (true/false 모두 멤버임)
+		});
+
+		// 실제 비밀번호 구독 (owner만 읽기 가능)
+		const passwordValueRef = ref(rtdb, `chat-room-passwords/${activeRoomId}/password`);
+		const unsubscribePasswordValue = onValue(passwordValueRef, (snapshot) => {
+			roomPasswordValue = snapshot.val() ?? '';
+		});
+
+		return () => {
+			unsubscribeOwner();
+			unsubscribePasswordFlag();
+			unsubscribeMember();
+			unsubscribePasswordValue();
+		};
+	});
+
+	// 현재 사용자가 채팅방 owner인지 확인
+	const isRoomOwner = $derived.by(() => {
+		if (!roomOwner || !authStore.user?.uid) return false;
+		return roomOwner === authStore.user.uid;
+	});
 
 	// 핀 상태 관리
 	let isPinned = $state(false);
@@ -243,7 +366,7 @@
 
 			// 1. 이미 업로드된 파일 URL 수집
 			if (uploadingFiles.length > 0) {
-				console.log(`📤 ${uploadingFiles.length}개 파일 정보 수집`);
+				// console.log(`📤 ${uploadingFiles.length}개 파일 정보 수집`);
 
 				// 업로드 완료되지 않은 파일이 있는지 확인
 				const incompleteFiles = uploadingFiles.filter((fs) => !fs.completed && !fs.error);
@@ -268,7 +391,7 @@
 					}
 				});
 
-				console.log(`✅ ${Object.keys(urls).length}개 파일 URL 수집 완료`);
+				// console.log(`✅ ${Object.keys(urls).length}개 파일 URL 수집 완료`);
 			}
 
 			// 2. 메시지 전송
@@ -319,7 +442,7 @@
 				requestAnimationFrame(() => {
 					if (composerInputRef) {
 						composerInputRef.focus();
-						console.log('✅ 채팅 입력 창에 포커스 추가됨');
+						// console.log('✅ 채팅 입력 창에 포커스 추가됨');
 					}
 				});
 			}
@@ -370,7 +493,7 @@
 		try {
 			const url = window.location.href;
 			await navigator.clipboard.writeText(url);
-			console.log('URL 복사됨:', url);
+			// console.log('URL 복사됨:', url);
 			// TODO: 토스트 메시지로 알림
 		} catch (error) {
 			console.error('URL 복사 실패:', error);
@@ -379,7 +502,7 @@
 
 	// 멤버 목록
 	function handleMemberList() {
-		console.log('멤버 목록 클릭');
+		// console.log('멤버 목록 클릭');
 		// TODO: 멤버 목록 다이얼로그 표시
 	}
 
@@ -399,7 +522,7 @@
 
 		try {
 			await leaveChatRoom(rtdb, activeRoomId, authStore.user.uid);
-			console.log('채팅방 탈퇴 완료');
+			// console.log('채팅방 탈퇴 완료');
 			void goto('/chat/list');
 		} catch (error) {
 			console.error('채팅방 탈퇴 실패:', error);
@@ -408,7 +531,7 @@
 
 	// 신고하고 탈퇴하기
 	function handleReportAndLeave() {
-		console.log('신고하고 탈퇴하기 클릭');
+		// console.log('신고하고 탈퇴하기 클릭');
 		// TODO: 신고 다이얼로그 표시 후 탈퇴
 	}
 
@@ -434,7 +557,7 @@
 
 		try {
 			await inviteUserToChatRoom(rtdb, activeRoomId, uid, authStore.user.uid);
-			console.log('✅ 초대 성공:', uid);
+			// console.log('✅ 초대 성공:', uid);
 			alert(m.chatInvitationSent());
 		} catch (error) {
 			console.error('❌ 초대 실패:', error);
@@ -459,7 +582,7 @@
 				authStore.user.uid,
 				currentRoomType
 			);
-			console.log(`✅ 채팅방 핀 ${newPinState ? '설정' : '해제'} 완료:`, activeRoomId);
+			// console.log(`✅ 채팅방 핀 ${newPinState ? '설정' : '해제'} 완료:`, activeRoomId);
 		} catch (error) {
 			console.error('채팅방 핀 토글 실패:', error);
 			alert('핀 기능을 사용할 수 없습니다. 채팅방에 참여한 후 시도해주세요.');
@@ -497,19 +620,19 @@
 				if (newStatus) {
 					// 구독: 필드 삭제
 					await remove(subscriptionRef);
-					console.log(`📢 1:1 채팅방 알림 구독 완료: ${activeRoomId}`);
+					// console.log(`📢 1:1 채팅방 알림 구독 완료: ${activeRoomId}`);
 				} else {
 					// 구독 해제: false 저장
 					await set(subscriptionRef, false);
-					console.log(`🔕 1:1 채팅방 알림 구독 해제: ${activeRoomId}`);
+					// console.log(`🔕 1:1 채팅방 알림 구독 해제: ${activeRoomId}`);
 				}
 			} else {
 				// 그룹/오픈 채팅방
 				const memberRef = ref(rtdb, `chat-rooms/${activeRoomId}/members/${authStore.user.uid}`);
 				await set(memberRef, newStatus);
-				console.log(
-					`${newStatus ? '📢' : '🔕'} 그룹 채팅방 알림 ${newStatus ? '구독' : '구독 해제'}: ${activeRoomId}`
-				);
+				// console.log(
+				// 	`${newStatus ? '📢' : '🔕'} 그룹 채팅방 알림 ${newStatus ? '구독' : '구독 해제'}: ${activeRoomId}`
+				// );
 			}
 
 			// 로컬 상태 업데이트 (onValue 리스너가 자동으로 업데이트하지만 즉각적인 UI 반영을 위해)
@@ -547,7 +670,7 @@
 	function markCurrentRoomAsRead(): boolean {
 		// 채팅방 활성화 상태 및 사용자 인증 확인
 		if (!activeRoomId || !authStore.user?.uid || !rtdb) {
-			console.log('채팅방 또는 사용자 정보 없음 - newMessageCount 업데이트 건너뜀');
+			// console.log('채팅방 또는 사용자 정보 없음 - newMessageCount 업데이트 건너뜀');
 			return false;
 		}
 
@@ -556,7 +679,7 @@
 		setTimeout(() => {
 			// 다시 한번 유효성 검사 (타이머 실행 중 사용자가 로그아웃하거나 방을 나갈 수 있음)
 			if (!activeRoomId || !authStore.user?.uid || !rtdb) {
-				console.log('타이머 실행 중 상태 변경 - newMessageCount 업데이트 취소');
+				// console.log('타이머 실행 중 상태 변경 - newMessageCount 업데이트 취소');
 				return;
 			}
 
@@ -565,7 +688,7 @@
 				newMessageCount: 0
 			})
 				.then(() => {
-					console.log('newMessageCount 0으로 업데이트 완료 (채팅방에서 새 메시지 읽음 처리)');
+					// console.log('newMessageCount 0으로 업데이트 완료 (채팅방에서 새 메시지 읽음 처리)');
 				})
 				.catch((error) => {
 					console.error('newMessageCount 업데이트 실패:', error);
@@ -584,7 +707,7 @@
 	 * @param item - 새로 추가된 메시지 아이템 ({ key: string, data: any })
 	 */
 	function handleNewMessage(item: { key: string; data: any }) {
-		console.log('새 메시지 추가됨:', item);
+		// console.log('새 메시지 추가됨:', item);
 
 		// 현재 채팅방을 읽음 상태로 표시
 		markCurrentRoomAsRead();
@@ -616,7 +739,7 @@
 			return;
 		}
 
-		console.log(`📂 ${files.length}개 파일 선택됨 - 즉시 업로드 시작`);
+		// console.log(`📂 ${files.length}개 파일 선택됨 - 즉시 업로드 시작`);
 
 		// v1.2.0: 공통 processFiles 함수 사용
 		await processFiles(files);
@@ -635,9 +758,9 @@
 		// Firebase Storage에서 파일 삭제 (업로드 완료된 경우만)
 		if (fileStatus.downloadUrl) {
 			try {
-				console.log(`🗑️ Firebase Storage에서 파일 삭제 시작: ${fileStatus.file.name}`);
+				// console.log(`🗑️ Firebase Storage에서 파일 삭제 시작: ${fileStatus.file.name}`);
 				await deleteChatFile(fileStatus.downloadUrl);
-				console.log(`✅ 파일 삭제 완료: ${fileStatus.file.name}`);
+				// console.log(`✅ 파일 삭제 완료: ${fileStatus.file.name}`);
 			} catch (error) {
 				console.error(`❌ 파일 삭제 실패: ${fileStatus.file.name}`, error);
 				// 삭제 실패해도 로컬 목록에서는 제거
@@ -714,7 +837,7 @@
 			return;
 		}
 
-		console.log(`📦 드롭된 파일 개수: ${files.length}`);
+		// console.log(`📦 드롭된 파일 개수: ${files.length}`);
 
 		// 파일 처리 (handleFileSelect와 동일한 로직)
 		await processFiles(Array.from(files));
@@ -736,7 +859,7 @@
 				continue;
 			}
 
-			console.log(`📎 파일 선택됨: ${file.name} (${formatFileSize(file.size)})`);
+			// console.log(`📎 파일 선택됨: ${file.name} (${formatFileSize(file.size)})`);
 
 			// 파일 업로드 상태 추가 (progress: 0, completed: false)
 			const fileStatus: FileUploadStatus = {
@@ -763,7 +886,7 @@
 				// 업로드 완료
 				uploadingFiles[currentIndex].completed = true;
 				uploadingFiles[currentIndex].downloadUrl = downloadUrl;
-				console.log(`✅ 파일 업로드 완료: ${file.name}`);
+				// console.log(`✅ 파일 업로드 완료: ${file.name}`);
 			} catch (error) {
 				console.error('❌ 파일 업로드 실패:', error);
 				uploadingFiles[currentIndex].error = '업로드 실패';
@@ -890,6 +1013,18 @@
 						{m.chatInviteFriend()}
 					</DropdownMenu.Item>
 					<DropdownMenu.Separator />
+
+					<!-- Owner만 비밀번호 설정 메뉴 표시 -->
+					{#if isRoomOwner}
+						<DropdownMenu.Item
+							onclick={() => (passwordSettingDialogOpen = true)}
+							class="bg-purple-50 hover:bg-purple-100"
+						>
+							<span class="mr-2">🔒</span>
+							{m.chatPasswordSettings()}
+						</DropdownMenu.Item>
+						<DropdownMenu.Separator />
+					{/if}
 				{/if}
 				<DropdownMenu.Item onclick={handleMemberList} class="bg-blue-50 hover:bg-blue-100">
 					<span class="mr-2">👥</span>
@@ -925,6 +1060,8 @@
 		<!-- v1.2.0: 드래그 앤 드롭 지원 메시지 목록 -->
 		<div
 			class="message-list-section"
+			role="region"
+			aria-label="채팅 메시지 영역"
 			ondragenter={handleDragEnter}
 			ondragover={handleDragOver}
 			ondragleave={handleDragLeave}
@@ -978,7 +1115,13 @@
 															<img src={url} alt="첨부 이미지" class="attachment-image" />
 														{:else if isVideoUrl(url)}
 															<!-- 동영상 첨부파일 -->
-															<video src={url} class="attachment-video" controls></video>
+														<video
+															src={url}
+															class="attachment-video"
+															controls
+															aria-hidden="true"
+															tabindex="-1"
+														/>
 														{:else}
 															<!-- 일반 파일 첨부파일 -->
 															<div class="attachment-file">
@@ -1067,7 +1210,7 @@
 
 			<!-- v1.2.0: 드래그 앤 드롭 오버레이 -->
 			{#if isDragging}
-				<div class="drag-drop-overlay">
+				<div class="drag-drop-overlay" role="region" aria-label="파일 드래그 앤 드롭 안내">
 					<div class="drag-drop-content">
 						<!-- 파일 아이콘 애니메이션 -->
 						<svg class="drag-drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -1100,7 +1243,12 @@
 										{#if fileStatus.file.type.startsWith('image/')}
 											<img src={fileStatus.downloadUrl} alt={fileStatus.file.name} />
 										{:else if fileStatus.file.type.startsWith('video/')}
-											<video src={fileStatus.downloadUrl} controls></video>
+											<video
+												src={fileStatus.downloadUrl}
+												controls
+												aria-hidden="true"
+												tabindex="-1"
+											/>
 										{/if}
 									{:else}
 										<!-- 업로드 중: 회색 배경만 표시 -->
@@ -1282,18 +1430,43 @@
 	on:userSelect={handleUserSelect}
 />
 
+<!-- 비밀번호 설정 다이얼로그 (Owner 전용) -->
+{#if !isSingleChat && isRoomOwner}
+	<Dialog bind:open={passwordSettingDialogOpen}>
+		<DialogContent class="sm:max-w-md">
+			<DialogHeader>
+				<DialogTitle>{m.chatPasswordSettings()}</DialogTitle>
+			</DialogHeader>
+			<RoomPasswordSetting
+				roomId={activeRoomId}
+				currentPassword={roomPasswordValue}
+				onCancel={() => (passwordSettingDialogOpen = false)}
+			/>
+		</DialogContent>
+	</Dialog>
+{/if}
+
+<!-- 비밀번호 입력 프롬프트 모달 (비회원 입장 시) -->
+{#if !isSingleChat && passwordPromptOpen}
+	<RoomPasswordPrompt
+		roomId={activeRoomId}
+		bind:open={passwordPromptOpen}
+		onSuccess={handlePasswordSuccess}
+		onCancel={handlePasswordCancel}
+	/>
+{/if}
+
 <style>
 	@import 'tailwindcss' reference;
 
 	/**
 	 * 채팅방 전체 컨테이너
-	 * Flexbox column 방향으로 전체 화면 높이를 활용합니다.
-	 * - 데스크톱: TopBar 높이 제외
-	 * - 모바일: 전체 화면 사용
+	 * Flexbox column 방향으로 부모(.chat-room-main) 높이를 활용합니다.
+	 * 부모 컨테이너가 이미 화면 높이를 설정했으므로 h-full 사용
 	 */
 	.chat-room-container {
 		@apply flex flex-col;
-		/* 전체 높이 사용 (레이아웃에서 이미 설정된 높이 활용) */
+		/* 부모 높이 100% 사용 */
 		@apply h-full;
 		/* 최대 너비 (데스크톱) */
 		@apply mx-auto max-w-[960px];

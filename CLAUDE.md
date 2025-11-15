@@ -25,6 +25,10 @@
   - [ ] Svelte 의 Tailwind CSS 스타일링은 아래의 [CSS 스타일링](#css-스타일링) 섹션을 따릅니다.
   - [ ] Svelte 의 paraglide i18n 다국어 처리는 아래의 [다국어 (i18n) 처리](#다국어-i18n-처리) 섹션을 따릅니다.
   - [ ] 모든 UI/UX 작업(코딩)을 할 때에 svelte-shadcn 과 Tailwind CSS 를 씁니다.
+- [ ] Firebase Realtime Database Security Rules 작업 시에는 JSONC 기능을 적극 활용합니다.
+  - [ ] 모든 `.read/.write/.validate` 조건식에 `&&` 또는 `||` 가 등장하면 반드시 여러 줄로 나누어 작성합니다.
+  - [ ] 각 조건 블록 앞에는 세부 의도를 설명하는 주석을 남기고, 괄호로 우선순위를 명확히 표현합니다.
+  - [ ] 단일 줄 논리식이나 주석 없는 규칙은 허용되지 않습니다.
 
 ## CSS 스타일링
 

@@ -1,21 +1,15 @@
 ---
-name: ko.json
-description: ko 다국어 메시지
+title: ko.json
+type: config
+path: messages/ko.json
+status: active
 version: 1.0.0
-type: configuration
-category: i18n-message
-original_path: messages/ko.json
+last_updated: 2025-11-15
 ---
-
-# ko.json
 
 ## 개요
 
-**파일 경로**: `messages/ko.json`
-**파일 타입**: configuration
-**카테고리**: i18n-message
-
-ko 다국어 메시지
+이 파일은 `messages/ko.json`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -277,28 +271,50 @@ ko 다국어 메시지
 	"homeSectionRecentUsersDesc": "방금 가입한 사용자 목록이 여기에 표시될 예정입니다.",
 	"homeSectionRecentOpenChat": "최근 오픈 채팅 메시지",
 	"homeSectionRecentOpenChatDesc": "실시간 오픈 채팅 메시지를 곧 확인할 수 있습니다.",
+	"homeSectionRecentOpenChatEmpty": "최근 오픈 채팅 메시지가 없습니다.",
+	"homeSectionRecentOpenChatLogin": "로그인하면 참여 중인 오픈 채팅의 최신 메시지를 볼 수 있습니다.",
 	"homeSectionPopularOpenRoom": "인기 오픈 채팅방",
 	"homeSectionPopularOpenRoomDesc": "참여자가 많은 오픈 채팅방을 추천해 드립니다.",
 	"homeSectionRecentPosts": "최근 글 & 댓글",
 	"homeSectionRecentPostsDesc": "게시판의 최신 글과 댓글을 한눈에 볼 수 있도록 준비 중입니다.",
 	"homeSectionRecentUsersCount": "최근 가입한 회원 {count}명",
-	"sidebarDevHighlightAttachment": "8. 첨부파일 업로드",
-	"sidebarDevHighlightPassword": "9. 채팅 비밀번호 기능",
-	"sidebarDevHighlightPostType": "10. Post 타입 메시지",
+	"homeOpenChatNoMessage": "아직 대화가 없습니다.",
+	"sidebarDevHighlightAttachment": "9. 첨부파일 업로드",
+	"sidebarDevHighlightPassword": "10. 채팅 비밀번호 기능",
+	"sidebarDevHighlightPostType": "11. Post 타입 메시지",
 	"chatAccept": "수락",
 	"chatReject": "거절",
 	"chatInviteFriend": "친구 초대",
 	"chatInviteToRoom": "이 채팅방에 친구를 초대하세요",
 	"chatSearchUserToInvite": "초대할 친구를 검색하세요",
-	"chatInvitationSent": "초대를 보냈습니다"
+	"chatInvitationSent": "초대를 보냈습니다",
+	"sidebarDevHighlightWrapUp": "8. 채팅방 마무리 기능",
+	"chatNoMoreMessages": "더 이상 메시지가 없습니다.",
+	"chatRoomList": "내 채팅",
+	"chatRoomListEmpty": "참여한 채팅방이 없습니다.",
+	"chatRoomListLoading": "채팅방 로딩 중...",
+	"chatPasswordSaving": "저장 중...",
+	"chatPasswordEnableToggle": "비밀번호 활성화",
+	"chatPasswordInputPlaceholder": "비밀번호 (최소 4자)",
+	"chatPasswordConfirmPlaceholder": "비밀번호 확인",
+	"chatPasswordMinLengthError": "비밀번호는 최소 4자 이상이어야 합니다",
+	"chatPasswordMismatchError": "비밀번호가 일치하지 않습니다",
+	"chatPasswordSetSuccess": "비밀번호가 설정되었습니다",
+	"chatPasswordRemoveSuccess": "비밀번호가 해제되었습니다",
+	"chatPasswordSaveFailure": "비밀번호 저장에 실패했습니다",
+	"chatPasswordSettings": "비밀번호 설정",
+	"chatPasswordRequired": "이 채팅방은 비밀번호가 필요합니다.",
+	"chatPasswordEnterPrompt": "비밀번호를 입력하세요",
+	"chatPasswordVerifying": "검증 중... ({countdown}초 남음)",
+	"chatPasswordVerifySuccess": "비밀번호가 확인되었습니다",
+	"chatPasswordIncorrect": "비밀번호가 올바르지 않습니다",
+	"chatPasswordVerifyFailure": "비밀번호 검증에 실패했습니다",
+	"chatPasswordDelete": "비밀번호 삭제",
+	"chatPasswordDeleteSuccess": "비밀번호가 삭제되었습니다"
 }
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

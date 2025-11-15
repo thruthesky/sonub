@@ -319,6 +319,273 @@ function handleRoomClick(roomId: string, type: string) {
 - 활성 채팅방은 파란색으로 강조
 - 읽지 않은 메시지는 빨간 배지로 명확히 표시
 
+---
+
+## ⚠️ 중요: 채팅방 레이아웃 구조 변경 금지 규칙
+
+**🚨 경고**: 채팅방 레이아웃(`src/routes/chat/room/+layout.svelte`)의 CSS 구조를 변경하면 **무한 스크롤이 작동하지 않고** 레이아웃이 깨집니다. 아래 규칙을 **절대 위반하지 마세요**.
+
+### 문제 발생 사례
+
+레이아웃 관련 작업 시 다음과 같은 문제가 **자주** 발생합니다:
+- ❌ 채팅 입력창(footer)이 화면에서 사라짐
+- ❌ 메시지 목록의 무한 스크롤이 작동하지 않음
+- ❌ 왼쪽 사이드바의 채팅방 목록 스크롤이 작동하지 않음
+- ❌ 모바일/데스크톱에서 overflow가 발생하여 화면이 깨짐
+
+### 필수 준수 사항
+
+#### 1. `.chat-room-layout` - 절대 변경 금지 속성
+
+```css
+.chat-room-layout {
+  @apply fixed;           /* ✅ REQUIRED: fixed positioning */
+  @apply top-0 left-0;    /* ✅ REQUIRED: 화면 좌상단 고정 */
+  @apply h-[100dvh];      /* ✅ REQUIRED: 모바일 전체 화면 높이 */
+  @apply w-full;          /* ✅ REQUIRED: 전체 너비 */
+  @apply bg-gray-50;      /* 배경색 (변경 가능) */
+
+  /* ✅ REQUIRED: 모바일 safe-area 고려 */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+
+  @apply flex flex-col;   /* ✅ REQUIRED: 모바일 세로 레이아웃 */
+}
+
+@media (min-width: 768px) {
+  .chat-room-layout {
+    /* ✅ REQUIRED: TopBar 높이(4rem) + 상하 여백(4rem) = 8rem 제외 */
+    height: calc(100vh - 8rem);
+    @apply relative;      /* ✅ REQUIRED: 데스크톱은 relative positioning */
+    @apply flex-row;      /* ✅ REQUIRED: 데스크톱 가로 레이아웃 (2-column) */
+  }
+}
+```
+
+**🔴 절대 하지 말아야 할 것**:
+- ❌ `fixed` → `relative`, `absolute`, `static`으로 변경
+- ❌ `h-[100dvh]` → `h-full`, `h-screen`, `min-h-screen`으로 변경
+- ❌ `calc(100vh - 8rem)` → `calc(100vh - 4rem)` 또는 다른 값으로 변경
+- ❌ `flex-col` / `flex-row` 제거 또는 변경
+- ❌ `top-0 left-0` 제거
+- ❌ `padding-top/bottom` (safe-area-inset) 제거
+
+**✅ 변경해도 되는 것**:
+- ✅ `bg-gray-50` 등 배경색 변경
+
+#### 2. `.chat-room-sidebar` - 무한 스크롤 필수 구조
+
+```css
+.chat-room-sidebar {
+  @apply hidden;  /* ✅ REQUIRED: 모바일에서 숨김 */
+}
+
+@media (min-width: 768px) {
+  .chat-room-sidebar {
+    @apply flex flex-col;         /* ✅ REQUIRED: Flexbox 세로 레이아웃 */
+    @apply w-80;                  /* 너비 (변경 가능) */
+    @apply border-r border-gray-200;  /* 테두리 (변경 가능) */
+    @apply bg-white;              /* 배경색 (변경 가능) */
+    @apply overflow-hidden;       /* ✅ REQUIRED: overflow 숨김 */
+  }
+}
+```
+
+**🔴 절대 하지 말아야 할 것**:
+- ❌ `flex flex-col` 제거 → 무한 스크롤 작동 안 함
+- ❌ `overflow-hidden` 제거 또는 `overflow-auto`, `overflow-scroll`로 변경
+- ❌ 모바일에서 `hidden` 제거
+
+**✅ 변경해도 되는 것**:
+- ✅ `w-80` → 다른 너비로 변경
+- ✅ 테두리, 배경색 변경
+
+#### 3. `.sidebar-content` - 무한 스크롤 핵심
+
+```css
+.sidebar-content {
+  @apply flex-1 overflow-auto;  /* ✅ REQUIRED: flex-1 + overflow-auto */
+}
+```
+
+**🔴 절대 하지 말아야 할 것**:
+- ❌ `flex-1` 제거 → 높이가 늘어나며 레이아웃 깨짐
+- ❌ `overflow-auto` 제거 또는 `overflow-hidden`으로 변경 → 스크롤 안 됨
+
+#### 4. `.chat-room-main` - 메인 콘텐츠 영역
+
+```css
+.chat-room-main {
+  @apply flex-1;          /* ✅ REQUIRED: 남은 공간 차지 */
+  @apply overflow-hidden; /* ✅ REQUIRED: overflow 숨김 */
+}
+```
+
+**🔴 절대 하지 말아야 할 것**:
+- ❌ `flex-1` 제거
+- ❌ `overflow-hidden` 제거 또는 `overflow-auto`로 변경
+
+### 레이아웃이 작동하는 원리
+
+```
+┌─────────────────────────────────────────────────┐
+│ .chat-room-layout (fixed, h-[100dvh], flex)    │
+├────────────────┬────────────────────────────────┤
+│ .chat-room-    │ .chat-room-main                │
+│ sidebar        │ (flex-1, overflow-hidden)      │
+│ (flex flex-col)│                                │
+│ ┌────────────┐ │ ┌────────────────────────────┐ │
+│ │ .sidebar-  │ │ │ 채팅방 페이지              │ │
+│ │ header     │ │ │ (+page.svelte)             │ │
+│ │ (shrink-0) │ │ │                            │ │
+│ ├────────────┤ │ │ .chat-room-container       │ │
+│ │ .sidebar-  │ │ │ (flex flex-col h-full)     │ │
+│ │ content    │ │ │                            │ │
+│ │ (flex-1    │ │ │ ┌────────────────────────┐ │ │
+│ │ overflow-  │ │ │ │ 헤더 (shrink-0)        │ │ │
+│ │ auto)      │ │ │ ├────────────────────────┤ │ │
+│ │            │ │ │ │ 메시지 목록 (flex-1    │ │ │
+│ │ [무한      │ │ │ │ overflow-auto)         │ │ │
+│ │ 스크롤]    │ │ │ │                        │ │ │
+│ │            │ │ │ │ [무한 스크롤]          │ │ │
+│ │            │ │ │ ├────────────────────────┤ │ │
+│ │            │ │ │ │ 입력창 (shrink-0)      │ │ │
+│ │            │ │ │ └────────────────────────┘ │ │
+│ └────────────┘ │ └────────────────────────────┘ │
+└────────────────┴────────────────────────────────┘
+```
+
+**핵심 원리**:
+1. **고정 높이 컨테이너** (`.chat-room-layout`): `fixed` + `h-[100dvh]` / `calc(100vh - 8rem)`
+2. **Flexbox 레이아웃**: `flex flex-col` (모바일) / `flex-row` (데스크톱)
+3. **flex-1 영역**: 남은 공간을 차지하여 자동으로 높이 계산
+4. **overflow-auto**: `flex-1`로 계산된 높이 내에서만 스크롤
+5. **shrink-0**: 헤더/푸터는 고정 높이 유지
+
+**왜 무한 스크롤이 작동하는가?**
+- `.sidebar-content` / 메시지 목록이 `flex-1`로 **정확한 높이**를 가지므로
+- `overflow-auto`가 해당 높이를 **초과하는 콘텐츠를 스크롤**할 수 있음
+- 스크롤 이벤트가 정상적으로 감지되어 **DatabaseListView의 무한 스크롤 트리거 작동**
+
+### 레이아웃 수정 시 체크리스트
+
+레이아웃 관련 작업을 할 때 **반드시** 다음을 확인하세요:
+
+- [ ] `.chat-room-layout`의 `fixed`, `h-[100dvh]`, `calc(100vh - 8rem)` 유지
+- [ ] `.chat-room-sidebar`의 `overflow-hidden` 유지
+- [ ] `.sidebar-content`의 `flex-1 overflow-auto` 유지
+- [ ] `.chat-room-main`의 `flex-1 overflow-hidden` 유지
+- [ ] `safe-area-inset-top/bottom` 유지
+- [ ] 모바일 `flex-col`, 데스크톱 `flex-row` 유지
+- [ ] `npm run dev` 실행 후 실제 브라우저에서 테스트:
+  - [ ] 모바일 화면에서 메시지 입력창이 보이는지
+  - [ ] 데스크톱 화면에서 왼쪽 사이드바 스크롤 작동하는지
+  - [ ] 메시지 목록 무한 스크롤이 작동하는지
+  - [ ] 채팅 입력창(footer)이 화면에 표시되는지
+
+### 완전한 레이아웃 CSS 코드 (현재 작동 중인 버전)
+
+**파일**: `src/routes/chat/room/+layout.svelte`
+
+```css
+@import 'tailwindcss' reference;
+
+/**
+ * 채팅방 레이아웃 컨테이너
+ * - 모바일: 단일 컬럼 (전체 화면)
+ * - 데스크톱: 2-column (사이드바 + 메인)
+ */
+.chat-room-layout {
+  @apply fixed;
+  @apply top-0 left-0;
+  /* 모바일: 전체 화면 높이 사용 (TopBar 숨김) */
+  @apply h-[100dvh];
+
+  /* 전체 너비 사용 */
+  @apply w-full;
+
+  /* 배경색 */
+  @apply bg-gray-50;
+
+  /* 모바일 safe-area 고려 (상태바, 노치 등) */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+
+  /* 모바일: 단일 컬럼 */
+  @apply flex flex-col;
+}
+
+/* 데스크톱: TopBar 높이(4rem) 제외, 2-column 레이아웃 */
+@media (min-width: 768px) {
+  .chat-room-layout {
+    /* TopBar 높이(4rem) 제외 + 채팅방 상하 여백 (4rem) */
+    height: calc(100vh - 8rem);
+    @apply relative;
+    /* 2-column: 사이드바 + 메인 */
+    @apply flex-row;
+  }
+}
+
+/**
+ * 왼쪽 사이드바 (채팅방 목록)
+ * - 모바일: 숨김
+ * - 데스크톱: 표시 (고정 너비)
+ */
+.chat-room-sidebar {
+  /* 모바일: 숨김 */
+  @apply hidden;
+}
+
+/* 데스크톱: 사이드바 표시 */
+@media (min-width: 768px) {
+  .chat-room-sidebar {
+    @apply flex flex-col;
+    @apply w-80;
+    @apply border-r border-gray-200;
+    @apply bg-white;
+    @apply overflow-hidden;
+  }
+}
+
+.sidebar-header {
+  @apply flex items-center justify-between;
+  @apply px-4 py-3;
+  @apply border-b border-gray-200;
+  @apply shrink-0;
+}
+
+.sidebar-title {
+  @apply text-lg font-semibold text-gray-900;
+}
+
+.sidebar-content {
+  @apply flex-1 overflow-auto;
+}
+
+.sidebar-placeholder {
+  @apply flex items-center justify-center;
+  @apply p-8 text-center text-gray-500;
+}
+
+.sidebar-error {
+  @apply p-4 text-center text-red-600;
+}
+
+/**
+ * 메인 콘텐츠 (채팅방 페이지)
+ * - 모바일: 전체 화면
+ * - 데스크톱: 나머지 공간 사용
+ */
+.chat-room-main {
+  @apply flex-1;
+  @apply overflow-hidden;
+}
+```
+
+**⚠️ 이 코드를 수정할 때는 반드시 위의 "필수 준수 사항"을 확인하세요!**
+
+---
+
 ### 1. 사용자 프로필 실시간 구독
 
 채팅 상대방의 프로필 정보를 실시간으로 구독하여 표시합니다.
@@ -803,6 +1070,33 @@ onChildRemoved(dataQuery, (snapshot) => {
 - 메시지 수정/삭제 권한 제어
 - 스팸 방지 및 신고 기능
 
+### 🔥 매우 중요: `members/{uid}` 필드의 의미 🔥
+
+**채팅방 멤버 관리 시 반드시 알아야 할 사항**
+
+`/chat-rooms/{roomId}/members/{uid}` 필드는 **세 가지 상태**를 가질 수 있습니다:
+
+1. **필드가 존재하지 않음**: 사용자가 채팅방의 멤버가 **아닙니다**
+2. **`true`**: 사용자가 멤버이며 **알림을 구독**합니다
+3. **`false`**: 사용자가 멤버이지만 **알림을 구독하지 않습니다**
+
+**⚠️ 흔한 실수**: `snapshot.val() === true`로 체크하면 `false`일 때 멤버가 아닌 것으로 잘못 판단합니다!
+
+**✅ 올바른 방법**: 멤버 여부를 확인할 때는 `snapshot.exists()`를 사용해야 합니다.
+
+**코드 예시**:
+```typescript
+// ❌ 잘못된 코드 - false일 때 멤버가 아닌 것으로 잘못 판단
+const isMember = snapshot.val() === true;
+
+// ✅ 올바른 코드 - 필드 존재 여부만 확인 (true/false 모두 멤버임)
+const isMember = snapshot.exists();
+```
+
+**참고 파일**:
+- [src/routes/chat/room/+page.svelte](../src/routes/chat/room/+page.svelte): 223번째 줄 참조
+- [src/lib/functions/chat.functions.ts](../src/lib/functions/chat.functions.ts): `joinChatRoom` 함수 참조
+
 ## 성능 최적화
 
 ### 현재 적용
@@ -860,6 +1154,26 @@ onChildRemoved(dataQuery, (snapshot) => {
 - [messages/*.json](../messages/) - 다국어 메시지 파일
 
 ## 변경 이력
+
+- **2025-11-15**: 채팅방 레이아웃 구조 변경 금지 규칙 추가
+  - **배경**: 채팅방 레이아웃 작업 시 자주 발생하는 무한 스크롤 및 레이아웃 깨짐 문제 방지
+  - **문제점**:
+    - 레이아웃 CSS 수정 시 채팅 입력창(footer)이 사라지는 문제
+    - 메시지 목록 및 사이드바의 무한 스크롤이 작동하지 않는 문제
+    - 모바일/데스크톱에서 overflow 발생하여 화면이 깨지는 문제
+  - **추가 내용**:
+    - "⚠️ 중요: 채팅방 레이아웃 구조 변경 금지 규칙" 섹션 신규 추가
+    - `.chat-room-layout`, `.chat-room-sidebar`, `.sidebar-content`, `.chat-room-main` 클래스별 필수 준수 사항 명시
+    - 절대 변경하면 안 되는 CSS 속성 목록 (🔴 표시)
+    - 변경 가능한 CSS 속성 목록 (✅ 표시)
+    - 레이아웃 작동 원리 ASCII 다이어그램 추가
+    - 레이아웃 수정 시 체크리스트 제공
+    - 완전한 레이아웃 CSS 코드 (현재 작동 중인 버전) 전체 포함
+  - **핵심 규칙**:
+    - `fixed` positioning, `h-[100dvh]`, `calc(100vh - 8rem)` 절대 변경 금지
+    - `flex-1 overflow-auto` 조합 유지 (무한 스크롤 작동의 핵심)
+    - `safe-area-inset-top/bottom` 유지 (모바일 화면 대응)
+  - **목적**: 향후 레이아웃 관련 작업 시 이 규칙을 반드시 참조하여 동일한 문제 재발 방지
 
 - **2025-11-14 (저녁)**: Cloud Functions - allChatListOrder 우선순위 수정
   - **문제점**: 새 채팅 메시지가 있음에도 채팅방 목록에서 상단에 표시되지 않음

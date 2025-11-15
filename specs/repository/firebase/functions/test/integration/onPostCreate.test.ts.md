@@ -1,21 +1,15 @@
 ---
-name: onPostCreate.test.ts
-description: onPostCreate.test Cloud Function
+title: onPostCreate.test.ts
+type: typescript
+path: firebase/functions/test/integration/onPostCreate.test.ts
+status: active
 version: 1.0.0
-type: firebase-function
-category: cloud-function
-original_path: firebase/functions/test/integration/onPostCreate.test.ts
+last_updated: 2025-11-15
 ---
-
-# onPostCreate.test.ts
 
 ## 개요
 
-**파일 경로**: `firebase/functions/test/integration/onPostCreate.test.ts`
-**파일 타입**: firebase-function
-**카테고리**: cloud-function
-
-onPostCreate.test Cloud Function
+이 파일은 `firebase/functions/test/integration/onPostCreate.test.ts`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -131,10 +125,6 @@ describe("Integration Test: onPostCreate", () => {
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성
