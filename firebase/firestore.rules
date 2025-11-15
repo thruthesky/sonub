@@ -103,25 +103,17 @@ service cloud.firestore {
      *
      * 쓰기 권한:
      * - 본인만 자신의 데이터를 쓸 수 있음
-     * - 2025-12-12까지는 테스트용으로 무조건 쓰기 허용
      */
     match /users/{uid} {
       // 읽기: 모든 사용자 (로그인 불필요)
       allow read: if true;
 
       // 쓰기: 본인만 가능
-      // 2025-12-12까지는 무조건 허용 (테스트 데이터 생성용)
-      allow write: if (
-        // 2025-12-12 00:00:00 (Unix timestamp: 1765555200000ms)
-        request.time.toMillis() < 1765555200000 ||
-        isOwner(uid)
-      );
+      allow write: if isOwner(uid);
 
       // Validation: 필수 필드 검증
       allow create: if (
-        request.resource.data.uid is string &&
-        request.resource.data.displayName is string &&
-        request.resource.data.createdAt is timestamp
+        request.resource.data.uid is string
       );
 
       allow update: if (
