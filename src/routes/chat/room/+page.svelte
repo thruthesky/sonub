@@ -43,6 +43,7 @@
 	import UserSearchDialog from '$lib/components/user/UserSearchDialog.svelte';
 	import RoomPasswordSetting from '$lib/components/chat/room-password-setting.svelte';
 	import RoomPasswordPrompt from '$lib/components/chat/room-password-prompt.svelte';
+	import MessageEditModal from '$lib/components/chat/MessageEditModal.svelte';
 	import {
 		Dialog,
 		DialogContent,
@@ -149,6 +150,7 @@
 
 	// 작성 중인 메시지
 	let composerText = $state('');
+	let composerRows = $state(1); // textarea 줄 수 (최대 4줄까지 높이 증가, 이후 스크롤)
 	let isSending = $state(false);
 	let sendError = $state<string | null>(null);
 
@@ -175,6 +177,13 @@
 
 	// 비밀번호 입력 Prompt 모달 상태
 	let passwordPromptOpen = $state(false);
+
+	// 메시지 수정 모달 상태
+	let editModalOpen = $state(false);
+	let selectedMessageId = $state<string>('');
+	let selectedMessageText = $state<string>('');
+	let selectedMessageUrls = $state<Record<number, string>>({});
+	let selectedMessageCreatedAt = $state<number>(0);
 
 	// 채팅방 정보 구독 (owner, password 등)
 	let roomOwner = $state<string | null>(null);
@@ -341,8 +350,47 @@
 		};
 	});
 
-	// 채팅 입력 창(input) 직접 참조
-	let composerInputRef: HTMLInputElement | null = $state(null);
+	// 채팅 입력 창(textarea) 직접 참조
+	let composerInputRef: HTMLTextAreaElement | null = $state(null);
+
+	/**
+	 * textarea 입력 핸들러: 줄 수를 자동 계산하여 최대 4줄까지 높이 증가
+	 */
+	function handleComposerInput() {
+		if (!composerInputRef) return;
+
+		// 줄바꿈 개수 계산
+		const lines = composerText.split('\n');
+		const lineCount = lines.length;
+
+		// 최대 4줄까지 높이 증가, 이후 스크롤바로 처리
+		composerRows = Math.min(lineCount, 4);
+	}
+
+	/**
+	 * textarea 키보드 이벤트 핸들러
+	 * - Enter: 메시지 전송
+	 * - Shift+Enter: 줄바꿈 (무제한, 단 높이는 최대 4줄)
+	 */
+	function handleComposerKeyDown(event: KeyboardEvent) {
+		// Shift+Enter: 줄바꿈 허용 (무제한)
+		if (event.key === 'Enter' && event.shiftKey) {
+			// 줄바꿈 제한 없이 기본 동작 허용
+			// 4줄 이상일 경우 스크롤바로 처리
+			return;
+		}
+
+		// Enter만 누르면 메시지 전송
+		if (event.key === 'Enter' && !event.shiftKey) {
+			event.preventDefault();
+			// 폼 submit 이벤트 트리거
+			const target = event.currentTarget as HTMLElement;
+			const form = target?.closest('form');
+			if (form) {
+				form.requestSubmit();
+			}
+		}
+	}
 
 	// 메시지 전송 처리
 	async function handleSendMessage(event: SubmitEvent) {
@@ -419,6 +467,7 @@
 			} else {
 				// 메시지 전송 성공 시
 				composerText = '';
+		composerRows = 1; // textarea 줄 수 초기화
 				sendError = null;
 				isSending = false;
 
@@ -714,6 +763,104 @@
 
 		// TODO: 필요한 추가 작업 수행
 		// 예: 사운드 재생, 알림 표시, 배지 업데이트 등
+	}
+
+	/**
+	 * 메시지 수정 버튼 클릭 핸들러
+	 *
+	 * @param messageId - 메시지 ID
+	 * @param text - 메시지 텍스트
+	 * @param urls - 첨부파일 URL 목록
+	 * @param createdAt - 메시지 생성 시각
+	 */
+	function handleEditMessage(
+		messageId: string,
+		text: string,
+		urls: Record<number, string>,
+		createdAt: number
+	) {
+		selectedMessageId = messageId;
+		selectedMessageText = text ?? '';
+		selectedMessageUrls = urls ?? {};
+		selectedMessageCreatedAt = createdAt;
+		editModalOpen = true;
+	}
+
+	/**
+	 * 메시지 삭제 버튼 클릭 핸들러
+	 *
+	 * @param messageId - 메시지 ID
+	 * @param urls - 첨부파일 URL 목록
+	 */
+	async function handleDeleteMessage(messageId: string, urls: Record<number, string>) {
+		const confirmed = confirm('메시지를 삭제하시겠습니까?');
+		if (!confirmed) return;
+
+		if (!rtdb) {
+			alert('Firebase 연결이 없습니다.');
+			return;
+		}
+
+		try {
+			// 1. 첨부파일 삭제 (Storage)
+			if (urls && Object.keys(urls).length > 0) {
+				for (const url of Object.values(urls)) {
+					try {
+						await deleteChatFile(url);
+					} catch (err) {
+						console.error('첨부파일 삭제 실패:', err);
+						// 첨부파일 삭제 실패해도 계속 진행
+					}
+				}
+			}
+
+			// 2. 메시지 Soft Delete (deleted: true, urls/text 필드 제거)
+			const messageRef = ref(rtdb, `chat-messages/${messageId}`);
+			await update(messageRef, {
+				deleted: true,
+				deletedAt: Date.now(),
+				text: '',
+				urls: null
+			});
+
+			// console.log('메시지 삭제 완료:', messageId);
+		} catch (err) {
+			console.error('메시지 삭제 실패:', err);
+			alert('메시지 삭제에 실패했습니다. 다시 시도해주세요.');
+		}
+	}
+
+	/**
+	 * 메시지 수정 가능 여부 확인
+	 *
+	 * 90분(5400초) 이내 메시지만 수정/삭제 가능
+	 *
+	 * @param createdAt - 메시지 생성 시각 (밀리초)
+	 * @returns 수정 가능 여부
+	 */
+	function canEditMessage(createdAt: number): boolean {
+		if (!createdAt) return false;
+
+		const now = Date.now();
+		const elapsed = now - createdAt;
+		const ninetyMinutesInMs = 90 * 60 * 1000; // 90분 = 5,400,000ms
+
+		return elapsed < ninetyMinutesInMs;
+	}
+
+	/**
+	 * 메시지 수정 모달 닫기 핸들러
+	 */
+	function handleEditModalClose() {
+		editModalOpen = false;
+	}
+
+	/**
+	 * 메시지 수정 저장 완료 핸들러
+	 */
+	function handleEditModalSaved() {
+		// console.log('메시지 수정 완료');
+		// 모달은 자동으로 닫힘 (MessageEditModal에서 onClose 호출)
 	}
 
 	/**
@@ -1091,6 +1238,8 @@ function preventDrop(event: DragEvent) {
 						{#snippet item(itemData: { key: string; data: any })}
 							{@const message = itemData.data ?? {}}
 							{@const mine = message.senderUid === authStore.user?.uid}
+							{@const messageId = itemData.key}
+							{@const isEditable = mine && canEditMessage(message.createdAt) && !message.deleted}
 							<article class={`message-row ${mine ? 'message-row--mine' : 'message-row--theirs'}`}>
 								{#if !mine}
 									<Avatar uid={message.senderUid} size={36} class="message-avatar" />
@@ -1100,66 +1249,112 @@ function preventDrop(event: DragEvent) {
 										<span class="message-sender-label">{resolveSenderLabel(message.senderUid)}</span
 										>
 									{/if}
-									<div class={`message-bubble ${mine ? 'bubble-mine' : 'bubble-theirs'}`}>
-										<!-- 텍스트 -->
-										{#if message.text}
-											<p class="message-text m-0">{message.text}</p>
-										{/if}
 
-										<!-- 첨부파일 목록 -->
-										{#if message.urls && Object.keys(message.urls).length > 0}
-											<div class="message-attachments">
-												{#each Object.entries(message.urls as Record<string, string>) as [index, url]}
-													<a
-														href={url}
-														target="_blank"
-														rel="noopener noreferrer"
-														class="attachment-item"
-													>
-														{#if isImageUrl(url)}
-															<!-- 이미지 첨부파일 -->
-															<img src={url} alt="첨부 이미지" class="attachment-image" />
-														{:else if isVideoUrl(url)}
-															<!-- 동영상 첨부파일 -->
-														<video
-															src={url}
-															class="attachment-video"
-															controls
-															aria-hidden="true"
-															tabindex="-1"
-														/>
-														{:else}
-															<!-- 일반 파일 첨부파일 -->
-															<div class="attachment-file">
-																<div class="attachment-file-icon">
-																	<span class="attachment-file-extension"
-																		>{getFileExtension(url).replace('.', '').toUpperCase()}</span
+									{#if message.deleted}
+										<!-- 삭제된 메시지 표시 -->
+										<div class={`message-bubble ${mine ? 'bubble-mine' : 'bubble-theirs'} deleted-message`}>
+											<p class="message-text m-0 text-gray-400 italic">삭제된 메시지입니다</p>
+										</div>
+									{:else}
+										<!-- 일반 메시지 표시 -->
+										<div class={`message-bubble ${mine ? 'bubble-mine' : 'bubble-theirs'}`}>
+											<!-- 텍스트 -->
+											{#if message.text}
+												<p class="message-text m-0">{message.text}</p>
+											{/if}
+
+											<!-- 첨부파일 목록 -->
+											{#if message.urls && Object.keys(message.urls).length > 0}
+												<div class="message-attachments">
+													{#each Object.entries(message.urls as Record<string, string>) as [index, url]}
+														<a
+															href={url}
+															target="_blank"
+															rel="noopener noreferrer"
+															class="attachment-item"
+														>
+															{#if isImageUrl(url)}
+																<!-- 이미지 첨부파일 -->
+																<img src={url} alt="첨부 이미지" class="attachment-image" />
+															{:else if isVideoUrl(url)}
+																<!-- 동영상 첨부파일 -->
+															<video
+																src={url}
+																class="attachment-video"
+																controls
+																aria-hidden="true"
+																tabindex="-1"
+															/>
+															{:else}
+																<!-- 일반 파일 첨부파일 -->
+																<div class="attachment-file">
+																	<div class="attachment-file-icon">
+																		<span class="attachment-file-extension"
+																			>{getFileExtension(url).replace('.', '').toUpperCase()}</span
+																		>
+																	</div>
+																	<div class="file-details">
+																		<p class="file-name">{getFilenameFromUrl(url)}</p>
+																	</div>
+																	<svg
+																		class="download-icon"
+																		fill="none"
+																		stroke="currentColor"
+																		viewBox="0 0 24 24"
+																		stroke-width="2"
 																	>
+																		<path
+																			stroke-linecap="round"
+																			stroke-linejoin="round"
+																			d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+																		/>
+																	</svg>
 																</div>
-																<div class="file-details">
-																	<p class="file-name">{getFilenameFromUrl(url)}</p>
-																</div>
-																<svg
-																	class="download-icon"
-																	fill="none"
-																	stroke="currentColor"
-																	viewBox="0 0 24 24"
-																	stroke-width="2"
-																>
-																	<path
-																		stroke-linecap="round"
-																		stroke-linejoin="round"
-																		d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-																	/>
-																</svg>
-															</div>
-														{/if}
-													</a>
-												{/each}
-											</div>
+															{/if}
+														</a>
+													{/each}
+												</div>
+											{/if}
+										</div>
+									{/if}
+
+									<!-- 타임스탬프 및 설정 아이콘 -->
+									<div class="message-footer">
+										<span class="message-timestamp">{formatChatMessageDate(message.createdAt)}</span>
+
+										{#if isEditable}
+											<!-- 설정 드롭다운 (90분 이내 메시지만) -->
+											<DropdownMenu.Root>
+												<DropdownMenu.Trigger>
+													<button class="message-settings-button" aria-label="메시지 설정">
+														⚙
+													</button>
+												</DropdownMenu.Trigger>
+												<DropdownMenu.Content align="end" class="w-32">
+													<DropdownMenu.Item
+														onclick={() =>
+															handleEditMessage(
+																messageId,
+																message.text ?? '',
+																message.urls ?? {},
+																message.createdAt
+															)}
+														class="hover:bg-blue-50"
+													>
+														<span class="mr-2">✏️</span>
+														수정
+													</DropdownMenu.Item>
+													<DropdownMenu.Item
+														onclick={() => handleDeleteMessage(messageId, message.urls ?? {})}
+														class="text-red-600 hover:bg-red-50"
+													>
+														<span class="mr-2">🗑️</span>
+														삭제
+													</DropdownMenu.Item>
+												</DropdownMenu.Content>
+											</DropdownMenu.Root>
 										{/if}
 									</div>
-									<span class="message-timestamp">{formatChatMessageDate(message.createdAt)}</span>
 								</div>
 							</article>
 						{/snippet}
@@ -1369,15 +1564,17 @@ function preventDrop(event: DragEvent) {
 				style="display: none;"
 			/>
 
-			<input
-				bind:this={composerInputRef}
-				type="text"
-				name="composer"
-				class="composer-input"
-				placeholder={m.chatWriteMessage()}
-				bind:value={composerText}
-				disabled={composerDisabled || isSending}
-			/>
+		<textarea
+			bind:this={composerInputRef}
+			name="composer"
+			class="composer-input"
+			placeholder={m.chatWriteMessage()}
+			bind:value={composerText}
+			disabled={composerDisabled || isSending}
+			rows={composerRows}
+			oninput={handleComposerInput}
+			onkeydown={handleComposerKeyDown}
+		></textarea>
 				<button
 					type="submit"
 					class="composer-button cursor-pointer"
@@ -1468,6 +1665,17 @@ function preventDrop(event: DragEvent) {
 		onCancel={handlePasswordCancel}
 	/>
 {/if}
+
+<!-- 메시지 수정 모달 -->
+<MessageEditModal
+	bind:open={editModalOpen}
+	messageId={selectedMessageId}
+	initialText={selectedMessageText}
+	initialUrls={selectedMessageUrls}
+	roomId={activeRoomId}
+	onClose={handleEditModalClose}
+	onSaved={handleEditModalSaved}
+/>
 
 <style>
 	@import 'tailwindcss' reference;
@@ -1581,6 +1789,22 @@ function preventDrop(event: DragEvent) {
 		@apply text-[11px] text-gray-400;
 	}
 
+	/* 메시지 하단 영역 (타임스탬프 + 설정 아이콘) */
+	.message-footer {
+		@apply flex items-center gap-2;
+	}
+
+	/* 메시지 설정 버튼 */
+	.message-settings-button {
+		@apply text-sm text-gray-400 transition-colors hover:text-gray-600;
+		@apply cursor-pointer bg-transparent border-0 p-0;
+	}
+
+	/* 삭제된 메시지 스타일 */
+	.deleted-message {
+		@apply opacity-60;
+	}
+
 	/* 메시지 플레이스홀더 스타일 */
 	.message-placeholder {
 		@apply text-center text-gray-500;
@@ -1596,10 +1820,10 @@ function preventDrop(event: DragEvent) {
 
 	/**
 	 * 입력창 폼 스타일
-	 * 고정 높이, shrink-0으로 축소 방지
+	 * shrink-0으로 축소 방지, items-end로 하단 정렬 (textarea가 여러 줄일 때 버튼들이 하단에 정렬)
 	 */
 		.composer-form {
-			@apply relative flex items-center gap-2 md:gap-3;
+			@apply relative flex items-end gap-2 md:gap-3;
 			/* 축소 방지 */
 			@apply shrink-0;
 		}
@@ -1703,11 +1927,19 @@ function preventDrop(event: DragEvent) {
 		@apply hover:bg-transparent;
 	}
 
-	/* 메시지 입력 스타일 */
+	/* 메시지 입력 스타일 (textarea) */
 	.composer-input {
 		@apply flex-1;
-		@apply rounded-full border border-gray-300 bg-white text-base;
+		@apply rounded-2xl border border-gray-300 bg-white text-base;
 		@apply px-3 py-2.5 md:px-4 md:py-3.5;
+		/* textarea 전용 스타일 */
+		@apply resize-none; /* 사용자가 수동으로 크기 조정하지 못하게 */
+		@apply leading-relaxed; /* 줄 간격 */
+		@apply align-middle; /* 수직 정렬 */
+		/* 최소/최대 높이 설정: 1줄~4줄 */
+		min-height: 2.5rem; /* 약 1줄 */
+		max-height: 10rem; /* 약 4줄 */
+		overflow-y: auto; /* 4줄 초과 시 스크롤 */
 	}
 
 	.composer-input:disabled {

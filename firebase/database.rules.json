@@ -135,15 +135,53 @@
     "chat-messages": {
       ".read": "auth != null",
       "$messageId": {
+        // 읽기 권한: 로그인한 사용자이며, 다음 중 하나에 해당
+        //   1. roomId에 본인 UID가 포함됨 (1:1 채팅)
+        //   2. 오픈 채팅방
+        //   3. 채팅방 멤버
         ".read": "auth != null &&
           (
             data.child('roomId').val().contains(auth.uid) ||
             root.child('chat-rooms').child(data.child('roomId').val()).child('type').val() == 'open' ||
             root.child('chat-rooms').child(data.child('roomId').val()).child('members').child(auth.uid).exists()
-          )",".write": "auth != null &&
+          )",
+
+        // 쓰기 권한: 로그인한 사용자이며, 다음 조건을 모두 만족
+        ".write": "auth != null &&
           (
-            newData.child('roomId').val().contains(auth.uid) ||
-            root.child('chat-rooms').child(newData.child('roomId').val()).child('members').child(auth.uid).exists()
+            // 조건 1: 채팅방 접근 권한 확인
+            // - roomId에 본인 UID가 포함되거나 (1:1 채팅)
+            // - 채팅방 멤버인 경우
+            (
+              newData.child('roomId').val().contains(auth.uid) ||
+              root.child('chat-rooms').child(newData.child('roomId').val()).child('members').child(auth.uid).exists()
+            )
+          ) &&
+          (
+            // 조건 2: 새 메시지 생성 또는 기존 메시지 수정/삭제 검증
+            (
+              // 2-1. 새 메시지 생성: 기존 데이터가 없는 경우
+              !data.exists()
+            ) ||
+            (
+              // 2-2. 기존 메시지 수정/삭제: 다음 조건을 모두 만족해야 함
+              data.exists() &&
+              (
+                // a) 본인이 작성한 메시지여야 함
+                data.child('senderUid').val() === auth.uid
+              ) &&
+              (
+                // b) 삭제되지 않은 메시지여야 함
+                !data.child('deleted').val()
+              ) &&
+              (
+                // c) 90분(5,400,000ms) 이내 메시지여야 함
+                // now: 현재 시각(밀리초)
+                // data.child('createdAt').val(): 메시지 생성 시각(밀리초)
+                // 90분 = 90 * 60 * 1000 = 5,400,000ms
+                (now - data.child('createdAt').val()) < 5400000
+              )
+            )
           )"
       },
       ".indexOn": [

@@ -2335,3 +2335,10 @@ function handleScrollToBottom() {
 ---
 
 이 구현 가이드를 따르면 `/src/routes/chat/room/+page.svelte` 파일을 완벽히 재구현할 수 있습니다!
+
+## 작업 이력 (SED Log)
+
+| 날짜 | 작업자 | 변경 내용 |
+| ---- | ------ | -------- |
+| 2025-11-15 | Claude Code | 채팅 입력창을 input에서 textarea로 변경: Shift+Enter 줄바꿈 지원, 최대 3줄 자동 높이 조정 |
+| 2025-11-15 | Claude Code | Shift+Enter 줄바꿈 무제한 허용, 입력창 최대 높이 4줄로 확장, 4줄 초과 시 스크롤바 표시 |

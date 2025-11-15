@@ -255,16 +255,19 @@
 					<span class="todo-number">11</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">그룹 채팅 비밀번호 기능</Card.Title>
-						<span class="todo-badge todo-badge--pending">📋 예정</span>
+						<span class="todo-badge todo-badge--done">✅ 완료</span>
 					</div>
 				</div>
 			</Card.Header>
 			<Card.Content>
 				<ul class="todo-list">
-					<li>오픈 채팅에 비밀번호 설정 옵션</li>
-					<li>입장 시 비밀번호 입력 모달</li>
-					<li><code>/open-chats/{'{roomId}'}/password</code> (해시 저장)</li>
-					<li>Cloud Functions에서 비밀번호 검증 수행</li>
+					<li>오픈/그룹 채팅에 비밀번호 설정 옵션 (owner만 설정 가능)</li>
+					<li>입장 시 비밀번호 입력 모달 + 검증 상태 안내/카운트다운</li>
+					<li><code>/chat-rooms/{'{roomId}'}/password</code>: true/false 플래그 저장</li>
+					<li><code>/chat-room-passwords/{'{roomId}'}/password</code>: 실제 비밀번호 저장</li>
+					<li><code>/chat-room-passwords/{'{roomId}'}/try/{'{uid}'}</code>에 입력값을 기록</li>
+					<li>Cloud Functions가 try 경로를 감시하여 비밀번호 검증 후 members에 추가</li>
+					<li>Security Rules로 password/members 경로 접근 제어 및 owner 권한 검증</li>
 				</ul>
 			</Card.Content>
 		</Card.Root>
@@ -276,7 +279,7 @@
 					<span class="todo-number">12</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">채팅 마무리 기능</Card.Title>
-						<span class="todo-badge todo-badge--pending">📋 예정</span>
+						<span class="todo-badge todo-badge--done">✅ 완료</span>
 					</div>
 				</div>
 			</Card.Header>
@@ -345,6 +348,15 @@
 							<li>Cloud Functions가 게시글/댓글/좋아요 이벤트 발생 시 대응 카운터를 업데이트 (<code>/stats/board</code> 트리)</li>
 							<li>게시판 목록/상세 헤더에서 최신 통계를 실시간으로 구독하여 UI에 노출</li>
 							<li>대시보드 카드 형태로 각 카테고리의 활동량을 비교할 수 있도록 시각화</li>
+						</ul>
+					</div>
+					<div>
+						<h4 class="todo-subtitle">13-6. 팔로잉/팔로워 기반 피드</h4>
+						<ul class="todo-list">
+							<li><code>/user-following/{'{uid}'}/{'{targetUid}'}: true</code>, <code>/user-followers/{'{uid}'}/{'{followerUid}'}: true</code> 구조로 친구 관계 저장</li>
+							<li>친구(팔로잉) 관계를 표시하는 UI (프로필 및 친구 목록)</li>
+							<li>팔로잉하는 사용자의 포스트/메시지를 홈 피드에서 우선 노출</li>
+							<li>팔로우/언팔로우 기능과 알림 처리</li>
 						</ul>
 					</div>
 				</div>

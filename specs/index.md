@@ -675,6 +675,24 @@ This document provides a detailed index of all specifications related to the son
   - Alert/Card/Button 기반 Light Mode UI
   - 로그인 사용자만 접근
 
+### Sonub Friend Overview
+- **File**: [sonub-friend-overview.md](./sonub-friend-overview.md)
+- **Title**: 친구·팔로잉/팔로워 관계 및 홈 피드 연동 개요
+- **Description**: 친구 관계를 `/user-following`·`/user-followers`로 관리하고, 팔로잉한 사용자의 게시물과 채팅 활동을 홈 피드/알림에 반영하는 전체 워크플로 명세
+- **Version**: 1.0.0
+- **Step**: 55
+- **Priority**: **
+- **Dependencies**:
+  - sonub-user-overview.md
+  - sonub-firebase-database-structure.md
+  - sonub-store-user-profile.md
+- **Tags**: friends, following, follower, feed, social
+- **핵심 내용**:
+  - `/user-following/{uid}/{targetUid}`·`/user-followers/{uid}/{followerUid}` 구조와 Cloud Functions 동기화
+  - 팔로우/언팔로우 버튼 UX, Chat 탭 "친구" 메뉴, 친구 찾기 CTA 명세
+  - 팔로잉 사용자의 메시지·포스트를 `/user-feed/{uid}`에 fan-out하고 FCM/알림을 발송하는 절차
+  - QA 체크리스트: 관계 데이터 일관성, 피드 노출, 알림 중복 방지
+
 ### Sonub User Props
 - **File**: [sonub-user-props.md](./sonub-user-props.md)
 - **Title**: 사용자 속성 분리 및 대량 조회 최적화 명세서
