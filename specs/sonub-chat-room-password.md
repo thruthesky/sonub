@@ -1,6 +1,6 @@
 ---
 title: 채팅방 비밀번호 설정 기능
-version: 1.1.0
+version: 2.0.0
 step: 53
 priority: **
 dependencies:
@@ -8,11 +8,11 @@ dependencies:
   - sonub-firebase-database-structure.md
   - sonub-firebase-security-rules.md
   - sonub-firebase-cloud-functions.md
-tags: [chat, password, security, firebase-rtdb, cloud-functions, svelte5]
+tags: [chat, password, security, firestore, cloud-functions, svelte5]
 author: Claude Code
 created: 2025-11-14
 updated: 2025-11-15
-status: in-progress
+status: completed
 ---
 
 # 채팅방 비밀번호 설정 기능
@@ -25,80 +25,79 @@ status: in-progress
 
 ### 1.2 핵심 기능
 - ✅ Owner만 비밀번호 설정/변경/삭제 가능
-- ✅ 비밀번호 설정 시 신규 사용자 입장 차단 (Security Rules)
-- ✅ Cloud Functions 기반 비밀번호 검증
-- ✅ 검증 완료 시 자동으로 members에 추가
+- ✅ 비밀번호 설정 시 신규 사용자 입장 차단 (Firestore Security Rules)
+- ✅ Cloud Functions 기반 비밀번호 검증 (Firestore Triggers)
+- ✅ 검증 완료 시 자동으로 members 서브컬렉션에 추가
 - ✅ 이미 members인 사용자는 비밀번호 불필요
-- ✅ 10초 타임아웃 기반 실시간 검증 UI
+- ✅ 5초 타임아웃 기반 실시간 검증 UI (onSnapshot)
 
 ---
 
-## 2. Database 구조
+## 2. Database 구조 (Firestore)
 
-### 2.1 `/chat-rooms/{roomId}`
+### 2.1 `chats/{roomId}` 문서
 ```typescript
 {
   owner: "owner-uid",           // 채팅방 소유자
   password: true,               // 비밀번호 설정 여부 플래그 (true 또는 필드 삭제)
-  members: {
-    [uid: string]: true | false // 입장 허가된 사용자 목록
-                                 // true: 멤버이며 알림 구독
-                                 // false: 멤버이지만 알림 미구독
-                                 // 필드 없음: 멤버가 아님
-  }
+  // ... 기타 채팅방 정보
 }
-```
-
-**🔥 매우 중요: `members/{uid}` 필드의 의미 🔥**
-
-`members/{uid}` 필드는 **세 가지 상태**를 가질 수 있으며, 각각의 의미를 정확히 이해해야 합니다:
-
-1. **필드가 존재하지 않음**: 사용자가 채팅방의 멤버가 **아닙니다**
-2. **`true`**: 사용자가 멤버이며 **알림을 구독**합니다
-3. **`false`**: 사용자가 멤버이지만 **알림을 구독하지 않습니다**
-
-**⚠️ 흔한 실수**: `snapshot.val() === true`로 체크하면 `false`일 때 멤버가 아닌 것으로 잘못 판단합니다!
-
-**✅ 올바른 방법**: 멤버 여부를 확인할 때는 `snapshot.exists()`를 사용해야 합니다.
-
-**예시 코드**:
-```typescript
-// ❌ 잘못된 코드 - false일 때 멤버가 아닌 것으로 잘못 판단
-const isMember = snapshot.val() === true;
-
-// ✅ 올바른 코드 - 필드 존재 여부만 확인 (true/false 모두 멤버임)
-const isMember = snapshot.exists();
 ```
 
 **중요**: `password` 필드는 `true` 또는 필드가 존재하지 않음(undefined)만 가능합니다. `false`를 저장하지 않습니다.
 
-### 2.2 `/chat-room-passwords/{roomId}`
+### 2.2 `chats/{roomId}/members/{uid}` 서브컬렉션
 ```typescript
 {
-  password: "plain-text-password",  // 비밀번호 (Plain Text - 암호화 안 함)
-  try: {
-    [uid: string]: "input-password" // 비밀번호 시도 기록 (Cloud Functions 트리거용)
-  }
+  member: true,                  // 멤버 여부
+  joinedAt: Timestamp            // 입장 시각 (서버 타임스탬프)
+}
+```
+
+**멤버 확인 방법**:
+```typescript
+// Firestore에서 멤버 여부 확인
+const memberDoc = await getDoc(doc(db, `chats/${roomId}/members/${uid}`));
+const isMember = memberDoc.exists() && memberDoc.data()?.member === true;
+```
+
+### 2.3 `chats/{roomId}/password-data/password` 문서
+```typescript
+{
+  password: "plain-text-password"  // 비밀번호 (Plain Text - 암호화 안 함)
+}
+```
+
+**보안 고려사항**:
+- `password-data` 서브컬렉션은 Owner만 읽기/쓰기 가능 (Security Rules)
+- Cloud Functions는 admin 권한으로 모든 데이터 접근 가능
+
+### 2.4 `chats/{roomId}/password-tries/{uid}` 서브컬렉션
+```typescript
+{
+  password: "input-password",    // 사용자가 입력한 비밀번호
+  timestamp: number               // 시도 시각 (밀리초)
 }
 ```
 
 **중요**:
-- `password` 필드는 Plain Text로 저장됩니다 (bcrypt 암호화 하지 않음)
-- `try/{uid}` 경로는 Cloud Functions 트리거용이며, 검증 후 즉시 삭제됩니다
+- 사용자가 비밀번호 입력 시 이 경로에 문서 생성
+- Cloud Functions가 트리거되어 비밀번호 검증
+- 검증 후 즉시 삭제됨
 
 ---
 
 ## 3. 입장 제어 플로우
 
-### 3.1 전체 플로우
+### 3.1 전체 플로우 (Firestore)
 ```
 1. 사용자 채팅방 입장 시도
    ↓
-2. /chat-rooms/{roomId}/members/{uid} 확인
-   ├─ 존재함 → 바로 입장 (비밀번호 불필요)
+2. chats/{roomId}/members/{uid} 문서 확인
+   ├─ 존재함 (member === true) → 바로 입장 (비밀번호 불필요)
    └─ 없음 → 3번으로
    ↓
-3. /chat-rooms/{roomId}/password 확인
+3. chats/{roomId} 문서의 password 필드 확인
    ├─ 필드 없음 → 바로 입장
    └─ true → 4번으로
    ↓
@@ -106,15 +105,15 @@ const isMember = snapshot.exists();
    ↓
 5. 사용자 비밀번호 입력
    ↓
-6. /chat-room-passwords/{roomId}/try/{uid} 에 입력값 저장
+6. chats/{roomId}/password-tries/{uid} 에 문서 생성 (입력값 저장)
    ↓
-7. Cloud Functions 자동 트리거 (onValueWritten)
-   ├─ 비밀번호 일치 → /chat-rooms/{roomId}/members/{uid}: true 저장
-   └─ 비밀번호 불일치 → try/{uid} 삭제 (에러 로그)
+7. Cloud Functions 자동 트리거 (onDocumentWritten)
+   ├─ 비밀번호 일치 → chats/{roomId}/members/{uid} 문서 생성: { member: true, joinedAt: serverTimestamp() }
+   └─ 비밀번호 불일치 → password-tries/{uid} 문서 삭제 (에러 로그)
    ↓
-8. 클라이언트: 10초 동안 매초 /chat-rooms/{roomId}/members/{uid} 확인
-   ├─ 존재하면 → 채팅방 revalidate/refresh → 입장 성공
-   └─ 10초 경과 → "비밀번호가 올바르지 않습니다" 에러 표시
+8. 클라이언트: 5초 동안 onSnapshot()으로 chats/{roomId}/members/{uid} 실시간 확인
+   ├─ 문서 생성됨 (member === true) → invalidate('chat:room') → 입장 성공
+   └─ 5초 경과 → "비밀번호가 올바르지 않습니다" 에러 표시
 ```
 
 ### 3.2 상세 단계별 설명
@@ -127,60 +126,57 @@ const isMember = snapshot.exists();
 
 #### 3.2.2 비밀번호 입력 (Step 4-6)
 - Dialog/Modal 형태로 비밀번호 입력 UI 표시
-- 입력값을 `/chat-room-passwords/{roomId}/try/{uid}` 경로에 저장
-- 저장 즉시 10초 타이머 시작
+- 입력값을 `chats/{roomId}/password-tries/{uid}` 문서로 저장
+- 저장 즉시 5초 타이머 시작
 
 #### 3.2.3 Cloud Functions 검증 (Step 7)
-- `onValueWritten` 트리거로 자동 실행
+- `onDocumentWritten` 트리거로 자동 실행 (Firestore)
 - 저장된 비밀번호와 입력값 비교
-- 일치: `/chat-rooms/{roomId}/members/{uid}: true` 저장
-- 불일치: `try/{uid}` 삭제만 수행
+- 일치: `chats/{roomId}/members/{uid}` 문서 생성 `{ member: true, joinedAt: serverTimestamp() }`
+- 불일치: `password-tries/{uid}` 문서 삭제만 수행
 
-#### 3.2.4 클라이언트 폴링 (Step 8)
-- 1초마다 `/chat-rooms/{roomId}/members/{uid}` 존재 확인
-- 존재하면: `invalidate('chat:room')` → 페이지 데이터 재로드
-- 10초 경과: 에러 메시지 + 모달 다시 표시
+#### 3.2.4 클라이언트 실시간 리스닝 (Step 8)
+- `onSnapshot()`으로 `chats/{roomId}/members/{uid}` 문서 실시간 확인
+- 문서 생성됨 (member === true): `invalidate('chat:room')` → 페이지 데이터 재로드
+- 5초 경과: 에러 메시지 + 모달 다시 표시
 
 ---
 
-## 4. Firebase Security Rules
+## 4. Firestore Security Rules
 
-### 4.1 `/chat-rooms/{roomId}` Rules
-```json
-{
-  "rules": {
-    "chat-rooms": {
-      "$roomId": {
-        ".read": "
-          // Owner는 항상 읽기 가능
-          data.child('owner').val() === auth.uid ||
-          // Members는 항상 읽기 가능
-          data.child('members').child(auth.uid).exists()
-        ",
-        "password": {
-          ".write": "
-            // Owner만 password 플래그 수정 가능
-            data.child('owner').val() === auth.uid ||
-            root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid
-          "
-        },
-        "members": {
-          "$uid": {
-            ".write": "
-              (
-                // 신규 추가 조건:
-                !data.exists() && (
-                  // 1) password 필드가 없는 경우 (비밀번호 미설정)
-                  !root.child('chat-rooms').child($roomId).child('password').exists() ||
-                  // 2) 본인이 owner인 경우 (owner는 항상 입장 가능)
-                  root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid
-                )
-              ) ||
-              // 기존 member는 수정/삭제 가능 (본인만)
-              (data.exists() && auth.uid === $uid)
-            "
-          }
-        }
+### 4.1 `chats/{roomId}` Rules
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /chats/{roomId} {
+      // 채팅방 문서 읽기
+      allow read: if request.auth != null && (
+        // Owner는 항상 읽기 가능
+        resource.data.owner == request.auth.uid ||
+        // Members는 항상 읽기 가능 (members 서브컬렉션 확인)
+        exists(/databases/$(database)/documents/chats/$(roomId)/members/$(request.auth.uid))
+      );
+
+      // password 필드 수정
+      allow update: if request.auth != null &&
+        resource.data.owner == request.auth.uid &&
+        // password 필드만 수정 가능
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['password']);
+
+      // Members 서브컬렉션
+      match /members/{uid} {
+        allow read: if request.auth != null;
+
+        allow create: if request.auth != null && (
+          // 1) 비밀번호가 설정되지 않은 경우
+          !get(/databases/$(database)/documents/chats/$(roomId)).data.password ||
+          // 2) Owner인 경우 (항상 입장 가능)
+          get(/databases/$(database)/documents/chats/$(roomId)).data.owner == request.auth.uid
+        );
+
+        // 기존 member는 자신의 문서 수정/삭제 가능 (나가기 기능)
+        allow update, delete: if request.auth != null && request.auth.uid == uid;
       }
     }
   }
@@ -188,76 +184,65 @@ const isMember = snapshot.exists();
 ```
 
 **핵심 로직**:
-1. **신규 추가 차단**: `password` 필드가 존재하고 owner가 아니면 members 추가 불가
-2. **기존 member**: 본인 데이터는 수정/삭제 가능 (나가기 기능)
+1. **신규 추가 차단**: `password` 필드가 true이고 owner가 아니면 members 생성 불가
+2. **기존 member**: 본인 문서는 수정/삭제 가능 (나가기 기능)
 3. **Owner 특권**: Owner는 비밀번호 설정 여부와 관계없이 항상 자신을 members에 추가 가능
 4. **비밀번호 미설정**: `password` 필드가 없으면 누구나 자신을 members에 추가 가능
 
-### 4.2 `/chat-room-passwords/{roomId}` Rules
-```json
-{
-  "rules": {
-    "chat-room-passwords": {
-      "$roomId": {
-        "password": {
-          ".read": "
-            // Owner만 비밀번호 읽기 가능
-            root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid
-          ",
-          ".write": "
-            // Owner만 비밀번호 쓰기 가능
-            root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid
-          "
-        },
-        "try": {
-          "$uid": {
-            ".write": "
-              // 본인만 try 경로에 쓰기 가능
-              auth.uid === $uid
-            "
-          }
-        }
-      }
-    }
-  }
+### 4.2 `chats/{roomId}/password-data` Rules
+```javascript
+match /chats/{roomId}/password-data/password {
+  // Owner만 비밀번호 읽기/쓰기 가능
+  allow read, write: if request.auth != null &&
+    get(/databases/$(database)/documents/chats/$(roomId)).data.owner == request.auth.uid;
+}
+```
+
+### 4.3 `chats/{roomId}/password-tries` Rules
+```javascript
+match /chats/{roomId}/password-tries/{uid} {
+  // 본인만 자신의 시도 기록 생성 가능
+  allow create: if request.auth != null && request.auth.uid == uid;
+
+  // 읽기 권한 없음 (Cloud Functions만 읽기)
 }
 ```
 
 **핵심 로직**:
-1. `password`: Owner만 읽기/쓰기 가능
-2. `try/{uid}`: 본인만 쓰기 가능 (비밀번호 시도 기록)
-3. `try` 읽기 권한 없음 (Cloud Functions만 읽기)
+1. `password-data/password`: Owner만 읽기/쓰기 가능
+2. `password-tries/{uid}`: 본인만 생성 가능
+3. `password-tries` 읽기 권한 없음 (Cloud Functions만 읽기)
 
 ---
 
-## 5. Cloud Functions 구현
+## 5. Cloud Functions 구현 (Firestore)
 
 ### 5.1 함수 개요
 **파일**: `firebase/functions/src/handlers/chat.password-verification.handler.ts`
 
-**트리거**: `onValueWritten('/chat-room-passwords/{roomId}/try/{uid}')`
+**트리거**: `onDocumentWritten('chats/{roomId}/password-tries/{uid}')`
 
 **로직**:
-1. `try/{uid}`에 기록된 입력 비밀번호 읽기
-2. `/chat-room-passwords/{roomId}/password` 실제 비밀번호 읽기
+1. `password-tries/{uid}` 문서에 기록된 입력 비밀번호 읽기
+2. `chats/{roomId}/password-data/password` 문서에서 실제 비밀번호 읽기
 3. 문자열 비교 (Plain Text 비교)
 4. 일치하면:
-   - `/chat-rooms/{roomId}/members/{uid}: true` 저장
-   - `/chat-room-passwords/{roomId}/try/{uid}` 삭제
+   - `chats/{roomId}/members/{uid}` 문서 생성: `{ member: true, joinedAt: serverTimestamp() }`
+   - `password-tries/{uid}` 문서 삭제
 5. 불일치하면:
-   - `/chat-room-passwords/{roomId}/try/{uid}` 삭제
+   - `password-tries/{uid}` 문서 삭제
    - 에러 로그 기록
 
 ### 5.2 코드 예시
 ```typescript
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
-import { onValueWritten } from "firebase-functions/v2/database";
+import { onDocumentWritten } from "firebase-functions/v2/firestore";
 
 /**
- * 채팅방 비밀번호 검증 핸들러
+ * 채팅방 비밀번호 검증 핸들러 (Firestore)
  *
- * /chat-room-passwords/{roomId}/try/{uid} 경로에 값이 기록되면 자동 실행됩니다.
+ * chats/{roomId}/password-tries/{uid} 경로에 값이 기록되면 자동 실행됩니다.
  *
  * @param roomId - 채팅방 ID
  * @param uid - 사용자 UID
@@ -268,29 +253,32 @@ export async function handlePasswordVerification(
   uid: string,
   tryPassword: string
 ): Promise<void> {
-  logger.info("비밀번호 검증 시작", { roomId, uid });
+  logger.info("채팅방 비밀번호 검증 시작", { roomId, uid });
+
+  const db = admin.firestore();
 
   try {
-    // 1. 실제 비밀번호 읽기
-    const passwordSnapshot = await admin.database()
-      .ref(`chat-room-passwords/${roomId}/password`)
-      .once("value");
+    // 1. 실제 비밀번호 읽기 (Firestore)
+    const passwordDocRef = db.doc(`chats/${roomId}/password-data/password`);
+    const passwordDoc = await passwordDocRef.get();
 
-    if (!passwordSnapshot.exists()) {
-      logger.error("비밀번호가 설정되지 않음", { roomId });
+    if (!passwordDoc.exists) {
+      logger.error("❌ 비밀번호가 설정되지 않음", { roomId, uid });
+      await db.doc(`chats/${roomId}/password-tries/${uid}`).delete();
       return;
     }
 
-    const actualPassword = passwordSnapshot.val() as string;
+    const actualPassword = passwordDoc.data()?.password as string;
 
     // 2. 비밀번호 비교 (Plain Text)
     if (tryPassword === actualPassword) {
-      logger.info("✅ 비밀번호 일치 - members에 추가", { roomId, uid });
+      logger.info("✅ 비밀번호 일치 - members에 추가 시작", { roomId, uid });
 
-      // 3. members에 추가
-      await admin.database()
-        .ref(`chat-rooms/${roomId}/members/${uid}`)
-        .set(true);
+      // 3. members에 추가 (admin 권한으로 Security Rules 우회)
+      await db.doc(`chats/${roomId}/members/${uid}`).set({
+        member: true,
+        joinedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
 
       logger.info("✅ members 추가 완료", { roomId, uid });
     } else {
@@ -298,32 +286,43 @@ export async function handlePasswordVerification(
     }
 
     // 4. try 경로 삭제 (보안상 즉시 삭제)
-    await admin.database()
-      .ref(`chat-room-passwords/${roomId}/try/${uid}`)
-      .remove();
+    await db.doc(`chats/${roomId}/password-tries/${uid}`).delete();
+
+    logger.info("✅ try 경로 삭제 완료", { roomId, uid });
 
   } catch (error) {
-    logger.error("비밀번호 검증 에러", { roomId, uid, error });
+    logger.error("❌ 비밀번호 검증 에러", { roomId, uid, error });
+
+    // 에러 발생 시에도 try 경로 삭제
+    try {
+      await db.doc(`chats/${roomId}/password-tries/${uid}`).delete();
+    } catch (deleteError) {
+      logger.error("❌ try 경로 삭제 실패", { roomId, uid, error: deleteError });
+    }
   }
 }
 
 /**
- * Cloud Functions 트리거 등록
+ * Cloud Functions 트리거 등록 (Firestore)
  */
-export const onPasswordTry = onValueWritten(
+export const onPasswordTry = onDocumentWritten(
   {
-    ref: "/chat-room-passwords/{roomId}/try/{uid}",
+    document: "chats/{roomId}/password-tries/{uid}",
     region: "asia-southeast1"
   },
   async (event) => {
     const roomId = event.params.roomId as string;
     const uid = event.params.uid as string;
-    const tryPassword = event.data.after.val() as string;
+    const afterData = event.data?.after.data();
+    const tryPassword = afterData?.password as string | null;
 
     // 삭제된 경우 무시
-    if (!tryPassword) {
+    if (!tryPassword || !event.data?.after.exists) {
+      logger.info("try 경로 삭제됨 - 무시", { roomId, uid });
       return;
     }
+
+    logger.info("onPasswordTry 트리거 실행", { roomId, uid });
 
     await handlePasswordVerification(roomId, uid, tryPassword);
   }
@@ -334,7 +333,7 @@ export const onPasswordTry = onValueWritten(
 
 ## 6. Svelte UI 구현
 
-### 6.1 비밀번호 설정 UI (Owner용)
+### 6.1 비밀번호 설정 UI (Owner용) - Firestore
 
 **파일**: `src/lib/components/chat/room-password-setting.svelte`
 
@@ -350,14 +349,14 @@ export const onPasswordTry = onValueWritten(
 - ✅ 3개 버튼: "취소", "저장", "비밀번호 삭제"
 - ✅ "비밀번호 삭제" 버튼은 기존 비밀번호가 있을 때만 표시
 
-**UI 구조**:
+**UI 구조 (Firestore)**:
 ```svelte
 <script lang="ts">
   import { Button } from '$lib/components/ui/button';
   import { Input } from '$lib/components/ui/input';
   import { toast } from 'svelte-sonner';
-  import { rtdb } from '$lib/firebase';
-  import { ref, update, remove } from 'firebase/database';
+  import { db } from '$lib/firebase';
+  import { doc, setDoc, updateDoc, deleteField } from 'firebase/firestore';
   import { m } from '$lib/paraglide/messages';
 
   interface Props {
@@ -371,13 +370,8 @@ export const onPasswordTry = onValueWritten(
   let password = $state(currentPassword);
   let isSaving = $state(false);
 
-  // 비밀번호 저장
+  // 비밀번호 저장 (Firestore)
   async function handleSave() {
-    if (!rtdb) {
-      toast.error(m.chatPasswordSaveFailure());
-      return;
-    }
-
     // 유효성 검사 (최소 4자)
     if (password.length < 4) {
       toast.error(m.chatPasswordMinLengthError());
@@ -387,17 +381,24 @@ export const onPasswordTry = onValueWritten(
     isSaving = true;
 
     try {
-      // 비밀번호 저장
-      await update(ref(rtdb, `chat-room-passwords/${roomId}`), {
+      // 비밀번호 저장 (password-data subcollection)
+      const passwordDocRef = doc(db!, `chats/${roomId}/password-data/password`);
+      await setDoc(passwordDocRef, {
         password: password
       });
 
-      // 활성화 플래그 저장
-      await update(ref(rtdb, `chat-rooms/${roomId}`), {
+      // 활성화 플래그 저장 (chat room document)
+      const roomDocRef = doc(db!, `chats/${roomId}`);
+      await updateDoc(roomDocRef, {
         password: true
       });
 
       toast.success(m.chatPasswordSetSuccess());
+
+      // 저장 성공 시 모달창 닫기
+      if (onCancel) {
+        onCancel();
+      }
     } catch (error) {
       console.error('❌ 비밀번호 저장 실패:', error);
       toast.error(m.chatPasswordSaveFailure());
@@ -406,26 +407,26 @@ export const onPasswordTry = onValueWritten(
     }
   }
 
-  // 비밀번호 삭제
+  // 비밀번호 삭제 (Firestore)
   async function handleDelete() {
-    if (!rtdb) {
-      toast.error(m.chatPasswordSaveFailure());
-      return;
-    }
-
     isSaving = true;
 
     try {
-      // 비밀번호 삭제
-      await remove(ref(rtdb, `chat-room-passwords/${roomId}/password`));
-
-      // 활성화 플래그 삭제
-      await remove(ref(rtdb, `chat-rooms/${roomId}/password`));
+      // 활성화 플래그 삭제 (password 필드만 제거)
+      const roomDocRef = doc(db!, `chats/${roomId}`);
+      await updateDoc(roomDocRef, {
+        password: deleteField()
+      });
 
       toast.success(m.chatPasswordDeleteSuccess());
 
-      // 입력창 초기화
+      // 비밀번호 입력창 초기화
       password = '';
+
+      // 삭제 성공 시 모달창 닫기
+      if (onCancel) {
+        onCancel();
+      }
     } catch (error) {
       console.error('❌ 비밀번호 삭제 실패:', error);
       toast.error(m.chatPasswordSaveFailure());
@@ -446,27 +447,37 @@ export const onPasswordTry = onValueWritten(
 
   <!-- 버튼 그룹 -->
   <div class="button-group">
-    <!-- 취소 버튼 -->
+    <!-- 취소 버튼 (좌측) -->
     {#if onCancel}
       <Button variant="outline" onclick={onCancel} disabled={isSaving}>
         {m.commonCancel()}
       </Button>
     {/if}
 
-    <!-- 저장 버튼 -->
-    <Button onclick={handleSave} disabled={isSaving}>
-      {isSaving ? m.chatPasswordSaving() : m.commonSave()}
-    </Button>
+    <!-- 우측 버튼 그룹 -->
+    <div class="right-buttons">
+      <!-- 비밀번호 삭제 버튼 (기존 비밀번호가 있을 때만) -->
+      {#if currentPassword}
+        <Button variant="destructive" onclick={handleDelete} disabled={isSaving}>
+          {m.chatPasswordDelete()}
+        </Button>
+      {/if}
 
-    <!-- 비밀번호 삭제 버튼 (기존 비밀번호가 있을 때만) -->
-    {#if currentPassword}
-      <Button variant="destructive" onclick={handleDelete} disabled={isSaving}>
-        {m.chatPasswordDelete()}
+      <!-- 저장 버튼 (파란색) -->
+      <Button onclick={handleSave} disabled={isSaving} class="bg-blue-600 hover:bg-blue-700 text-white">
+        {isSaving ? m.chatPasswordSaving() : m.commonSave()}
       </Button>
-    {/if}
+    </div>
   </div>
 </div>
 ```
+
+**주요 변경사항**:
+- `rtdb` → `db` (Firestore)
+- `ref()`, `update()`, `remove()` → `doc()`, `setDoc()`, `updateDoc()`, `deleteField()`
+- 경로 변경:
+  - `chat-room-passwords/${roomId}` → `chats/${roomId}/password-data/password`
+  - `chat-rooms/${roomId}` → `chats/${roomId}`
 
 **Props**:
 - `roomId`: 채팅방 ID
@@ -480,32 +491,33 @@ export const onPasswordTry = onValueWritten(
 - "취소", "저장", "비밀번호 삭제" 3개 버튼 제공
 - `isPasswordEnabled` prop 제거
 
-### 6.2 비밀번호 입력 모달 (입장자용)
+### 6.2 비밀번호 입력 모달 (입장자용) - Firestore
 
 **파일**: `src/lib/components/chat/room-password-prompt.svelte`
 
 **기능**:
 - Dialog 형태 모달
 - 비밀번호 입력 필드
-- 10초 타임아웃
-- 매초 members 확인
+- 5초 타임아웃
+- onSnapshot()으로 members 실시간 확인
 - 확인/취소 버튼
 
 **UI/UX 세부 규칙**:
 - 입력 필드에 공백(Space) 또는 Enter 키 입력 시 Dialog 전체가 닫히지 않도록 `keydown` 이벤트 전파를 차단하여 사용자가 안전하게 비밀번호를 입력/제출할 수 있어야 합니다.
 - 버튼 배치는 왼쪽에 텍스트 스타일의 `Cancel`, 오른쪽에 기본 버튼 형태의 `Confirm`을 두고, Confirm 버튼만 강조합니다.
 
-**UI 구조**:
+**UI 구조 (Firestore)**:
 ```svelte
 <script lang="ts">
-  import { Dialog, DialogContent } from '$lib/components/ui/dialog';
+  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '$lib/components/ui/dialog';
   import { Input } from '$lib/components/ui/input';
   import { Button } from '$lib/components/ui/button';
   import { toast } from 'svelte-sonner';
-  import { rtdb } from '$lib/firebase';
-  import { ref, set, onValue, off } from 'firebase/database';
+  import { db } from '$lib/firebase';
+  import { doc, setDoc, onSnapshot } from 'firebase/firestore';
   import { authStore } from '$lib/stores/auth.svelte';
   import { invalidate } from '$app/navigation';
+  import { m } from '$lib/paraglide/messages';
 
   interface Props {
     roomId: string;
@@ -514,11 +526,25 @@ export const onPasswordTry = onValueWritten(
     onCancel: () => void;
   }
 
-  let { roomId, open, onSuccess, onCancel }: Props = $props();
+  let { roomId, open = $bindable(), onSuccess, onCancel }: Props = $props();
 
   let password = $state('');
   let isVerifying = $state(false);
   let countdown = $state(5);
+
+  /**
+   * 입력 필드에서 공백 입력 시 Dialog가 닫히는 것을 방지
+   */
+  function handlePasswordKeyDown(event: KeyboardEvent) {
+    if (
+      event.code === 'Space' ||
+      event.key === ' ' ||
+      event.key === 'Spacebar' ||
+      event.key === 'Enter'
+    ) {
+      event.stopPropagation();
+    }
+  }
 
   async function handleSubmit() {
     if (!password || !authStore.user?.uid) return;
@@ -527,36 +553,41 @@ export const onPasswordTry = onValueWritten(
     countdown = 5;
 
     try {
-      // 1. try 경로에 비밀번호 저장
-      await set(
-        ref(rtdb, `chat-room-passwords/${roomId}/try/${authStore.user.uid}`),
-        password
-      );
+      // 1. try 경로에 비밀번호 저장 (Firestore)
+      const tryDocRef = doc(db!, `chats/${roomId}/password-tries/${authStore.user.uid}`);
+      await setDoc(tryDocRef, {
+        password: password,
+        timestamp: Date.now()
+      });
 
       // 2. 5초 동안 매초 members 확인
       const verified = await waitForVerification(roomId, authStore.user.uid);
 
       if (verified) {
-        toast.success('비밀번호가 확인되었습니다');
+        toast.success(m.chatPasswordVerifySuccess());
         await invalidate('chat:room'); // SvelteKit 데이터 재로드
         onSuccess();
       } else {
-        toast.error('비밀번호가 올바르지 않습니다');
+        toast.error(m.chatPasswordIncorrect());
         password = '';
       }
     } catch (error) {
-      console.error('비밀번호 검증 에러:', error);
-      toast.error('비밀번호 검증에 실패했습니다');
+      console.error('❌ 비밀번호 검증 에러:', error);
+      toast.error(m.chatPasswordVerifyFailure());
     } finally {
       isVerifying = false;
     }
   }
 
+  /**
+   * 비밀번호 검증 대기 함수 (Firestore onSnapshot)
+   */
   async function waitForVerification(roomId: string, uid: string): Promise<boolean> {
     return new Promise((resolve) => {
-      const memberRef = ref(rtdb, `chat-rooms/${roomId}/members/${uid}`);
+      const memberDocRef = doc(db!, `chats/${roomId}/members/${uid}`);
       let intervalId: any;
       let timeoutId: any;
+      let unsubscribe: (() => void) | null = null;
 
       // 매초 카운트다운
       intervalId = setInterval(() => {
@@ -566,52 +597,86 @@ export const onPasswordTry = onValueWritten(
       // 5초 타임아웃
       timeoutId = setTimeout(() => {
         clearInterval(intervalId);
-        off(memberRef);
+        if (unsubscribe) unsubscribe();
         resolve(false);
       }, 5000);
 
-      // members 확인
-      onValue(memberRef, (snapshot) => {
-        if (snapshot.val() === true) {
+      // members 경로 실시간 확인 (Firestore onSnapshot)
+      unsubscribe = onSnapshot(memberDocRef, (snapshot) => {
+        if (snapshot.exists() && snapshot.data()?.member === true) {
+          // 검증 성공: members에 추가됨
           clearInterval(intervalId);
           clearTimeout(timeoutId);
-          off(memberRef);
+          if (unsubscribe) unsubscribe();
           resolve(true);
         }
       });
     });
   }
+
+  function handleCancel() {
+    if (isVerifying) return; // 검증 중에는 취소 불가
+    password = '';
+    onCancel();
+  }
 </script>
 
-<Dialog {open}>
-  <DialogContent>
-    <h2>비밀번호 입력</h2>
-    <p>이 채팅방은 비밀번호가 필요합니다.</p>
+<Dialog bind:open>
+  <DialogContent class="modal-content">
+    <DialogHeader>
+      <DialogTitle class="modal-title">
+        {m.chatPasswordSettings()}
+      </DialogTitle>
+      <DialogDescription class="modal-description">
+        {m.chatPasswordRequired()}
+      </DialogDescription>
+    </DialogHeader>
 
-    <form onsubmit|preventDefault={handleSubmit}>
+    <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="modal-form">
+      <!-- 비밀번호 입력 필드 -->
       <Input
         type="password"
-        placeholder="비밀번호를 입력하세요"
+        placeholder={m.chatPasswordEnterPrompt()}
         bind:value={password}
         disabled={isVerifying}
+        class="password-input"
+        onkeydown={handlePasswordKeyDown}
       />
 
+      <!-- 검증 중 카운트다운 표시 -->
       {#if isVerifying}
-        <p>검증 중... ({countdown}초 남음)</p>
+        <p class="countdown-text">
+          {m.chatPasswordVerifying({ countdown })}
+        </p>
       {/if}
 
-      <div class="flex gap-2">
-        <Button type="submit" disabled={isVerifying || !password}>
-          확인
-        </Button>
-        <Button variant="outline" onclick={onCancel} disabled={isVerifying}>
-          취소
+      <!-- 버튼 영역 -->
+      <div class="button-group">
+        <button
+          type="button"
+          class="cancel-text-button"
+          onclick={handleCancel}
+          disabled={isVerifying}
+        >
+          {m.commonCancel()}
+        </button>
+        <Button type="submit" disabled={isVerifying || !password} class="confirm-button">
+          {m.commonConfirm()}
         </Button>
       </div>
     </form>
   </DialogContent>
 </Dialog>
 ```
+
+**주요 변경사항**:
+- `rtdb` → `db` (Firestore)
+- `ref()`, `set()`, `onValue()`, `off()` → `doc()`, `setDoc()`, `onSnapshot()`
+- 경로 변경:
+  - `chat-room-passwords/${roomId}/try/${uid}` → `chats/${roomId}/password-tries/${uid}`
+  - `chat-rooms/${roomId}/members/${uid}` → `chats/${roomId}/members/${uid}`
+- 멤버 확인 방식 변경:
+  - `snapshot.val() === true` → `snapshot.exists() && snapshot.data()?.member === true`
 
 ### 6.3 채팅방 헤더 메뉴 수정
 
@@ -872,5 +937,6 @@ export const load: PageLoad = async ({ params }) => {
 
 | 버전 | 날짜 | 변경 내용 | 작성자 |
 |------|------|----------|--------|
+| 2.0.0 | 2025-11-15 | **Firestore 마이그레이션 완료**<br>- Database 구조 변경: RTDB → Firestore 서브컬렉션<br>  - `chats/{roomId}/members/{uid}`: 멤버 관리<br>  - `chats/{roomId}/password-data/password`: 비밀번호 저장<br>  - `chats/{roomId}/password-tries/{uid}`: 비밀번호 시도<br>- Security Rules 완전 재작성: RTDB JSON → Firestore rules_version 2<br>- Cloud Functions: `onValueWritten` → `onDocumentWritten`<br>- UI 컴포넌트: RTDB API → Firestore API<br>  - `ref()`, `set()`, `update()`, `remove()` → `doc()`, `setDoc()`, `updateDoc()`, `deleteField()`<br>  - `onValue()` polling → `onSnapshot()` 실시간 리스너<br>- 타임아웃 단축: 10초 → 5초<br>- 멤버 확인 방식: `snapshot.val() === true` → `snapshot.exists() && snapshot.data()?.member === true` | Claude Code |
 | 1.1.0 | 2025-11-15 | 비밀번호 설정 UI 개선: 토글 제거, type="text" 사용, 버튼 3개 (취소/저장/삭제) | Claude Code |
-| 1.0.0 | 2025-11-14 | 초기 버전 작성 | Claude Code |
+| 1.0.0 | 2025-11-14 | 초기 버전 작성 (RTDB 기반) | Claude Code |

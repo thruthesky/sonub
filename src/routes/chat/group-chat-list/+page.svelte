@@ -2,10 +2,10 @@
 	/**
 	 * 그룹 채팅방 목록 페이지
 	 *
-	 * DatabaseListView를 사용하여 내가 참여한 그룹 채팅방 목록을 무한 스크롤로 표시합니다.
+	 * FirestoreListView를 사용하여 내가 참여한 그룹 채팅방 목록을 무한 스크롤로 표시합니다.
 	 */
 
-	import DatabaseListView from '$lib/components/DatabaseListView.svelte';
+	import FirestoreListView from '$lib/components/FirestoreListView.svelte';
 	import Avatar from '$lib/components/user/avatar.svelte';
 	import ChatCreateDialog from '$lib/components/chat/ChatCreateDialog.svelte';
 	import ChatInvitationList from '$lib/components/chat/ChatInvitationList.svelte';
@@ -16,7 +16,7 @@
 	import { resolveRoomTypeLabel, togglePinChatRoom } from '$lib/functions/chat.functions';
 	import ChatListMenu from '$lib/components/chat/ChatListMenu.svelte';
 	import ChatFavoritesDialog from '$lib/components/chat/ChatFavoritesDialog.svelte';
-	import { rtdb } from '$lib/firebase';
+	import { db } from '$lib/firebase';
 
 	type ChatJoinData = Record<string, unknown>;
 
@@ -114,23 +114,23 @@
 			return;
 		}
 
-		if (!rtdb) {
+		if (!db) {
 			console.error('Database가 초기화되지 않았습니다');
 			return;
 		}
 
 		try {
-			const isPinned = await togglePinChatRoom(rtdb, roomId, uid, roomType);
+			const isPinned = await togglePinChatRoom(db, roomId, uid, roomType);
 			// console.log(`✅ 채팅방 핀 ${isPinned ? '설정' : '해제'} 완료:`, roomId);
 		} catch (error) {
 			console.error('채팅방 핀 토글 실패:', error);
 		}
 	}
 
-	// 현재 로그인 사용자의 chat-joins 경로
+	// 현재 로그인 사용자의 chat-joins 경로 (Firestore)
 	const chatJoinPath = $derived.by(() => {
 		const uid = authStore.user?.uid;
-		const path = uid ? `chat-joins/${uid}` : '';
+		const path = uid ? `users/${uid}/chat-joins` : '';
 		// console.log('🔍 [Group Chat List Debug] User UID:', uid);
 		// console.log('🔍 [Group Chat List Debug] Chat join path:', path);
 		return path;
@@ -213,33 +213,33 @@
 				{@const dbListViewProps = {
 					path: chatJoinPath,
 					pageSize: PAGE_SIZE,
-					orderBy: JOIN_ORDER_FIELD,
-					threshold: 320,
-					reverse: true
+					orderByField: JOIN_ORDER_FIELD,
+					orderDirection: 'desc' as const,
+					threshold: 320
 				}}
 				{#if chatJoinPath}
 					<!--
-						// console.log('🔍 [Group Chat List Debug] DatabaseListView props:', dbListViewProps)
+						// console.log('🔍 [Group Chat List Debug] FirestoreListView props:', dbListViewProps)
 					-->
 				{/if}
-				<DatabaseListView
+				<FirestoreListView
 					path={chatJoinPath}
 					pageSize={PAGE_SIZE}
-					orderBy={JOIN_ORDER_FIELD}
+					orderByField={JOIN_ORDER_FIELD}
+					orderDirection="desc"
 					threshold={320}
-					reverse={true}
 				>
 					{#snippet item(itemData, index)}
 						<!--
 							// console.log('🔍 [Group Chat List Debug] Item received:', {
 							// 	index,
-							// 	key: itemData.key,
+							// 	id: itemData.id,
 							// 	hasData: !!itemData.data,
 							// 	data: itemData.data
 							// })
 						-->
 						{@const join = (itemData.data ?? {}) as ChatJoinData}
-						{@const roomId = (join.roomId ?? itemData.key ?? '') as string}
+						{@const roomId = (join.roomId ?? itemData.id ?? '') as string}
 						{@const roomType = (join.roomType ?? join.type ?? 'group').toString()}
 						{@const openAndGroupChatListOrder = join.openAndGroupChatListOrder ?? null}
 						<!--
@@ -333,7 +333,7 @@
 					{#snippet noMore()}
 						<p class="py-6 text-center text-xs uppercase tracking-wide text-gray-400">{m.chatUpToDate()}</p>
 					{/snippet}
-				</DatabaseListView>
+				</FirestoreListView>
 			{/key}
 		</section>
 	{/if}

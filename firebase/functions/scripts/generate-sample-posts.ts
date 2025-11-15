@@ -29,11 +29,11 @@ import * as admin from "firebase-admin";
  */
 function initializeFirebase() {
   // 자격증명 경로 확인
-  const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  // const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
   // console.log("🔧 Firebase Admin 초기화 중...");
   // console.log(
-    // `📍 Credentials: ${credentialsPath || "Default Application Credentials"}`
+    // `📍 Credentials: ${process.env.GOOGLE_APPLICATION_CREDENTIALS || "Default Application Credentials"}`
   // );
 
   if (!admin.apps.length) {
@@ -250,20 +250,20 @@ async function generateSamplePosts() {
 
       // 진행 상황 출력
       const progress = Math.min(endIndex, totalPosts);
-      const progressPercent = Math.round((progress / totalPosts) * 100);
+      // const progressPercent = Math.round((progress / totalPosts) * 100);
       // console.log(
-        // `\n📊 진행 상황: ${progress}/${totalPosts} (${progressPercent}%)\n`
+        // `\n📊 진행 상황: ${progress}/${totalPosts} (${Math.round((progress / totalPosts) * 100)}%)\n`
       // );
     }
 
     // 완료 결과 출력
-    const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
+    // const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
 
     // console.log("\n" + "=".repeat(60));
     // console.log("✅ 글 생성 완료!");
     // console.log("=".repeat(60));
     // console.log(`📊 생성된 글 수: ${createdCount}/${totalPosts}`);
-    // console.log(`⏱️  소요 시간: ${elapsedTime}초`);
+    // console.log(`⏱️  소요 시간: ${((Date.now() - startTime) / 1000).toFixed(2)}초`);
 
     if (errors.length > 0) {
       // console.log(`⚠️  오류 발생 수: ${errors.length}`);

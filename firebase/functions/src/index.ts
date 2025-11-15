@@ -12,10 +12,10 @@
 // Gen 2 API imports
 import {setGlobalOptions} from "firebase-functions/v2";
 import {
-  onValueCreated,
-  onValueDeleted,
-  onValueWritten,
-} from "firebase-functions/v2/database";
+  onDocumentCreated,
+  onDocumentDeleted,
+  onDocumentWritten,
+} from "firebase-functions/v2/firestore";
 import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 
@@ -62,26 +62,26 @@ setGlobalOptions({
 /**
  * 사용자 등록 시 user-props 노드에 주요 필드를 분리 저장하고 createdAt을 설정합니다.
  *
- * 트리거 경로: /users/{uid}
+ * 트리거 경로: users/{uid}
  *
  * 수행 작업:
- * 1. createdAt 필드 자동 생성 및 /users/{uid}/createdAt 직접 저장
+ * 1. createdAt 필드 자동 생성 및 users/{uid}/createdAt 직접 저장
  * 2. handleUserCreate() 함수를 통해 모든 사용자 데이터 정규화 및 동기화 수행
  *    - updatedAt 필드 자동 생성
  *    - displayNameLowerCase 자동 생성
  *    - photoUrl 처리
- *    - /users/{uid} 노드 업데이트
- *    - /user-props/ 노드 동기화
- *    - /stats/counters/user +1 (전체 사용자 통계 업데이트)
+ *    - users/{uid} 문서 업데이트
+ *    - stats 문서 동기화
+ *    - stats/counters/user +1 (전체 사용자 통계 업데이트)
  */
-export const onUserCreate = onValueCreated(
+export const onUserCreate = onDocumentCreated(
   {
-    ref: "/users/{uid}",
+    document: "users/{uid}",
     region: FIREBASE_REGION,
   },
   async (event) => {
     const uid = event.params.uid as string;
-    const userData = (event.data.val() || {}) as UserData;
+    const userData = (event.data?.data() || {}) as UserData;
 
     logger.info("새 사용자 등록 감지", {
       uid,
@@ -96,169 +96,62 @@ export const onUserCreate = onValueCreated(
 
 
 /**
- * 사용자 displayName 필드 생성/수정/삭제 시 트리거
+ * 사용자 문서 필드 변경 시 트리거 (통합)
  *
- * 트리거 경로: /users/{uid}/displayName
- * 트리거 이벤트: onValueWritten (생성, 수정, 삭제 모두 감지)
- *
- * 수행 작업:
- * - 생성/수정 시:
- *   1. createdAt 필드가 없으면 자동 생성
- *   2. displayNameLowerCase 자동 생성 (대소문자 구분 없는 검색용)
- *   3. updatedAt 업데이트
- * - 삭제 시:
- *   1. displayNameLowerCase 삭제 (동기화)
- *   2. updatedAt 업데이트
- *
- * 무한 루프 방지:
- * - displayName 필드만 감지하므로 displayNameLowerCase 업데이트 시 재트리거 안 됨
- */
-export const onUserDisplayNameWrite = onValueWritten(
-  {
-    ref: "/users/{uid}/displayName",
-    region: FIREBASE_REGION,
-  },
-  async (event) => {
-    const uid = event.params.uid as string;
-    const beforeValue = event.data.before.val() as string | null;
-    const afterValue = event.data.after.val() as string | null;
-
-    logger.info("displayName 필드 변경 감지 (생성/수정/삭제)", {
-      uid,
-      beforeValue,
-      afterValue,
-      action: afterValue === null ? "삭제" : beforeValue === null ? "생성" : "수정",
-    });
-
-    // 비즈니스 로직 핸들러 호출
-    return await handleUserDisplayNameUpdate(uid, beforeValue, afterValue);
-  }
-);
-
-/**
- * 사용자 photoUrl 필드 생성/수정/삭제 시 트리거
- *
- * 트리거 경로: /users/{uid}/photoUrl
- * 트리거 이벤트: onValueWritten (생성, 수정, 삭제 모두 감지)
+ * 트리거 경로: users/{uid}
+ * 트리거 이벤트: onDocumentWritten (생성, 수정, 삭제 모두 감지)
  *
  * 수행 작업:
- * - 생성/수정 시:
- *   1. createdAt 필드가 없으면 자동 생성
- *   2. updatedAt 업데이트
- * - 삭제 시:
- *   1. updatedAt 업데이트
- *
- * 무한 루프 방지:
- * - photoUrl 필드만 감지하므로 다른 필드 업데이트 시 재트리거 안 됨
- */
-export const onUserPhotoUrlWrite = onValueWritten(
-  {
-    ref: "/users/{uid}/photoUrl",
-    region: FIREBASE_REGION,
-  },
-  async (event) => {
-    const uid = event.params.uid as string;
-    const beforeValue = event.data.before.val() as string | null;
-    const afterValue = event.data.after.val() as string | null;
-
-    logger.info("photoUrl 필드 변경 감지 (생성/수정/삭제)", {
-      uid,
-      beforeValue,
-      afterValue,
-      action: afterValue === null ? "삭제" : beforeValue === null ? "생성" : "수정",
-    });
-
-    // 비즈니스 로직 핸들러 호출
-    return await handleUserPhotoUrlUpdate(uid, beforeValue, afterValue);
-  }
-);
-
-/**
- * 사용자 birthYearMonthDay 필드 생성/수정/삭제 시 트리거
- *
- * 트리거 경로: /users/{uid}/birthYearMonthDay
- * 트리거 이벤트: onValueWritten (생성, 수정, 삭제 모두 감지)
- *
- * 수행 작업:
- * - 생성/수정 시:
- *   1. createdAt 필드가 없으면 자동 생성
- *   2. YYYY-MM-DD 형식 파싱 및 유효성 검증
- *   3. 파생 필드 자동 생성:
- *      - birthYear (number): 생년
- *      - birthMonth (number): 생월
- *      - birthDay (number): 생일
- *      - birthMonthDay (string): 생월일 (MM-DD 형식)
- * - 삭제 시:
- *   1. 모든 파생 필드 삭제 (동기화)
- *
- * 무한 루프 방지:
- * - birthYearMonthDay 필드만 감지하므로 파생 필드 업데이트 시 재트리거 안 됨
+ * - displayName 필드 변경 시: handleUserDisplayNameUpdate 호출
+ * - photoUrl 필드 변경 시: handleUserPhotoUrlUpdate 호출
+ * - birthYearMonthDay 필드 변경 시: handleUserBirthYearMonthDayUpdate 호출
+ * - gender 필드 변경 시: handleUserGenderUpdate 호출
  *
  * 참고:
- * - updatedAt은 업데이트하지 않음 (내부 속성 변경으로 간주)
+ * - Firestore는 문서당 하나의 onDocumentWritten 트리거만 허용
+ * - 따라서 모든 필드 변경을 하나의 트리거에서 감지하고 각 핸들러 호출
  */
-export const onUserBirthYearMonthDayWrite = onValueWritten(
+export const onUserFieldsWrite = onDocumentWritten(
   {
-    ref: "/users/{uid}/birthYearMonthDay",
+    document: "users/{uid}",
     region: FIREBASE_REGION,
   },
   async (event) => {
     const uid = event.params.uid as string;
-    const beforeValue = event.data.before.val() as string | null;
-    const afterValue = event.data.after.val() as string | null;
+    const beforeData = event.data?.before.data() as UserData | undefined;
+    const afterData = event.data?.after.data() as UserData | undefined;
 
-    logger.info("birthYearMonthDay 필드 변경 감지 (생성/수정/삭제)", {
-      uid,
-      beforeValue,
-      afterValue,
-      action: afterValue === null ? "삭제" : beforeValue === null ? "생성" : "수정",
-    });
+    // displayName 필드 변경 감지
+    const beforeDisplayName = beforeData?.displayName ?? null;
+    const afterDisplayName = afterData?.displayName ?? null;
+    if (beforeDisplayName !== afterDisplayName) {
+      logger.info("displayName 필드 변경 감지", {uid, beforeDisplayName, afterDisplayName});
+      await handleUserDisplayNameUpdate(uid, beforeDisplayName, afterDisplayName);
+    }
 
-    // 비즈니스 로직 핸들러 호출
-    return await handleUserBirthYearMonthDayUpdate(uid, beforeValue, afterValue);
-  }
-);
+    // photoUrl 필드 변경 감지
+    const beforePhotoUrl = beforeData?.photoUrl ?? null;
+    const afterPhotoUrl = afterData?.photoUrl ?? null;
+    if (beforePhotoUrl !== afterPhotoUrl) {
+      logger.info("photoUrl 필드 변경 감지", {uid, beforePhotoUrl, afterPhotoUrl});
+      await handleUserPhotoUrlUpdate(uid, beforePhotoUrl, afterPhotoUrl);
+    }
 
-/**
- * 사용자 gender 필드 생성/수정/삭제 시 트리거
- *
- * 트리거 경로: /users/{uid}/gender
- * 트리거 이벤트: onValueWritten (생성, 수정, 삭제 모두 감지)
- *
- * 수행 작업:
- * - 생성/수정 시:
- *   1. photoUrl 존재 여부 확인
- *   2. photoUrl이 있는 경우:
- *      - gender=F: sort_recentFemaleWithPhoto에 createdAt 설정, sort_recentMaleWithPhoto는 null
- *      - gender=M: sort_recentMaleWithPhoto에 createdAt 설정, sort_recentFemaleWithPhoto는 null
- *   3. photoUrl이 없는 경우: 두 정렬 필드 모두 null
- *   4. updatedAt 업데이트
- * - 삭제 시:
- *   1. sort_recentFemaleWithPhoto와 sort_recentMaleWithPhoto 삭제
- *   2. updatedAt 업데이트
- *
- * 무한 루프 방지:
- * - gender 필드만 감지하므로 다른 필드 업데이트 시 재트리거 안 됨
- */
-export const onUserGenderWrite = onValueWritten(
-  {
-    ref: "/users/{uid}/gender",
-    region: FIREBASE_REGION,
-  },
-  async (event) => {
-    const uid = event.params.uid as string;
-    const beforeValue = event.data.before.val() as string | null;
-    const afterValue = event.data.after.val() as string | null;
+    // birthYearMonthDay 필드 변경 감지
+    const beforeBirthYearMonthDay = (beforeData?.birthYearMonthDay as string | undefined) ?? null;
+    const afterBirthYearMonthDay = (afterData?.birthYearMonthDay as string | undefined) ?? null;
+    if (beforeBirthYearMonthDay !== afterBirthYearMonthDay) {
+      logger.info("birthYearMonthDay 필드 변경 감지", {uid, beforeBirthYearMonthDay, afterBirthYearMonthDay});
+      await handleUserBirthYearMonthDayUpdate(uid, beforeBirthYearMonthDay, afterBirthYearMonthDay);
+    }
 
-    logger.info("gender 필드 변경 감지 (생성/수정/삭제)", {
-      uid,
-      beforeValue,
-      afterValue,
-      action: afterValue === null ? "삭제" : beforeValue === null ? "생성" : "수정",
-    });
-
-    // 비즈니스 로직 핸들러 호출
-    return await handleUserGenderUpdate(uid, beforeValue, afterValue);
+    // gender 필드 변경 감지
+    const beforeGender = (beforeData?.gender as string | undefined) ?? null;
+    const afterGender = (afterData?.gender as string | undefined) ?? null;
+    if (beforeGender !== afterGender) {
+      logger.info("gender 필드 변경 감지", {uid, beforeGender, afterGender});
+      await handleUserGenderUpdate(uid, beforeGender, afterGender);
+    }
   }
 );
 
@@ -267,20 +160,20 @@ export const onUserGenderWrite = onValueWritten(
 /**
  * 채팅 메시지 생성 시 트리거되는 Cloud Function
  *
- * 트리거 경로: /chat-messages/{messageId}
+ * 트리거 경로: messages/{messageId}
  *
  * 수행 작업:
  * 1. 프로토콜 메시지 건너뛰기 (시스템 메시지)
  * 2. 필수 필드 유효성 검사 (senderUid, roomId)
  * 3. 1:1 채팅인 경우:
- *    - 양쪽 사용자의 chat-joins 자동 생성/업데이트 (/chat-joins/{uid1}/{roomId}, /chat-joins/{uid2}/{roomId})
+ *    - 양쪽 사용자의 chat-joins 자동 생성/업데이트 (users/{uid1}/chat-joins/{roomId}, users/{uid2}/chat-joins/{roomId})
  *    - roomId, roomType, partnerUid 설정
  *    - lastMessageText, lastMessageAt 업데이트
  *    - 정렬 필드: singleChatListOrder (발신자: timestamp, 수신자: 200+timestamp)
  *    - allChatListOrder (통합 정렬용)
  *    - newMessageCount (수신자만 increment(1))
  * 4. 그룹/오픈 채팅인 경우:
- *    - chat-rooms에서 members 목록 조회
+ *    - chats에서 members 목록 조회
  *    - 모든 멤버의 chat-joins 자동 업데이트
  *    - roomName, lastMessageText, lastMessageAt 설정
  *    - 정렬 필드: groupChatListOrder 또는 openChatListOrder (발신자: timestamp, 타 멤버: 200+timestamp)
@@ -289,18 +182,18 @@ export const onUserGenderWrite = onValueWritten(
  *
  * 참고:
  * - 1:1 채팅 roomId 형식: "single-{uid1}-{uid2}" (알파벳 순 정렬)
- * - 그룹/오픈 채팅 roomId: 자동 생성된 Firebase push key
+ * - 그룹/오픈 채팅 roomId: 자동 생성된 Firestore 문서 ID
  *
  * 비즈니스 로직은 handlers/chat.handler.ts의 handleChatMessageCreate() 참조
  */
-export const onChatMessageCreate = onValueCreated(
+export const onChatMessageCreate = onDocumentCreated(
   {
-    ref: "/chat-messages/{messageId}",
+    document: "messages/{messageId}",
     region: FIREBASE_REGION,
   },
   async (event) => {
     const messageId = event.params.messageId as string;
-    const messageData = (event.data.val() || {}) as ChatMessage;
+    const messageData = (event.data?.data() || {}) as ChatMessage;
 
     // 비즈니스 로직 핸들러 호출
     return await handleChatMessageCreate(messageId, messageData);
@@ -312,7 +205,7 @@ export const onChatMessageCreate = onValueCreated(
 /**
  * 채팅방 생성 시 트리거되는 Cloud Function
  *
- * 트리거 경로: /chat-rooms/{roomId}
+ * 트리거 경로: chats/{roomId}
  *
  * 수행 작업:
  * 1. owner 필드를 통해 채팅방 생성자 확인 (보안 규칙으로 검증됨)
@@ -330,14 +223,14 @@ export const onChatMessageCreate = onValueCreated(
  *
  * 비즈니스 로직은 handlers/chat.handler.ts의 handleChatRoomCreate() 참조
  */
-export const onChatRoomCreate = onValueCreated(
+export const onChatRoomCreate = onDocumentCreated(
   {
-    ref: "/chat-rooms/{roomId}",
+    document: "chats/{roomId}",
     region: FIREBASE_REGION,
   },
   async (event) => {
     const roomId = event.params.roomId as string;
-    const roomData = (event.data.val() || {}) as Record<string, unknown>;
+    const roomData = (event.data?.data() || {}) as Record<string, unknown>;
     // owner 필드는 보안 규칙에 의해 auth.uid와 동일하게 검증되므로 신뢰 가능
     const ownerUid = typeof roomData.owner === "string"
       ? roomData.owner
@@ -359,7 +252,7 @@ export const onChatRoomCreate = onValueCreated(
 /**
  * 채팅 참여 정보 생성 시 트리거되는 Cloud Function
  *
- * 트리거 경로: /chat-joins/{uid}/{roomId}
+ * 트리거 경로: users/{uid}/chat-joins/{roomId}
  *
  * 수행 작업:
  * 1. joinedAt 필드가 없으면 현재 타임스탬프로 자동 생성
@@ -369,7 +262,7 @@ export const onChatRoomCreate = onValueCreated(
  *    - singleChatListOrder = timestamp (문자열) 설정
  *    - allChatListOrder = timestamp (숫자) 설정
  * 3. 그룹/오픈 채팅인 경우:
- *    - chat-rooms에서 채팅방 정보 조회
+ *    - chats에서 채팅방 정보 조회
  *    - roomType, roomName 설정
  *    - roomType이 "group"인 경우:
  *      - groupChatListOrder = timestamp (문자열) 설정
@@ -380,15 +273,15 @@ export const onChatRoomCreate = onValueCreated(
  *    - allChatListOrder = timestamp (숫자) 설정
  *
  * 참고:
- * - chat-joins 노드는 클라이언트가 직접 생성하거나 onChatMessageCreate에서 자동 생성됨
+ * - chat-joins 문서는 클라이언트가 직접 생성하거나 onChatMessageCreate에서 자동 생성됨
  * - 이 함수는 채팅방 타입별로 적절한 정렬 필드를 자동 설정
  * - 이미 완전히 설정된 경우 (joinedAt + roomType 존재) 건너뛰기
  *
  * 비즈니스 로직은 handlers/chat.handler.ts의 handleChatJoinCreate() 참조
  */
-export const onChatJoinCreate = onValueCreated(
+export const onChatJoinCreate = onDocumentCreated(
   {
-    ref: "/chat-joins/{uid}/{roomId}",
+    document: "users/{uid}/chat-joins/{roomId}",
     region: FIREBASE_REGION,
   },
   async (event) => {
@@ -410,24 +303,24 @@ export const onChatJoinCreate = onValueCreated(
 /**
  * 채팅방 멤버 입장 시 트리거되는 Cloud Function
  *
- * 트리거 경로: /chat-rooms/{roomId}/members/{uid}
+ * 트리거 경로: chats/{roomId}/members/{uid}
  *
  * 수행 작업:
- * 1. chat-rooms/{roomId}/members 아래의 모든 uid 읽기
- * 2. 모든 uid의 개수 세기 (true/false 구분 없이)
+ * 1. chats/{roomId}/members 컬렉션의 모든 문서 읽기
+ * 2. 모든 uid의 개수 세기 (member=true/false 구분 없이)
  * 3. memberCount 필드를 자동으로 증가
  *
  * 참고:
- * - members 필드 구조: chat-rooms/{roomId}/members/{uid}: boolean
+ * - members 컬렉션 구조: chats/{roomId}/members/{uid} 문서에 member: boolean
  * - true: 사용자가 채팅방에 참여 중, 메시지 알림을 받음
- * - onValueCreated 트리거로 멤버 입장 감지
- * - memberCount는 members 객체의 모든 uid 개수 (true/false 모두 포함)
+ * - onDocumentCreated 트리거로 멤버 입장 감지
+ * - memberCount는 members 컬렉션의 모든 문서 개수 (member=true/false 모두 포함)
  *
  * 비즈니스 로직은 handlers/chat.handler.ts의 handleChatRoomMemberJoin() 참조
  */
-export const onChatRoomMemberJoin = onValueCreated(
+export const onChatRoomMemberJoin = onDocumentCreated(
   {
-    ref: "/chat-rooms/{roomId}/members/{uid}",
+    document: "chats/{roomId}/members/{uid}",
     region: FIREBASE_REGION,
   },
   async (event) => {
@@ -449,23 +342,23 @@ export const onChatRoomMemberJoin = onValueCreated(
 /**
  * 채팅방 멤버 퇴장 시 트리거되는 Cloud Function
  *
- * 트리거 경로: /chat-rooms/{roomId}/members/{uid}
+ * 트리거 경로: chats/{roomId}/members/{uid}
  *
  * 수행 작업:
- * 1. chat-rooms/{roomId}/members 아래의 모든 uid 읽기
- * 2. 모든 uid의 개수 세기 (true/false 구분 없이)
+ * 1. chats/{roomId}/members 컬렉션의 모든 문서 읽기
+ * 2. 모든 uid의 개수 세기 (member=true/false 구분 없이)
  * 3. memberCount 필드를 자동으로 감소
  *
  * 참고:
- * - members 필드에서 uid가 삭제되면 퇴장으로 간주
- * - onValueDeleted 트리거로 멤버 퇴장 감지
- * - memberCount는 members 객체의 모든 uid 개수 (true/false 모두 포함)
+ * - members 컬렉션에서 문서가 삭제되면 퇴장으로 간주
+ * - onDocumentDeleted 트리거로 멤버 퇴장 감지
+ * - memberCount는 members 컬렉션의 모든 문서 개수 (member=true/false 모두 포함)
  *
  * 비즈니스 로직은 handlers/chat.handler.ts의 handleChatRoomMemberLeave() 참조
  */
-export const onChatRoomMemberLeave = onValueDeleted(
+export const onChatRoomMemberLeave = onDocumentDeleted(
   {
-    ref: "/chat-rooms/{roomId}/members/{uid}",
+    document: "chats/{roomId}/members/{uid}",
     region: FIREBASE_REGION,
   },
   async (event) => {
@@ -485,98 +378,77 @@ export const onChatRoomMemberLeave = onValueDeleted(
 
 
 /**
- * 채팅방 핀 생성 시 트리거되는 Cloud Function
+ * 채팅방 참여 정보 필드 변경 시 트리거 (통합)
  *
- * 트리거 경로: /chat-joins/{uid}/{roomId}/pin
- * 트리거 조건: pin 필드가 생성될 때 (set(true))
+ * 트리거 경로: users/{uid}/chat-joins/{roomId}
+ * 트리거 이벤트: onDocumentWritten (생성, 수정, 삭제 모두 감지)
  *
  * 수행 작업:
- * 1. chat-joins/{uid}/{roomId}의 모든 데이터 읽기
- * 2. xxxListOrder 또는 xxxChatListOrder로 끝나는 모든 필드 찾기
- * 3. 각 order 필드에 "500" prefix 추가
+ * - pin 필드 변경 시: handleChatRoomPinCreate 또는 handleChatRoomPinDelete 호출
+ * - newMessageCount 필드 변경 시: handleNewMessageCountWritten 호출
  *
  * 참고:
+ * - Firestore는 문서당 하나의 onDocumentWritten 트리거만 허용
+ * - 따라서 모든 필드 변경을 하나의 트리거에서 감지하고 각 핸들러 호출
  * - Prefix 규칙: "500" (핀됨) > "200" (읽지 않음) > "" (읽음)
- * - 클라이언트는 pin: true로 설정
- * - Cloud Functions가 모든 order 필드를 자동으로 업데이트
  *
- * 비즈니스 로직은 handlers/chat.handler.ts의 handleChatRoomPinCreate() 참조
+ * 비즈니스 로직:
+ * - pin: handlers/chat.handler.ts의 handleChatRoomPinCreate() 및 handleChatRoomPinDelete()
+ * - newMessageCount: handlers/chat.new-message-count.handler.ts의 handleNewMessageCountWritten()
  */
-export const onChatRoomPinCreate = onValueCreated(
+export const onChatJoinFieldsWrite = onDocumentWritten(
   {
-    ref: "/chat-joins/{uid}/{roomId}/pin",
+    document: "users/{uid}/chat-joins/{roomId}",
     region: FIREBASE_REGION,
   },
   async (event) => {
     const uid = event.params.uid as string;
     const roomId = event.params.roomId as string;
-    const pinValue = event.data.val() as boolean | null | undefined;
+    const beforeData = event.data?.before.data() as Record<string, unknown> | undefined;
+    const afterData = event.data?.after.data() as Record<string, unknown> | undefined;
 
-    logger.info("채팅방 핀 생성 감지", {
-      uid,
-      roomId,
-      pinValue,
-    });
-
-    // pin 값이 true인 경우에만 처리
-    if (pinValue !== true) {
-      logger.warn("핀 값이 true가 아님, 처리 건너뜀", {
+    // pin 필드 변경 감지
+    const beforePin = beforeData?.pin as boolean | undefined;
+    const afterPin = afterData?.pin as boolean | undefined;
+    if (beforePin !== afterPin) {
+      logger.info("채팅방 핀 필드 변경 감지", {
         uid,
         roomId,
-        pinValue,
+        beforePin,
+        afterPin,
       });
-      return;
+
+      // pin이 true로 설정된 경우 (핀 생성)
+      if (afterPin === true && beforePin !== true) {
+        await handleChatRoomPinCreate(uid, roomId);
+      }
+      // pin이 false로 변경되거나 삭제된 경우 (핀 해제)
+      else if (beforePin === true && afterPin !== true) {
+        await handleChatRoomPinDelete(uid, roomId);
+      }
     }
 
-    // 비즈니스 로직 핸들러 호출
-    return await handleChatRoomPinCreate(uid, roomId);
+    // newMessageCount 필드 변경 감지
+    const beforeValue = (beforeData?.newMessageCount as number | undefined) ?? null;
+    const afterValue = (afterData?.newMessageCount as number | undefined) ?? null;
+    if (beforeValue !== afterValue) {
+      logger.info("newMessageCount 필드 변경 감지", {
+        uid,
+        roomId,
+        beforeValue,
+        afterValue,
+      });
+
+      await handleNewMessageCountWritten(uid, roomId, beforeValue, afterValue);
+    }
   }
 );
 
-/**
- * 채팅방 핀 삭제 시 트리거되는 Cloud Function
- *
- * 트리거 경로: /chat-joins/{uid}/{roomId}/pin
- * 트리거 조건: pin 필드가 삭제될 때 (set(null))
- *
- * 수행 작업:
- * 1. chat-joins/{uid}/{roomId}의 모든 데이터 읽기
- * 2. xxxListOrder 또는 xxxChatListOrder로 끝나는 모든 필드 찾기
- * 3. newMessageCount > 0이면 "200" prefix 추가
- * 4. newMessageCount === 0이면 prefix 제거 (순수 timestamp)
- *
- * 참고:
- * - Prefix 규칙: "500" (핀됨) > "200" (읽지 않음) > "" (읽음)
- * - 클라이언트는 pin 필드를 삭제 (set(null))
- * - Cloud Functions가 모든 order 필드를 자동으로 업데이트
- *
- * 비즈니스 로직은 handlers/chat.handler.ts의 handleChatRoomPinDelete() 참조
- */
-export const onChatRoomPinDelete = onValueDeleted(
-  {
-    ref: "/chat-joins/{uid}/{roomId}/pin",
-    region: FIREBASE_REGION,
-  },
-  async (event) => {
-    const uid = event.params.uid as string;
-    const roomId = event.params.roomId as string;
-    const oldPinValue = event.data.val() as boolean | null | undefined;
-
-    logger.info("채팅방 핀 삭제 감지", {
-      uid,
-      roomId,
-      oldPinValue,
-    });
-
-    // 비즈니스 로직 핸들러 호출
-    return await handleChatRoomPinDelete(uid, roomId);
-  }
-);
 
 /**
  * 채팅 초대장 생성 시 트리거되는 Cloud Function
  *
- * 트리거 경로: /chat-invitations/{uid}/{roomId}
+ * 트리거 경로: users/{uid}/chat-invitations/{roomId}
  * 트리거 조건: 초대장이 생성될 때
  *
  * 수행 작업:
@@ -595,15 +467,15 @@ export const onChatRoomPinDelete = onValueDeleted(
  *
  * 비즈니스 로직은 handlers/chat.handler.ts의 handleChatInvitationCreate() 참조
  */
-export const onChatInvitationCreate = onValueCreated(
+export const onChatInvitationCreate = onDocumentCreated(
   {
-    ref: "/chat-invitations/{uid}/{roomId}",
+    document: "users/{uid}/chat-invitations/{roomId}",
     region: FIREBASE_REGION,
   },
   async (event) => {
     const inviteeUid = event.params.uid as string;
     const roomId = event.params.roomId as string;
-    const invitationData = (event.data.val() || {}) as {
+    const invitationData = (event.data?.data() || {}) as {
       inviterUid?: string;
       createdAt?: number;
     };
@@ -619,47 +491,6 @@ export const onChatInvitationCreate = onValueCreated(
   }
 );
 
-/**
- * newMessageCount 필드 변경 시 트리거되는 Cloud Function
- *
- * 트리거 경로: /chat-joins/{uid}/{roomId}/newMessageCount
- * 트리거 이벤트: onValueWritten (생성, 수정, 삭제 모두 감지)
- *
- * 수행 작업:
- * 1. newMessageCount가 0으로 변경되었는지 확인
- * 2. 0이면 모든 xxxListOrder 필드에서 "200" prefix 제거
- * 3. "500" prefix는 유지 (핀 설정된 채팅방)
- * 4. 존재하지 않는 필드는 무시
- *
- * 참고:
- * - 사용자가 채팅방에 입장하여 메시지를 읽으면 newMessageCount가 0이 됨
- * - 이때 모든 order 필드를 "읽음" 상태로 전환
- * - Prefix 규칙: "500" (핀됨) > "200" (읽지 않음) > "" (읽음)
- *
- * 비즈니스 로직은 handlers/chat.handler.ts의 handleNewMessageCountWritten() 참조
- */
-export const onNewMessageCountWrite = onValueWritten(
-  {
-    ref: "/chat-joins/{uid}/{roomId}/newMessageCount",
-    region: FIREBASE_REGION,
-  },
-  async (event) => {
-    const uid = event.params.uid as string;
-    const roomId = event.params.roomId as string;
-    const beforeValue = event.data.before.val() as number | null;
-    const afterValue = event.data.after.val() as number | null;
-
-    logger.info("newMessageCount 필드 변경 감지", {
-      uid,
-      roomId,
-      beforeValue,
-      afterValue,
-    });
-
-    // 비즈니스 로직 핸들러 호출
-    return await handleNewMessageCountWritten(uid, roomId, beforeValue, afterValue);
-  }
-);
 
 /**
  * 채팅방 비밀번호 검증 트리거

@@ -13,17 +13,17 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { signOut } from 'firebase/auth';
-	import { auth, rtdb } from '$lib/firebase';
+	import { auth } from '$lib/firebase';
 	import { goto } from '$app/navigation';
 	import Avatar from '$lib/components/user/avatar.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { rtdbStore } from '$lib/stores/database.svelte';
+	import { firestoreStore } from '$lib/stores/firestore.svelte';
 
 	// 로그아웃 처리 중 상태
 	let isSigningOut = $state(false);
 
 	// v1.0.0: 새 메시지 카운트 실시간 구독
-	let newMessageCountStore = $state<ReturnType<typeof rtdbStore<number>> | null>(null);
+	let newMessageCountStore = $state<ReturnType<typeof firestoreStore<number>> | null>(null);
 	let newMessageCount = $state(0);
 
 	/**
@@ -32,7 +32,7 @@
 	$effect(() => {
 		if (authStore.isAuthenticated && authStore.user?.uid) {
 			const path = `users/${authStore.user.uid}/newMessageCount`;
-			newMessageCountStore = rtdbStore<number>(path);
+			newMessageCountStore = firestoreStore<number>(path);
 			// console.log(`📊 새 메시지 카운트 구독 시작: ${path}`);
 		} else {
 			newMessageCountStore = null;

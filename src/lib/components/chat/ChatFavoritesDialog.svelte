@@ -1,12 +1,13 @@
 <script lang="ts">
 	/**
-	 * 채팅 즐겨찾기 관리 다이얼로그
+	 * 채팅 즐겨찾기 관리 다이얼로그 (Firestore)
 	 *
 	 * 기능:
 	 * - 즐겨찾기 폴더 목록/생성/수정/삭제
 	 * - 폴더별 채팅방 추가/제거
 	 * - 폴더 클릭 시 채팅방 목록 표시
 	 * - 채팅방에서 호출 시 현재 채팅방이 속한 폴더 강조 표시
+	 * - Path: users/{uid}/chat-favorites (Firestore subcollection)
 	 */
 	import { createEventDispatcher } from 'svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -19,8 +20,8 @@
 		DialogTitle
 	} from '$lib/components/ui/dialog';
 	import { authStore } from '$lib/stores/auth.svelte';
-	import { ref, push, set, remove, get, update } from 'firebase/database';
-	import { rtdb } from '$lib/firebase';
+	import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy as firestoreOrderBy } from 'firebase/firestore';
+	import { db } from '$lib/firebase';
 	import * as m from '$lib/paraglide/messages.js';
 
 	/**
@@ -76,23 +77,23 @@
 	let isSaving = $state(false);
 
 	/**
-	 * 즐겨찾기 폴더 목록 불러오기
+	 * 즐겨찾기 폴더 목록 불러오기 (Firestore)
 	 */
 	async function loadFavorites() {
-		if (!authStore.user?.uid || !rtdb) return;
+		if (!authStore.user?.uid) return;
 
 		isLoading = true;
 		errorMessage = '';
 
 		try {
-			const favoritesRef = ref(rtdb, `chat-favorites/${authStore.user.uid}`);
-			const snapshot = await get(favoritesRef);
+			const favoritesRef = collection(db!, `users/${authStore.user.uid}/chat-favorites`);
+			const q = query(favoritesRef, firestoreOrderBy('folderOrder', 'asc'));
+			const snapshot = await getDocs(q);
 
-			if (snapshot.exists()) {
-				const data = snapshot.val();
-				favorites = Object.entries(data).map(([id, value]) => ({
-					id,
-					...(value as Omit<Favorite, 'id'>)
+			if (!snapshot.empty) {
+				favorites = snapshot.docs.map(doc => ({
+					id: doc.id,
+					...(doc.data() as Omit<Favorite, 'id'>)
 				})).sort((a, b) => {
 					// pinned 폴더 (folderOrder가 "500"으로 시작)를 먼저 표시
 					const aIsPinned = a.folderOrder.startsWith('500');
@@ -139,7 +140,7 @@
 	}
 
 	/**
-	 * 폴더 저장 (생성 또는 수정)
+	 * 폴더 저장 (생성 또는 수정) - Firestore
 	 */
 	async function saveFolder() {
 		const trimmedName = folderName.trim();
@@ -148,7 +149,7 @@
 			return;
 		}
 
-		if (!authStore.user?.uid || !rtdb) {
+		if (!authStore.user?.uid) {
 			errorMessage = '로그인이 필요합니다.';
 			return;
 		}
@@ -163,10 +164,9 @@
 
 			if (viewMode === 'create') {
 				// 새 폴더 생성
-				const favoritesRef = ref(rtdb, `chat-favorites/${authStore.user.uid}`);
-				const newFavoriteRef = push(favoritesRef);
+				const favoritesRef = collection(db!, `users/${authStore.user.uid}/chat-favorites`);
 
-				await set(newFavoriteRef, {
+				await addDoc(favoritesRef, {
 					name: trimmedName,
 					description: folderDescription.trim() || null,
 					createdAt: now,
@@ -175,8 +175,8 @@
 				});
 			} else if (viewMode === 'edit' && selectedFavorite) {
 				// 기존 폴더 수정
-				const favoriteRef = ref(rtdb, `chat-favorites/${authStore.user.uid}/${selectedFavorite.id}`);
-				await update(favoriteRef, {
+				const favoriteRef = doc(db!, `users/${authStore.user.uid}/chat-favorites`, selectedFavorite.id);
+				await updateDoc(favoriteRef, {
 					name: trimmedName,
 					description: folderDescription.trim() || null,
 					folderOrder
@@ -196,18 +196,18 @@
 	}
 
 	/**
-	 * 폴더 삭제
+	 * 폴더 삭제 (Firestore)
 	 */
 	async function deleteFolder(favorite: Favorite) {
 		if (!confirm(`"${favorite.name}" 폴더를 삭제하시겠습니까?`)) {
 			return;
 		}
 
-		if (!authStore.user?.uid || !rtdb) return;
+		if (!authStore.user?.uid) return;
 
 		try {
-			const favoriteRef = ref(rtdb, `chat-favorites/${authStore.user.uid}/${favorite.id}`);
-			await remove(favoriteRef);
+			const favoriteRef = doc(db!, `users/${authStore.user.uid}/chat-favorites`, favorite.id);
+			await deleteDoc(favoriteRef);
 			await loadFavorites();
 		} catch (error) {
 			console.error('폴더 삭제 실패:', error);
@@ -216,23 +216,29 @@
 	}
 
 	/**
-	 * 폴더 선택 (채팅방 추가/제거 토글)
+	 * 폴더 선택 (채팅방 추가/제거 토글) - Firestore
 	 */
 	async function toggleRoomInFolder(favorite: Favorite) {
-		if (!currentRoomId || !authStore.user?.uid || !rtdb) return;
+		if (!currentRoomId || !authStore.user?.uid) return;
 
 		try {
 			const roomList = favorite.roomList || {};
 			const isInFolder = roomList[currentRoomId] === true;
 
-			const favoriteRef = ref(rtdb, `chat-favorites/${authStore.user.uid}/${favorite.id}/roomList/${currentRoomId}`);
+			const favoriteRef = doc(db!, `users/${authStore.user.uid}/chat-favorites`, favorite.id);
 
 			if (isInFolder) {
-				// 이미 추가되어 있으면 제거
-				await remove(favoriteRef);
+				// 이미 추가되어 있으면 제거 (필드 삭제)
+				const updatedRoomList = { ...roomList };
+				delete updatedRoomList[currentRoomId];
+				await updateDoc(favoriteRef, {
+					roomList: updatedRoomList
+				});
 			} else {
 				// 추가되어 있지 않으면 추가
-				await set(favoriteRef, true);
+				await updateDoc(favoriteRef, {
+					[`roomList.${currentRoomId}`]: true
+				});
 			}
 
 			// 목록 새로고침
@@ -244,14 +250,20 @@
 	}
 
 	/**
-	 * 폴더에서 채팅방 제거
+	 * 폴더에서 채팅방 제거 (Firestore)
 	 */
 	async function removeRoomFromFolder(favorite: Favorite, roomId: string) {
-		if (!authStore.user?.uid || !rtdb) return;
+		if (!authStore.user?.uid) return;
 
 		try {
-			const favoriteRef = ref(rtdb, `chat-favorites/${authStore.user.uid}/${favorite.id}/roomList/${roomId}`);
-			await remove(favoriteRef);
+			const favoriteRef = doc(db!, `users/${authStore.user.uid}/chat-favorites`, favorite.id);
+			const roomList = favorite.roomList || {};
+			const updatedRoomList = { ...roomList };
+			delete updatedRoomList[roomId];
+
+			await updateDoc(favoriteRef, {
+				roomList: updatedRoomList
+			});
 			await loadFavorites();
 		} catch (error) {
 			console.error('채팅방 제거 실패:', error);

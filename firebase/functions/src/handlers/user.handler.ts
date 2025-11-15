@@ -7,14 +7,14 @@ import * as logger from "firebase-functions/logger";
 import {UserData} from "../types";
 
 /**
- * 사용자 등록 시 user-props 노드에 주요 필드를 분리 저장하고 createdAt을 설정합니다.
+ * 사용자 등록 시 Firestore 문서에 주요 필드를 설정하고 createdAt을 설정합니다.
  *
  * 수행 작업:
- * 1. createdAt 필드 자동 생성 및 /users/{uid}/createdAt 직접 저장
- * 2. updateUserProps() 함수를 통해 모든 사용자 데이터 정규화 및 동기화 수행
+ * 1. createdAt 필드 자동 생성 및 users/{uid} 문서에 저장
+ * 2. 사용자 데이터 정규화 및 동기화 수행
  *    - photoUrl 처리
- *    - /users/{uid} 노드 업데이트
- *    - /stats/counters/user +1 (전체 사용자 통계 업데이트)
+ *    - users/{uid} 문서 업데이트
+ *    - stats/counters 문서의 user 필드 +1 (전체 사용자 통계 업데이트)
  *
  * @param {string} uid - 사용자 UID
  * @param {UserData} userData - 사용자 데이터
@@ -30,29 +30,27 @@ export async function handleUserCreate(
   });
 
   const now = Date.now();
-
-  const updates: Record<string, unknown> = {};
+  const db = admin.firestore();
+  const batch = db.batch();
 
   // createdAt 필드 자동 생성 (없는 경우만)
   const createdAt =
     typeof userData.createdAt === "number" ? userData.createdAt : now;
 
-  // /users/{uid}/createdAt 직접 저장 (없는 경우만)
+  // users/{uid} 문서에 createdAt 저장 (없는 경우만)
   if (userData.createdAt === undefined || userData.createdAt === null) {
-    updates[`users/${uid}/createdAt`] = createdAt;
+    const userRef = db.doc(`users/${uid}`);
+    batch.update(userRef, {createdAt});
     logger.info("createdAt 저장 예정", {uid, createdAt});
   }
 
-  // 📊 전체 사용자 통계 업데이트: /stats/counters/user +1
-  updates["stats/counters/user"] = admin.database.ServerValue.increment(1);
+  // 📊 전체 사용자 통계 업데이트: stats/counters 문서의 user 필드 +1
+  const statsRef = db.doc("stats/counters");
+  batch.set(statsRef, {user: admin.firestore.FieldValue.increment(1)}, {merge: true});
 
-  if (Object.keys(updates).length > 0) {
-    await admin.database().ref().update(updates);
-    logger.info("사용자 생성 관련 업데이트 완료", {
-      uid,
-      updatesCount: Object.keys(updates).length,
-    });
-  }
+  // 배치 커밋
+  await batch.commit();
+  logger.info("사용자 생성 관련 업데이트 완료", {uid});
 
   return {
     success: true,
@@ -92,13 +90,15 @@ export async function handleUserUpdate(
   });
 
   const now = Date.now();
+  const db = admin.firestore();
+  const userRef = db.doc(`users/${uid}`);
   const updates: Record<string, unknown> = {};
 
   // 1. createdAt 필드가 없으면 자동 생성
   if (afterData.createdAt === undefined || afterData.createdAt === null) {
     const createdAt =
       typeof beforeData?.createdAt === "number" ? beforeData.createdAt : now;
-    updates[`users/${uid}/createdAt`] = createdAt;
+    updates.createdAt = createdAt;
     logger.info("createdAt 필드 자동 생성", {uid, createdAt});
   }
 
@@ -111,7 +111,7 @@ export async function handleUserUpdate(
 
   // 3. displayName 또는 photoUrl이 변경된 경우에만 updatedAt 업데이트
   if (displayNameChanged || photoUrlChanged) {
-    updates[`users/${uid}/updatedAt`] = now;
+    updates.updatedAt = now;
     logger.info("displayName 또는 photoUrl 변경 감지, updatedAt 업데이트", {
       uid,
       displayNameChanged,
@@ -128,7 +128,7 @@ export async function handleUserUpdate(
 
   if (needsDisplayNameLowerCase) {
     const displayNameLowerCase = afterData.displayName!.toLowerCase();
-    updates[`users/${uid}/displayNameLowerCase`] = displayNameLowerCase;
+    updates.displayNameLowerCase = displayNameLowerCase;
     logger.info("displayNameLowerCase 생성/업데이트", {
       uid,
       displayNameLowerCase,
@@ -150,10 +150,10 @@ export async function handleUserUpdate(
       const [, year, month, day] = birthDateMatch;
 
       // 파생 필드 생성
-      updates[`users/${uid}/birthYear`] = parseInt(year, 10);
-      updates[`users/${uid}/birthMonth`] = parseInt(month, 10);
-      updates[`users/${uid}/birthDay`] = parseInt(day, 10);
-      updates[`users/${uid}/birthMonthDay`] = `${month}-${day}`;
+      updates.birthYear = parseInt(year, 10);
+      updates.birthMonth = parseInt(month, 10);
+      updates.birthDay = parseInt(day, 10);
+      updates.birthMonthDay = `${month}-${day}`;
 
       logger.info("birthYearMonthDay 파싱 및 파생 필드 생성", {
         uid,
@@ -173,7 +173,7 @@ export async function handleUserUpdate(
 
   // 6. DB에 업데이트 반영
   if (Object.keys(updates).length > 0) {
-    await admin.database().ref().update(updates);
+    await userRef.update(updates);
     logger.info("사용자 정보 업데이트 완료", {
       uid,
       updatesCount: Object.keys(updates).length,
@@ -192,10 +192,11 @@ export async function handleUserUpdate(
  * @returns {Promise<number | null>} createdAt 값 (생성 필요 시 새 값, 아니면 null)
  */
 async function ensureCreatedAt(uid: string): Promise<number | null> {
-  const userRef = admin.database().ref(`users/${uid}`);
-  const snapshot = await userRef.child("createdAt").once("value");
+  const db = admin.firestore();
+  const userRef = db.doc(`users/${uid}`);
+  const snapshot = await userRef.get();
 
-  if (!snapshot.exists()) {
+  if (!snapshot.exists || !snapshot.data()?.createdAt) {
     const now = Date.now();
     logger.info("createdAt 필드가 없어 자동 생성", {uid, createdAt: now});
     return now;
@@ -240,24 +241,26 @@ export async function handleUserDisplayNameUpdate(
   });
 
   const now = Date.now();
+  const db = admin.firestore();
+  const userRef = db.doc(`users/${uid}`);
   const updates: Record<string, unknown> = {};
 
   // 삭제 케이스
   if (afterValue === null) {
     // displayNameLowerCase 삭제
-    updates[`users/${uid}/displayNameLowerCase`] = null;
+    updates.displayNameLowerCase = admin.firestore.FieldValue.delete();
     logger.info("displayName 삭제, displayNameLowerCase도 삭제", {uid});
   } else {
     // 생성/수정 케이스
     // 1. createdAt 필드가 없으면 자동 생성
     const createdAt = await ensureCreatedAt(uid);
     if (createdAt !== null) {
-      updates[`users/${uid}/createdAt`] = createdAt;
+      updates.createdAt = createdAt;
     }
 
     // 2. displayNameLowerCase 자동 생성/수정
     const displayNameLowerCase = afterValue.toLowerCase();
-    updates[`users/${uid}/displayNameLowerCase`] = displayNameLowerCase;
+    updates.displayNameLowerCase = displayNameLowerCase;
     logger.info("displayNameLowerCase 자동 생성/수정", {
       uid,
       displayNameLowerCase,
@@ -265,12 +268,12 @@ export async function handleUserDisplayNameUpdate(
   }
 
   // 3. updatedAt 업데이트 (생성/수정/삭제 모두)
-  updates[`users/${uid}/updatedAt`] = now;
+  updates.updatedAt = now;
   logger.info("updatedAt 업데이트", {uid, updatedAt: now});
 
   // DB 업데이트 반영
   if (Object.keys(updates).length > 0) {
-    await admin.database().ref().update(updates);
+    await userRef.update(updates);
     logger.info("displayName 변경 처리 완료", {
       uid,
       updatesCount: Object.keys(updates).length,
@@ -319,27 +322,28 @@ export async function handleUserPhotoUrlUpdate(
   });
 
   const now = Date.now();
+  const db = admin.firestore();
+  const userRef = db.doc(`users/${uid}`);
   const updates: Record<string, unknown> = {};
 
   // 삭제 케이스
   if (afterValue === null) {
     // 모든 정렬 필드 삭제
-    updates[`users/${uid}/sort_recentWithPhoto`] = null;
-    updates[`users/${uid}/sort_recentFemaleWithPhoto`] = null;
-    updates[`users/${uid}/sort_recentMaleWithPhoto`] = null;
+    updates.sort_recentWithPhoto = admin.firestore.FieldValue.delete();
+    updates.sort_recentFemaleWithPhoto = admin.firestore.FieldValue.delete();
+    updates.sort_recentMaleWithPhoto = admin.firestore.FieldValue.delete();
     logger.info("photoUrl 삭제, 모든 정렬 필드도 삭제", {uid});
   } else {
     // 생성/수정 케이스
     // 1. createdAt 필드가 없으면 자동 생성
     const createdAt = await ensureCreatedAt(uid);
     if (createdAt !== null) {
-      updates[`users/${uid}/createdAt`] = createdAt;
+      updates.createdAt = createdAt;
     }
 
     // 2. 사용자 데이터 읽기 (gender와 createdAt 필요)
-    const userRef = admin.database().ref(`users/${uid}`);
-    const userSnapshot = await userRef.once("value");
-    const userData = userSnapshot.val();
+    const userSnapshot = await userRef.get();
+    const userData = userSnapshot.data();
 
     if (userData) {
       const userCreatedAt = userData.createdAt || Date.now();
@@ -347,25 +351,25 @@ export async function handleUserPhotoUrlUpdate(
 
       // 3. 정렬 필드 생성
       // sort_recentWithPhoto: photoUrl이 있으면 항상 생성
-      updates[`users/${uid}/sort_recentWithPhoto`] = userCreatedAt;
+      updates.sort_recentWithPhoto = userCreatedAt;
       logger.info("sort_recentWithPhoto 생성", {uid, value: userCreatedAt});
 
       // sort_recentFemaleWithPhoto: 여자인 경우만
       if (gender === "F") {
-        updates[`users/${uid}/sort_recentFemaleWithPhoto`] = userCreatedAt;
+        updates.sort_recentFemaleWithPhoto = userCreatedAt;
         logger.info("sort_recentFemaleWithPhoto 생성", {uid, value: userCreatedAt});
       } else {
         // 남자로 변경되었거나 gender가 없는 경우 삭제
-        updates[`users/${uid}/sort_recentFemaleWithPhoto`] = null;
+        updates.sort_recentFemaleWithPhoto = admin.firestore.FieldValue.delete();
       }
 
       // sort_recentMaleWithPhoto: 남자인 경우만
       if (gender === "M") {
-        updates[`users/${uid}/sort_recentMaleWithPhoto`] = userCreatedAt;
+        updates.sort_recentMaleWithPhoto = userCreatedAt;
         logger.info("sort_recentMaleWithPhoto 생성", {uid, value: userCreatedAt});
       } else {
         // 여자로 변경되었거나 gender가 없는 경우 삭제
-        updates[`users/${uid}/sort_recentMaleWithPhoto`] = null;
+        updates.sort_recentMaleWithPhoto = admin.firestore.FieldValue.delete();
       }
     } else {
       logger.warn("사용자 데이터를 찾을 수 없음", {uid});
@@ -373,12 +377,12 @@ export async function handleUserPhotoUrlUpdate(
   }
 
   // 4. updatedAt 업데이트 (생성/수정/삭제 모두)
-  updates[`users/${uid}/updatedAt`] = now;
+  updates.updatedAt = now;
   logger.info("updatedAt 업데이트", {uid, updatedAt: now});
 
   // DB 업데이트 반영
   if (Object.keys(updates).length > 0) {
-    await admin.database().ref().update(updates);
+    await userRef.update(updates);
     logger.info("photoUrl 변경 처리 완료", {
       uid,
       updatesCount: Object.keys(updates).length,
@@ -429,22 +433,24 @@ export async function handleUserBirthYearMonthDayUpdate(
     action: afterValue === null ? "삭제" : beforeValue === null ? "생성" : "수정",
   });
 
+  const db = admin.firestore();
+  const userRef = db.doc(`users/${uid}`);
   const updates: Record<string, unknown> = {};
 
   // 삭제 케이스
   if (afterValue === null) {
     // 모든 파생 필드 삭제
-    updates[`users/${uid}/birthYear`] = null;
-    updates[`users/${uid}/birthMonth`] = null;
-    updates[`users/${uid}/birthDay`] = null;
-    updates[`users/${uid}/birthMonthDay`] = null;
+    updates.birthYear = admin.firestore.FieldValue.delete();
+    updates.birthMonth = admin.firestore.FieldValue.delete();
+    updates.birthDay = admin.firestore.FieldValue.delete();
+    updates.birthMonthDay = admin.firestore.FieldValue.delete();
     logger.info("birthYearMonthDay 삭제, 모든 파생 필드도 삭제", {uid});
   } else {
     // 생성/수정 케이스
     // 1. createdAt 필드가 없으면 자동 생성
     const createdAt = await ensureCreatedAt(uid);
     if (createdAt !== null) {
-      updates[`users/${uid}/createdAt`] = createdAt;
+      updates.createdAt = createdAt;
     }
 
     // 2. YYYY-MM-DD 형식 파싱 및 파생 필드 생성
@@ -454,10 +460,10 @@ export async function handleUserBirthYearMonthDayUpdate(
       const [, year, month, day] = birthDateMatch;
 
       // 파생 필드 생성/수정
-      updates[`users/${uid}/birthYear`] = parseInt(year, 10);
-      updates[`users/${uid}/birthMonth`] = parseInt(month, 10);
-      updates[`users/${uid}/birthDay`] = parseInt(day, 10);
-      updates[`users/${uid}/birthMonthDay`] = `${month}-${day}`;
+      updates.birthYear = parseInt(year, 10);
+      updates.birthMonth = parseInt(month, 10);
+      updates.birthDay = parseInt(day, 10);
+      updates.birthMonthDay = `${month}-${day}`;
 
       logger.info("birthYearMonthDay 파싱 및 파생 필드 생성/수정", {
         uid,
@@ -478,7 +484,7 @@ export async function handleUserBirthYearMonthDayUpdate(
 
   // DB 업데이트 반영
   if (Object.keys(updates).length > 0) {
-    await admin.database().ref().update(updates);
+    await userRef.update(updates);
     logger.info("birthYearMonthDay 변경 처리 완료", {
       uid,
       updatesCount: Object.keys(updates).length,
@@ -528,20 +534,21 @@ export async function handleUserGenderUpdate(
   });
 
   const now = Date.now();
+  const db = admin.firestore();
+  const userRef = db.doc(`users/${uid}`);
   const updates: Record<string, unknown> = {};
 
   // 삭제 케이스
   if (afterValue === null) {
     // 성별 관련 정렬 필드 삭제
-    updates[`users/${uid}/sort_recentFemaleWithPhoto`] = null;
-    updates[`users/${uid}/sort_recentMaleWithPhoto`] = null;
+    updates.sort_recentFemaleWithPhoto = admin.firestore.FieldValue.delete();
+    updates.sort_recentMaleWithPhoto = admin.firestore.FieldValue.delete();
     logger.info("gender 삭제, 성별 관련 정렬 필드도 삭제", {uid});
   } else {
     // 생성/수정 케이스
     // 1. 사용자 데이터 읽기 (photoUrl과 createdAt 필요)
-    const userRef = admin.database().ref(`users/${uid}`);
-    const userSnapshot = await userRef.once("value");
-    const userData = userSnapshot.val();
+    const userSnapshot = await userRef.get();
+    const userData = userSnapshot.data();
 
     if (userData) {
       const photoUrl = userData.photoUrl;
@@ -557,8 +564,8 @@ export async function handleUserGenderUpdate(
 
         // gender=F: 여성 정렬 필드 생성, 남성 정렬 필드 삭제
         if (afterValue === "F") {
-          updates[`users/${uid}/sort_recentFemaleWithPhoto`] = userCreatedAt;
-          updates[`users/${uid}/sort_recentMaleWithPhoto`] = null;
+          updates.sort_recentFemaleWithPhoto = userCreatedAt;
+          updates.sort_recentMaleWithPhoto = admin.firestore.FieldValue.delete();
           logger.info("sort_recentFemaleWithPhoto 생성, sort_recentMaleWithPhoto 삭제", {
             uid,
             value: userCreatedAt,
@@ -566,8 +573,8 @@ export async function handleUserGenderUpdate(
         }
         // gender=M: 남성 정렬 필드 생성, 여성 정렬 필드 삭제
         else if (afterValue === "M") {
-          updates[`users/${uid}/sort_recentMaleWithPhoto`] = userCreatedAt;
-          updates[`users/${uid}/sort_recentFemaleWithPhoto`] = null;
+          updates.sort_recentMaleWithPhoto = userCreatedAt;
+          updates.sort_recentFemaleWithPhoto = admin.firestore.FieldValue.delete();
           logger.info("sort_recentMaleWithPhoto 생성, sort_recentFemaleWithPhoto 삭제", {
             uid,
             value: userCreatedAt,
@@ -575,14 +582,14 @@ export async function handleUserGenderUpdate(
         }
         // gender가 F, M이 아닌 경우: 두 필드 모두 삭제
         else {
-          updates[`users/${uid}/sort_recentFemaleWithPhoto`] = null;
-          updates[`users/${uid}/sort_recentMaleWithPhoto`] = null;
+          updates.sort_recentFemaleWithPhoto = admin.firestore.FieldValue.delete();
+          updates.sort_recentMaleWithPhoto = admin.firestore.FieldValue.delete();
           logger.info("gender가 F/M이 아님, 두 정렬 필드 모두 삭제", {uid, gender: afterValue});
         }
       } else {
         // photoUrl이 없는 경우: 두 정렬 필드 모두 삭제
-        updates[`users/${uid}/sort_recentFemaleWithPhoto`] = null;
-        updates[`users/${uid}/sort_recentMaleWithPhoto`] = null;
+        updates.sort_recentFemaleWithPhoto = admin.firestore.FieldValue.delete();
+        updates.sort_recentMaleWithPhoto = admin.firestore.FieldValue.delete();
         logger.info("photoUrl 없음, 두 정렬 필드 모두 삭제", {uid});
       }
     } else {
@@ -591,12 +598,12 @@ export async function handleUserGenderUpdate(
   }
 
   // 3. updatedAt 업데이트 (생성/수정/삭제 모두)
-  updates[`users/${uid}/updatedAt`] = now;
+  updates.updatedAt = now;
   logger.info("updatedAt 업데이트", {uid, updatedAt: now});
 
   // DB 업데이트 반영
   if (Object.keys(updates).length > 0) {
-    await admin.database().ref().update(updates);
+    await userRef.update(updates);
     logger.info("gender 변경 처리 완료", {
       uid,
       updatesCount: Object.keys(updates).length,

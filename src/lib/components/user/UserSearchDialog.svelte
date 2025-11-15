@@ -1,11 +1,11 @@
 <script lang="ts">
   /**
-   * 사용자 검색 다이얼로그
+   * 사용자 검색 다이얼로그 (Firestore)
    *
-   * displayNameLowerCase 값을 기준으로 정확히 일치하는 사용자를 검색하는 모달입니다.
+   * displayNameLowerCase 값을 기준으로 prefix 매칭으로 사용자를 검색하는 모달입니다.
    * - 사용자 검색이 필요한 모든 페이지에서 재사용합니다.
    * - 검색어는 제출 시 자동으로 소문자로 정규화됩니다.
-   * - showResults=true 시 검색 결과를 다이얼로그 내에 DatabaseListView로 표시합니다.
+   * - showResults=true 시 검색 결과를 다이얼로그 내에 FirestoreListView로 표시합니다.
    * - 검색 결과에서 사용자를 클릭하면 onUserSelect 콜백이 호출됩니다.
    */
   import { createEventDispatcher } from 'svelte';
@@ -18,7 +18,7 @@
     DialogHeader,
     DialogTitle
   } from '$lib/components/ui/dialog';
-  import DatabaseListView from '$lib/components/DatabaseListView.svelte';
+  import FirestoreListView from '$lib/components/FirestoreListView.svelte';
   import Avatar from '$lib/components/user/avatar.svelte';
 
   type UserData = Record<string, unknown>;
@@ -37,7 +37,7 @@
     clearLabel?: string;
     /** 검색 결과를 다이얼로그 내에 표시할지 여부 (기본값: false) */
     showResults?: boolean;
-    /** RTDB 사용자 경로 (기본값: "users") */
+    /** Firestore 사용자 컬렉션 경로 (기본값: "users") */
     usersPath?: string;
     /** 검색할 필드 이름 (기본값: "displayNameLowerCase") */
     searchField?: string;
@@ -49,9 +49,9 @@
     open = $bindable(false),
     keyword = $bindable(''),
     title = '사용자 검색',
-    description = 'displayNameLowerCase 필드가 정확히 일치하는 사용자를 찾습니다. 입력값은 자동으로 소문자로 변환됩니다.',
+    description = 'displayNameLowerCase 필드를 prefix 매칭으로 검색합니다. 입력값은 자동으로 소문자로 변환됩니다.',
     label = '검색할 사용자 이름 (소문자 기준)',
-    helperText = 'Firebase RTDB 의 `displayNameLowerCase` 필드와 일치해야 하므로 공백/대소문자를 제거한 형태로 입력해주세요.',
+    helperText = 'Firestore의 `displayNameLowerCase` 필드를 prefix 검색하므로 공백/대소문자를 제거한 형태로 입력해주세요.',
     placeholder = '예: sonub',
     minLength = 2,
     autoLowercase = true,
@@ -70,7 +70,7 @@
   }>();
 
   let inputRef: HTMLInputElement | null = $state(null);
-  /** 검색이 실행된 키워드 (DatabaseListView에 전달) */
+  /** 검색이 실행된 키워드 (FirestoreListView에 전달) */
   let searchKeyword = $state<string | null>(null);
 
   function handleSubmit(event: SubmitEvent) {
@@ -178,15 +178,19 @@
       <div class="search-results">
         <h3 class="results-title">검색 결과</h3>
         {#key searchKeyword}
-          <DatabaseListView
+          <FirestoreListView
             path={usersPath}
             pageSize={pageSize}
-            orderBy={searchField}
-            equalToValue={searchKeyword}
+            orderByField={searchField}
+            orderDirection="asc"
+            whereFilters={[
+              { field: searchField, operator: '>=', value: searchKeyword },
+              { field: searchField, operator: '<', value: searchKeyword + '\uf8ff' }
+            ]}
           >
             {#snippet item(itemData)}
               {@const user = (itemData.data ?? {}) as UserData}
-              {@const uid = (itemData.key ?? '') as string}
+              {@const uid = (itemData.id ?? '') as string}
               {@const displayName =
                 typeof user.displayName === 'string' ? user.displayName : uid}
               {@const email = typeof user.email === 'string' ? user.email : ''}
@@ -215,7 +219,7 @@
                 <p>"{searchKeyword}" 와 일치하는 사용자를 찾을 수 없습니다.</p>
               </div>
             {/snippet}
-          </DatabaseListView>
+          </FirestoreListView>
         {/key}
       </div>
     {/if}

@@ -7,7 +7,7 @@
 	 * - 데스크톱: TopBar 표시, 왼쪽 사이드바(채팅방 목록) + 오른쪽(채팅 메시지) 2-column 레이아웃
 	 */
 
-	import DatabaseListView from '$lib/components/DatabaseListView.svelte';
+	import FirestoreListView from '$lib/components/FirestoreListView.svelte';
 	import ChatRoomListItem from './ChatRoomListItem.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { m } from '$lib/paraglide/messages';
@@ -55,19 +55,19 @@
 
 		<div class="sidebar-content">
 			{#if authStore.user?.uid}
-				<DatabaseListView
-					path="chat-joins/{authStore.user.uid}"
-					orderBy="allChatListOrder"
+				<FirestoreListView
+					path="users/{authStore.user.uid}/chat-joins"
+					orderByField="allChatListOrder"
+					orderDirection="desc"
 					pageSize={20}
-					reverse={true}
 					scrollTrigger="bottom"
 				>
-					{#snippet item(itemData: { key: string; data: any })}
+					{#snippet item(itemData)}
 						<ChatRoomListItem
-							roomId={itemData.key}
+							roomId={itemData.id}
 							roomData={itemData.data ?? {}}
 							{activeRoomId}
-							onclick={() => handleRoomClick(itemData.key, itemData.data?.type || 'group')}
+							onclick={() => handleRoomClick(itemData.id, itemData.data?.type || 'group')}
 						/>
 					{/snippet}
 
@@ -82,7 +82,7 @@
 					{#snippet error(errorMessage: string | null)}
 						<div class="sidebar-error">{errorMessage}</div>
 					{/snippet}
-				</DatabaseListView>
+				</FirestoreListView>
 			{:else}
 				<div class="sidebar-placeholder">{m.authSignInRequired()}</div>
 			{/if}

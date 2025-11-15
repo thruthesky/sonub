@@ -12,9 +12,9 @@ import Avatar from '$lib/components/user/avatar.svelte';
 import { m } from '$lib/paraglide/messages';
 import { User, Bell, TrendingUp, Sparkles, Mail, BarChart3 } from 'lucide-svelte';
 import { goto } from '$app/navigation';
-import { rtdbStore } from '$lib/stores/database.svelte';
+import { firestoreStore } from '$lib/stores/firestore.svelte';
 
-const userCountStore = rtdbStore<number>('stats/counters/user', 0);
+const userCountStore = firestoreStore<number>('stats/counters/user', 0);
 
 function goToStats() {
 	void goto('/stats');

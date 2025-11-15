@@ -1,18 +1,19 @@
 <script lang="ts">
 	/**
-	 * 채팅방 페이지
+	 * 채팅방 페이지 (Firestore)
 	 *
 	 * GET 파라미터로 전달된 uid 값이 있으면 1:1 채팅방으로 동작합니다.
 	 * 채팅 상대의 프로필을 실시간으로 구독하고 메시지 목록 및 입력창을 제공합니다.
+	 * - 메시지 경로: chats/{roomId}/messages (Firestore subcollection)
 	 */
 
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import DatabaseListView from '$lib/components/DatabaseListView.svelte';
+	import FirestoreListView from '$lib/components/FirestoreListView.svelte';
 	import Avatar from '$lib/components/user/avatar.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
-	import { userProfileStore } from '$lib/stores/user-profile.svelte';
-	import { pushData } from '$lib/stores/database.svelte';
+	import { userProfileFirestoreStore } from '$lib/stores/user-profile-firestore.svelte';
+	import { addDocument } from '$lib/stores/firestore.svelte';
 	import { m } from '$lib/paraglide/messages';
 	import {
 		buildSingleRoomId,
@@ -35,8 +36,17 @@
 	} from '$lib/functions/storage.functions';
 	import type { FileUploadStatus } from '$lib/types/chat.types';
 	import { tick, onDestroy } from 'svelte';
-	import { rtdb } from '$lib/firebase';
-	import { ref, update, onValue, set, remove, get } from 'firebase/database';
+	import { db } from '$lib/firebase';
+	import {
+		doc,
+		updateDoc,
+		onSnapshot,
+		setDoc,
+		deleteDoc,
+		getDoc,
+		deleteField,
+		Timestamp
+	} from 'firebase/firestore';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { Button } from '$lib/components/ui/button';
 	import ChatFavoritesDialog from '$lib/components/chat/ChatFavoritesDialog.svelte';
@@ -66,16 +76,15 @@
 		return '';
 	});
 
-	// DatabaseListView 설정 (Flat 구조 기준)
-	const messagePath = 'chat-messages';
-	const roomOrderField = 'roomOrder';
-	const roomOrderPrefix = $derived.by(() => (activeRoomId ? `-${activeRoomId}-` : ''));
-	const canRenderMessages = $derived.by(() => Boolean(activeRoomId && roomOrderPrefix));
+	// FirestoreListView 설정 (계층 구조)
+	const messagePath = $derived.by(() => (activeRoomId ? `chats/${activeRoomId}/messages` : ''));
+	const messageOrderField = 'createdAt';
+	const canRenderMessages = $derived.by(() => Boolean(messagePath));
 
-	// 채팅 상대 프로필 구독
+	// 채팅 상대 프로필 구독 (Firestore)
 	$effect(() => {
 		if (uidParam) {
-			userProfileStore.ensureSubscribed(uidParam);
+			userProfileFirestoreStore.ensureSubscribed(uidParam);
 		}
 	});
 
@@ -89,12 +98,12 @@
 	 * - 비밀번호 불필요: joinChatRoom 호출
 	 */
 	$effect(() => {
-		if (!activeRoomId || !authStore.user?.uid || !rtdb) return;
+		if (!activeRoomId || !authStore.user?.uid || !db) return;
 
 		if (isSingleChat) {
-			// 1:1 채팅: chat-joins 노드에 최소 정보만 업데이트
+			// 1:1 채팅: chat-joins 문서에 최소 정보만 업데이트
 			// Cloud Functions(onChatJoinCreate)가 자동으로 필요한 필드들을 추가합니다.
-			enterSingleChatRoom(rtdb, activeRoomId, authStore.user.uid);
+			enterSingleChatRoom(db, activeRoomId, authStore.user.uid);
 		} else {
 			// 그룹/오픈 채팅: 비밀번호 확인 후 입장
 			// 채팅방 정보 로드 완료 확인 (roomOwner가 null이 아니면 로드 완료)
@@ -106,10 +115,10 @@
 					passwordPromptOpen = true;
 				} else if (isRoomMember || isRoomOwner) {
 					// 이미 members이거나 owner인 경우: 입장 (chat-joins 업데이트)
-					joinChatRoom(rtdb, activeRoomId, authStore.user.uid);
+					joinChatRoom(db, activeRoomId, authStore.user.uid);
 				} else {
 					// 비밀번호 불필요하지만 members도 아닌 경우: 자동으로 members에 추가
-					joinChatRoom(rtdb, activeRoomId, authStore.user.uid);
+					joinChatRoom(db, activeRoomId, authStore.user.uid);
 				}
 			}
 		}
@@ -137,9 +146,9 @@
 		goto('/chat/list');
 	}
 
-	const targetProfile = $derived(userProfileStore.getCachedProfile(uidParam));
-	const targetProfileLoading = $derived(userProfileStore.isLoading(uidParam));
-	const targetProfileError = $derived(userProfileStore.getError(uidParam));
+	const targetProfile = $derived(userProfileFirestoreStore.getCachedProfile(uidParam));
+	const targetProfileLoading = $derived(userProfileFirestoreStore.isLoading(uidParam));
+	const targetProfileError = $derived(userProfileFirestoreStore.getError(uidParam));
 
 	// 채팅 상대 표시 이름
 	const targetDisplayName = $derived.by(() => {
@@ -192,16 +201,15 @@
 	let isRoomMember = $state(false); // 현재 사용자가 members인지 여부
 
 	/**
-	 * 채팅방 정보 구독 (그룹/오픈 채팅방만)
+	 * 채팅방 정보 구독 (그룹/오픈 채팅방만) - Firestore
 	 *
 	 * 구독 경로:
-	 * - /chat-rooms/{roomId}/owner: 채팅방 소유자 UID
-	 * - /chat-rooms/{roomId}/password: 비밀번호 활성화 여부 (true/false)
-	 * - /chat-rooms/{roomId}/members/{uid}: 현재 사용자의 멤버 상태
-	 * - /chat-room-passwords/{roomId}/password: 실제 비밀번호 (owner만 읽기 가능)
+	 * - chats/{roomId}: 채팅방 문서 (owner, password 필드 포함)
+	 * - chats/{roomId}/members/{uid}: 현재 사용자의 멤버 상태
+	 * - chat-passwords/{roomId}: 실제 비밀번호 (owner만 읽기 가능)
 	 */
 	$effect(() => {
-		if (!activeRoomId || !authStore.user?.uid || !rtdb || isSingleChat) {
+		if (!activeRoomId || !authStore.user?.uid || !db || isSingleChat) {
 			roomOwner = null;
 			roomPasswordEnabled = false;
 			roomPasswordValue = '';
@@ -209,40 +217,44 @@
 			return;
 		}
 
-		// 채팅방 owner 구독
-		const ownerRef = ref(rtdb, `chat-rooms/${activeRoomId}/owner`);
-		const unsubscribeOwner = onValue(ownerRef, (snapshot) => {
-			roomOwner = snapshot.val() ?? null;
-		});
-
-		// 채팅방 password 플래그 구독
-		const passwordFlagRef = ref(rtdb, `chat-rooms/${activeRoomId}/password`);
-		const unsubscribePasswordFlag = onValue(passwordFlagRef, (snapshot) => {
-			roomPasswordEnabled = snapshot.val() === true;
+		// 채팅방 기본 정보 구독 (owner, password 플래그)
+		const roomRef = doc(db, `chats/${activeRoomId}`);
+		const unsubscribeRoom = onSnapshot(roomRef, (snapshot) => {
+			if (snapshot.exists()) {
+				const data = snapshot.data();
+				roomOwner = data?.owner ?? null;
+				roomPasswordEnabled = data?.password === true;
+			} else {
+				roomOwner = null;
+				roomPasswordEnabled = false;
+			}
 		});
 
 		// 현재 사용자의 members 상태 구독
-		// 중요: members/{uid} 필드는 true/false 값을 가질 수 있습니다
-		// - true: 멤버이며 알림 구독
-		// - false: 멤버이지만 알림 미구독
-		// - 필드 없음: 멤버가 아님
-		// 따라서 val() === true가 아닌 exists()로 필드 존재 여부만 확인해야 합니다
-		const memberRef = ref(rtdb, `chat-rooms/${activeRoomId}/members/${authStore.user.uid}`);
-		const unsubscribeMember = onValue(memberRef, (snapshot) => {
-			isRoomMember = snapshot.exists(); // 필드 존재 여부만 확인 (true/false 모두 멤버임)
+		// 중요: members/{uid} 문서가 존재하면 멤버입니다
+		// - value: true → 멤버이며 알림 구독
+		// - value: false → 멤버이지만 알림 미구독
+		// - 문서 없음 → 멤버가 아님
+		const memberRef = doc(db, `chats/${activeRoomId}/members/${authStore.user.uid}`);
+		const unsubscribeMember = onSnapshot(memberRef, (snapshot) => {
+			isRoomMember = snapshot.exists(); // 문서 존재 여부만 확인
 		});
 
 		// 실제 비밀번호 구독 (owner만 읽기 가능)
-		const passwordValueRef = ref(rtdb, `chat-room-passwords/${activeRoomId}/password`);
-		const unsubscribePasswordValue = onValue(passwordValueRef, (snapshot) => {
-			roomPasswordValue = snapshot.val() ?? '';
+		const passwordRef = doc(db, `chat-passwords/${activeRoomId}`);
+		const unsubscribePassword = onSnapshot(passwordRef, (snapshot) => {
+			if (snapshot.exists()) {
+				const data = snapshot.data();
+				roomPasswordValue = data?.password ?? '';
+			} else {
+				roomPasswordValue = '';
+			}
 		});
 
 		return () => {
-			unsubscribeOwner();
-			unsubscribePasswordFlag();
+			unsubscribeRoom();
 			unsubscribeMember();
-			unsubscribePasswordValue();
+			unsubscribePassword();
 		};
 	});
 
@@ -261,26 +273,23 @@
 		return 'group';
 	});
 
-	// 채팅방 핀 상태 구독
+	// 채팅방 핀 상태 구독 - Firestore
 	$effect(() => {
-		if (!activeRoomId || !authStore.user?.uid || !rtdb) {
+		if (!activeRoomId || !authStore.user?.uid || !db) {
 			isPinned = false;
 			return;
 		}
 
-		const pinRef = ref(rtdb, `chat-joins/${authStore.user.uid}/${activeRoomId}/pin`);
-		const unsubscribe = onValue(pinRef, (snapshot) => {
+		const chatJoinRef = doc(db, `users/${authStore.user.uid}/chat-joins/${activeRoomId}`);
+		const unsubscribe = onSnapshot(chatJoinRef, (snapshot) => {
 			if (!snapshot.exists()) {
 				isPinned = false;
 				return;
 			}
 
-			const pinValue = snapshot.val();
-			if (pinValue === true) {
-				isPinned = true;
-			} else {
-				isPinned = false;
-			}
+			const data = snapshot.data();
+			const pinValue = data?.pin;
+			isPinned = pinValue === true;
 		});
 
 		return () => {
@@ -293,19 +302,19 @@
 	let subscriptionLoading = $state(false);
 
 	/**
-	 * 채팅방 알림 구독 상태 로드
+	 * 채팅방 알림 구독 상태 로드 - Firestore
 	 *
-	 * 1:1 채팅방: /chat-joins/{uid}/{roomId}/fcm-subscription 확인
+	 * 1:1 채팅방: users/{uid}/chat-joins/{roomId}/fcm-subscription 확인
 	 * - 필드 없음 → 구독 중 (true)
 	 * - false → 구독 해제
 	 *
-	 * 그룹/오픈 채팅방: /chat-rooms/{roomId}/members/{uid} 확인
-	 * - true → 구독 중
-	 * - false → 구독 해제
-	 * - 필드 없음 → 구독 중 (기본값)
+	 * 그룹/오픈 채팅방: chats/{roomId}/members/{uid} 확인
+	 * - value: true → 구독 중
+	 * - value: false → 구독 해제
+	 * - 문서 없음 → 구독 중 (기본값)
 	 */
 	$effect(() => {
-		if (!activeRoomId || !authStore.user?.uid || !rtdb) {
+		if (!activeRoomId || !authStore.user?.uid || !db) {
 			isNotificationSubscribed = true; // 기본값
 			return;
 		}
@@ -314,31 +323,30 @@
 
 		if (isSingleChat) {
 			// 1:1 채팅방: fcm-subscription 필드 구독
-			const subscriptionRef = ref(
-				rtdb,
-				`chat-joins/${authStore.user.uid}/${activeRoomId}/fcm-subscription`
-			);
+			const chatJoinRef = doc(db, `users/${authStore.user.uid}/chat-joins/${activeRoomId}`);
 
-			unsubscribe = onValue(subscriptionRef, (snapshot) => {
+			unsubscribe = onSnapshot(chatJoinRef, (snapshot) => {
 				if (!snapshot.exists()) {
 					isNotificationSubscribed = true; // 기본값: 구독 중
 					return;
 				}
 
-				const value = snapshot.val();
+				const data = snapshot.data();
+				const value = data?.['fcm-subscription'];
 				isNotificationSubscribed = value !== false;
 			});
 		} else {
-			// 그룹/오픈 채팅방: members 필드 구독
-			const memberRef = ref(rtdb, `chat-rooms/${activeRoomId}/members/${authStore.user.uid}`);
+			// 그룹/오픈 채팅방: members 문서 구독
+			const memberRef = doc(db, `chats/${activeRoomId}/members/${authStore.user.uid}`);
 
-			unsubscribe = onValue(memberRef, (snapshot) => {
+			unsubscribe = onSnapshot(memberRef, (snapshot) => {
 				if (!snapshot.exists()) {
 					isNotificationSubscribed = true; // 기본값: 구독 중
 					return;
 				}
 
-				const value = snapshot.val();
+				const data = snapshot.data();
+				const value = data?.value;
 				isNotificationSubscribed = value === true;
 			});
 		}
@@ -442,9 +450,8 @@
 				// console.log(`✅ ${Object.keys(urls).length}개 파일 URL 수집 완료`);
 			}
 
-			// 2. 메시지 전송
+			// 2. 메시지 전송 (Firestore)
 			const trimmed = composerText.trim();
-			const timestamp = Date.now();
 
 			const payload = {
 				roomId: activeRoomId,
@@ -452,14 +459,12 @@
 				text: trimmed,
 				urls,
 				senderUid: authStore.user.uid,
-				createdAt: timestamp,
+				createdAt: Timestamp.now(),
 				editedAt: null,
-				deletedAt: null,
-				roomOrder: `-${activeRoomId}-${timestamp}`,
-				rootOrder: `-${activeRoomId}-${timestamp}`
+				deletedAt: null
 			};
 
-			const result = await pushData(messagePath, payload);
+			const result = await addDocument(messagePath, payload);
 
 			if (!result.success) {
 				sendError = result.error ?? m.chatSendFailed();
@@ -564,13 +569,13 @@
 
 	// 방 탈퇴하기
 	async function handleLeaveRoom() {
-		if (!activeRoomId || !authStore.user?.uid || !rtdb) return;
+		if (!activeRoomId || !authStore.user?.uid || !db) return;
 
 		const confirmed = confirm('채팅방에서 나가시겠습니까?');
 		if (!confirmed) return;
 
 		try {
-			await leaveChatRoom(rtdb, activeRoomId, authStore.user.uid);
+			await leaveChatRoom(db, activeRoomId, authStore.user.uid);
 			// console.log('채팅방 탈퇴 완료');
 			void goto('/chat/list');
 		} catch (error) {
@@ -599,13 +604,13 @@
 	async function handleUserSelect(event: CustomEvent<{ user: any; uid: string }>) {
 		const { uid } = event.detail;
 
-		if (!activeRoomId || !authStore.user?.uid || !rtdb) {
+		if (!activeRoomId || !authStore.user?.uid || !db) {
 			console.error('채팅방 또는 사용자 정보 없음');
 			return;
 		}
 
 		try {
-			await inviteUserToChatRoom(rtdb, activeRoomId, uid, authStore.user.uid);
+			await inviteUserToChatRoom(db, activeRoomId, uid, authStore.user.uid);
 			// console.log('✅ 초대 성공:', uid);
 			alert(m.chatInvitationSent());
 		} catch (error) {
@@ -619,14 +624,14 @@
 	 * 채팅방을 핀하거나 핀 해제합니다
 	 */
 	async function handleTogglePin() {
-		if (!activeRoomId || !authStore.user?.uid || !rtdb) {
+		if (!activeRoomId || !authStore.user?.uid || !db) {
 			console.error('채팅방 또는 사용자 정보 없음');
 			return;
 		}
 
 		try {
 			const newPinState = await togglePinChatRoom(
-				rtdb,
+				db,
 				activeRoomId,
 				authStore.user.uid,
 				currentRoomType
@@ -646,11 +651,11 @@
 	 * - 구독 해제 → 구독: fcm-subscription 필드 삭제
 	 *
 	 * 그룹/오픈 채팅방:
-	 * - 구독 → 구독 해제: members/{uid}: false 저장
-	 * - 구독 해제 → 구독: members/{uid}: true 저장
+	 * - 구독 → 구독 해제: members/{uid}: { value: false } 저장
+	 * - 구독 해제 → 구독: members/{uid}: { value: true } 저장
 	 */
 	async function handleToggleNotificationSubscription() {
-		if (!activeRoomId || !authStore.user?.uid || !rtdb || subscriptionLoading) {
+		if (!activeRoomId || !authStore.user?.uid || !db || subscriptionLoading) {
 			console.error('채팅방 또는 사용자 정보 없음');
 			return;
 		}
@@ -661,30 +666,31 @@
 		try {
 			if (isSingleChat) {
 				// 1:1 채팅방
-				const subscriptionRef = ref(
-					rtdb,
-					`chat-joins/${authStore.user.uid}/${activeRoomId}/fcm-subscription`
-				);
+				const chatJoinRef = doc(db, `users/${authStore.user.uid}/chat-joins/${activeRoomId}`);
 
 				if (newStatus) {
 					// 구독: 필드 삭제
-					await remove(subscriptionRef);
+					await updateDoc(chatJoinRef, {
+						'fcm-subscription': deleteField()
+					});
 					// console.log(`📢 1:1 채팅방 알림 구독 완료: ${activeRoomId}`);
 				} else {
 					// 구독 해제: false 저장
-					await set(subscriptionRef, false);
+					await updateDoc(chatJoinRef, {
+						'fcm-subscription': false
+					});
 					// console.log(`🔕 1:1 채팅방 알림 구독 해제: ${activeRoomId}`);
 				}
 			} else {
 				// 그룹/오픈 채팅방
-				const memberRef = ref(rtdb, `chat-rooms/${activeRoomId}/members/${authStore.user.uid}`);
-				await set(memberRef, newStatus);
+				const memberRef = doc(db, `chats/${activeRoomId}/members/${authStore.user.uid}`);
+				await setDoc(memberRef, { value: newStatus });
 				// console.log(
 				// 	`${newStatus ? '📢' : '🔕'} 그룹 채팅방 알림 ${newStatus ? '구독' : '구독 해제'}: ${activeRoomId}`
 				// );
 			}
 
-			// 로컬 상태 업데이트 (onValue 리스너가 자동으로 업데이트하지만 즉각적인 UI 반영을 위해)
+			// 로컬 상태 업데이트 (onSnapshot 리스너가 자동으로 업데이트하지만 즉각적인 UI 반영을 위해)
 			isNotificationSubscribed = newStatus;
 		} catch (error) {
 			console.error('알림 구독 상태 변경 실패:', error);
@@ -718,7 +724,7 @@
 	 */
 	function markCurrentRoomAsRead(): boolean {
 		// 채팅방 활성화 상태 및 사용자 인증 확인
-		if (!activeRoomId || !authStore.user?.uid || !rtdb) {
+		if (!activeRoomId || !authStore.user?.uid || !db) {
 			// console.log('채팅방 또는 사용자 정보 없음 - newMessageCount 업데이트 건너뜀');
 			return false;
 		}
@@ -727,13 +733,13 @@
 		// 790ms 지연을 두어 Cloud Functions의 +1 증가가 먼저 완료되도록 보장
 		setTimeout(() => {
 			// 다시 한번 유효성 검사 (타이머 실행 중 사용자가 로그아웃하거나 방을 나갈 수 있음)
-			if (!activeRoomId || !authStore.user?.uid || !rtdb) {
+			if (!activeRoomId || !authStore.user?.uid || !db) {
 				// console.log('타이머 실행 중 상태 변경 - newMessageCount 업데이트 취소');
 				return;
 			}
 
-			const chatJoinRef = ref(rtdb, `chat-joins/${authStore.user.uid}/${activeRoomId}`);
-			update(chatJoinRef, {
+			const chatJoinRef = doc(db, `users/${authStore.user.uid}/chat-joins/${activeRoomId}`);
+			updateDoc(chatJoinRef, {
 				newMessageCount: 0
 			})
 				.then(() => {
@@ -748,14 +754,14 @@
 	}
 
 	/**
-	 * DatabaseListView에서 새 메시지 추가 시 호출되는 콜백
+	 * FirestoreListView에서 새 메시지 추가 시 호출되는 콜백
 	 *
 	 * 사용자가 채팅방에 입장해 있는 상태에서 새로운 메시지가 도착하면
 	 * 즉시 읽음 처리를 위해 newMessageCount를 0으로 업데이트합니다.
 	 *
-	 * @param item - 새로 추가된 메시지 아이템 ({ key: string, data: any })
+	 * @param item - 새로 추가된 메시지 아이템 ({ id: string, data: any })
 	 */
-	function handleNewMessage(item: { key: string; data: any }) {
+	function handleNewMessage(item: { id: string; data: any }) {
 		// console.log('새 메시지 추가됨:', item);
 
 		// 현재 채팅방을 읽음 상태로 표시
@@ -796,7 +802,7 @@
 		const confirmed = confirm('메시지를 삭제하시겠습니까?');
 		if (!confirmed) return;
 
-		if (!rtdb) {
+		if (!db) {
 			alert('Firebase 연결이 없습니다.');
 			return;
 		}
@@ -815,12 +821,12 @@
 			}
 
 			// 2. 메시지 Soft Delete (deleted: true, urls/text 필드 제거)
-			const messageRef = ref(rtdb, `chat-messages/${messageId}`);
-			await update(messageRef, {
+			const messageRef = doc(db, `chat-messages/${messageId}`);
+			await updateDoc(messageRef, {
 				deleted: true,
 				deletedAt: Date.now(),
 				text: '',
-				urls: null
+				urls: deleteField()
 			});
 
 			// console.log('메시지 삭제 완료:', messageId);
@@ -1221,24 +1227,23 @@ function preventDrop(event: DragEvent) {
 				ondrop={preventDrop}
 			>
 			{#if canRenderMessages}
-				{#key roomOrderPrefix}
-					<DatabaseListView
+				{#key messagePath}
+					<FirestoreListView
 						bind:this={databaseListView}
 						path={messagePath}
 						pageSize={20}
-						orderBy={roomOrderField}
-						orderPrefix={roomOrderPrefix}
+						orderByField={messageOrderField}
+						orderDirection="asc"
 						threshold={300}
-						reverse={false}
 						scrollTrigger="top"
 						autoScrollToEnd={true}
 						autoScrollOnNewData={true}
 						onItemAdded={handleNewMessage}
 					>
-						{#snippet item(itemData: { key: string; data: any })}
+						{#snippet item(itemData: { id: string; data: any })}
 							{@const message = itemData.data ?? {}}
 							{@const mine = message.senderUid === authStore.user?.uid}
-							{@const messageId = itemData.key}
+							{@const messageId = itemData.id}
 							{@const isEditable = mine && canEditMessage(message.createdAt) && !message.deleted}
 							<article class={`message-row ${mine ? 'message-row--mine' : 'message-row--theirs'}`}>
 								{#if !mine}
@@ -1381,7 +1386,7 @@ function preventDrop(event: DragEvent) {
 						{#snippet noMore()}
 							<div class="message-placeholder subtle py-6">{m.chatNoMoreMessages()}</div>
 						{/snippet}
-					</DatabaseListView>
+					</FirestoreListView>
 				{/key}
 			{:else}
 				<div class="message-placeholder py-6">{m.chatPreparingStream()}</div>

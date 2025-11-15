@@ -1,12 +1,12 @@
 <script lang="ts">
   /**
-   * 사용자 목록 페이지
+   * 사용자 목록 페이지 (Firestore)
    *
-   * Firebase Realtime Database의 /users 경로에서 사용자 목록을 불러와 표시합니다.
-   * DatabaseListView 컴포넌트를 사용하여 페이지네이션과 무한 스크롤을 지원합니다.
+   * Firestore의 users 컬렉션에서 사용자 목록을 불러와 표시합니다.
+   * FirestoreListView 컴포넌트를 사용하여 페이지네이션과 무한 스크롤을 지원합니다.
    */
 
-  import DatabaseListView from '$lib/components/DatabaseListView.svelte';
+  import FirestoreListView from '$lib/components/FirestoreListView.svelte';
   import Avatar from '$lib/components/user/avatar.svelte';
   import UserSearchDialog from '$lib/components/user/UserSearchDialog.svelte';
   import { Button } from '$lib/components/ui/button/index.js';
@@ -37,6 +37,21 @@
   );
   const listOrderBy = $derived.by(() => (isSearching ? 'displayNameLowerCase' : selectedSortField));
   const listPageSize = $derived.by(() => (isSearching ? 50 : DEFAULT_PAGE_SIZE));
+
+  // Firestore WHERE 필터 (검색용)
+  const listWhereFilters = $derived.by(() => {
+    if (!isSearching) return [];
+
+    // Firestore에서 prefix 검색: displayNameLowerCase >= 'search' AND displayNameLowerCase < 'search\uf8ff'
+    return [
+      { field: 'displayNameLowerCase', operator: '>=', value: normalizedSearch },
+      { field: 'displayNameLowerCase', operator: '<', value: normalizedSearch + '\uf8ff' }
+    ] as Array<{
+      field: string;
+      operator: '<' | '<=' | '==' | '!=' | '>=' | '>' | 'array-contains' | 'array-contains-any' | 'in' | 'not-in';
+      value: any;
+    }>;
+  });
 
   function openSearchDialog() {
     dialogKeyword = activeSearch;
@@ -107,23 +122,23 @@
   />
 
   {#key listKey}
-    <DatabaseListView
+    <FirestoreListView
       path="users"
       pageSize={listPageSize}
-      orderBy={listOrderBy}
+      orderByField={listOrderBy}
+      orderDirection="desc"
+      whereFilters={listWhereFilters}
       threshold={300}
-      reverse={false}
-      equalToValue={isSearching ? normalizedSearch : undefined}
     >
-    {#snippet item(itemData: { key: string; data: any })}
+    {#snippet item(itemData: { id: string; data: any })}
       <article class="user-card">
         <a
           class="user-card-main"
-          href={`/user/profile?uid=${itemData.key}`}
+          href={`/user/profile?uid=${itemData.id}`}
           aria-label={m.userProfileDetail()}
         >
           <div class="user-avatar">
-            <Avatar uid={itemData.key} size={60} class="shadow-sm" />
+            <Avatar uid={itemData.id} size={60} class="shadow-sm" />
           </div>
 
           <div class="user-info">
@@ -161,7 +176,7 @@
         </a>
 
         <div class="user-card-chips">
-          <a class="chip chip-primary cursor-pointer" href={`/chat/room?uid=${itemData.key}`}>
+          <a class="chip chip-primary cursor-pointer" href={`/chat/room?uid=${itemData.id}`}>
             {m.navChat()}
           </a>
         </div>
@@ -206,7 +221,7 @@
         <p>{m.userAllLoaded()}</p>
       </div>
     {/snippet}
-    </DatabaseListView>
+    </FirestoreListView>
   {/key}
 </div>
 

@@ -1,8 +1,8 @@
 ---
 name: sonub-chat-message
 title: 채팅 메시지 수정 및 삭제 기능 명세
-version: 1.0.0
-description: 채팅방에서 사용자가 자신이 전송한 메시지를 수정하고 삭제할 수 있는 기능
+version: 2.0.0
+description: 채팅방에서 사용자가 자신이 전송한 메시지를 수정하고 삭제할 수 있는 기능 (Firestore)
 author: Claude Code
 email: noreply@anthropic.com
 license: GPL-3.0
@@ -18,6 +18,8 @@ tags:
   - message
   - edit
   - delete
+  - firestore
+status: completed
 ---
 
 # 채팅 메시지 수정 및 삭제 기능 명세
@@ -122,16 +124,24 @@ interface Props {
 }
 ```
 
-#### 2.2.3 저장 로직
+#### 2.2.3 저장 로직 (Firestore)
 
 ```typescript
+import { db } from '$lib/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+
 const updates = {
   text: text.trim(),
   urls,
   editedAt: Date.now()
 };
-await update(ref(rtdb, `chat-messages/${messageId}`), updates);
+await updateDoc(doc(db, `messages/${messageId}`), updates);
 ```
+
+**주요 변경사항**:
+- `rtdb` → `db` (Firestore)
+- `ref()`, `update()` → `doc()`, `updateDoc()`
+- 경로 변경: `chat-messages/${messageId}` → `messages/${messageId}`
 
 ---
 
@@ -185,13 +195,16 @@ function handleEditMessage(
 
 **파일**: `/src/routes/chat/room/+page.svelte`
 
-#### 3.3.1 삭제 프로세스
+#### 3.3.1 삭제 프로세스 (Firestore)
 
 1. **사용자 확인**: `confirm()` 다이얼로그
 2. **첨부파일 삭제**: Storage에서 모든 첨부파일 삭제
-3. **Soft Delete**: RTDB에서 메시지 필드 업데이트
+3. **Soft Delete**: Firestore에서 메시지 필드 업데이트
 
 ```typescript
+import { db } from '$lib/firebase';
+import { doc, updateDoc, deleteField } from 'firebase/firestore';
+
 async function handleDeleteMessage(messageId: string, urls: Record<number, string>) {
   const confirmed = confirm('메시지를 삭제하시겠습니까?');
   if (!confirmed) return;
@@ -203,16 +216,22 @@ async function handleDeleteMessage(messageId: string, urls: Record<number, strin
     }
   }
 
-  // 2. Soft Delete (RTDB)
-  const messageRef = ref(rtdb, `chat-messages/${messageId}`);
-  await update(messageRef, {
+  // 2. Soft Delete (Firestore)
+  const messageRef = doc(db, `messages/${messageId}`);
+  await updateDoc(messageRef, {
     deleted: true,
     deletedAt: Date.now(),
     text: '',
-    urls: null
+    urls: deleteField()  // Firestore에서는 deleteField()로 필드 삭제
   });
 }
 ```
+
+**주요 변경사항**:
+- `rtdb` → `db` (Firestore)
+- `ref()`, `update()` → `doc()`, `updateDoc()`
+- 경로 변경: `chat-messages/${messageId}` → `messages/${messageId}`
+- `urls: null` → `urls: deleteField()` (Firestore 방식)
 
 #### 3.3.2 Soft Delete 방식
 
@@ -230,76 +249,90 @@ async function handleDeleteMessage(messageId: string, urls: Record<number, strin
 
 ---
 
-## 4. Firebase Realtime Database
+## 4. Firebase Firestore
 
 ### 4.1 데이터 구조
 
-**경로**: `/chat-messages/{messageId}`
+**경로**: `messages/{messageId}`
 
-```json
+```typescript
 {
-  "roomId": "string",
-  "type": "message",
-  "text": "string",
-  "senderUid": "string",
-  "createdAt": 1234567890000,
-  "editedAt": 1234567890000,      // 수정 시각 (null이면 미수정)
-  "deleted": false,                // 삭제 여부
-  "deletedAt": null,               // 삭제 시각 (null이면 미삭제)
-  "urls": {
-    "0": "https://...",
-    "1": "https://..."
+  roomId: string,
+  type: "message",
+  text: string,
+  senderUid: string,
+  createdAt: number,              // 밀리초 타임스탬프
+  editedAt?: number,              // 수정 시각 (필드 없으면 미수정)
+  deleted?: boolean,              // 삭제 여부 (필드 없으면 false)
+  deletedAt?: number,             // 삭제 시각 (필드 없으면 미삭제)
+  urls?: {                        // 첨부파일 URL 목록
+    0: "https://...",
+    1: "https://..."
   },
-  "roomOrder": "-roomId-timestamp",
-  "rootOrder": "-roomId-timestamp"
+  roomOrder: string,              // "-roomId-timestamp"
+  rootOrder: string               // "-roomId-timestamp"
 }
 ```
 
-### 4.2 Security Rules
+**Firestore 특징**:
+- 필드가 존재하지 않으면 `undefined`로 처리 (RTDB의 `null`과 다름)
+- `urls: deleteField()`로 필드 완전 삭제 가능
 
-**파일**: `/firebase/database.rules.json`
+### 4.2 Firestore Security Rules
 
-#### 4.2.1 쓰기 권한
+**파일**: `/firebase/firestore.rules`
 
-```jsonc
-".write": "auth != null &&
-  (
-    // 조건 1: 채팅방 접근 권한 확인
-    (
-      newData.child('roomId').val().contains(auth.uid) ||
-      root.child('chat-rooms').child(newData.child('roomId').val()).child('members').child(auth.uid).exists()
-    )
-  ) &&
-  (
-    // 조건 2: 새 메시지 생성 또는 기존 메시지 수정/삭제 검증
-    (
-      // 2-1. 새 메시지 생성
-      !data.exists()
-    ) ||
-    (
-      // 2-2. 기존 메시지 수정/삭제: 다음 조건을 모두 만족
-      data.exists() &&
-      (
+#### 4.2.1 메시지 컬렉션 규칙
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /messages/{messageId} {
+      // 읽기: 인증된 사용자
+      allow read: if request.auth != null;
+
+      // 생성: 채팅방 접근 권한이 있는 사용자
+      allow create: if request.auth != null && (
+        // 조건 1: 1:1 채팅방 (roomId에 본인 uid 포함)
+        request.resource.data.roomId.matches('.*' + request.auth.uid + '.*') ||
+        // 조건 2: 그룹 채팅방 (members 서브컬렉션 확인)
+        exists(/databases/$(database)/documents/chats/$(request.resource.data.roomId)/members/$(request.auth.uid))
+      );
+
+      // 수정: 본인이 작성한 메시지 + 90분 이내 + 삭제되지 않음
+      allow update: if request.auth != null &&
         // a) 본인이 작성한 메시지
-        data.child('senderUid').val() === auth.uid
-      ) &&
-      (
-        // b) 삭제되지 않은 메시지
-        !data.child('deleted').val()
-      ) &&
-      (
+        resource.data.senderUid == request.auth.uid &&
+        // b) 삭제되지 않은 메시지 (deleted 필드가 없거나 false)
+        (
+          !('deleted' in resource.data) ||
+          resource.data.deleted == false
+        ) &&
         // c) 90분(5,400,000ms) 이내 메시지
-        (now - data.child('createdAt').val()) < 5400000
-      )
-    )
-  )"
+        (request.time.toMillis() - resource.data.createdAt) < 5400000;
+
+      // 삭제: 허용 안 함 (Soft Delete만 사용)
+      allow delete: if false;
+    }
+  }
+}
 ```
 
 #### 4.2.2 검증 규칙
 
-1. **본인 메시지만 수정/삭제**: `data.child('senderUid').val() === auth.uid`
-2. **삭제된 메시지는 수정 불가**: `!data.child('deleted').val()`
-3. **90분 경과 메시지는 수정/삭제 불가**: `(now - createdAt) < 5400000`
+1. **본인 메시지만 수정**: `resource.data.senderUid == request.auth.uid`
+2. **삭제되지 않은 메시지만 수정**: `!('deleted' in resource.data) || resource.data.deleted == false`
+3. **90분 경과 메시지는 수정 불가**: `(request.time.toMillis() - resource.data.createdAt) < 5400000`
+4. **Hard Delete 금지**: `allow delete: if false` (Soft Delete만 허용)
+
+**주요 변경사항**:
+- RTDB JSON 형식 → Firestore rules_version 2 형식
+- `data.child()` → `resource.data`
+- `newData.child()` → `request.resource.data`
+- `root.child()...exists()` → `exists()` 함수 사용
+- `now` → `request.time.toMillis()`
+- RTDB의 `null` 체크 → Firestore의 필드 존재 여부 체크 (`'deleted' in resource.data`)
 
 ---
 
@@ -396,13 +429,7 @@ export interface ChatMessage {
 
 ## 9. 작업 이력 (SED Log)
 
-| 날짜 | 작업자 | 변경 내용 |
-| ---- | ------ | -------- |
-| 2025-11-15 | Claude Code | 채팅 메시지 수정/삭제 기능 구현 |
-| 2025-11-15 | Claude Code | MessageEditModal 컴포넌트 생성 |
-| 2025-11-15 | Claude Code | 채팅방 페이지에 설정 아이콘 및 드롭다운 메뉴 추가 |
-| 2025-11-15 | Claude Code | 90분 시간 제한 로직 구현 (클라이언트 + 서버) |
-| 2025-11-15 | Claude Code | Firebase Security Rules 업데이트 |
-| 2025-11-15 | Claude Code | Soft Delete 방식으로 메시지 삭제 구현 |
-| 2025-11-15 | Claude Code | MessageEditModal textarea에서 스페이스바/Enter 키 입력 문제 수정: Dialog 컴포넌트 키보드 이벤트 전파 차단 |
-| 2025-11-15 | Claude Code | 첨부파일 중복 표시 문제 수정: 업로드 완료 후 1초 뒤 uploadingFiles에서 자동 제거 |
+| 버전 | 날짜 | 작업자 | 변경 내용 |
+| ---- | ---- | ------ | -------- |
+| 2.0.0 | 2025-11-15 | Claude Code | **Firestore 마이그레이션 완료**<br>- Database 경로 변경: `chat-messages/{messageId}` → `messages/{messageId}`<br>- API 변경: `ref()`, `update()` → `doc()`, `updateDoc()`<br>- Security Rules: RTDB JSON → Firestore rules_version 2<br>  - `data.child()` → `resource.data`<br>  - `newData.child()` → `request.resource.data`<br>  - `now` → `request.time.toMillis()`<br>- Soft Delete 방식: `urls: null` → `urls: deleteField()`<br>- 필드 존재 여부 체크: RTDB `null` → Firestore `'field' in data` |
+| 1.0.0 | 2025-11-15 | Claude Code | 초기 버전 작성 (RTDB 기반)<br>- 채팅 메시지 수정/삭제 기능 구현<br>- MessageEditModal 컴포넌트 생성<br>- 채팅방 페이지에 설정 아이콘 및 드롭다운 메뉴 추가<br>- 90분 시간 제한 로직 구현 (클라이언트 + 서버)<br>- Firebase Security Rules 업데이트<br>- Soft Delete 방식으로 메시지 삭제 구현<br>- MessageEditModal textarea에서 스페이스바/Enter 키 입력 문제 수정<br>- 첨부파일 중복 표시 문제 수정 |

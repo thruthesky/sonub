@@ -2,10 +2,10 @@
 	/**
 	 * 오픈 채팅방 목록 페이지
 	 *
-	 * DatabaseListView를 사용하여 공개된 오픈 채팅방 목록을 무한 스크롤로 표시합니다.
+	 * FirestoreListView를 사용하여 공개된 오픈 채팅방 목록을 무한 스크롤로 표시합니다.
 	 */
 
-	import DatabaseListView from '$lib/components/DatabaseListView.svelte';
+	import FirestoreListView from '$lib/components/FirestoreListView.svelte';
 	import ChatCreateDialog from '$lib/components/chat/ChatCreateDialog.svelte';
 	import ChatInvitationList from '$lib/components/chat/ChatInvitationList.svelte';
 	import { authStore } from '$lib/stores/auth.svelte';
@@ -15,12 +15,12 @@
 	import { resolveRoomTypeLabel, togglePinChatRoom } from '$lib/functions/chat.functions';
 	import ChatListMenu from '$lib/components/chat/ChatListMenu.svelte';
 	import ChatFavoritesDialog from '$lib/components/chat/ChatFavoritesDialog.svelte';
-	import { rtdb } from '$lib/firebase';
+	import { db } from '$lib/firebase';
 
 	type ChatRoomData = Record<string, unknown>;
 
 	const PAGE_SIZE = 20;
-	const CHAT_ROOMS_PATH = 'chat-rooms';
+	const CHAT_ROOMS_PATH = 'chats'; // Firestore collection path
 	const ORDER_FIELD = 'openListOrder';
 
 	// ChatCreateDialog 상태
@@ -117,13 +117,13 @@
 			return;
 		}
 
-		if (!rtdb) {
+		if (!db) {
 			console.error('Database가 초기화되지 않았습니다');
 			return;
 		}
 
 		try {
-			const isPinned = await togglePinChatRoom(rtdb, roomId, uid, roomType);
+			const isPinned = await togglePinChatRoom(db, roomId, uid, roomType);
 			// console.log(`✅ 채팅방 핀 ${isPinned ? '설정' : '해제'} 완료:`, roomId);
 		} catch (error) {
 			console.error('채팅방 핀 토글 실패:', error);
@@ -218,31 +218,31 @@
 				{@const dbListViewProps = {
 					path: CHAT_ROOMS_PATH,
 					pageSize: PAGE_SIZE,
-					orderBy: ORDER_FIELD,
-					threshold: 320,
-					reverse: true
+					orderByField: ORDER_FIELD,
+					orderDirection: 'desc' as const,
+					threshold: 320
 				}}
 				<!--
-					// console.log('🔍 [Open Chat List Debug] DatabaseListView props:', dbListViewProps)
+					// console.log('🔍 [Open Chat List Debug] FirestoreListView props:', dbListViewProps)
 				-->
-				<DatabaseListView
+				<FirestoreListView
 					path={CHAT_ROOMS_PATH}
 					pageSize={PAGE_SIZE}
-					orderBy={ORDER_FIELD}
+					orderByField={ORDER_FIELD}
+					orderDirection="desc"
 					threshold={320}
-					reverse={true}
 				>
 				{#snippet item(itemData, index)}
 					<!--
 						// console.log('🔍 [Open Chat List Debug] Item received:', {
 						// 	index,
-						// 	key: itemData.key,
+						// 	id: itemData.id,
 						// 	hasData: !!itemData.data,
 						// 	data: itemData.data
 						// })
 					-->
 					{@const room = (itemData.data ?? {}) as ChatRoomData}
-					{@const roomId = (itemData.key ?? '') as string}
+					{@const roomId = (itemData.id ?? '') as string}
 					{@const roomType = (room.type ?? 'open').toString()}
 					{@const isOpen = room.open === true}
 					<!--
@@ -339,7 +339,7 @@
 				{#snippet noMore()}
 					<p class="py-6 text-center text-xs uppercase tracking-wide text-gray-400">{m.chatUpToDate()}</p>
 				{/snippet}
-			</DatabaseListView>
+			</FirestoreListView>
 			{/key}
 		</section>
 	{/if}

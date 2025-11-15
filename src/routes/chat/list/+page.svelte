@@ -1,11 +1,12 @@
 <script lang="ts">
 	/**
-	 * 채팅방 목록 페이지
+	 * 채팅방 목록 페이지 (Firestore)
 	 *
-	 * DatabaseListView를 사용하여 내가 참여한 채팅방 목록을 무한 스크롤로 표시합니다.
+	 * FirestoreListView를 사용하여 내가 참여한 채팅방 목록을 무한 스크롤로 표시합니다.
+	 * - Path: users/{uid}/chat-joins (Firestore subcollection)
 	 */
 
-	import DatabaseListView from '$lib/components/DatabaseListView.svelte';
+	import FirestoreListView from '$lib/components/FirestoreListView.svelte';
 	import UserSearchDialog from '$lib/components/user/UserSearchDialog.svelte';
 	import ChatCreateDialog from '$lib/components/chat/ChatCreateDialog.svelte';
 	import ChatInvitationList from '$lib/components/chat/ChatInvitationList.svelte';
@@ -13,10 +14,11 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { goto } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
-	import { togglePinChatRoom } from '$lib/functions/chat.functions';
 	import ChatListMenu from '$lib/components/chat/ChatListMenu.svelte';
 	import ChatFavoritesDialog from '$lib/components/chat/ChatFavoritesDialog.svelte';
-	import { rtdb } from '$lib/firebase';
+	import { db } from '$lib/firebase';
+	import { updateDocument } from '$lib/stores/firestore.svelte';
+	import { Timestamp } from 'firebase/firestore';
 
 	type ChatJoinData = Record<string, unknown>;
 	type UserData = Record<string, unknown>;
@@ -114,13 +116,13 @@
 	}
 
 	/**
-	 * 채팅방 핀 토글 핸들러
+	 * 채팅방 핀 토글 핸들러 (Firestore)
 	 * 클릭 시 채팅방을 핀하거나 핀 해제합니다
 	 */
 	async function handleTogglePin(
 		event: MouseEvent,
 		roomId: string,
-		roomType: string
+		roomType: string // eslint-disable-line @typescript-eslint/no-unused-vars
 	): Promise<void> {
 		event.stopPropagation(); // 버튼 클릭 이벤트 전파 방지
 
@@ -130,14 +132,29 @@
 			return;
 		}
 
-		if (!rtdb) {
-			console.error('Database가 초기화되지 않았습니다');
+		if (!db) {
+			console.error('Firestore가 초기화되지 않았습니다');
 			return;
 		}
 
 		try {
-			const isPinned = await togglePinChatRoom(rtdb, roomId, uid, roomType);
-			// console.log(`✅ 채팅방 핀 ${isPinned ? '설정' : '해제'} 완료:`, roomId);
+			// Firestore: users/{uid}/chat-joins/{roomId} 문서 업데이트
+			const chatJoinPath = `users/${uid}/chat-joins/${roomId}`;
+
+			// 현재 핀 상태 확인 (join 데이터에서 pin 필드 읽기)
+			const result = await import('$lib/stores/firestore.svelte').then(mod =>
+				mod.readDocument<{ pin?: boolean }>(chatJoinPath)
+			);
+
+			const currentPin = result.success && result.data?.pin === true;
+			const newPinValue = !currentPin;
+
+			// 핀 상태 업데이트
+			await updateDocument(chatJoinPath, {
+				pin: newPinValue ? true : null // false 대신 null로 설정하여 필드 삭제
+			});
+
+			// console.log(`✅ 채팅방 핀 ${newPinValue ? '설정' : '해제'} 완료:`, roomId);
 		} catch (error) {
 			console.error('채팅방 핀 토글 실패:', error);
 		}
@@ -146,9 +163,9 @@
 	// 현재 로그인 사용자의 chat-joins 경로
 	const chatJoinPath = $derived.by(() => {
 		const uid = authStore.user?.uid;
-		const path = uid ? `chat-joins/${uid}` : '';
+		const path = uid ? `users/${uid}/chat-joins` : '';
 		// console.log('🔍 [Chat List Debug] User UID:', uid);
-		// console.log('🔍 [Chat List Debug] Chat join path:', path);
+		// console.log('🔍 [Chat List Debug] Chat join path (Firestore subcollection):', path);
 		return path;
 	});
 
@@ -231,25 +248,25 @@
 				{@const dbListViewProps = {
 					path: chatJoinPath,
 					pageSize: PAGE_SIZE,
-					orderBy: JOIN_ORDER_FIELD,
-					threshold: 320,
-					reverse: true
+					orderByField: JOIN_ORDER_FIELD,
+					orderDirection: 'desc',
+					threshold: 320
 				}}
 				{#if chatJoinPath}
 					<!--
-						// console.log('🔍 [Chat List Debug] DatabaseListView props:', dbListViewProps)
+						// console.log('🔍 [Chat List Debug] FirestoreListView props:', dbListViewProps)
 					-->
 				{/if}
-				<DatabaseListView
+				<FirestoreListView
 					path={chatJoinPath}
 					pageSize={PAGE_SIZE}
-					orderBy={JOIN_ORDER_FIELD}
+					orderByField={JOIN_ORDER_FIELD}
+					orderDirection="desc"
 					threshold={320}
-					reverse={true}
 				>
 					{#snippet item(itemData, index)}
 						{@const join = (itemData.data ?? {}) as ChatJoinData}
-						{@const roomId = (join.roomId ?? itemData.key ?? '') as string}
+						{@const roomId = (join.roomId ?? itemData.id ?? '') as string}
 						{@const roomType = (join.roomType ?? join.type ?? 'single').toString()}
 						<ChatListItem
 							{join}
@@ -276,7 +293,7 @@
 					{#snippet noMore()}
 						<p class="py-6 text-center text-xs uppercase tracking-wide text-gray-400">{m.chatUpToDate()}</p>
 					{/snippet}
-				</DatabaseListView>
+				</FirestoreListView>
 			{/key}
 		</section>
 	{/if}

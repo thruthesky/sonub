@@ -26,7 +26,9 @@
   "compileOnSave": true,
   "include": [
     "src",
-    "scripts",
     "../../shared/**/*.ts"
+  ],
+  "exclude": [
+    "scripts"
   ]
 }

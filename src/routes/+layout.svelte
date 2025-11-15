@@ -28,8 +28,7 @@
 	import { registerServiceWorker, subscribeOnMessage } from '$lib/fcm';
 	import { page } from '$app/stores';
 	import { authStore } from '$lib/stores/auth.svelte';
-	import { rtdbStore } from '$lib/stores/database.svelte';
-	import { rtdb } from '$lib/firebase';
+	import { firestoreStore } from '$lib/stores/firestore.svelte';
 
 	let { children } = $props();
 
@@ -46,7 +45,7 @@
 	/**
 	 * v1.0.0: 새 메시지 카운트 실시간 구독
 	 */
-	let newMessageCountStore = $state<ReturnType<typeof rtdbStore<number>> | null>(null);
+	let newMessageCountStore = $state<ReturnType<typeof firestoreStore<number>> | null>(null);
 
 	/**
 	 * v1.0.0: 알림음 객체 (클라이언트 사이드에서만 초기화)
@@ -74,7 +73,7 @@
 	$effect(() => {
 		if (browser && authStore.isAuthenticated && authStore.user?.uid) {
 			const path = `users/${authStore.user.uid}/newMessageCount`;
-			newMessageCountStore = rtdbStore<number>(path);
+			newMessageCountStore = firestoreStore<number>(path);
 			// console.log(`🔔 [알림음] 새 메시지 카운트 구독 시작: ${path}`);
 		} else {
 			newMessageCountStore = null;

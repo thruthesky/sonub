@@ -1,17 +1,17 @@
 <script lang="ts">
 	/**
-	 * 채팅방 비밀번호 입력 모달 컴포넌트
+	 * 채팅방 비밀번호 입력 모달 컴포넌트 (Firestore)
 	 *
 	 * 비밀번호가 설정된 채팅방에 입장하려는 사용자가 비밀번호를 입력하는 Dialog 모달입니다.
 	 *
 	 * 주요 기능:
 	 * 1. 비밀번호 입력 필드
-	 * 2. try 경로에 비밀번호 저장: /chat-room-passwords/{roomId}/try/{uid}
-	 * 3. 10초 동안 매초 members 확인: /chat-rooms/{roomId}/members/{uid}
+	 * 2. try 경로에 비밀번호 저장: chats/{roomId}/password-tries/{uid}
+	 * 3. 5초 동안 매초 members 확인: chats/{roomId}/members/{uid}
 	 * 4. Cloud Functions가 비밀번호 검증 후 members에 추가
 	 * 5. 성공 시 invalidate() 호출하여 SvelteKit 데이터 재로드
 	 * 6. 실패 시 에러 메시지 표시
-	 * 7. 카운트다운 표시 (10초)
+	 * 7. 카운트다운 표시 (5초)
 	 *
 	 * @prop roomId - 채팅방 ID
 	 * @prop open - Dialog 열림/닫힘 상태
@@ -29,8 +29,8 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
-	import { rtdb } from '$lib/firebase';
-	import { ref, set, onValue, off } from 'firebase/database';
+	import { db } from '$lib/firebase';
+	import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { invalidate } from '$app/navigation';
 	import { m } from '$lib/paraglide/messages';
@@ -66,11 +66,11 @@
 	}
 
 	/**
-	 * 비밀번호 제출 핸들러
+	 * 비밀번호 제출 핸들러 (Firestore)
 	 *
 	 * 로직:
-	 * 1. try 경로에 비밀번호 저장: /chat-room-passwords/{roomId}/try/{uid}
-	 * 2. waitForVerification() 호출하여 10초 동안 members 확인
+	 * 1. try 경로에 비밀번호 저장: chats/{roomId}/password-tries/{uid}
+	 * 2. waitForVerification() 호출하여 5초 동안 members 확인
 	 * 3. 성공 시:
 	 *    - 성공 토스트 표시
 	 *    - invalidate('chat:room') 호출하여 SvelteKit 데이터 재로드
@@ -80,19 +80,20 @@
 	 *    - 비밀번호 입력 필드 초기화
 	 */
 	async function handleSubmit() {
-		if (!password || !authStore.user?.uid || !rtdb) return;
+		if (!password || !authStore.user?.uid) return;
 
 		isVerifying = true;
 		countdown = 5;
 
 		try {
-			// 1. try 경로에 비밀번호 저장
-			await set(
-				ref(rtdb, `chat-room-passwords/${roomId}/try/${authStore.user.uid}`),
-				password
-			);
+			// 1. try 경로에 비밀번호 저장 (Firestore)
+			const tryDocRef = doc(db!, `chats/${roomId}/password-tries/${authStore.user.uid}`);
+			await setDoc(tryDocRef, {
+				password: password,
+				timestamp: Date.now()
+			});
 
-			// 2. 10초 동안 매초 members 확인
+			// 2. 5초 동안 매초 members 확인
 			const verified = await waitForVerification(roomId, authStore.user.uid);
 
 			if (verified) {
@@ -101,7 +102,7 @@
 				await invalidate('chat:room'); // SvelteKit 데이터 재로드
 				onSuccess();
 			} else {
-				// 4. 검증 실패 (10초 타임아웃)
+				// 4. 검증 실패 (5초 타임아웃)
 				toast.error(m.chatPasswordIncorrect());
 				password = '';
 			}
@@ -114,9 +115,9 @@
 	}
 
 	/**
-	 * 비밀번호 검증 대기 함수
+	 * 비밀번호 검증 대기 함수 (Firestore)
 	 *
-	 * 10초 동안 매초 members 경로를 확인하여 Cloud Functions가
+	 * 5초 동안 매초 members 경로를 확인하여 Cloud Functions가
 	 * 비밀번호 검증 후 members에 추가했는지 확인합니다.
 	 *
 	 * @param roomId - 채팅방 ID
@@ -124,14 +125,11 @@
 	 * @returns Promise<boolean> - 검증 성공 여부
 	 */
 	async function waitForVerification(roomId: string, uid: string): Promise<boolean> {
-		if (!rtdb) return false;
-
-		const db = rtdb; // 로컬 변수에 할당하여 TypeScript non-null 타입 보장
-
 		return new Promise((resolve) => {
-			const memberRef = ref(db, `chat-rooms/${roomId}/members/${uid}`);
+			const memberDocRef = doc(db!, `chats/${roomId}/members/${uid}`);
 			let intervalId: any;
 			let timeoutId: any;
+			let unsubscribe: (() => void) | null = null;
 
 			// 매초 카운트다운
 			intervalId = setInterval(() => {
@@ -141,17 +139,17 @@
 			// 5초 타임아웃
 			timeoutId = setTimeout(() => {
 				clearInterval(intervalId);
-				off(memberRef);
+				if (unsubscribe) unsubscribe();
 				resolve(false);
 			}, 5000);
 
-			// members 경로 실시간 확인
-			onValue(memberRef, (snapshot) => {
-				if (snapshot.val() === true) {
+			// members 경로 실시간 확인 (Firestore onSnapshot)
+			unsubscribe = onSnapshot(memberDocRef, (snapshot) => {
+				if (snapshot.exists() && snapshot.data()?.member === true) {
 					// 검증 성공: members에 추가됨
 					clearInterval(intervalId);
 					clearTimeout(timeoutId);
-					off(memberRef);
+					if (unsubscribe) unsubscribe();
 					resolve(true);
 				}
 			});

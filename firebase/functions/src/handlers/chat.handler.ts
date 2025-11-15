@@ -74,6 +74,7 @@ export async function handleChatMessageCreate(
   const senderUid = messageData.senderUid;
   const timestamp = messageData.createdAt || Date.now();
   const messageText = messageData.text || "";
+  const db = admin.firestore();
 
   // 단계 3: 1:1 채팅인지 확인 (공유 함수 사용)
   if (isSingleChat(roomId)) {
@@ -97,38 +98,38 @@ export async function handleChatMessageCreate(
     const senderSingleListOrder = `${timestamp}`;
     const partnerSingleListOrder = `200${timestamp}`;
 
-    const updates: {[key: string]: unknown} = {};
+    // Firestore batch 생성
+    const batch = db.batch();
 
     // 발신자의 chat-join 업데이트 (읽음 상태)
-    updates[`chat-joins/${senderUid}/${roomId}/roomId`] = roomId;
-    updates[`chat-joins/${senderUid}/${roomId}/roomType`] = "single";
-    updates[`chat-joins/${senderUid}/${roomId}/partnerUid`] = partnerUid;
-    updates[`chat-joins/${senderUid}/${roomId}/lastMessageText`] = messageText;
-    updates[`chat-joins/${senderUid}/${roomId}/lastMessageAt`] = timestamp;
-    updates[`chat-joins/${senderUid}/${roomId}/updatedAt`] = timestamp;
-    updates[`chat-joins/${senderUid}/${roomId}/singleChatListOrder`] =
-      senderSingleListOrder;
-    updates[`chat-joins/${senderUid}/${roomId}/allChatListOrder`] =
-      senderSingleListOrder;
+    const senderChatJoinRef = db.doc(`users/${senderUid}/chat-joins/${roomId}`);
+    batch.set(senderChatJoinRef, {
+      roomId,
+      roomType: "single",
+      partnerUid,
+      lastMessageText: messageText,
+      lastMessageAt: timestamp,
+      updatedAt: timestamp,
+      singleChatListOrder: senderSingleListOrder,
+      allChatListOrder: senderSingleListOrder,
+    }, {merge: true});
 
     // 수신자의 chat-join 업데이트 (읽지 않은 상태, 200 prefix 추가)
-    updates[`chat-joins/${partnerUid}/${roomId}/roomId`] = roomId;
-    updates[`chat-joins/${partnerUid}/${roomId}/roomType`] = "single";
-    updates[`chat-joins/${partnerUid}/${roomId}/partnerUid`] = senderUid;
-    updates[`chat-joins/${partnerUid}/${roomId}/lastMessageText`] = messageText;
-    updates[`chat-joins/${partnerUid}/${roomId}/lastMessageAt`] = timestamp;
-    updates[`chat-joins/${partnerUid}/${roomId}/updatedAt`] = timestamp;
-    updates[`chat-joins/${partnerUid}/${roomId}/singleChatListOrder`] =
-      partnerSingleListOrder;
-    updates[`chat-joins/${partnerUid}/${roomId}/allChatListOrder`] =
-      partnerSingleListOrder;
-
-    // 수신자의 읽지 않은 메시지 카운터 증가
-    updates[`chat-joins/${partnerUid}/${roomId}/newMessageCount`] =
-      admin.database.ServerValue.increment(1);
+    const partnerChatJoinRef = db.doc(`users/${partnerUid}/chat-joins/${roomId}`);
+    batch.set(partnerChatJoinRef, {
+      roomId,
+      roomType: "single",
+      partnerUid: senderUid,
+      lastMessageText: messageText,
+      lastMessageAt: timestamp,
+      updatedAt: timestamp,
+      singleChatListOrder: partnerSingleListOrder,
+      allChatListOrder: partnerSingleListOrder,
+      newMessageCount: admin.firestore.FieldValue.increment(1),
+    }, {merge: true});
 
     // 모든 업데이트를 한 번에 실행
-    await admin.database().ref().update(updates);
+    await batch.commit();
 
     logger.info("1:1 채팅 chat-joins 업데이트 완료", {
       messageId,
@@ -136,22 +137,26 @@ export async function handleChatMessageCreate(
       senderUid,
       partnerUid,
       timestamp,
-      updatesCount: Object.keys(updates).length,
     });
   } else {
     // === 그룹/오픈 채팅 처리 ===
     logger.info("그룹/오픈 채팅 메시지 처리", {messageId, roomId});
 
     // 채팅방 정보 조회
-    const roomRef = admin.database().ref(`chat-rooms/${roomId}`);
-    const roomSnapshot = await roomRef.once("value");
+    const roomRef = db.doc(`chats/${roomId}`);
+    const roomSnapshot = await roomRef.get();
 
-    if (!roomSnapshot.exists()) {
+    if (!roomSnapshot.exists) {
       logger.error("채팅방 정보를 찾을 수 없음", {messageId, roomId});
       return;
     }
 
-    const roomData = roomSnapshot.val();
+    const roomData = roomSnapshot.data();
+    if (!roomData) {
+      logger.error("채팅방 데이터가 없음", {messageId, roomId});
+      return;
+    }
+
     const roomType = roomData.type || "group"; // 기본값: group
     const roomName = roomData.name || roomId;
     const members = roomData.members || {};
@@ -170,17 +175,13 @@ export async function handleChatMessageCreate(
       return;
     }
 
-    const updates: {[key: string]: unknown} = {};
-
     // 각 member의 기존 chat-joins 데이터를 먼저 읽기 (병렬 처리)
     const chatJoinReads = Object.keys(members).map(async (memberUid) => {
-      const chatJoinRef = admin.database().ref(
-        `chat-joins/${memberUid}/${roomId}`
-      );
-      const snapshot = await chatJoinRef.once("value");
+      const chatJoinRef = db.doc(`users/${memberUid}/chat-joins/${roomId}`);
+      const snapshot = await chatJoinRef.get();
       return {
         memberUid,
-        existingData: snapshot.val() as Record<string, unknown> | null,
+        existingData: snapshot.exists ? (snapshot.data() as Record<string, unknown>) : null,
       };
     });
 
@@ -192,18 +193,24 @@ export async function handleChatMessageCreate(
       memberCount: chatJoinResults.length,
     });
 
+    // Firestore batch 생성
+    const batch = db.batch();
+    let updateCount = 0;
+
     // 각 member의 chat-joins 업데이트
     for (const {memberUid, existingData} of chatJoinResults) {
-      const basePath = `chat-joins/${memberUid}/${roomId}`;
       const isSender = memberUid === senderUid;
+      const chatJoinRef = db.doc(`users/${memberUid}/chat-joins/${roomId}`);
 
       // 공통 필드
-      updates[`${basePath}/roomId`] = roomId;
-      updates[`${basePath}/roomType`] = roomType;
-      updates[`${basePath}/roomName`] = roomName;
-      updates[`${basePath}/lastMessageText`] = messageText;
-      updates[`${basePath}/lastMessageAt`] = timestamp;
-      updates[`${basePath}/updatedAt`] = timestamp;
+      const updateData: Record<string, unknown> = {
+        roomId,
+        roomType,
+        roomName,
+        lastMessageText: messageText,
+        lastMessageAt: timestamp,
+        updatedAt: timestamp,
+      };
 
       // allChatListOrder 계산
       // - 기존 필드가 있고, "500"으로 시작하면 유지 (핀 설정된 채팅방)
@@ -220,15 +227,15 @@ export async function handleChatMessageCreate(
         String(existingAllChatListOrder).startsWith("500")
       ) {
         // 핀 설정된 채팅방: 기존 값 유지
-        updates[`${basePath}/allChatListOrder`] = existingAllChatListOrder;
+        updateData.allChatListOrder = existingAllChatListOrder;
       } else if (existingAllChatListOrder !== undefined) {
         // 기존 필드가 있는 경우
-        updates[`${basePath}/allChatListOrder`] = isSender ?
+        updateData.allChatListOrder = isSender ?
           `${timestamp}` :
           `200${timestamp}`;
       } else {
         // 기존 필드가 없는 경우: 새로 생성 (timestamp만)
-        updates[`${basePath}/allChatListOrder`] = `${timestamp}`;
+        updateData.allChatListOrder = `${timestamp}`;
       }
 
       // 채팅방 타입에 따른 정렬 필드
@@ -244,14 +251,14 @@ export async function handleChatMessageCreate(
           String(existingGroupListOrder).startsWith("500")
         ) {
           // 핀 설정된 채팅방: 기존 값 유지
-          updates[`${basePath}/groupChatListOrder`] = existingGroupListOrder;
+          updateData.groupChatListOrder = existingGroupListOrder;
         } else if (existingGroupListOrder !== undefined) {
           // 기존 필드가 있는 경우
           const groupListOrder = isSender ? `${timestamp}` : `200${timestamp}`;
-          updates[`${basePath}/groupChatListOrder`] = groupListOrder;
+          updateData.groupChatListOrder = groupListOrder;
         } else {
           // 기존 필드가 없는 경우: 새로 생성
-          updates[`${basePath}/groupChatListOrder`] = `${timestamp}`;
+          updateData.groupChatListOrder = `${timestamp}`;
         }
       } else if (roomType === "open") {
         // 오픈 채팅인 경우
@@ -265,14 +272,14 @@ export async function handleChatMessageCreate(
           String(existingOpenListOrder).startsWith("500")
         ) {
           // 핀 설정된 채팅방: 기존 값 유지
-          updates[`${basePath}/openChatListOrder`] = existingOpenListOrder;
+          updateData.openChatListOrder = existingOpenListOrder;
         } else if (existingOpenListOrder !== undefined) {
           // 기존 필드가 있는 경우
           const openListOrder = isSender ? `${timestamp}` : `200${timestamp}`;
-          updates[`${basePath}/openChatListOrder`] = openListOrder;
+          updateData.openChatListOrder = openListOrder;
         } else {
           // 기존 필드가 없는 경우: 새로 생성
-          updates[`${basePath}/openChatListOrder`] = `${timestamp}`;
+          updateData.openChatListOrder = `${timestamp}`;
         }
       }
 
@@ -288,27 +295,28 @@ export async function handleChatMessageCreate(
         String(existingOpenAndGroupListOrder).startsWith("500")
       ) {
         // 핀 설정된 채팅방: 기존 값 유지
-        updates[`${basePath}/openAndGroupChatListOrder`] =
-          existingOpenAndGroupListOrder;
+        updateData.openAndGroupChatListOrder = existingOpenAndGroupListOrder;
       } else if (existingOpenAndGroupListOrder !== undefined) {
         // 기존 필드가 있는 경우
-        updates[`${basePath}/openAndGroupChatListOrder`] = isSender ?
+        updateData.openAndGroupChatListOrder = isSender ?
           `${timestamp}` :
           `200${timestamp}`;
       } else {
         // 기존 필드가 없는 경우: 새로 생성
-        updates[`${basePath}/openAndGroupChatListOrder`] = `${timestamp}`;
+        updateData.openAndGroupChatListOrder = `${timestamp}`;
       }
 
       // newMessageCount 증가 (발신자 제외)
       if (!isSender) {
-        updates[`${basePath}/newMessageCount`] =
-          admin.database.ServerValue.increment(1);
+        updateData.newMessageCount = admin.firestore.FieldValue.increment(1);
       }
+
+      batch.set(chatJoinRef, updateData, {merge: true});
+      updateCount++;
     }
 
     // 모든 업데이트를 한 번에 실행
-    await admin.database().ref().update(updates);
+    await batch.commit();
 
     logger.info("그룹/오픈 채팅 chat-joins 업데이트 완료", {
       messageId,
@@ -317,7 +325,7 @@ export async function handleChatMessageCreate(
       senderUid,
       memberCount: Object.keys(members).length,
       timestamp,
-      updatesCount: Object.keys(updates).length,
+      updatesCount: updateCount,
     });
   }
 
@@ -328,11 +336,10 @@ export async function handleChatMessageCreate(
 
   try {
     // 단계 1: 발신자 이름 조회
-    const senderRef = admin.database().ref(`users/${senderUid}/displayName`);
-    const senderSnapshot = await senderRef.once("value");
-    const senderName = senderSnapshot.exists() ?
-      senderSnapshot.val() as string :
-      "알 수 없음";
+    const senderRef = db.doc(`users/${senderUid}`);
+    const senderSnapshot = await senderRef.get();
+    const senderData = senderSnapshot.exists ? senderSnapshot.data() : null;
+    const senderName = senderData?.displayName || "알 수 없음";
 
     logger.info("발신자 이름 조회 완료", {
       messageId,
@@ -361,12 +368,12 @@ export async function handleChatMessageCreate(
       }
     } else {
       // 그룹/오픈 채팅: 발신자를 제외한 모든 멤버 (구독 중인 멤버만)
-      const roomRef = admin.database().ref(`chat-rooms/${roomId}`);
-      const roomSnapshot = await roomRef.once("value");
+      const roomRef = db.doc(`chats/${roomId}`);
+      const roomSnapshot = await roomRef.get();
 
-      if (roomSnapshot.exists()) {
-        const roomData = roomSnapshot.val();
-        const members = roomData.members || {};
+      if (roomSnapshot.exists) {
+        const roomData = roomSnapshot.data();
+        const members = roomData?.members || {};
 
         // 발신자 제외하고 구독 중인 멤버만 필터링
         for (const uid of Object.keys(members)) {
@@ -467,47 +474,39 @@ export async function handleChatRoomCreate(
   }
 
   const timestamp = Date.now();
-  const updates: {[key: string]: unknown} = {};
+  const db = admin.firestore();
+  const roomRef = db.doc(`chats/${roomId}`);
 
-  // 단계 2: createdAt 필드 확인 및 설정
-  const createdAtRef = admin.database().ref(
-    `chat-rooms/${roomId}/createdAt`
-  );
-  const createdAtSnapshot = await createdAtRef.once("value");
+  // 단계 2: 채팅방 문서 읽기
+  const roomSnapshot = await roomRef.get();
+  const existingData = roomSnapshot.exists ? roomSnapshot.data() : {};
 
-  if (!createdAtSnapshot.exists()) {
-    updates[`chat-rooms/${roomId}/createdAt`] = timestamp;
+  const updates: Record<string, unknown> = {};
+
+  // 단계 3: createdAt 필드 확인 및 설정
+  if (!existingData?.createdAt) {
+    updates.createdAt = timestamp;
     logger.info("createdAt 필드 생성", {roomId, createdAt: timestamp});
   }
 
-  // 단계 3: members 객체 확인 및 설정 (그룹/오픈 채팅만)
+  // 단계 4: members 객체 확인 및 설정 (그룹/오픈 채팅만)
   const roomType = roomData.type as string;
   if (roomType === "group" || roomType === "open") {
-    const membersRef = admin.database().ref(
-      `chat-rooms/${roomId}/members`
-    );
-    const membersSnapshot = await membersRef.once("value");
-
-    if (!membersSnapshot.exists()) {
+    if (!existingData?.members) {
       // members 객체에 owner를 true로 추가
-      updates[`chat-rooms/${roomId}/members`] = {[ownerUid]: true};
+      updates.members = {[ownerUid]: true};
       logger.info("members 필드 생성", {roomId, members: {[ownerUid]: true}});
     }
 
     // memberCount는 members 객체의 모든 uid 개수 (true/false 구분 없이)
-    const memberCountRef = admin.database().ref(
-      `chat-rooms/${roomId}/memberCount`
-    );
-    const memberCountSnapshot = await memberCountRef.once("value");
-
-    if (!memberCountSnapshot.exists()) {
+    if (!existingData?.memberCount) {
       // members가 새로 생성되면 1, 기존에 있으면 모든 uid 개수
       let totalCount = 1;
-      if (membersSnapshot.exists()) {
-        const membersData = membersSnapshot.val() as Record<string, boolean>;
+      if (existingData?.members) {
+        const membersData = existingData.members as Record<string, boolean>;
         totalCount = Object.keys(membersData).length;
       }
-      updates[`chat-rooms/${roomId}/memberCount`] = totalCount;
+      updates.memberCount = totalCount;
       logger.info("memberCount 필드 생성", {
         roomId,
         memberCount: totalCount,
@@ -515,9 +514,9 @@ export async function handleChatRoomCreate(
     }
   }
 
-  // 단계 4: 모든 업데이트를 한 번에 실행
+  // 단계 5: 모든 업데이트를 한 번에 실행
   if (Object.keys(updates).length > 0) {
-    await admin.database().ref().update(updates);
+    await roomRef.update(updates);
     logger.info("채팅방 필드 설정 완료", {
       roomId,
       owner: ownerUid,
@@ -561,11 +560,12 @@ export async function handleChatJoinCreate(
   });
 
   const timestamp = Date.now();
-  const chatJoinRef = admin.database().ref(`chat-joins/${uid}/${roomId}`);
-  const chatJoinSnapshot = await chatJoinRef.once("value");
+  const db = admin.firestore();
+  const chatJoinRef = db.doc(`users/${uid}/chat-joins/${roomId}`);
+  const chatJoinSnapshot = await chatJoinRef.get();
 
   // 이미 완전히 설정된 경우 건너뛰기
-  const existingData = chatJoinSnapshot.val();
+  const existingData = chatJoinSnapshot.exists ? chatJoinSnapshot.data() : null;
   if (existingData?.joinedAt && existingData?.roomType) {
     logger.info("chat-join 정보가 이미 완전히 설정됨, 건너뜀", {
       uid,
@@ -614,10 +614,10 @@ export async function handleChatJoinCreate(
     logger.info("그룹/오픈 채팅 참여 정보 처리", {uid, roomId});
 
     // 채팅방 정보 조회
-    const roomRef = admin.database().ref(`chat-rooms/${roomId}`);
-    const roomSnapshot = await roomRef.once("value");
+    const roomRef = db.doc(`chats/${roomId}`);
+    const roomSnapshot = await roomRef.get();
 
-    if (!roomSnapshot.exists()) {
+    if (!roomSnapshot.exists) {
       logger.warn("채팅방 정보를 찾을 수 없음, 기본값으로 설정", {
         uid,
         roomId,
@@ -627,7 +627,12 @@ export async function handleChatJoinCreate(
       updates.roomType = "group";
       updates.allChatListOrder = timestamp;
     } else {
-      const roomData = roomSnapshot.val();
+      const roomData = roomSnapshot.data();
+      if (!roomData) {
+        logger.error("채팅방 데이터가 없음", {uid, roomId});
+        return;
+      }
+
       const roomType = roomData.type || "group";
       const roomName = roomData.name || roomId;
 
@@ -657,7 +662,7 @@ export async function handleChatJoinCreate(
   }
 
   // 업데이트 실행
-  await chatJoinRef.update(updates);
+  await chatJoinRef.set(updates, {merge: true});
 
   logger.info("chat-join 정보 업데이트 완료", {
     uid,
@@ -700,20 +705,37 @@ export async function handleChatRoomMemberJoin(
     uid,
   });
 
-  // 단계 1: members 필드 읽기
-  const membersRef = admin.database().ref(`chat-rooms/${roomId}/members`);
-  const membersSnapshot = await membersRef.once("value");
+  const db = admin.firestore();
+  const roomRef = db.doc(`chats/${roomId}`);
 
-  if (!membersSnapshot.exists()) {
+  // 단계 1: 채팅방 정보 읽기
+  const roomSnapshot = await roomRef.get();
+
+  if (!roomSnapshot.exists) {
+    logger.warn("채팅방 정보가 없음, chat-joins 업데이트를 건너뜀", {
+      roomId,
+      uid,
+    });
+    return;
+  }
+
+  const roomData = roomSnapshot.data();
+  if (!roomData) {
+    logger.error("채팅방 데이터가 없음", {roomId, uid});
+    return;
+  }
+
+  const membersData = roomData.members as Record<string, boolean> | undefined;
+
+  if (!membersData || Object.keys(membersData).length === 0) {
     logger.warn("members 필드가 없음, memberCount를 0으로 설정", {
       roomId,
     });
-    await admin.database().ref(`chat-rooms/${roomId}/memberCount`).set(0);
+    await roomRef.update({memberCount: 0});
     return;
   }
 
   // 단계 2: 모든 uid 개수 세기 (true/false 구분 없이)
-  const membersData = membersSnapshot.val() as Record<string, boolean>;
   const totalMemberCount = Object.keys(membersData).length;
 
   logger.info("멤버 입장 후 참여자 수 계산 완료", {
@@ -723,10 +745,7 @@ export async function handleChatRoomMemberJoin(
   });
 
   // 단계 3: memberCount 업데이트
-  await admin
-    .database()
-    .ref(`chat-rooms/${roomId}/memberCount`)
-    .set(totalMemberCount);
+  await roomRef.update({memberCount: totalMemberCount});
 
   logger.info("memberCount 업데이트 완료 (멤버 입장)", {
     roomId,
@@ -735,18 +754,6 @@ export async function handleChatRoomMemberJoin(
   });
 
   // 단계 4: 채팅방 정보 조회
-  const roomRef = admin.database().ref(`chat-rooms/${roomId}`);
-  const roomSnapshot = await roomRef.once("value");
-
-  if (!roomSnapshot.exists()) {
-    logger.warn("채팅방 정보가 없음, chat-joins 업데이트를 건너뜀", {
-      roomId,
-      uid,
-    });
-    return;
-  }
-
-  const roomData = roomSnapshot.val();
   const roomType = roomData.type || "unknown";
   const roomName = roomData.name || roomId;
 
@@ -758,21 +765,20 @@ export async function handleChatRoomMemberJoin(
   });
 
   // 단계 5: 마지막 채팅 메시지 조회
-  const messagesRef = admin.database().ref("chat-messages");
+  // Firestore에서는 roomId로 필터링하고 createdAt으로 정렬하여 마지막 메시지를 가져옴
+  const messagesRef = db.collection("messages");
   const lastMessageSnapshot = await messagesRef
-    .orderByChild("roomOrder")
-    .startAt(`-${roomId}-`)
-    .endAt(`-${roomId}-\uf8ff`)
-    .limitToLast(1)
-    .once("value");
+    .where("roomId", "==", roomId)
+    .orderBy("createdAt", "desc")
+    .limit(1)
+    .get();
 
   let lastMessageText = "";
   let lastMessageAt = 0;
 
-  if (lastMessageSnapshot.exists()) {
-    const messages = lastMessageSnapshot.val();
-    const messageId = Object.keys(messages)[0];
-    const lastMessage = messages[messageId];
+  if (!lastMessageSnapshot.empty) {
+    const lastMessage = lastMessageSnapshot.docs[0].data();
+    const messageId = lastMessageSnapshot.docs[0].id;
 
     lastMessageText = lastMessage.text || "";
     lastMessageAt = lastMessage.createdAt || 0;
@@ -792,8 +798,9 @@ export async function handleChatRoomMemberJoin(
   }
 
   // 단계 6: chat-joins 정보 업데이트
-  const chatJoinRef = admin.database().ref(`chat-joins/${uid}/${roomId}`);
-  const chatJoinSnapshot = await chatJoinRef.once("value");
+  const chatJoinRef = db.doc(`users/${uid}/chat-joins/${roomId}`);
+  const chatJoinSnapshot = await chatJoinRef.get();
+  const chatJoinData = chatJoinSnapshot.exists ? chatJoinSnapshot.data() : null;
 
   const timestamp = Date.now();
   const updates: Record<string, string | number> = {
@@ -822,11 +829,11 @@ export async function handleChatRoomMemberJoin(
   updates.allChatListOrder = timestamp;
 
   // joinedAt은 없는 경우에만 설정
-  if (!chatJoinSnapshot.exists() || !chatJoinSnapshot.val()?.joinedAt) {
+  if (!chatJoinData?.joinedAt) {
     updates.joinedAt = timestamp;
   }
 
-  await chatJoinRef.update(updates);
+  await chatJoinRef.set(updates, {merge: true});
 
   logger.info("chat-joins 상세 정보 업데이트 완료", {
     roomId,
@@ -860,20 +867,32 @@ export async function handleChatRoomMemberLeave(
     uid,
   });
 
-  // 단계 1: members 필드 읽기
-  const membersRef = admin.database().ref(`chat-rooms/${roomId}/members`);
-  const membersSnapshot = await membersRef.once("value");
+  const db = admin.firestore();
 
-  if (!membersSnapshot.exists()) {
+  // 단계 1: 채팅방 정보 읽기
+  const roomRef = db.doc(`chats/${roomId}`);
+  const roomSnapshot = await roomRef.get();
+
+  if (!roomSnapshot.exists) {
+    logger.info("채팅방 정보가 없음, memberCount를 0으로 설정", {
+      roomId,
+    });
+    await roomRef.update({memberCount: 0});
+    return;
+  }
+
+  const roomData = roomSnapshot.data();
+  const membersData = roomData?.members as Record<string, boolean> | undefined;
+
+  if (!membersData || Object.keys(membersData).length === 0) {
     logger.info("members 필드가 없음, memberCount를 0으로 설정", {
       roomId,
     });
-    await admin.database().ref(`chat-rooms/${roomId}/memberCount`).set(0);
+    await roomRef.update({memberCount: 0});
     return;
   }
 
   // 단계 2: 모든 uid 개수 세기 (true/false 구분 없이)
-  const membersData = membersSnapshot.val() as Record<string, boolean>;
   const totalMemberCount = Object.keys(membersData).length;
 
   logger.info("멤버 퇴장 후 참여자 수 계산 완료", {
@@ -883,10 +902,7 @@ export async function handleChatRoomMemberLeave(
   });
 
   // 단계 3: memberCount 업데이트
-  await admin
-    .database()
-    .ref(`chat-rooms/${roomId}/memberCount`)
-    .set(totalMemberCount);
+  await roomRef.update({memberCount: totalMemberCount});
 
   logger.info("memberCount 업데이트 완료 (멤버 퇴장)", {
     roomId,
@@ -894,11 +910,11 @@ export async function handleChatRoomMemberLeave(
     memberCount: totalMemberCount,
   });
 
-  // 단계 4: chat-joins 노드 삭제
-  const chatJoinRef = admin.database().ref(`chat-joins/${uid}/${roomId}`);
-  await chatJoinRef.remove();
+  // 단계 4: chat-joins 문서 삭제
+  const chatJoinRef = db.doc(`users/${uid}/chat-joins/${roomId}`);
+  await chatJoinRef.delete();
 
-  logger.info("chat-joins 노드 삭제 완료", {
+  logger.info("chat-joins 문서 삭제 완료", {
     roomId,
     uid,
   });
@@ -930,16 +946,22 @@ export async function handleChatRoomPinCreate(
     roomId,
   });
 
-  // chat-joins 데이터 읽기
-  const chatJoinRef = admin.database().ref(`chat-joins/${uid}/${roomId}`);
-  const snapshot = await chatJoinRef.once("value");
+  const db = admin.firestore();
 
-  if (!snapshot.exists()) {
-    logger.error("chat-joins 노드가 존재하지 않음", {uid, roomId});
+  // chat-joins 데이터 읽기
+  const chatJoinRef = db.doc(`users/${uid}/chat-joins/${roomId}`);
+  const snapshot = await chatJoinRef.get();
+
+  if (!snapshot.exists) {
+    logger.error("chat-joins 문서가 존재하지 않음", {uid, roomId});
     return;
   }
 
-  const data = snapshot.val();
+  const data = snapshot.data();
+  if (!data) {
+    logger.error("chat-joins 문서 데이터가 없음", {uid, roomId});
+    return;
+  }
 
   // xxxListOrder 또는 xxxChatListOrder 필드 찾기
   const updates: Record<string, string> = {};
@@ -1027,16 +1049,23 @@ export async function handleChatRoomPinDelete(
     roomId,
   });
 
-  // chat-joins 데이터 읽기
-  const chatJoinRef = admin.database().ref(`chat-joins/${uid}/${roomId}`);
-  const snapshot = await chatJoinRef.once("value");
+  const db = admin.firestore();
 
-  if (!snapshot.exists()) {
-    logger.error("chat-joins 노드가 존재하지 않음", {uid, roomId});
+  // chat-joins 데이터 읽기
+  const chatJoinRef = db.doc(`users/${uid}/chat-joins/${roomId}`);
+  const snapshot = await chatJoinRef.get();
+
+  if (!snapshot.exists) {
+    logger.error("chat-joins 문서가 존재하지 않음", {uid, roomId});
     return;
   }
 
-  const data = snapshot.val();
+  const data = snapshot.data();
+  if (!data) {
+    logger.error("chat-joins 문서 데이터가 없음", {uid, roomId});
+    return;
+  }
+
   const newMessageCount = Number(data.newMessageCount ?? 0);
 
   // xxxListOrder 또는 xxxChatListOrder 필드 찾기
@@ -1143,18 +1172,18 @@ export async function handleChatInvitationCreate(
   }
 
   const inviterUid = invitationData.inviterUid;
-  const updates: Record<string, unknown> = {};
+  const db = admin.firestore();
 
   // 1. 채팅방 정보 조회
-  const roomRef = admin.database().ref(`chat-rooms/${roomId}`);
-  const roomSnapshot = await roomRef.once("value");
+  const roomRef = db.doc(`chats/${roomId}`);
+  const roomSnapshot = await roomRef.get();
 
-  if (!roomSnapshot.exists()) {
+  if (!roomSnapshot.exists) {
     logger.error("채팅방을 찾을 수 없음", {roomId});
     throw new Error(`채팅방을 찾을 수 없습니다: ${roomId}`);
   }
 
-  const roomData = roomSnapshot.val() as {
+  const roomData = roomSnapshot.data() as {
     name?: string;
     type?: string;
     members?: Record<string, boolean>;
@@ -1189,11 +1218,11 @@ export async function handleChatInvitationCreate(
   }
 
   // 2. 초대한 사람 정보 조회
-  const inviterRef = admin.database().ref(`users/${inviterUid}`);
-  const inviterSnapshot = await inviterRef.once("value");
-  const inviterData = inviterSnapshot.val() as {
-    displayName?: string;
-  } | null;
+  const inviterRef = db.doc(`users/${inviterUid}`);
+  const inviterSnapshot = await inviterRef.get();
+  const inviterData = inviterSnapshot.exists ?
+    inviterSnapshot.data() as {displayName?: string} :
+    null;
 
   const inviterName = inviterData?.displayName || "사용자";
 
@@ -1203,11 +1232,11 @@ export async function handleChatInvitationCreate(
   });
 
   // 3. 초대받은 사람의 언어 코드 조회
-  const inviteeRef = admin.database().ref(`users/${inviteeUid}`);
-  const inviteeSnapshot = await inviteeRef.once("value");
-  const inviteeData = inviteeSnapshot.val() as {
-    languageCode?: string;
-  } | null;
+  const inviteeRef = db.doc(`users/${inviteeUid}`);
+  const inviteeSnapshot = await inviteeRef.get();
+  const inviteeData = inviteeSnapshot.exists ?
+    inviteeSnapshot.data() as {languageCode?: string} :
+    null;
 
   const languageCode = inviteeData?.languageCode || "en";
 
@@ -1234,22 +1263,19 @@ export async function handleChatInvitationCreate(
   // 서버 타임스탬프 생성
   const now = Date.now();
 
-  // createdAt과 invitationOrder 추가
-  updates[`chat-invitations/${inviteeUid}/${roomId}/createdAt`] = now;
-  updates[`chat-invitations/${inviteeUid}/${roomId}/invitationOrder`] = `-${now}`;
-
-  // 나머지 필드 추가
-  updates[`chat-invitations/${inviteeUid}/${roomId}/roomName`] = roomName;
-  updates[`chat-invitations/${inviteeUid}/${roomId}/roomType`] = roomType;
-  updates[`chat-invitations/${inviteeUid}/${roomId}/inviterName`] = inviterName;
-  updates[`chat-invitations/${inviteeUid}/${roomId}/message`] = message;
-
-  await admin.database().ref().update(updates);
+  const invitationRef = db.doc(`users/${inviteeUid}/chat-invitations/${roomId}`);
+  await invitationRef.set({
+    createdAt: now,
+    invitationOrder: `-${now}`,
+    roomName,
+    roomType,
+    inviterName,
+    message,
+  }, {merge: true});
 
   logger.info("초대장 정보 업데이트 완료", {
     inviteeUid,
     roomId,
-    updatesCount: Object.keys(updates).length,
   });
 
   // 6. FCM 푸시 알림 전송

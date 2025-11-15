@@ -1,7 +1,7 @@
 ---
 name: 채팅방 즐겨찾기 기능
 description: 사용자가 채팅방을 폴더별로 정리하고 관리할 수 있는 즐겨찾기(북마크) 기능
-version: 1.0.0
+version: 2.0.0
 step: 60
 priority: **
 dependencies:
@@ -13,7 +13,11 @@ tags:
   - bookmark
   - folder
   - firebase
-  - rtdb
+  - firestore
+author: Claude Code
+created: 2025-11-13
+updated: 2025-11-15
+status: completed
 ---
 
 # 채팅방 즐겨찾기 기능
@@ -28,7 +32,7 @@ tags:
 - **채팅방 관리**: 각 폴더에 채팅방을 추가하거나 제거할 수 있습니다
 - **상단 고정**: 중요한 폴더를 목록 상단에 고정할 수 있습니다
 - **듀얼 모드**: 채팅방에서 호출 시 "추가 모드"와 "목록 모드"를 전환할 수 있습니다
-- **실시간 동기화**: Firebase RTDB를 통해 실시간으로 데이터가 동기화됩니다
+- **Firestore 기반**: Firebase Firestore를 통해 데이터를 저장하고 관리합니다
 
 ### 1.2 사용 시나리오
 
@@ -83,17 +87,17 @@ tags:
 
 ### 2.3 기술 요구사항
 - [x] Svelte 5 Runes: `$state`, `$bindable`, `$derived`, `$effect` 사용
-- [x] Firebase RTDB: 실시간 데이터베이스 사용
+- [x] Firebase Firestore: Firestore 데이터베이스 사용
 - [x] shadcn-svelte: Dialog 컴포넌트 사용
 - [x] TailwindCSS: Light Mode 스타일링
 - [x] TypeScript: 타입 안정성 보장
 
 ## 3. 데이터베이스 구조 (Database Structure)
 
-### 3.1 Firebase RTDB 경로
+### 3.1 Firestore 경로
 
 ```
-/chat-favorites/{uid}/{favoriteId}
+users/{uid}/chat-favorites/{favoriteId}
   ├─ name: string                    # 폴더 이름
   ├─ description: string | null      # 폴더 설명 (선택사항)
   ├─ createdAt: number              # 생성 타임스탬프
@@ -104,32 +108,30 @@ tags:
 
 ### 3.2 데이터 구조 예시
 
-```json
+```typescript
+// Firestore 문서 예시
+// 경로: users/user123/chat-favorites/favorite001
 {
-  "chat-favorites": {
-    "user123": {
-      "favorite001": {
-        "name": "업무 관련",
-        "description": "팀 채팅을 모아둔 폴더",
-        "createdAt": 1700000000000,
-        "folderOrder": "5001700000000000",
-        "roomList": {
-          "room001": true,
-          "room002": true,
-          "room003": true
-        }
-      },
-      "favorite002": {
-        "name": "친구들",
-        "description": null,
-        "createdAt": 1700100000000,
-        "folderOrder": "1700100000000",
-        "roomList": {
-          "room004": true,
-          "room005": true
-        }
-      }
-    }
+  "name": "업무 관련",
+  "description": "팀 채팅을 모아둔 폴더",
+  "createdAt": 1700000000000,
+  "folderOrder": "5001700000000000",
+  "roomList": {
+    "room001": true,
+    "room002": true,
+    "room003": true
+  }
+}
+
+// 경로: users/user123/chat-favorites/favorite002
+{
+  "name": "친구들",
+  "description": null,
+  "createdAt": 1700100000000,
+  "folderOrder": "1700100000000",
+  "roomList": {
+    "room004": true,
+    "room005": true
   }
 }
 ```
@@ -206,28 +208,29 @@ type DisplayMode = 'add' | 'browse';
 
 ```typescript
 /**
- * 즐겨찾기 폴더 목록 불러오기
+ * 즐겨찾기 폴더 목록 불러오기 (Firestore)
  *
  * 동작:
- * 1. 현재 사용자의 chat-favorites 경로에서 데이터 읽기
- * 2. 데이터를 Favorite[] 배열로 변환
- * 3. 정렬 로직 적용 (고정 폴더 먼저, 그 다음 최신순)
+ * 1. 현재 사용자의 users/{uid}/chat-favorites 경로에서 데이터 읽기
+ * 2. Firestore query로 folderOrder 기준 정렬
+ * 3. 데이터를 Favorite[] 배열로 변환
+ * 4. 클라이언트에서 고정 폴더 우선 정렬 로직 적용
  */
 async function loadFavorites() {
-  if (!authStore.user?.uid || !rtdb) return;
+  if (!authStore.user?.uid) return;
 
   isLoading = true;
   errorMessage = '';
 
   try {
-    const favoritesRef = ref(rtdb, `chat-favorites/${authStore.user.uid}`);
-    const snapshot = await get(favoritesRef);
+    const favoritesRef = collection(db!, `users/${authStore.user.uid}/chat-favorites`);
+    const q = query(favoritesRef, firestoreOrderBy('folderOrder', 'asc'));
+    const snapshot = await getDocs(q);
 
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      favorites = Object.entries(data).map(([id, value]) => ({
-        id,
-        ...(value as Omit<Favorite, 'id'>)
+    if (!snapshot.empty) {
+      favorites = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...(doc.data() as Omit<Favorite, 'id'>)
       })).sort((a, b) => {
         // pinned 폴더 (folderOrder가 "500"으로 시작)를 먼저 표시
         const aIsPinned = a.folderOrder.startsWith('500');
@@ -257,13 +260,13 @@ async function loadFavorites() {
 
 ```typescript
 /**
- * 폴더 저장 (생성 또는 수정)
+ * 폴더 저장 (생성 또는 수정) - Firestore
  *
  * 동작:
  * 1. 입력값 검증
  * 2. folderOrder 계산 (고정 시 "500" 접두사 추가)
- * 3. 생성 모드: push()로 새 폴더 생성
- * 4. 수정 모드: update()로 기존 폴더 수정
+ * 3. 생성 모드: addDoc()로 새 폴더 생성
+ * 4. 수정 모드: updateDoc()로 기존 폴더 수정
  * 5. 목록 새로고침 및 목록 모드로 전환
  */
 async function saveFolder() {
@@ -273,7 +276,7 @@ async function saveFolder() {
     return;
   }
 
-  if (!authStore.user?.uid || !rtdb) {
+  if (!authStore.user?.uid) {
     errorMessage = '로그인이 필요합니다.';
     return;
   }
@@ -287,11 +290,9 @@ async function saveFolder() {
     const folderOrder = `${prefix}${now}`;
 
     if (viewMode === 'create') {
-      // 새 폴더 생성
-      const favoritesRef = ref(rtdb, `chat-favorites/${authStore.user.uid}`);
-      const newFavoriteRef = push(favoritesRef);
-
-      await set(newFavoriteRef, {
+      // 새 폴더 생성 (Firestore)
+      const favoritesRef = collection(db!, `users/${authStore.user.uid}/chat-favorites`);
+      await addDoc(favoritesRef, {
         name: trimmedName,
         description: folderDescription.trim() || null,
         createdAt: now,
@@ -299,9 +300,9 @@ async function saveFolder() {
         roomList: {}
       });
     } else if (viewMode === 'edit' && selectedFavorite) {
-      // 기존 폴더 수정
-      const favoriteRef = ref(rtdb, `chat-favorites/${authStore.user.uid}/${selectedFavorite.id}`);
-      await update(favoriteRef, {
+      // 기존 폴더 수정 (Firestore)
+      const favoriteRef = doc(db!, `users/${authStore.user.uid}/chat-favorites`, selectedFavorite.id);
+      await updateDoc(favoriteRef, {
         name: trimmedName,
         description: folderDescription.trim() || null,
         folderOrder
@@ -325,28 +326,34 @@ async function saveFolder() {
 
 ```typescript
 /**
- * 폴더 선택 (채팅방 추가/제거 토글)
+ * 폴더 선택 (채팅방 추가/제거 토글) - Firestore
  *
  * 동작:
  * 1. 현재 채팅방이 해당 폴더에 있는지 확인
- * 2. 있으면 remove(), 없으면 set(true)
- * 3. 목록 새로고침
+ * 2. 있으면 roomList에서 제거 (전체 객체 업데이트 방식)
+ * 3. 없으면 dot notation으로 roomList 필드 추가
+ * 4. 목록 새로고침
  */
 async function toggleRoomInFolder(favorite: Favorite) {
-  if (!currentRoomId || !authStore.user?.uid || !rtdb) return;
+  if (!currentRoomId || !authStore.user?.uid) return;
 
   try {
     const roomList = favorite.roomList || {};
     const isInFolder = roomList[currentRoomId] === true;
 
-    const favoriteRef = ref(rtdb, `chat-favorites/${authStore.user.uid}/${favorite.id}/roomList/${currentRoomId}`);
+    const favoriteRef = doc(db!, `users/${authStore.user.uid}/chat-favorites`, favorite.id);
 
     if (isInFolder) {
       // 이미 추가되어 있으면 제거
-      await remove(favoriteRef);
+      // Firestore에서는 중첩 필드 개별 삭제가 어려우므로 전체 객체 업데이트
+      const updatedRoomList = { ...roomList };
+      delete updatedRoomList[currentRoomId];
+      await updateDoc(favoriteRef, { roomList: updatedRoomList });
     } else {
-      // 추가되어 있지 않으면 추가
-      await set(favoriteRef, true);
+      // 추가되어 있지 않으면 추가 (dot notation 사용)
+      await updateDoc(favoriteRef, {
+        [`roomList.${currentRoomId}`]: true
+      });
     }
 
     // 목록 새로고침
@@ -735,7 +742,23 @@ $effect(() => {
 
 ## 12. 변경 이력 (Change History)
 
-### v1.0.0 (2025-11-13)
+### v2.0.0 (2025-11-15) - Firestore 마이그레이션
+- ✅ Firebase RTDB에서 Firestore로 완전 마이그레이션
+- ✅ 데이터베이스 경로 변경: `/chat-favorites/{uid}` → `users/{uid}/chat-favorites`
+- ✅ API 변경:
+  - `ref()` → `collection()` / `doc()`
+  - `get()` → `getDocs()` with `query()`
+  - `push()` → `addDoc()`
+  - `set()` → `setDoc()`
+  - `update()` → `updateDoc()`
+  - `remove()` → `deleteDoc()`
+- ✅ roomList 업데이트 방식 변경:
+  - 추가: dot notation 사용 (`roomList.{roomId}: true`)
+  - 제거: 전체 객체 업데이트 방식
+- ✅ 타입 안전성 개선: `db!` non-null assertion 추가
+- ✅ SED 문서 업데이트 완료
+
+### v1.0.0 (2025-11-13) - 초기 버전 (RTDB 기반)
 - ✅ 초기 구현 완료
 - ✅ 폴더 생성/수정/삭제 기능
 - ✅ 채팅방 추가/제거 기능

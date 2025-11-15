@@ -12,10 +12,10 @@ import * as admin from "firebase-admin";
  * @returns Promise<void>
  *
  * 주요 처리 로직:
- * 1. **증가 감지**: newMessageCount가 증가하면 /users/{uid}/newMessageCount를 increment
+ * 1. **증가 감지**: newMessageCount가 증가하면 users/{uid} 문서의 newMessageCount를 increment
  * 2. **0/삭제 감지**: newMessageCount가 0이 되거나 삭제되면 전체 재계산
- *    - 모든 chat-joins/{uid}/* 읽어서 newMessageCount > 0인 채팅방만 합산
- *    - 합산 결과를 /users/{uid}/newMessageCount에 저장
+ *    - 모든 users/{uid}/chat-joins 서브컬렉션에서 newMessageCount > 0인 채팅방만 합산
+ *    - 합산 결과를 users/{uid} 문서의 newMessageCount에 저장
  *    - ⚠️ 중요: increment가 아닌 전체 재계산으로 데이터 불일치 방지
  * 3. **Order 필드 업데이트**: newMessageCount가 0이 되면 "200" prefix 제거
  *    - xxxListOrder로 끝나는 모든 필드 찾기
@@ -25,7 +25,7 @@ import * as admin from "firebase-admin";
  * 참고:
  * - Prefix 규칙: "500" (핀됨) > "200" (읽지 않음) > "" (읽음)
  * - 사용자가 채팅방에 입장하여 메시지를 읽으면 newMessageCount가 0이 됨
- * - /users/{uid}/newMessageCount는 모든 채팅방의 newMessageCount 합계
+ * - users/{uid} 문서의 newMessageCount는 모든 채팅방의 newMessageCount 합계
  */
 export async function handleNewMessageCountWritten(
   uid: string,
@@ -42,13 +42,15 @@ export async function handleNewMessageCountWritten(
 
   const before = Number(beforeValue ?? 0);
   const after = Number(afterValue ?? 0);
+  const db = admin.firestore();
+  const userRef = db.doc(`users/${uid}`);
 
   // ========================================
   // 1단계: newMessageCount 증가 감지 → increment
   // ========================================
   if (after > before) {
     const increment = after - before;
-    logger.info("newMessageCount 증가 감지, /users/{uid}/newMessageCount increment 시작", {
+    logger.info("newMessageCount 증가 감지, users/{uid} 문서의 newMessageCount increment 시작", {
       uid,
       roomId,
       before,
@@ -57,27 +59,17 @@ export async function handleNewMessageCountWritten(
     });
 
     try {
-      await admin.database().ref(`users/${uid}/newMessageCount`).transaction(
-        (currentValue) => {
-          const current = Number(currentValue ?? 0);
-          const newValue = current + increment;
-          logger.info("Transaction: newMessageCount increment", {
-            uid,
-            currentValue: current,
-            increment,
-            newValue,
-          });
-          return newValue;
-        }
-      );
+      await userRef.update({
+        newMessageCount: admin.firestore.FieldValue.increment(increment),
+      });
 
-      logger.info("✅ /users/{uid}/newMessageCount increment 완료", {
+      logger.info("✅ users/{uid} 문서의 newMessageCount increment 완료", {
         uid,
         roomId,
         increment,
       });
     } catch (error) {
-      logger.error("❌ /users/{uid}/newMessageCount increment 실패", {
+      logger.error("❌ users/{uid} 문서의 newMessageCount increment 실패", {
         uid,
         roomId,
         error,
@@ -97,43 +89,38 @@ export async function handleNewMessageCountWritten(
     });
 
     try {
-      // 모든 chat-joins/{uid}/* 읽어서 newMessageCount > 0인 채팅방만 가져오기
-      const chatJoinsSnapshot = await admin.database()
-        .ref(`chat-joins/${uid}`)
-        .orderByChild("newMessageCount")
-        .startAt(1) // newMessageCount >= 1인 채팅방만
-        .once("value");
+      // 모든 users/{uid}/chat-joins 서브컬렉션에서 newMessageCount > 0인 채팅방만 가져오기
+      const chatJoinsSnapshot = await db.collection(`users/${uid}/chat-joins`)
+        .where("newMessageCount", ">=", 1)
+        .get();
 
       let totalNewMessageCount = 0;
 
-      if (chatJoinsSnapshot.exists()) {
-        const chatJoinsData = chatJoinsSnapshot.val() as Record<string, { newMessageCount?: number }>;
-
-        // 각 채팅방의 newMessageCount 합산
-        for (const roomKey in chatJoinsData) {
-          const count = Number(chatJoinsData[roomKey].newMessageCount ?? 0);
-          if (count > 0) {
-            totalNewMessageCount += count;
-            logger.info("채팅방 newMessageCount 합산", {
-              uid,
-              roomKey,
-              count,
-              totalNewMessageCount,
-            });
-          }
+      // 각 채팅방의 newMessageCount 합산
+      chatJoinsSnapshot.forEach((doc) => {
+        const data = doc.data();
+        const count = Number(data.newMessageCount ?? 0);
+        if (count > 0) {
+          totalNewMessageCount += count;
+          logger.info("채팅방 newMessageCount 합산", {
+            uid,
+            roomKey: doc.id,
+            count,
+            totalNewMessageCount,
+          });
         }
-      }
+      });
 
-      // /users/{uid}/newMessageCount에 합산 결과 저장
-      await admin.database().ref(`users/${uid}/newMessageCount`).set(totalNewMessageCount);
+      // users/{uid} 문서의 newMessageCount에 합산 결과 저장
+      await userRef.update({newMessageCount: totalNewMessageCount});
 
-      logger.info("✅ /users/{uid}/newMessageCount 전체 재계산 완료", {
+      logger.info("✅ users/{uid} 문서의 newMessageCount 전체 재계산 완료", {
         uid,
         roomId,
         totalNewMessageCount,
       });
     } catch (error) {
-      logger.error("❌ /users/{uid}/newMessageCount 전체 재계산 실패", {
+      logger.error("❌ users/{uid} 문서의 newMessageCount 전체 재계산 실패", {
         uid,
         roomId,
         error,
@@ -154,16 +141,20 @@ export async function handleNewMessageCountWritten(
     return;
   }
 
-  // chat-joins 데이터 읽기
-  const chatJoinRef = admin.database().ref(`chat-joins/${uid}/${roomId}`);
-  const snapshot = await chatJoinRef.once("value");
+  // users/{uid}/chat-joins/{roomId} 문서 읽기
+  const chatJoinRef = db.doc(`users/${uid}/chat-joins/${roomId}`);
+  const snapshot = await chatJoinRef.get();
 
-  if (!snapshot.exists()) {
-    logger.error("chat-joins 노드가 존재하지 않음", {uid, roomId});
+  if (!snapshot.exists) {
+    logger.error("chat-joins 문서가 존재하지 않음", {uid, roomId});
     return;
   }
 
-  const data = snapshot.val();
+  const data = snapshot.data();
+  if (!data) {
+    logger.error("chat-joins 문서 데이터가 없음", {uid, roomId});
+    return;
+  }
 
   // xxxListOrder 필드 찾기
   const updates: Record<string, string> = {};

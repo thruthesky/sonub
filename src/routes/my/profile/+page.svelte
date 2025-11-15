@@ -1,17 +1,19 @@
 <script lang="ts">
 	/**
-	 * 내 프로필 수정 페이지
+	 * 내 프로필 수정 페이지 (Firestore)
 	 *
 	 * 로그인한 사용자 자신의 프로필 정보를 수정하는 페이지입니다.
-	 * - 프로필 사진 업로드 (photoUrl)
+	 * - 프로필 사진 업로드 (Firebase Storage)
 	 * - 닉네임 (displayName)
 	 * - 성별 (gender)
 	 * - 생년월일 (birthYear, birthMonth, birthDay)
+	 * - Firestore: users/{uid} 문서에 저장
 	 */
 
 	import { authStore } from '$lib/stores/auth.svelte';
-	import { rtdb, storage } from '$lib/firebase';
-	import { ref as dbRef, get, update } from 'firebase/database';
+	import { db, storage } from '$lib/firebase';
+	import { readDocument, updateDocument } from '$lib/stores/firestore.svelte';
+	import type { UserData } from '$lib/types/firestore.types';
 	import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 	import { goto } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -53,20 +55,19 @@
 	const dayOptions = Array.from({ length: 31 }, (_, i) => i + 1);
 
 	/**
-	 * 사용자 프로필 데이터 로드
+	 * 사용자 프로필 데이터 로드 (Firestore)
 	 */
 	async function loadProfile() {
-		if (!authStore.user?.uid || !rtdb) return;
+		if (!authStore.user?.uid || !db) return;
 
 		loading = true;
 		errorMessage = '';
 
 		try {
-			const userRef = dbRef(rtdb, `users/${authStore.user.uid}`);
-			const snapshot = await get(userRef);
+			const result = await readDocument<UserData>(`users/${authStore.user.uid}`);
 
-			if (snapshot.exists()) {
-				const userData = snapshot.val();
+			if (result.success && result.data) {
+				const userData = result.data;
 				displayName = userData.displayName || '';
 				photoUrl = userData.photoUrl || ''; // 프로필 사진 URL 로드
 				gender = userData.gender || '';
@@ -94,9 +95,12 @@
 						birthDay = parseInt(parts[2]);
 					}
 				}
-			} else {
+			} else if (result.success && !result.data) {
 				// 신규 사용자 - Firebase Auth에서 displayName 가져오기
 				displayName = authStore.user.displayName || '';
+			} else {
+				// 로드 실패
+				throw new Error(result.error || 'Unknown error');
 			}
 		} catch (error) {
 			console.error('프로필 로드 실패:', error);
@@ -187,10 +191,9 @@
 			// photoUrl 업데이트
 			photoUrl = downloadURL;
 
-			// RTDB에 즉시 저장
-			if (rtdb) {
-				const userRef = dbRef(rtdb, `users/${authStore.user.uid}`);
-				await update(userRef, { photoUrl: downloadURL });
+			// Firestore에 즉시 저장
+			if (db) {
+				await updateDocument(`users/${authStore.user.uid}`, { photoUrl: downloadURL });
 			}
 
 			successMessage = m.profilePictureUploadSuccess();
@@ -211,10 +214,10 @@
 	/**
 	 * 프로필 사진 제거
 	 * - photoUrl과 photoPreview를 null로 설정
-	 * - RTDB에서 photoUrl 필드 제거
+	 * - Firestore에서 photoUrl 필드 제거
 	 */
 	async function handleRemovePhoto() {
-		if (!authStore.user?.uid || !rtdb) {
+		if (!authStore.user?.uid || !db) {
 			errorMessage = m.authSignInRequired();
 			return;
 		}
@@ -224,9 +227,8 @@
 		successMessage = '';
 
 		try {
-			// RTDB에서 photoUrl 제거
-			const userRef = dbRef(rtdb, `users/${authStore.user.uid}`);
-			await update(userRef, { photoUrl: null });
+			// Firestore에서 photoUrl 제거
+			await updateDocument(`users/${authStore.user.uid}`, { photoUrl: null });
 
 			// 상태 초기화
 			photoUrl = '';
@@ -247,10 +249,10 @@
 	}
 
 	/**
-	 * 프로필 저장
+	 * 프로필 저장 (Firestore)
 	 */
 	async function handleSave() {
-		if (!authStore.user?.uid || !rtdb) {
+		if (!authStore.user?.uid || !db) {
 			errorMessage = m.authSignInRequired();
 			return;
 		}
@@ -271,7 +273,7 @@
 		successMessage = '';
 
 		try {
-			const updateData: Record<string, string> = {
+			const updateData: Record<string, any> = {
 				displayName: displayName.trim()
 			};
 
@@ -301,9 +303,8 @@
 				updateData.photoUrl = photoUrl;
 			}
 
-			// Firebase RTDB에 저장
-			const userRef = dbRef(rtdb, `users/${authStore.user.uid}`);
-			await update(userRef, updateData);
+			// Firestore에 저장
+			await updateDocument(`users/${authStore.user.uid}`, updateData);
 
 			successMessage = m.profileSaveSuccess();
 

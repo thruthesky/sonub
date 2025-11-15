@@ -11,11 +11,11 @@
 -->
 
 <script lang="ts">
-	import DatabaseListView from '$lib/components/DatabaseListView.svelte';
+	import FirestoreListView from '$lib/components/FirestoreListView.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { acceptInvitation, rejectInvitation } from '$lib/functions/chat.functions';
-	import { rtdb } from '$lib/firebase';
+	import { db } from '$lib/firebase';
 	import { m } from '$lib/paraglide/messages';
 	import { goto } from '$app/navigation';
 
@@ -24,10 +24,10 @@
 	const PAGE_SIZE = 10;
 	const ORDER_FIELD = 'invitationOrder';
 
-	// 현재 로그인 사용자의 chat-invitations 경로
+	// 현재 로그인 사용자의 chat-invitations 경로 (Firestore)
 	const invitationPath = $derived.by(() => {
 		const uid = authStore.user?.uid;
-		const path = uid ? `chat-invitations/${uid}` : '';
+		const path = uid ? `users/${uid}/chat-invitations` : '';
 		return path;
 	});
 
@@ -37,13 +37,13 @@
 	 */
 	async function handleAccept(roomId: string) {
 		const uid = authStore.user?.uid;
-		if (!uid || !rtdb) {
+		if (!uid || !db) {
 			console.error('사용자 인증 정보 또는 Database가 초기화되지 않았습니다');
 			return;
 		}
 
 		try {
-			await acceptInvitation(rtdb, roomId, uid);
+			await acceptInvitation(db, roomId, uid);
 			// console.log('✅ 초대 수락 완료:', roomId);
 
 			// 채팅방으로 자동 이동
@@ -58,13 +58,13 @@
 	 */
 	async function handleReject(roomId: string) {
 		const uid = authStore.user?.uid;
-		if (!uid || !rtdb) {
+		if (!uid || !db) {
 			console.error('사용자 인증 정보 또는 Database가 초기화되지 않았습니다');
 			return;
 		}
 
 		try {
-			await rejectInvitation(rtdb, roomId, uid);
+			await rejectInvitation(db, roomId, uid);
 			// console.log('✅ 초대 거절 완료:', roomId);
 		} catch (error) {
 			console.error('초대 거절 실패:', error);
@@ -73,16 +73,16 @@
 </script>
 
 {#if authStore.isAuthenticated && invitationPath}
-	<DatabaseListView
+	<FirestoreListView
 		path={invitationPath}
 		pageSize={PAGE_SIZE}
-		orderBy={ORDER_FIELD}
+		orderByField={ORDER_FIELD}
+		orderDirection="desc"
 		threshold={320}
-		reverse={true}
 	>
 		{#snippet item(itemData)}
 			{@const invitation = (itemData.data ?? {}) as InvitationData}
-			{@const roomId = (invitation.roomId ?? itemData.key ?? '') as string}
+			{@const roomId = (invitation.roomId ?? itemData.id ?? '') as string}
 			{@const roomName = (invitation.roomName ?? '채팅방') as string}
 			{@const inviterName = (invitation.inviterName ?? '사용자') as string}
 			{@const message = (invitation.message ?? '') as string}
@@ -128,7 +128,7 @@
 			<!-- 로딩 중에도 아무것도 표시하지 않음 -->
 			<div style="display: none;"></div>
 		{/snippet}
-	</DatabaseListView>
+	</FirestoreListView>
 {/if}
 
 <style>

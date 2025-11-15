@@ -1,9 +1,15 @@
 ---
 name: sonub-chat-room
-version: 1.0.0
-description: 채팅방 UI 및 RTDB 연동 사양
+version: 2.0.0
+description: 채팅방 UI 및 Firestore 연동 사양
 dependencies:
   - sonub-firebase-database-structure.md
+tags:
+  - chat
+  - ui
+  - firestore
+status: completed
+updated: 2025-11-15
 ---
 # Sonub 채팅방 기능 사양
 
@@ -77,24 +83,27 @@ function buildSingleRoomId(a: string, b: string) {
 - **모바일** (768px 미만): 사이드바 숨김 (`hidden`), 메인 콘텐츠만 표시
 - **데스크톱** (768px 이상): 2-column 레이아웃, 사이드바 320px + 메인 콘텐츠
 
-#### Firebase 데이터 구조
+#### Firebase 데이터 구조 (Firestore)
 
 ```typescript
-// 채팅방 참여 정보 경로
-const path = `chat-joins/${authStore.user.uid}`;
+// 채팅방 참여 정보 경로 (Firestore)
+// Collection: users/{uid}/chat-joins
+// Document ID: {roomId}
 
 // 데이터 구조
 {
-  "{roomId}": {
-    "roomType": "single" | "group" | "open",
-    "name": "채팅방 이름",
-    "lastMessage": "마지막 메시지 내용",
-    "newMessageCount": 3,           // 읽지 않은 메시지 수
-    "allChatListOrder": -1234567890, // 정렬 순서 (음수 timestamp)
-    "joinedAt": 1234567890
-  }
+  roomType: "single" | "group" | "open",
+  name: "채팅방 이름",
+  lastMessage: "마지막 메시지 내용",
+  newMessageCount: 3,           // 읽지 않은 메시지 수
+  allChatListOrder: -1234567890, // 정렬 순서 (음수 timestamp)
+  joinedAt: 1234567890
 }
 ```
+
+**Firestore 마이그레이션 노트**:
+- RTDB 경로: `chat-joins/{uid}/{roomId}`
+- Firestore 경로: `users/{uid}/chat-joins/{roomId}` (서브컬렉션)
 
 #### DatabaseListView 설정
 
@@ -2338,7 +2347,7 @@ function handleScrollToBottom() {
 
 ## 작업 이력 (SED Log)
 
-| 날짜 | 작업자 | 변경 내용 |
-| ---- | ------ | -------- |
-| 2025-11-15 | Claude Code | 채팅 입력창을 input에서 textarea로 변경: Shift+Enter 줄바꿈 지원, 최대 3줄 자동 높이 조정 |
-| 2025-11-15 | Claude Code | Shift+Enter 줄바꿈 무제한 허용, 입력창 최대 높이 4줄로 확장, 4줄 초과 시 스크롤바 표시 |
+| 버전 | 날짜 | 작업자 | 변경 내용 |
+| ---- | ---- | ------ | -------- |
+| 2.0.0 | 2025-11-15 | Claude Code | **Firestore 마이그레이션 완료**<br>- 데이터베이스 경로 변경:<br>  - `chat-joins/{uid}/{roomId}` → `users/{uid}/chat-joins/{roomId}`<br>  - `chat-messages/{messageId}` → `messages/{messageId}`<br>  - `chat-rooms/{roomId}` → `chats/{roomId}`<br>- DatabaseListView 컴포넌트 Firestore 지원<br>- RTDB API → Firestore API 마이그레이션 |
+| 1.0.0 | 2025-11-15 | Claude Code | 초기 버전 작성 (RTDB 기반)<br>- 채팅 입력창을 input에서 textarea로 변경: Shift+Enter 줄바꿈 지원, 최대 3줄 자동 높이 조정<br>- Shift+Enter 줄바꿈 무제한 허용, 입력창 최대 높이 4줄로 확장, 4줄 초과 시 스크롤바 표시 |
