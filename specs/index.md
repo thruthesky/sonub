@@ -42,7 +42,7 @@ step: 20
      - clsx `^2.1.1`
      - tailwind-merge `^3.3.1`
    - **백엔드**: 
-     - Firebase `^12.5.0` (Authentication, Realtime Database, Firestore, Storage, Cloud Functions)
+     - Firebase `^12.5.0` (Authentication, Firestore, Storage, Cloud Functions)
    - **다국어**: 
      - @inlang/paraglide-js `^2.4.0` (ko, ja, zh, en 지원)
    - **테스트**: 
@@ -288,7 +288,7 @@ This document provides a detailed index of all specifications related to the son
 - **구현된 서비스**:
   - Firebase Authentication (SSR 대응)
   - Firestore Database
-  - Realtime Database
+  - Firestore
   - Firebase Storage
   - Firebase Analytics
 - **주요 구현 사항**:
@@ -336,90 +336,84 @@ This document provides a detailed index of all specifications related to the son
 - **검증**:
   - 로그인 → 파일 업로드 → 목록/삭제 순으로 수동 테스트
 
-### Firebase Realtime Database Structure
+### Firestore Database Structure
 - **File**: [sonub-firebase-database-structure.md](./sonub-firebase-database-structure.md)
-- **Title**: Firebase Realtime Database 구조 가이드
-- **Description**: `/users`, `user-props`, friends/followers/following 등 RTDB 전체 스키마와 역할 분리를 정의한 기준 문서
-- **Version**: 1.0.0
+- **Title**: Firestore 데이터 구조 가이드
+- **Description**: `users`, `chats`, `chat-room-passwords`, `system/stats` 등 Firestore 스키마와 책임 분리를 정의한 기준 문서
+- **Version**: 2.0.0
 - **Step**: (미정)
 - **Priority**: (미정)
 - **Dependencies**: 없음
-- **Tags**: firebase, realtime-database, schema, architecture
+- **Tags**: firebase, firestore, schema, architecture
 - **주요 내용**:
-  - Flat 스타일 데이터 구조, 속성 분리, Cloud Functions 활용 원칙
-  - `/users/{uid}` 필드 정의, Firebase Auth와 RTDB 필드 차이 주의사항
-  - `user-props`, 친구 관계(friends/followers/following) 데이터 모델 및 책임 구분
-  - 관련 가이드와 참고 문서 링크, 검증 체크리스트
+  - 컬렉션/서브컬렉션 구조, Cloud Functions 책임, 시스템 컬렉션 설명
+  - 사용자 파생 필드, 채팅방, 메시지, FCM 토큰, system/stats 등 정의
+  - 관련 문서 링크, 검증 체크리스트
 
-### Firebase Realtime Database Utilities
+### Firestore Utilities
 - **File**: [sonub-firebase-realtime-database.md](./sonub-firebase-realtime-database.md)
-- **Title**: Firebase Realtime Database 유틸리티 라이브러리
-- **Description**: Svelte 5 runes 기반 RTDB 읽기/쓰기/구독 헬퍼와 실시간 스토어 구현 명세
+- **Title**: Firestore 유틸리티 라이브러리
+- **Description**: Svelte 5 runes 기반 Firestore 스토어/CRUD/쿼리/배치 명세
 - **Version**: 1.0.0
 - **Step**: 30
 - **Priority**: ***
 - **Dependencies**:
   - sonub-setup-firebase.md
   - sonub-firebase-database-structure.md
-- **Tags**: firebase, rtdb, svelte, store, utility
+- **Tags**: firebase, firestore, svelte, store, utility
 - **Files**:
-  - `src/lib/stores/database.svelte.ts`
+  - `src/lib/stores/firestore.svelte.ts`
 - **제공 기능**:
-  - `readData`, `writeData`, `updateData`, `deleteData`, `pushData` 등 공용 API
-  - `createRealtimeStore`/`rtdbStore`로 실시간 구독 + 로딩/에러 상태 자동 관리
-  - `setupPresence`로 온라인 상태 트래킹, 중복 리스너 방지 구조
+  - `createFirestoreStore`, CRUD/쿼리/배치 헬퍼
   - TypeScript 제네릭 지원 및 Firebase Emulator 테스트 절차
 
-### Database Store Specification
+### Firestore Store Specification
 - **File**: [sonub-store-database.md](./sonub-store-database.md)
-- **Title**: 데이터베이스 스토어 (Database Store)
-- **Description**: Firebase Realtime Database 유틸리티 스토어 - createRealtimeStore, CRUD 함수, 온라인 상태 관리
-- **Version**: 1.0.0
+- **Title**: Firestore 스토어
+- **Description**: Firestore 실시간 스토어/CRUD/배치 유틸리티
+- **Version**: 2.0.0
 - **Step**: 46
 - **Priority**: ***
 - **Dependencies**:
   - sonub-setup-firebase.md
   - sonub-firebase-database-structure.md
-- **Tags**: firebase, rtdb, realtime-database, svelte5, store, crud, utilities
+- **Tags**: firebase, firestore, svelte5, store, crud, utilities
 - **Files**:
-  - `src/lib/stores/database.svelte.ts`
+  - `src/lib/stores/firestore.svelte.ts`
 - **핵심 기능**:
-  - `createRealtimeStore<T>()` - 실시간 데이터 구독 스토어 생성 (alias: rtdbStore)
-  - CRUD 함수: `writeData`, `updateData`, `deleteData`, `pushData`, `readData`
-  - `setupPresence()` - 온라인/오프라인 상태 자동 관리
-  - TypeScript 제네릭 타입 지원 및 구조화된 결과 반환
-  - 전체 소스 코드 및 사용 예제 포함
+  - `createFirestoreStore<T>()` 실시간 문서 구독
+  - `writeDocument`, `updateDocument`, `deleteDocument`, `addDocument`, `readDocument`
+  - `buildQuery`, `runQuery`, `executeBatch`
 
-### 🔥 DatabaseListView Component (MUST USE for ALL RTDB List Views)
+### 🔥 FirestoreListView Component
 - **File**: [sonub-firebase-database-list-view.md](./sonub-firebase-database-list-view.md)
-- **Title**: DatabaseListView 컴포넌트 무한 스크롤 가이드
-- **Description**: Firebase Realtime Database의 **모든 데이터 목록 표시**에 사용해야 하는 표준 컴포넌트
+- **Title**: FirestoreListView 컴포넌트 무한 스크롤 가이드
+- **Description**: Firestore 데이터 목록/채팅 메시지 등에 사용하는 표준 컴포넌트
 - **Version**: 3.0.0
 - **Step**: 30
 - **Priority**: *** (최우선)
 - **Dependencies**:
   - sonub-firebase-database-structure.md
-- **Tags**: firebase, rtdb, infinite-scroll, list-view, universal-component, svelte5
+- **Tags**: firebase, firestore, infinite-scroll, list-view, svelte5
 - **Files**:
-  - `src/lib/components/DatabaseListView.svelte`
+  - `src/lib/components/FirestoreListView.svelte`
 - **🔥 핵심 원칙 (반드시 준수)**:
-  - **모든 Firebase Realtime Database 데이터 목록 표시에 DatabaseListView를 사용해야 합니다**
-  - 사용자 목록, 게시글 목록, 댓글 목록, 채팅 메시지, 채팅방 목록, 알림 목록 등 **모든 경우**에 적용
-  - 무한 스크롤, 실시간 동기화, 메모리 관리가 자동으로 처리됩니다
+  - Firestore 기반 목록은 모두 FirestoreListView를 사용한다.
+  - 무한 스크롤/실시간 동기화/메모리 관리가 자동으로 처리됨
 - **주요 기능**:
-  - 양방향 무한 스크롤 (`scrollTrigger`: 'top' 또는 'bottom')
-  - 실시간 데이터 동기화 (onValue, onChildAdded, onChildRemoved)
+  - 양방향 무한 스크롤 (`scrollTrigger`: 'top' 또는 'bottom`)
+  - 실시간 `onSnapshot` 기반 페이지네이션, `startAfter`/`endBefore` 커서 지원
   - 자동 메모리 관리 (리스너 자동 해제)
-  - orderPrefix 기반 서버 측 필터링 (카테고리, 채팅방 등)
-  - reverse 옵션 (최신 데이터부터 표시)
+  - `whereFilters` + `orderByField` 조합으로 서버 필터링
   - 공개 메서드: `refresh()`, `scrollToTop()`, `scrollToBottom()`
-  - 고도로 커스터마이징 가능한 snippet 시스템
+  - snippet 시스템으로 빈/로딩/에러 상태 커스터마이징
 - **사용 예시**:
   ```svelte
-  <DatabaseListView
+  <FirestoreListView
     path="users"
-    orderBy="createdAt"
-    reverse={true}
+    pageSize={20}
+    orderByField="createdAt"
+    orderDirection="desc"
     scrollTrigger="bottom"
     pageSize={20}
   >
@@ -597,7 +591,7 @@ This document provides a detailed index of all specifications related to the son
 ### Sonub User Overview
 - **File**: [sonub-user-overview.md](./sonub-user-overview.md)
 - **Title**: 사용자 관리 체계 및 프로필 관리 명세서
-- **Description**: Firebase Authentication과 Realtime Database를 활용한 사용자 관리 시스템 설계 및 구현 명세서
+- **Description**: Firebase Authentication과 Firestore를 활용한 사용자 관리 시스템 설계 및 구현 명세서
 - **Version**: 1.0.0
 - **Step**: 40
 - **Priority**: **
@@ -607,7 +601,7 @@ This document provides a detailed index of all specifications related to the son
 - **Tags**: user-management, profile, firebase, authentication
 - **관련 세부 명세**:
   - 사용자 프로필 정보 구조
-  - Firebase Storage 및 Realtime Database 저장소 설계
+  - Firebase Storage 및 Firestore 저장소 설계
   - 실시간 프로필 업데이트 기능
 
 ### Sonub User Profile Store
@@ -1024,7 +1018,7 @@ find specs/repository/firebase/functions/src -name "*.ts.md"
 #### 4. Firebase 설정 (3개)
 
 - [firebase/cors.json](./repository/firebase/cors.json.md) - Firebase Storage CORS 설정
-- [firebase/database.rules.json](./repository/firebase/database.rules.json.md) - Realtime Database 보안 규칙
+- (RTDB 규칙 문서는 사용하지 않으며, Firestore 규칙은 `firebase/firestore.rules`를 참조합니다.)
 - [firebase/firebase.json](./repository/firebase/firebase.json.md) - Firebase 프로젝트 설정
 
 #### 5. Firebase Cloud Functions (34개)

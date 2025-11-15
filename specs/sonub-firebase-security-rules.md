@@ -1,410 +1,195 @@
 ---
-name: sonub-firebase-security
-version: 1.4.0
-description: Firebase RTDB 및 Storage의 보안 규칙 정의 - 사용자 데이터 보호 및 관리자 권한 관리, 채팅방 필드별 세밀한 보안 규칙, JSONC 주석 작성 지침, 초기화 및 배포 방법
-author: Claude
-email: noreply@anthropic.com
-step: 35
-priority: '**'
+name: sonub-firestore-security
+version: 2.1.0
+description: Firestore/Storage 보안 규칙 요약 및 작성 지침
+author: Codex Agent
+email: noreply@openai.com
+license: GPL-3.0
 dependencies:
   - sonub-setup-firebase.md
   - sonub-firebase-database-structure.md
 tags:
+  - firestore
   - security
-  - firebase
   - rules
-  - rtdb
-  - authorization
-  - deployment
-  - chat-rooms
-  - field-level-security
-  - jsonc
-  - comments
+last_updated: 2025-01-16
 ---
 
-## 📋 개요
+# Firestore 보안 규칙
 
-Sonub의 보안 규칙은 다음 원칙을 따릅니다:
-- **최소 권한 원칙**: 필요한 최소한의 권한만 부여
-- **RTDB 기반 권한**: `/system/settings/admins` 배열에 관리자 UID 저장
-- **클라이언트 읽기**: 메뉴에서 표시 여부만 클라이언트에서 판단
-- **서버 검증**: 실제 데이터 수정은 Security Rules로 검증
+규칙 파일: `firebase/firestore.rules`
 
----
+## 1. 기본 원칙
 
-## 1️⃣ 관리자 권한 관리 시스템
+1. **kebab-case 컬렉션 명명**: `users`, `chats`, `chat-room-passwords`, `system/stats` 등
+2. **최소 권한**: 본인 문서는 본인만 쓰기, 읽기는 공개 여부에 따라 결정
+3. **Cloud Functions 연계**: 파생 필드/통계는 Functions가 처리하므로 클라이언트가 시스템 필드를 쓰지 않는다
+4. **관리자 판별**: `system/settings` 문서의 `admins` 객체를 기준으로 한다 (클라이언트도 Firestore에서 동일 문서를 읽음)
 
-### RTDB 구조
+## 2. 컬렉션별 규칙 요약
 
-```json
-{
-  "system": {
-    "settings": {
-      "admins": {
-        "uid-user1": true,
-        "uid-user2": true,
-        "uid-user3": true
-      }
+| 경로 | 읽기 | 쓰기 | 비고 |
+|------|------|------|------|
+| `/users/{uid}` | 누구나 허용 (프로필 노출) | `request.auth.uid == uid` | `.create`/`.update`에서 필수 필드 검증 |
+| `/users/{uid}/chat-joins/{roomId}` | `request.auth != null && request.auth.uid == uid` | 동일 | Cloud Functions가 정렬 필드 업데이트 |
+| `/chats/{roomId}` | 로그인 사용자 | 생성은 로그인 사용자, update는 owner 또는 멤버 조건 | `members` 필드는 멤버 본인만 수정 |
+| `/chats/{roomId}/messages/{messageId}` | 방 멤버 또는 1:1 참가자 | 채팅 참여자만 쓰기/삭제 | `isChatRoomMember` 헬퍼 사용 |
+| `/chat-room-passwords/{roomId}` | owner와 관리자만 | owner 전용 | `/tries/{uid}`는 해당 사용자만 읽기/쓰기 |
+| `/fcm-tokens/{token}` | 본인만 (uid가 있을 때) | `request.auth.uid == resource.data.uid` (uid 없는 경우는 읽기 불가, 쓰기만) |
+| `/system/stats` | 로그인 사용자 | Cloud Functions만 쓰기 (Security Rules에서는 `false`) |
+| `/system/settings` | 로그인 사용자 | 관리자만 (`admins[request.auth.uid] == true`) |
+
+### rules 예시
+
+```groovy
+match /databases/{database}/documents {
+  function isSignedIn() {
+    return request.auth != null;
+  }
+
+  function isOwner(uid) {
+    return isSignedIn() && request.auth.uid == uid;
+  }
+
+  match /users/{uid} {
+    allow read: if true;
+    allow write: if isOwner(uid);
+  }
+
+  match /users/{uid}/chat-joins/{roomId} {
+    allow read, write: if isOwner(uid);
+  }
+
+  match /chats/{roomId} {
+    allow read: if isSignedIn();
+    allow create: if isSignedIn();
+    allow update, delete: if isChatRoomOwner(roomId);
+
+    match /messages/{messageId} {
+      allow read, write: if isChatRoomMember(roomId);
     }
+  }
+
+  match /chat-room-passwords/{roomId} {
+    allow read, write: if isChatRoomOwner(roomId) || isAdmin();
+
+    match /tries/{uid} {
+      allow read, write: if isOwner(uid);
+    }
+  }
+
+  match /system/{docId} {
+    allow read: if isSignedIn();
+    allow write: if docId == "settings" && isAdmin();
   }
 }
 ```
 
-**특징:**
-- 객체 형식으로 관리자 UID 저장 (key: uid, value: true)
-- 모든 로그인 사용자가 읽기 가능
-- 관리자만 쓰기 가능
-- 변경이 즉시 반영됨 (재로그인 불필요)
-- Security Rules에서 쉽게 체크 가능
+> `isChatRoomOwner`/`isChatRoomMember`/`isAdmin` 함수는 규칙 파일 상단에서 정의한다. `isAdmin`은 `get(/databases/$(database)/documents/system/settings).data.admins[request.auth.uid] == true` 로 판별한다.
 
-### 클라이언트 로직
+## 3. Storage 규칙 (요약)
 
-메뉴 페이지에서 관리자 권한 확인:
+파일: `firebase/storage.rules`
 
-```typescript
-// src/lib/stores/auth.svelte.ts
-let adminList: string[] = $state([]);
+| 경로 | 설명 |
+|------|------|
+| `/users/{uid}/profile/*` | 본인만 쓰기/삭제 가능, 읽기는 공개 |
+| 기타 | 기본 deny |
 
-// 로그인 후 관리자 목록 조회
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    const adminSnapshot = await database.ref('system/settings/admins').once('value');
-    adminList = adminSnapshot.val() ?? [];
-  }
-});
+Storage 규칙도 kebab-case 폴더명(`/users/{uid}/profile/`)을 사용한다.
 
-// 계산 속성
-export const isAdmin = $derived(
-  authStore.isAuthenticated && adminList.includes(authStore.user?.uid ?? '')
-);
-```
+## 4. 작성 지침
 
-메뉴 페이지에서 사용:
+- 조건식은 반드시 여러 줄로 작성하여 가독성을 높인다.
+- `.validate`를 이용해 타입/최대 길이를 검증한다 (예: `newData.isString() && newData.val().size() <= 50`).
+- `allow write: if false`를 사용해 Cloud Functions만 수정해야 하는 문서(`system/stats`)를 보호한다.
+- 컬렉션 이름/문서 경로는 스펙과 코드 전반에서 동일한 kebab-case를 사용한다.
 
-```svelte
-{#if authStore.isAdmin}
-  <Button onclick={goToAdmin}>관리자 페이지</Button>
-{/if}
-```
+## 5. 참고 코드
+
+- `firebase/firestore.rules`
+- `firebase/storage.rules`
+- `src/lib/functions/chat.functions.ts` (멤버십 로직)
+- `firebase/functions/src/handlers/user.handler.ts`
 
 ---
 
-## 2️⃣ Firebase Realtime Database 보안 규칙
+## 6. 변경 이력
 
-### Realtime Database Rules 작성 방법
+### v2.1.0 (2025-01-16)
 
-보안 규칙은 길어질수록 가독성이 급격히 떨어집니다. Sonub에서는 모든 RTDB Rule을 아래 원칙에 따라 작성합니다.
+**작업 내용: Firestore Security Rules 권한 오류 수정 및 경로 불일치 해결**
 
-- **주석 작성**: Firebase Security Rules는 JSONC(JSON with Comments) 형식을 지원합니다.
-  - 복잡한 규칙에는 반드시 주석을 추가하여 의도를 명확히 설명합니다.
-  - 각 필드의 쓰기 권한 조건을 주석으로 설명합니다.
-  - 허용/불허용 조건을 명시적으로 주석에 작성합니다.
-  - **주의**: JSON 문자열 값을 반드시 여러줄로 작성해야 해서, 가독성을 높입니다.
-  - 예시:
-  ```json
-  "members": {
-    "$uid": {
-      // 쓰기 권한: 본인만 ($uid === auth.uid)
-      // 허용 조건 (OR):
-      //   1. data.exists(): 이미 멤버 → 퇴장/알림 설정 변경 가능
-      //   2. !password.exists(): 비밀번호 미설정 → 자유롭게 가입 가능
-      //   3. owner === auth.uid: Owner → 비밀번호 설정 시에도 가입 가능
-      ".write": "auth != null && $uid === auth.uid && (data.exists() || !root.child('chat-rooms').child($roomId).child('password').exists() || root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid)"
-    }
-  }
+#### 수정 사항
+
+**1. system 컬렉션 규칙 추가**
+- **문제**: `system/stats` 문서 접근 시 권한 오류 발생
   ```
+  firestore.svelte.ts:197 ❌ 실시간 문서 로드 실패: system/stats
+  FirebaseError: Missing or insufficient permissions.
+  ```
+- **원인**: `firestore.rules`에 `stats` 컬렉션만 정의되어 있고 `system` 컬렉션 규칙이 없었음
+- **해결**: `firebase/firestore.rules` Lines 402-418에 `system` 컬렉션 규칙 추가
+  - 읽기: `allow read: if true` (모든 사용자 - 로그인 불필요)
+  - 쓰기: `allow write: if false` (Cloud Functions만)
+- **관련 파일**: `src/lib/components/right-sidebar.svelte:25` (system/stats 구독)
 
-- ⚠️ **JSONC 다중 라인 규칙 강제**:
-  - Database Rules는 JSONC를 사용하므로, `&&` 또는 `||`가 포함된 모든 `.read`, `.write`, `.validate` 조건은 반드시 여러 줄로 작성합니다.
-  - 각 줄은 논리 단위(AND/OR 묶음)마다 줄바꿈하고, 필요한 경우 괄호를 추가하여 우선순위를 명확히 표시합니다.
-  - 여러 줄 조건 앞뒤에는 주석을 추가해 의도를 설명하고, 단일 줄 조건식은 허용되지 않습니다.
+**2. FCM 토큰 경로 불일치 수정**
+- **문제**: FCM 토큰 저장 시 권한 오류 발생
+  ```
+  fcm.ts:238 [FCM 저장] ❌❌❌ 토큰 저장 실패:
+  FirebaseError: Missing or insufficient permissions.
+  ```
+- **원인**:
+  - 코드(`src/lib/fcm.ts:229`)는 `fcm-tokens/{token}` 경로 사용 (하이픈)
+  - Rules(`firebase/firestore.rules:446`)는 `fcmTokens/{tokenId}` 경로 사용 (카멜케이스)
+  - 경로 불일치로 인한 권한 거부
+- **해결**: `firebase/firestore.rules:449`를 `fcm-tokens` 경로로 수정
+  - `match /fcmTokens/{tokenId}` → `match /fcm-tokens/{token}`
+  - 비로그인 사용자도 자신의 토큰 등록 가능하도록 추가 규칙 설정
+- **참고**: `specs/sonub-firebase-database-structure.md:109-113`에서 공식 경로 확인
 
-- **논리식 괄호 명시**: 연산자 우선순위를 괄호로 명시합니다.
-  - 올바른 예: `A || (B && C)`
-  - 잘못된 예: `A && B || C`
-- **조건이 길어지면 여러 줄로 표현**:
+**3. Firestore 스토어 경로 오류 수정 (클라이언트)**
+- **문제**: `newMessageCount` 구독 시 Firestore 스토어 생성 오류
+  ```
+  firestore.svelte.ts:206 ❌ Firestore 스토어 생성 오류:
+  users/GljDA3yso2b3wIHh1M45vHGUcK72/newMessageCount
+  Error: createFirestoreStore는 Document 경로만 지원합니다.
+  Collection 경로가 전달되었습니다
+  ```
+- **원인**:
+  - `src/routes/+layout.svelte:80`에서 `users/{uid}/newMessageCount`를 문서 경로로 사용
+  - `newMessageCount`는 필드명이지 문서 ID가 아님
+  - `firestoreStore()`는 문서 경로만 지원하며 필드 경로는 지원하지 않음
+- **해결**: `src/routes/+layout.svelte` 수정
+  - `UserData` 인터페이스 추가 (Lines 50-55)
+  - 스토어 타입 변경: `firestoreStore<number>` → `firestoreStore<UserData>`
+  - 구독 경로 변경: `users/{uid}/newMessageCount` → `users/{uid}`
+  - 필드 접근 방식 변경: `state.data ?? 0` → `state.data?.newMessageCount ?? 0` (Line 109)
+- **참고**: `src/lib/components/top-bar.svelte:43-44`에 이미 올바른 패턴 구현되어 있었음
 
-```json
-".write": "auth != null && (
-  ($uid == auth.uid && !data.exists()) ||
-  root.child('admins').child(auth.uid).val() == true
-)"
-```
-
-- **권한 체크와 필드 검증 분리**:
-  - `.write`에서는 **권한**과 **존재 여부**만 확인합니다.
-  - 각 필드의 타입/길이 등 **데이터 유효성**은 하위 키의 `.validate` 블록에서 처리합니다.
-  - 예를 들어 name 필드:
-
-```json
-"name": {
-  ".write": "root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",
-  ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
-}
-```
-
-이 방식으로 규칙을 작성하면 리뷰와 유지보수가 훨씬 쉬워집니다.
-
-### 초기화 및 설정
-
-Firebase Realtime Database 보안 규칙을 설정하려면 다음 단계를 따릅니다:
-
-```bash
-# Firebase 프로젝트 폴더로 이동
-cd firebase
-
-# Firebase Realtime Database 초기화
-firebase init database
-```
-
-초기화가 완료되면 `firebase/database.rules.json` 파일이 생성됩니다.
-
-### 보안 규칙 정의
-
-사용자의 프로필 데이터는 다음과 같이 보호됩니다:
-
-```json
-{
-  "rules": {
-    "users": {
-        "$uid": {
-          // 자신만 읽기 가능. 모든 사용자가 읽기 불가능
-        ".read": "auth.uid == $uid",
-          // 2025-12-12 까지는 무조건 쓰기 통과 (테스트 데이터 생성용)
-          // 그 이후는 본인만 쓰기 가능
-          ".write": "now < 1765555200000 || auth.uid == $uid",
-          // 필수 필드 검증
-          ".validate": "newData.hasChildren(['displayName'])"
-        },
-        ".indexOn": ["createdAt"]
-      },
-      "system": {
-        "settings": {
-          "admins": {
-            // 로그인한 모든 사용자가 읽기 가능 (메뉴에서 사용)
-            ".read": "auth != null",
-            // 관리자만 쓰기 가능 (배열에 있는 사용자만)
-            ".write": "root.child('system/settings/admins').val().contains(auth.uid)"
-          }
-        }
-      },
-    "test": {
-        "data": {
-          // QA 전용 테스트 데이터 노드 - 누구나 읽고 쓰기 가능
-          ".read": true,
-          ".write": true
-       }
-    }
-  }
-}
-```
-
-**설명:**
-- `users/$uid`: 사용자 프로필 (모두 읽기, 2025-12-12까지 무조건 쓰기, 이후 본인만 쓰기)
-  - `now < 1765555200000`: 2025-12-12 자정(UTC) 이전에는 모든 사용자 쓰기 허용 (테스트 데이터 생성용)
-  - `auth.uid == $uid`: 2025-12-12 이후에는 본인 데이터만 쓰기 가능
-- `system/settings/admins`: 관리자 객체 (key: UID, value: true, 로그인 사용자는 읽기, 관리자만 쓰기)
-- `test/data`: QA 테스트 전용 경로. DatabaseListView 데모가 자유롭게 데이터를 생성/삭제할 수 있도록 `.read`와
-  `.write`를 모두 `true`로 설정한다. 이 노드는 **프로덕션 데이터와 분리된 테스트 공간**이므로 민감한 정보를 저장하지 않는다.
-
-### 보안 규칙 배포
-
-`firebase/database.rules.json` 파일을 수정한 후, 다음 명령어로 Firebase Realtime Database에 보안 규칙을 배포합니다:
+#### 배포 결과
 
 ```bash
-# firebase 폴더에서 실행
-cd firebase
-
-# Realtime Database 보안 규칙만 배포
-firebase deploy --only database
+cd firebase && firebase deploy --only firestore:rules
+# ✔  Deploy complete!
 ```
 
-**주의사항:**
-- 보안 규칙 배포 전에 반드시 JSON 문법을 확인하세요.
-- 배포 후 Firebase Console에서 규칙이 올바르게 적용되었는지 확인하세요.
-- 규칙 변경은 즉시 적용되므로 프로덕션 환경에서는 신중하게 배포하세요.
-
----
-
-## 2️⃣-2 채팅방(chat-rooms) 보안 규칙
-
-### 설계 원칙
-
-채팅방 보안 규칙은 **가독성(readability) 향상**을 위해 각 필드별로 세밀하게 설정합니다:
-- 복잡한 단일 규칙보다 필드별 명확한 규칙 작성
-- 각 필드의 생명주기(생성, 수정, 삭제) 명확히 정의
-- `.write`와 `.validate`를 분리하여 권한과 데이터 검증 구분
-
-### 필드별 보안 규칙
-
-```json
-{
-  "rules": {
-    "chat-rooms": {
-      ".read": true,
-      "$roomId": {
-        ".write": "auth != null",
-        "owner": {
-          ".write": "!root.child('chat-rooms').child($roomId).exists() && newData.val() === auth.uid",
-          ".validate": "newData.isString()"
-        },
-        "name": {
-          ".write": "!root.child('chat-rooms').child($roomId).exists() || root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",
-          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
-        },
-        "description": {
-          ".write": "!root.child('chat-rooms').child($roomId).exists() || root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",
-          ".validate": "newData.isString() && newData.val().length <= 200"
-        },
-        "type": {
-          ".write": "!data.exists()",
-          ".validate": "newData.val() === 'group' || newData.val() === 'open' || newData.val() === 'single'"
-        },
-        "createdAt": {
-          ".write": "!data.exists()",
-          ".validate": "newData.isNumber()"
-        },
-        "open": {
-          ".write": "!data.exists()",
-          ".validate": "newData.isBoolean()"
-        },
-        "groupListOrder": {
-          ".write": "!data.exists()",
-          ".validate": "newData.isNumber()"
-        },
-        "openListOrder": {
-          ".write": "!data.exists()",
-          ".validate": "newData.isNumber()"
-        },
-        "memberCount": {
-          ".write": false,
-          ".validate": "newData.isNumber() && newData.val() >= 0"
-        },
-        "members": {
-          "$uid": {
-            ".write": "auth != null && ($uid === auth.uid || root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid)",
-            ".validate": "newData.isBoolean() || newData.val() === null"
-          }
-        },
-        "$other": {
-          ".validate": false
-        }
-      },
-      ".indexOn": ["openListOrder"]
-    }
-  }
-}
-```
-
-### 필드별 규칙 설명
-
-| 필드 | 쓰기 권한 | 검증 규칙 | 설명 |
-|------|----------|----------|------|
-| **owner** | Cloud Functions만 | 문자열 | 채팅방 소유자 UID. **Cloud Functions에서만 설정 가능** (`.write: false`) |
-| **createdAt** | Cloud Functions만 | 숫자(타임스탬프) | 생성 시간. **Cloud Functions에서만 설정 가능** (`.write: false`) |
-| **_requestingUid** | 생성 시 본인만 | 문자열 | **임시 필드**. 클라이언트가 `auth.uid`와 동일한 값으로 전달하면, Cloud Functions가 검증 후 `owner`로 복사하고 삭제 |
-| **name** | owner만 | 1-50자 문자열 | 채팅방 이름. owner만 수정 가능 |
-| **description** | owner만 | 최대 200자 문자열 | 채팅방 설명. owner만 수정 가능 |
-| **type** | 생성 시만 | 'group', 'open', 'single' | 채팅방 타입. 생성 후 변경 불가 |
-| **open** | 생성 시만 | boolean | 공개 여부. 생성 후 변경 불가 |
-| **groupListOrder** | 생성 시만 | 숫자 | 그룹 채팅 정렬 순서. 생성 후 변경 불가 |
-| **openListOrder** | 생성 시만 | 숫자 | 오픈 채팅 정렬 순서. 생성 후 변경 불가 |
-| **memberCount** | Cloud Functions만 | 0 이상의 숫자 | 멤버 수. 서버에서 자동 관리 |
-| **members/$uid** | 본인 또는 owner | boolean / null | 방 참여 여부와 알림 설정. 사용자는 스스로 true/false 설정, owner는 구성원 관리 가능, null은 퇴장 처리 |
-| **$other** | 허용 안 함 | - | 정의되지 않은 필드는 생성 불가 |
-
-### 보안 규칙 패턴
-
-#### 1. 불변 필드 (Immutable Field)
-```json
-"owner": {
-  ".write": "!data.exists() && newData.val() === auth.uid",
-  ".validate": "newData.isString()"
-}
-```
-- `!data.exists()`: 데이터가 없을 때만 (= 생성 시에만)
-- `newData.val() === auth.uid`: 값이 현재 사용자 UID와 일치해야 함
-
-#### 2. Owner 전용 수정 필드
-```json
-"name": {
-  ".write": "root.child('chat-rooms').child($roomId).child('owner').val() === auth.uid",
-  ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 50"
-}
-```
-- owner 값을 확인하여 소유자만 수정 가능
-- 데이터 타입과 길이 검증
-
-#### 3. 읽기 전용 필드 (생성 후)
-```json
-"type": {
-  ".write": "!data.exists()",
-  ".validate": "newData.val() === 'group' || newData.val() === 'open' || newData.val() === 'single'"
-}
-```
-- 생성 시에만 설정 가능
-- 허용된 값만 설정 가능
-
-#### 4. 정의되지 않은 필드 차단
-```json
-"$other": {
-  ".validate": false
-}
-```
-- 정의되지 않은 필드는 생성/수정 불가
-- 데이터베이스 스키마 보호
-
----
-
-
-## 3️⃣ Firebase Storage 보안 규칙
-
-### 초기화 및 설정
-
-Firebase Storage 보안 규칙을 설정하려면 다음 단계를 따릅니다:
+#### 검증
 
 ```bash
-# Firebase 프로젝트 폴더로 이동
-cd firebase
-
-# Firebase Storage 초기화
-firebase init storage
+npm run check
+# ✅ Type check 통과 (CSS 경고만 존재 - 정상)
 ```
 
-초기화가 완료되면 `firebase/storage.rules` 파일이 생성됩니다.
+#### 영향받은 파일
 
-### 보안 규칙 정의
+- `firebase/firestore.rules` (Lines 402-418, 449)
+- `src/routes/+layout.svelte` (Lines 50-55, 87-95, 109)
 
-프로필 사진 저장소의 보안 규칙:
+#### 문제 해결 패턴
 
-```
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    // /users/{userId}/profile 경로의 파일
-    match /users/{userId}/profile/{fileName=**} {
-      allow read: if true;  // 모든 사용자가 읽기 가능
-      allow write: if request.auth.uid == userId;  // 본인만 쓰기 가능
-      allow delete: if request.auth.uid == userId;  // 본인만 삭제 가능
-    }
-  }
-}
-```
-
-### 보안 규칙 배포
-
-`firebase/storage.rules` 파일을 수정한 후, 다음 명령어로 Firebase Storage에 보안 규칙을 배포합니다:
-
-```bash
-# firebase 폴더에서 실행
-cd firebase
-
-# Storage 보안 규칙만 배포
-firebase deploy --only storage
-```
-
-**주의사항:**
-- 보안 규칙 배포 전에 반드시 문법을 확인하세요.
-- 배포 후 Firebase Console에서 규칙이 올바르게 적용되었는지 확인하세요.
-- 규칙 변경은 즉시 적용되므로 프로덕션 환경에서는 신중하게 배포하세요.
-
+1. **경로 불일치 디버깅**: 코드에서 사용하는 경로와 Security Rules의 경로를 비교
+2. **스펙 문서 참조**: `specs/sonub-firebase-database-structure.md`에서 공식 경로 확인
+3. **작동하는 코드 참조**: `top-bar.svelte`의 올바른 패턴을 `+layout.svelte`에 적용
+4. **타입 안전성**: TypeScript 인터페이스로 문서 구조 명시화

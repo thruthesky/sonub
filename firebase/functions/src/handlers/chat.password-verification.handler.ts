@@ -86,7 +86,7 @@ export async function handlePasswordVerification(
 export const onPasswordTry = onDocumentWritten(
   {
     document: "chats/{roomId}/password-tries/{uid}",
-    region: "asia-southeast1"
+    region:  "asia-northeast3"
   },
   async (event) => {
     const roomId = event.params.roomId as string;

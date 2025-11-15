@@ -1314,6 +1314,6 @@ recentUsers.reverse();
 
 ## 참고 문서
 
-- [Firebase Realtime Database](https://firebase.google.com/docs/database)
+- [Cloud Firestore](https://firebase.google.com/docs/firestore)
 - [Firebase Admin SDK - Database](https://firebase.google.com/docs/admin/setup#initialize-sdk)
 - [TypeScript 타입 안전성](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html)

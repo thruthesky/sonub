@@ -69,7 +69,7 @@ dependencies:
 - **게시글 삭제 시 연관 데이터 정리**: 게시글 삭제 시 좋아요, 댓글 등 연관 데이터 자동 삭제
 - **알림 트리거 및 전송**: 좋아요, 댓글, 친구 요청 등의 이벤트 발생 시 알림 전송
 
-**참고**: 이 문서에서 사용하는 모든 경로는 Firebase Realtime Database의 최상위 경로(`/`)에서 시작합니다. 예: `/users/{uid}`, `/posts/{postId}`
+**참고**: 이 문서에서 사용하는 모든 경로는 Cloud Firestore 컬렉션 기준입니다. 예: `users/{uid}`, `posts/{postId}`
 
 이 문서에서는 파이어베이스 클라우드 함수를 개발할 때 따라야 할 지침들을 안내합니다.
 
@@ -110,7 +110,7 @@ dependencies:
    - 참고: [Firebase Functions Gen 2 문서](https://firebase.google.com/docs/functions/2nd-gen)
 
 2. **SNS 데이터 구조 준수**:
-   - Firebase Realtime Database 최상위 경로 사용
+- Cloud Firestore 컬렉션/문서 경로 사용
    - 게시글: `/posts/{postId}`
    - 사용자: `/users/{uid}`
    - 통합 좋아요 (Flat Style): `/likes/{type}-{nodeId}-{uid}` (값: 1)
@@ -759,7 +759,7 @@ export const onLikeCreated = onValueCreated(
 
 #### 목적
 
-Firebase Admin SDK를 초기화하여 Realtime Database, Firestore 등에 접근할 수 있도록 설정합니다.
+Firebase Admin SDK를 초기화하여 Firestore, Storage 등에 접근할 수 있도록 설정합니다.
 
 #### 코드 예시
 
@@ -1254,7 +1254,7 @@ export const onLikeCreated = functions
 
 ## 8. 데이터베이스 트리거 구현 예제
 
-본 섹션에서는 Firebase Realtime Database의 데이터 변경 이벤트에 반응하여 자동으로 실행되는 Cloud Functions 구현 예제를 제공합니다.
+본 섹션에서는 Cloud Firestore의 데이터 변경 이벤트에 반응하여 자동으로 실행되는 Cloud Functions 구현 예제를 제공합니다.
 
 **중요**: 이 섹션의 모든 예제는 **sns-web-database.md**에 정의된 데이터베이스 구조를 기반으로 합니다. 데이터베이스 구조는 [SNS 데이터베이스 구조 가이드](./sns-web-database.md)를 참고하세요.
 

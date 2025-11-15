@@ -200,8 +200,8 @@ shouldShowImage = true (photoUrl 존재 && !imageLoadFailed)
 │ Avatar 컴포넌트                                              │
 │ ┌──────────────────────────────────────────────────────────┐ │
 │ │ onMount()                                                │ │
-│ │   - RTDB 리스너 등록                                     │ │
-│ │   - onValue(ref(rtdb, `users/${uid}`))                  │ │
+│ │   - Firestore 리스너 등록                                │ │
+│ │   - onSnapshot(doc(db, `users/${uid}`))                  │ │
 │ └──────────────────────────────────────────────────────────┘ │
 │ ┌──────────────────────────────────────────────────────────┐ │
 │ │ $derived 반응형 값                                       │ │
@@ -209,11 +209,11 @@ shouldShowImage = true (photoUrl 존재 && !imageLoadFailed)
 │ │   - shouldShowImage = photoUrl && !imageLoadFailed      │ │
 │ └──────────────────────────────────────────────────────────┘ │
 └────────────────────────────┬─────────────────────────────────┘
-                             │ onValue 리스너
+                             │ onSnapshot 리스너
                              ↓
 ┌──────────────────────────────────────────────────────────────┐
-│ Firebase Realtime Database                                   │
-│ /users/{uid}/                                                │
+│ Cloud Firestore                                              │
+│ users/{uid}                                                  │
 │   - photoUrl: "https://lh3.googleusercontent.com/..."        │
 │   - displayName: "JaeHo Song"                                │
 └──────────────────────────────────────────────────────────────┘
@@ -231,7 +231,7 @@ shouldShowImage = true (photoUrl 존재 && !imageLoadFailed)
 interface Props {
 	/**
 	 * 사용자 UID (필수)
-	 * RTDB에서 photoUrl과 displayName을 자동으로 가져옵니다.
+	 * Firestore `users/{uid}` 문서에서 photoUrl과 displayName을 자동으로 가져옵니다.
 	 */
 	uid?: string;
 
@@ -1206,7 +1206,7 @@ const optimizedPhotoUrl = photoUrl?.replace(/=s\d+/, `=s${size * 2}`);
 
 **확인 사항:**
 1. ✅ `onValue` 리스너가 등록되었는지 콘솔 로그 확인
-2. ✅ Firebase Realtime Database 보안 규칙 확인
+2. ✅ Firestore 보안 규칙 확인
 3. ✅ 네트워크 연결 확인
 
 **해결:**
@@ -1419,7 +1419,7 @@ Avatar 컴포넌트는 다음과 같은 문제를 해결했습니다:
 
 **핵심 기술:**
 - Svelte 5 runes ($state, $derived, $effect)
-- Firebase Realtime Database (onValue)
+- Firestore `onSnapshot` 구독
 - CORS/Referrer 정책 이해 및 적용
 - 상태 기반 UI 전환 (imageLoadFailed)
 

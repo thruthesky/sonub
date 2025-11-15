@@ -27,8 +27,8 @@ import { getAuth, type Auth } from 'firebase/auth';
 // Firestore
 import { getFirestore, type Firestore } from 'firebase/firestore';
 
-// Realtime Database
-import { getDatabase, type Database } from 'firebase/database';
+// Realtime Database - DEPRECATED: Firestore로 마이그레이션 완료
+// import { getDatabase, type Database } from 'firebase/database';
 
 // Storage
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
@@ -91,8 +91,9 @@ export const db: Firestore | null = browser ? getFirestore(app) : null;
 /**
  * Realtime Database 서비스
  * 브라우저 환경에서만 초기화
+ * 중요: RTDB 를 사용하지 않습니다. 현재 프로젝트의 모든 영역에서 RTDB 를 사용하지 않으므로, 아래의 rtdb 코드를 주석처리하고, rtdb 를 쓰는 모든 코드는 Firestore 로 마이그레이션 해야 합니다.
  */
-export const rtdb: Database | null = browser ? getDatabase(app) : null;
+// export const rtdb: Database | null = browser ? getDatabase(app) : null;
 
 /**
  * Storage 서비스

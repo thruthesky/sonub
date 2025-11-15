@@ -96,14 +96,22 @@
 	 * - 비밀번호 필요 여부 확인 (roomPasswordEnabled && !isRoomMember && !isRoomOwner)
 	 * - 비밀번호 필요: passwordPromptOpen = true
 	 * - 비밀번호 불필요: joinChatRoom 호출
+	 *
+	 * 무한 루프 방지:
+	 * - joinAttemptedRoomId로 이미 입장 시도한 방인지 확인
+	 * - activeRoomId가 변경되면 새로운 방이므로 다시 입장 시도
 	 */
 	$effect(() => {
 		if (!activeRoomId || !authStore.user?.uid || !db) return;
+
+		// 이미 이 방에 대해 입장 시도했으면 스킵 (무한 루프 방지)
+		if (joinAttemptedRoomId === activeRoomId) return;
 
 		if (isSingleChat) {
 			// 1:1 채팅: chat-joins 문서에 최소 정보만 업데이트
 			// Cloud Functions(onChatJoinCreate)가 자동으로 필요한 필드들을 추가합니다.
 			enterSingleChatRoom(db, activeRoomId, authStore.user.uid);
+			joinAttemptedRoomId = activeRoomId; // 입장 시도 기록
 		} else {
 			// 그룹/오픈 채팅: 비밀번호 확인 후 입장
 			// 채팅방 정보 로드 완료 확인 (roomOwner가 null이 아니면 로드 완료)
@@ -113,12 +121,15 @@
 				if (needsPassword) {
 					// 비밀번호 필요: 모달 표시
 					passwordPromptOpen = true;
+					joinAttemptedRoomId = activeRoomId; // 입장 시도 기록
 				} else if (isRoomMember || isRoomOwner) {
 					// 이미 members이거나 owner인 경우: 입장 (chat-joins 업데이트)
 					joinChatRoom(db, activeRoomId, authStore.user.uid);
+					joinAttemptedRoomId = activeRoomId; // 입장 시도 기록
 				} else {
 					// 비밀번호 불필요하지만 members도 아닌 경우: 자동으로 members에 추가
 					joinChatRoom(db, activeRoomId, authStore.user.uid);
+					joinAttemptedRoomId = activeRoomId; // 입장 시도 기록
 				}
 			}
 		}
@@ -199,6 +210,7 @@
 	let roomPasswordEnabled = $state(false);
 	let roomPasswordValue = $state<string>('');
 	let isRoomMember = $state(false); // 현재 사용자가 members인지 여부
+	let joinAttemptedRoomId = $state<string>(''); // 입장 시도한 방 ID (무한 루프 방지)
 
 	/**
 	 * 채팅방 정보 구독 (그룹/오픈 채팅방만) - Firestore

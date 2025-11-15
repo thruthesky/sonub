@@ -11,10 +11,11 @@ import {UserData} from "../types";
  *
  * 수행 작업:
  * 1. createdAt 필드 자동 생성 및 users/{uid} 문서에 저장
- * 2. 사용자 데이터 정규화 및 동기화 수행
+ * 2. displayNameLowerCase 필드 자동 생성 (displayName이 있는 경우)
+ * 3. 사용자 데이터 정규화 및 동기화 수행
  *    - photoUrl 처리
  *    - users/{uid} 문서 업데이트
- *    - stats/counters 문서의 user 필드 +1 (전체 사용자 통계 업데이트)
+ *    - system/stats 문서의 userCount 필드 +1 (전체 사용자 통계 업데이트)
  *
  * @param {string} uid - 사용자 UID
  * @param {UserData} userData - 사용자 데이터
@@ -32,25 +33,41 @@ export async function handleUserCreate(
   const now = Date.now();
   const db = admin.firestore();
   const batch = db.batch();
+  const userRef = db.doc(`users/${uid}`);
+  const updates: Record<string, unknown> = {};
 
-  // createdAt 필드 자동 생성 (없는 경우만)
+  // 1. createdAt 필드 자동 생성 (없는 경우만)
   const createdAt =
     typeof userData.createdAt === "number" ? userData.createdAt : now;
 
-  // users/{uid} 문서에 createdAt 저장 (없는 경우만)
   if (userData.createdAt === undefined || userData.createdAt === null) {
-    const userRef = db.doc(`users/${uid}`);
-    batch.update(userRef, {createdAt});
+    updates.createdAt = createdAt;
     logger.info("createdAt 저장 예정", {uid, createdAt});
   }
 
-  // 📊 전체 사용자 통계 업데이트: stats/counters 문서의 user 필드 +1
-  const statsRef = db.doc("stats/counters");
-  batch.set(statsRef, {user: admin.firestore.FieldValue.increment(1)}, {merge: true});
+  // 2. displayNameLowerCase 필드 자동 생성 (displayName이 있는 경우)
+  if (userData.displayName) {
+    const displayNameLowerCase = userData.displayName.toLowerCase();
+    updates.displayNameLowerCase = displayNameLowerCase;
+    logger.info("displayNameLowerCase 자동 생성", {
+      uid,
+      displayName: userData.displayName,
+      displayNameLowerCase,
+    });
+  }
+
+  // 3. users/{uid} 문서 업데이트 (createdAt, displayNameLowerCase)
+  if (Object.keys(updates).length > 0) {
+    batch.update(userRef, updates);
+  }
+
+  // 4. 📊 전체 사용자 통계 업데이트: system/stats 문서의 userCount 필드 +1
+  const statsRef = db.doc("system/stats");
+  batch.set(statsRef, {userCount: admin.firestore.FieldValue.increment(1)}, {merge: true});
 
   // 배치 커밋
   await batch.commit();
-  logger.info("사용자 생성 관련 업데이트 완료", {uid});
+  logger.info("사용자 생성 관련 업데이트 완료", {uid, updatesCount: Object.keys(updates).length});
 
   return {
     success: true,
@@ -141,19 +158,40 @@ export async function handleUserUpdate(
     beforeData?.birthYearMonthDay !== afterData?.birthYearMonthDay;
 
   if (afterData.birthYearMonthDay && birthYearMonthDayChanged) {
-    // YYYY-MM-DD 형식 파싱
-    const birthDateMatch = afterData.birthYearMonthDay.match(
-      /^(\d{4})-(\d{2})-(\d{2})$/
-    );
+    // YYYYMMDD 숫자 또는 YYYY-MM-DD 문자열 형식 파싱
+    let year = "";
+    let month = "";
+    let day = "";
+    let parseSuccess = false;
 
-    if (birthDateMatch) {
-      const [, year, month, day] = birthDateMatch;
+    const birthValue = afterData.birthYearMonthDay as number | string;
 
+    // 숫자 형식 (YYYYMMDD) 파싱 시도
+    if (typeof birthValue === "number") {
+      const dateStr = birthValue.toString();
+      if (dateStr.length === 8) {
+        year = dateStr.substring(0, 4);
+        month = dateStr.substring(4, 6);
+        day = dateStr.substring(6, 8);
+        parseSuccess = true;
+      }
+    } else if (typeof birthValue === "string") {
+      // 문자열 형식 (YYYY-MM-DD) 파싱 시도 (하위 호환성)
+      const birthDateMatch = birthValue.match(
+        /^(\d{4})-(\d{2})-(\d{2})$/
+      );
+      if (birthDateMatch) {
+        [, year, month, day] = birthDateMatch;
+        parseSuccess = true;
+      }
+    }
+
+    if (parseSuccess) {
       // 파생 필드 생성
       updates.birthYear = parseInt(year, 10);
       updates.birthMonth = parseInt(month, 10);
       updates.birthDay = parseInt(day, 10);
-      updates.birthMonthDay = `${month}-${day}`;
+      updates.birthMonthDay = parseInt(`${month}${day}`, 10); // MMDD 형식 숫자 (예: 1016)
 
       logger.info("birthYearMonthDay 파싱 및 파생 필드 생성", {
         uid,
@@ -161,10 +199,10 @@ export async function handleUserUpdate(
         birthYear: parseInt(year, 10),
         birthMonth: parseInt(month, 10),
         birthDay: parseInt(day, 10),
-        birthMonthDay: `${month}-${day}`,
+        birthMonthDay: parseInt(`${month}${day}`, 10),
       });
     } else {
-      logger.warn("birthYearMonthDay 형식이 올바르지 않습니다", {
+      logger.warn("birthYearMonthDay 형식이 올바르지 않습니다 (YYYYMMDD 숫자 또는 YYYY-MM-DD 문자열 필요)", {
         uid,
         birthYearMonthDay: afterData.birthYearMonthDay,
       });
@@ -400,12 +438,12 @@ export async function handleUserPhotoUrlUpdate(
  * 수행 작업:
  * - 생성/수정 시:
  *   1. createdAt 필드가 없으면 자동 생성
- *   2. YYYY-MM-DD 형식 파싱 및 유효성 검증
+ *   2. YYYYMMDD 숫자 또는 YYYY-MM-DD 문자열 형식 파싱 및 유효성 검증
  *   3. 파생 필드 자동 생성:
  *      - birthYear (number): 생년
  *      - birthMonth (number): 생월
  *      - birthDay (number): 생일
- *      - birthMonthDay (string): 생월일 (MM-DD 형식)
+ *      - birthMonthDay (number): 생월일 (MMDD 형식 숫자, 예: 1016)
  * - 삭제 시:
  *   1. 모든 파생 필드 삭제 (birthYear, birthMonth, birthDay, birthMonthDay)
  *
@@ -417,14 +455,14 @@ export async function handleUserPhotoUrlUpdate(
  * - updatedAt은 업데이트하지 않음 (내부 속성 변경으로 간주)
  *
  * @param {string} uid - 사용자 UID
- * @param {string | null} beforeValue - 변경 전 birthYearMonthDay 값
- * @param {string | null} afterValue - 변경 후 birthYearMonthDay 값 (YYYY-MM-DD 형식, 삭제 시 null)
+ * @param {string | number | null} beforeValue - 변경 전 birthYearMonthDay 값
+ * @param {string | number | null} afterValue - 변경 후 birthYearMonthDay 값 (YYYYMMDD 숫자 또는 YYYY-MM-DD 문자열, 삭제 시 null)
  * @returns {Promise<{success: boolean; uid: string}>} 처리 결과
  */
 export async function handleUserBirthYearMonthDayUpdate(
   uid: string,
-  beforeValue: string | null,
-  afterValue: string | null
+  beforeValue: string | number | null,
+  afterValue: string | number | null
 ): Promise<{success: boolean; uid: string}> {
   logger.info("birthYearMonthDay 변경 감지", {
     uid,
@@ -453,17 +491,36 @@ export async function handleUserBirthYearMonthDayUpdate(
       updates.createdAt = createdAt;
     }
 
-    // 2. YYYY-MM-DD 형식 파싱 및 파생 필드 생성
-    const birthDateMatch = afterValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    // 2. YYYYMMDD 숫자 또는 YYYY-MM-DD 문자열 형식 파싱 및 파생 필드 생성
+    let year = "";
+    let month = "";
+    let day = "";
+    let parseSuccess = false;
 
-    if (birthDateMatch) {
-      const [, year, month, day] = birthDateMatch;
+    // 숫자 형식 (YYYYMMDD) 파싱 시도
+    if (typeof afterValue === "number") {
+      const dateStr = afterValue.toString();
+      if (dateStr.length === 8) {
+        year = dateStr.substring(0, 4);
+        month = dateStr.substring(4, 6);
+        day = dateStr.substring(6, 8);
+        parseSuccess = true;
+      }
+    } else if (typeof afterValue === "string") {
+      // 문자열 형식 (YYYY-MM-DD) 파싱 시도 (하위 호환성)
+      const birthDateMatch = afterValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (birthDateMatch) {
+        [, year, month, day] = birthDateMatch;
+        parseSuccess = true;
+      }
+    }
 
+    if (parseSuccess) {
       // 파생 필드 생성/수정
       updates.birthYear = parseInt(year, 10);
       updates.birthMonth = parseInt(month, 10);
       updates.birthDay = parseInt(day, 10);
-      updates.birthMonthDay = `${month}-${day}`;
+      updates.birthMonthDay = parseInt(`${month}${day}`, 10); // MMDD 형식 숫자 (예: 1016)
 
       logger.info("birthYearMonthDay 파싱 및 파생 필드 생성/수정", {
         uid,
@@ -471,10 +528,10 @@ export async function handleUserBirthYearMonthDayUpdate(
         birthYear: parseInt(year, 10),
         birthMonth: parseInt(month, 10),
         birthDay: parseInt(day, 10),
-        birthMonthDay: `${month}-${day}`,
+        birthMonthDay: parseInt(`${month}${day}`, 10),
       });
     } else {
-      logger.warn("birthYearMonthDay 형식이 올바르지 않습니다 (YYYY-MM-DD 형식 필요)", {
+      logger.warn("birthYearMonthDay 형식이 올바르지 않습니다 (YYYYMMDD 숫자 또는 YYYY-MM-DD 문자열 필요)", {
         uid,
         birthYearMonthDay: afterValue,
       });

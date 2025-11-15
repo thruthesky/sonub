@@ -103,8 +103,8 @@ export interface UserData {
   updatedAt?: number;
   /** 성별 (M|F) */
   gender?: string;
-  /** 생년월일 (YYYY-MM-DD 형식, 클라이언트에서 저장) */
-  birthYearMonthDay?: string;
+  /** 생년월일 (YYYYMMDD 숫자 또는 YYYY-MM-DD 문자열, 클라이언트에서 저장) */
+  birthYearMonthDay?: number | string;
   /** 생년 (Cloud Functions에서 자동 생성) */
   birthYear?: number;
   /** 생월 (Cloud Functions에서 자동 생성) */

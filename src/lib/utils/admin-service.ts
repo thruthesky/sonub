@@ -1,16 +1,16 @@
 /**
- * 관리자 서비스 - Firebase Realtime Database 연동
+ * 관리자 서비스 - Firestore 연동
  *
  * 테스트 사용자 생성, 사용자 목록 조회 등의 관리자 기능을 담당합니다.
  */
 
-import { rtdb } from '$lib/firebase';
-import { ref, set, get, remove } from 'firebase/database';
+import { db } from '$lib/firebase';
+import { doc, setDoc, getDoc, deleteDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import type { TestUser } from './test-user-generator';
 import { testUserToFirebaseData } from './test-user-generator';
 
 /**
- * 테스트 사용자를 Firebase Realtime Database에 저장합니다.
+ * 테스트 사용자를 Firestore에 저장합니다.
  *
  * @param users 저장할 테스트 사용자 배열
  * @param onProgress 진행 상황 콜백 함수
@@ -20,8 +20,8 @@ export async function saveTestUsersToFirebase(
 	users: TestUser[],
 	onProgress?: (index: number, total: number) => void
 ): Promise<boolean> {
-	if (!rtdb) {
-		console.error('Firebase Realtime Database가 초기화되지 않았습니다.');
+	if (!db) {
+		console.error('Firestore가 초기화되지 않았습니다.');
 		return false;
 	}
 
@@ -29,10 +29,10 @@ export async function saveTestUsersToFirebase(
 		// 각 사용자를 순차적으로 저장
 		for (let i = 0; i < users.length; i++) {
 			const user = users[i];
-			const userRef = ref(rtdb, `users/${user.uid}`);
+			const userRef = doc(db, `users/${user.uid}`);
 			const firebaseData = testUserToFirebaseData(user);
 
-			await set(userRef, firebaseData);
+			await setDoc(userRef, firebaseData);
 
 			// 진행 상황 콜백
 			if (onProgress) {
@@ -48,43 +48,43 @@ export async function saveTestUsersToFirebase(
 }
 
 /**
- * Firebase Realtime Database에서 모든 임시 사용자를 조회합니다.
+ * Firestore에서 모든 임시 사용자를 조회합니다.
  *
  * @returns 임시 사용자 데이터
  */
 export async function getTemporaryUsers(): Promise<Record<string, TestUser>> {
-	if (!rtdb) {
-		console.error('Firebase Realtime Database가 초기화되지 않았습니다.');
+	if (!db) {
+		console.error('Firestore가 초기화되지 않았습니다.');
 		return {};
 	}
 
 	try {
-		const usersRef = ref(rtdb, 'users');
-		const snapshot = await get(usersRef);
+		// isTemporary가 true인 사용자만 쿼리
+		const usersRef = collection(db, 'users');
+		const q = query(usersRef, where('isTemporary', '==', true));
+		const snapshot = await getDocs(q);
 
-		if (!snapshot.exists()) {
+		if (snapshot.empty) {
 			return {};
 		}
 
-		const allUsers = snapshot.val() as Record<string, unknown>;
 		const temporaryUsers: Record<string, TestUser> = {};
 
-		// isTemporary가 true인 사용자만 필터링
-		Object.entries(allUsers).forEach(([uid, userData]) => {
-			const user = userData as Record<string, unknown>;
-			if (user.isTemporary === true) {
-				temporaryUsers[uid] = {
-					uid,
-					displayName: (user.displayName as string) || '',
-					email: (user.email as string) || '',
-					photoUrl: (user.photoUrl as string | null) || null,
-					gender: (user.gender as 'male' | 'female' | 'other') || 'other',
-					birthYear: (user.birthYear as number) || 0,
-					createdAt: (user.createdAt as number) || 0,
-					updatedAt: (user.updatedAt as number) || 0,
-					isTemporary: true
-				};
-			}
+		// 문서를 순회하며 데이터 추출
+		snapshot.forEach((doc) => {
+			const uid = doc.id;
+			const user = doc.data();
+			temporaryUsers[uid] = {
+				uid,
+				displayName: (user.displayName as string) || '',
+				email: (user.email as string) || '',
+				photoUrl: (user.photoUrl as string | null) || null,
+				gender: (user.gender as 'male' | 'female' | 'other') || 'other',
+				birthYear: (user.birthYear as number) || 0,
+				createdAt: (user.createdAt as number) || 0,
+				updatedAt: (user.updatedAt as number) || 0,
+				isTemporary: true
+			};
 		});
 
 		return temporaryUsers;
@@ -95,20 +95,20 @@ export async function getTemporaryUsers(): Promise<Record<string, TestUser>> {
 }
 
 /**
- * 특정 사용자를 Firebase Realtime Database에서 삭제합니다.
+ * 특정 사용자를 Firestore에서 삭제합니다.
  *
  * @param uid 삭제할 사용자의 UID
  * @returns 삭제 완료 여부
  */
 export async function deleteUserByUid(uid: string): Promise<boolean> {
-	if (!rtdb) {
-		console.error('Firebase Realtime Database가 초기화되지 않았습니다.');
+	if (!db) {
+		console.error('Firestore가 초기화되지 않았습니다.');
 		return false;
 	}
 
 	try {
-		const userRef = ref(rtdb, `users/${uid}`);
-		await remove(userRef);
+		const userRef = doc(db, `users/${uid}`);
+		await deleteDoc(userRef);
 		return true;
 	} catch (error) {
 		console.error('사용자 삭제 중 오류 발생:', error);
@@ -125,8 +125,8 @@ export async function deleteUserByUid(uid: string): Promise<boolean> {
 export async function deleteAllTemporaryUsers(
 	onProgress?: (deleted: number, total: number) => void
 ): Promise<boolean> {
-	if (!rtdb) {
-		console.error('Firebase Realtime Database가 초기화되지 않았습니다.');
+	if (!db) {
+		console.error('Firestore가 초기화되지 않았습니다.');
 		return false;
 	}
 

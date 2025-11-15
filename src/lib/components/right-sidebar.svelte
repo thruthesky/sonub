@@ -14,7 +14,15 @@ import { User, Bell, TrendingUp, Sparkles, Mail, BarChart3 } from 'lucide-svelte
 import { goto } from '$app/navigation';
 import { firestoreStore } from '$lib/stores/firestore.svelte';
 
-const userCountStore = firestoreStore<number>('stats/counters/user', 0);
+/**
+ * 시스템 통계 데이터 타입
+ */
+interface SystemStats {
+	userCount: number;
+}
+
+// system/stats document를 구독하여 실시간 사용자 수를 가져옵니다
+const userCountStore = firestoreStore<SystemStats>('system/stats');
 
 function goToStats() {
 	void goto('/stats');
@@ -84,7 +92,7 @@ function goToStats() {
 							{#if $userCountStore.loading}
 								로딩 중...
 							{:else}
-								{$userCountStore.data ?? 0}명
+								{$userCountStore.data?.userCount ?? 0}명
 							{/if}
 						</p>
 					</div>

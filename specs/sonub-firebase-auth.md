@@ -170,54 +170,6 @@ tags:
 - `onAuthStateChanged` 구독은 컴포넌트 언마운트 시 반드시 해제합니다.
 - Google 로그인 외 다른 공급자를 사용할 경우 `provider` 객체만 교체하면 됩니다.
 
-## 3. Firebase Auth 프로필 RTDB 동기화
-
-### 3.1 해결하려는 문제
-
-#### 3.1.1 문제 배경
-
-Firebase Authentication과 Realtime Database(RTDB)는 각각 독립적인 시스템입니다:
-- **Firebase Auth**: 사용자 인증 정보 관리 (uid, email, photoURL, displayName 등)
-- **RTDB**: 애플리케이션 데이터 저장소 (`/users/{uid}` 경로에 사용자 프로필 저장)
-
-문제는 두 시스템 간의 데이터 불일치입니다:
-1. Google/Apple 로그인 시 Auth에는 photoURL, displayName이 자동 저장됨
-2. 하지만 RTDB `/users/{uid}/photoUrl`, `/users/{uid}/displayName`은 자동 동기화되지 않음
-3. 애플리케이션은 RTDB 데이터를 기반으로 UI를 렌더링하므로 프로필 사진/이름이 표시되지 않음
-
-#### 3.1.2 기존 구현의 문제점
-
-조사 결과 다음과 같은 문제가 발견되었습니다:
-- **로그인 함수**: `signInWithGoogle()`, `signInWithApple()`은 Auth 로그인만 수행, RTDB 저장 없음
-- **onAuthStateChanged**: 관리자 목록만 로드, 프로필 동기화 없음
-- **Cloud Functions**: `/users/{uid}` 노드 변경사항만 감지, Auth photoURL 자동 가져오기 불가
-
-결과적으로 **신규 사용자의 프로필 정보가 RTDB에 저장되지 않는 문제**가 발생합니다.
-
-#### 3.1.3 요구사항
-
-1. **자동 동기화**: 새 접속/리프레시 시 Auth 프로필을 RTDB에 자동 동기화
-2. **조건부 저장**:
-   - `photoUrl`: RTDB에 **없거나 null이거나 공백일 때만** Auth photoURL 저장
-   - `displayName`: RTDB에 **없을 때만** Auth displayName 저장
-3. **필드 제외**: email, phoneNumber는 동기화하지 않음
-4. **타임스탬프**: createdAt, updatedAt은 Cloud Functions가 자동 처리 (클라이언트 건드리지 않음)
-5. **덮어쓰기 방지**: 기존 값이 있으면 절대 덮어쓰지 않음 (사용자가 수동으로 수정한 프로필 보호)
-
-### 3.2 전체 구조 및 아키텍처
-
-#### 3.2.1 동기화 흐름도
-
-```
-사용자 액션
-    ↓
-┌─────────────────────────────────────┐
-│ 1. 새 접속 / 페이지 리프레시        │
-│    또는 로그인 (Google/Apple)       │
-└─────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────┐
-│ 2. onAuthStateChanged 트리거        │
 │    (auth.svelte.ts)                 │
 └─────────────────────────────────────┘
     ↓
@@ -268,26 +220,29 @@ Firebase Authentication과 Realtime Database(RTDB)는 각각 독립적인 시스
 │ AuthStore (auth.svelte.ts)                               │
 │ ┌──────────────────────────────────────────────────────┐ │
 │ │ initializeAuthListener()                             │ │
-│ │   - onAuthStateChanged 리스너 등록                   │ │
-│ │   - user 객체 변경 감지                              │ │
+│ │   - onAuthStateChanged 등록                          │ │
+│ │   - Firestore db 인스턴스 확인                       │ │
 │ └──────────────────────────────────────────────────────┘ │
 │ ┌──────────────────────────────────────────────────────┐ │
 │ │ syncUserProfile(user)                                │ │
-│ │   - RTDB 기존 데이터 조회                            │ │
-│ │   - 조건부 업데이트 수행                             │ │
+│ │   - Firestore 문서(`users/{uid}`) 읽기               │ │
+│ │   - 비어 있는 필드만 조건부 업데이트                 │ │
 │ └──────────────────────────────────────────────────────┘ │
 └───────────────────┬──────────────────────────────────────┘
                     │
-                    │ update()
+                    │ setDoc / updateDoc
                     │
                     ↓
 ┌──────────────────────────────────────────────────────────┐
-│ Firebase Realtime Database                               │
-│ /users/{uid}/                                            │
-│   - displayName                                          │
-│   - photoUrl                                             │
-│   - createdAt (Cloud Functions 관리)                     │
-│   - updatedAt (Cloud Functions 관리)                     │
+│ Cloud Firestore                                          │
+│ 컬렉션: users                                            │
+│ 문서: {uid}                                              │
+│   - displayName (클라이언트)                             │
+│   - photoUrl (클라이언트)                                │
+│   - languageCode (클라이언트)                            │
+│   - createdAt (Cloud Functions)                          │
+│   - updatedAt (Cloud Functions)                          │
+│   - displayNameLowerCase 등 파생 필드 (Cloud Functions)  │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -297,50 +252,51 @@ Firebase Authentication과 Realtime Database(RTDB)는 각각 독립적인 시스
 
 **파일:** `src/lib/stores/auth.svelte.ts`
 
-#### 3.3.2 Import 추가
+#### 3.3.2 Firestore API 사용
 
 ```typescript
-import { ref, get, update } from 'firebase/database';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 ```
 
-**설명:**
-- `ref`: RTDB 참조 생성
-- `get`: RTDB 데이터 읽기 (1회성)
-- `update`: RTDB 데이터 부분 업데이트 (병합)
+- 문서가 없으면 `setDoc(doc(db, 'users', user.uid), { uid, ...updates })`
+- 문서가 있으면 `updateDoc()`으로 변경된 필드만 병합
 
-**주의:** `set()`이 아닌 `update()`를 사용하여 기존 필드를 덮어쓰지 않습니다.
-
-#### 3.3.3 syncUserProfile() 메서드 구현
+#### 3.3.3 syncUserProfile() 메서드 개요
 
 **상세 내용:**
 
 `syncUserProfile()` 메서드의 전체 구현, 동작 원리, 사용 예제는 [sonub-store-auth.md](./sonub-store-auth.md)를 참조하세요.
 
 **동기화 규칙 (간략):**
-- **photoUrl**: RTDB에 값이 없거나 null이거나 공백일 때만 Auth의 photoURL 저장
-- **displayName**: RTDB에 값이 없을 때만 Auth의 displayName 저장
+- **photoUrl**: Firestore에 값이 없거나 공백일 때만 Auth photoURL 저장
+- **displayName**: 문서에 없을 때만 Auth displayName 저장
+- **languageCode**: 문서에 없으면 브라우저 언어 코드 저장
 - **덮어쓰기 방지**: 사용자가 수정한 프로필은 절대 덮어쓰지 않음
-- **병합 업데이트**: `update()` 사용 (전체 교체 금지)
+- **병합 업데이트**: 존재 여부에 따라 `setDoc(..., { merge: true })` 또는 `updateDoc` 사용
 
-**핵심 로직:**
+**핵심 로직 스케치:**
 ```typescript
-// 기존 데이터 조회
-const userRef = ref(rtdb, `users/${user.uid}`);
-const snapshot = await get(userRef);
-const existingData = snapshot.val() || {};
-
-// 조건부 업데이트
+const userRef = doc(db, `users/${user.uid}`);
+const snapshot = await getDoc(userRef);
+const existing = snapshot.data() ?? {};
 const updates: Record<string, any> = {};
-if (!existingData.photoUrl?.trim() && user.photoURL) {
-	updates.photoUrl = user.photoURL;
+
+if (!existing.photoUrl?.trim() && user.photoURL) {
+  updates.photoUrl = user.photoURL;
 }
-if (!existingData.displayName && user.displayName) {
-	updates.displayName = user.displayName;
+if (!existing.displayName && user.displayName) {
+  updates.displayName = user.displayName;
+}
+if (!existing.languageCode) {
+  updates.languageCode = detectBrowserLanguage();
 }
 
-// 병합 업데이트
 if (Object.keys(updates).length > 0) {
-	await update(userRef, updates);
+  if (snapshot.exists()) {
+    await updateDoc(userRef, updates);
+  } else {
+    await setDoc(userRef, { uid: user.uid, ...updates });
+  }
 }
 ```
 
@@ -493,74 +449,6 @@ class AuthStore {
 			this._state.initialized = true;
 		}
 	}
-
-	/**
-	 * RTDB에서 관리자 목록 로드
-	 *
-	 * /system/settings/admins는 객체 형식으로 저장됨:
-	 * { "uid-user1": true, "uid-user2": true, ... }
-	 *
-	 * 이를 UID 배열로 변환하여 저장합니다.
-	 * Firebase SDK v9+ 모듈식 API를 사용합니다.
-	 */
-	private async loadAdminList() {
-		if (!rtdb) {
-			console.warn('Firebase Realtime Database가 초기화되지 않았습니다.');
-			return;
-		}
-
-		try {
-			// Firebase SDK v9+ 모듈식 API 사용
-			const adminRef = ref(rtdb, 'system/settings/admins');
-			const snapshot = await get(adminRef);
-			const adminsObj = snapshot.val();
-
-			// 객체에서 UID 배열로 변환 (value가 true인 항목만 포함)
-			if (adminsObj && typeof adminsObj === 'object') {
-				this._state.adminList = Object.keys(adminsObj).filter(uid => adminsObj[uid] === true);
-			} else {
-				this._state.adminList = [];
-			}
-
-			console.log('관리자 목록 로드됨:', this._state.adminList);
-		} catch (error) {
-			console.error('관리자 목록 로드 실패:', error);
-			this._state.adminList = [];
-		}
-	}
-
-	/**
-	 * Firebase Auth 사용자 프로필을 RTDB에 동기화
-	 *
-	 * 동기화 규칙:
-	 * - photoUrl: RTDB에 값이 없거나 null이거나 공백일 때만 Auth의 photoURL 저장
-	 * - displayName: RTDB에 값이 없을 때만 Auth의 displayName 저장
-	 * - email, phoneNumber는 동기화하지 않음
-	 * - createdAt, updatedAt은 Cloud Functions가 자동 처리
-	 *
-	 * @param user - Firebase Auth User 객체
-	 */
-	private async syncUserProfile(user: User) {
-		if (!rtdb) {
-			console.warn('Firebase Realtime Database가 초기화되지 않았습니다.');
-			return;
-		}
-
-		try {
-			// RTDB에서 현재 사용자 데이터 확인
-			const userRef = ref(rtdb, `users/${user.uid}`);
-			const snapshot = await get(userRef);
-			const existingData = snapshot.val() || {};
-
-			// 동기화할 데이터 준비
-			const updates: Record<string, any> = {};
-
-			// photoUrl: 없거나 null이거나 공백일 때만 동기화
-			// trim() 전에 undefined 체크를 위해 옵셔널 체이닝 사용
-			if (!existingData.photoUrl?.trim() && user.photoURL) {
-				updates.photoUrl = user.photoURL;
-				console.log('photoUrl 동기화:', user.photoURL);
-			}
 
 			// displayName: 없을 때만 동기화
 			if (!existingData.displayName && user.displayName) {
@@ -844,3 +732,73 @@ await set(ref(rtdb, `events/profile-updates/${Date.now()}`), {
   4. **신규**: 신규 사용자 로그인 시 RTDB에 photoUrl, displayName 자동 저장 확인
   5. **신규**: 기존 사용자 로그인 시 기존 프로필 덮어쓰지 않는지 확인
   6. **신규**: photoUrl이 공백일 때 Auth photoURL로 복원되는지 확인
+	/**
+	 * Firestore에서 관리자 목록 로드
+	 *
+	 * `system/settings` 문서 구조:
+	 * ```json
+	 * { "admins": { "uid-user1": true, "uid-user2": true } }
+	 * ```
+	 */
+	private async loadAdminList() {
+		if (!db) {
+			console.warn('Firebase Firestore가 초기화되지 않았습니다.');
+			return;
+		}
+
+		try {
+			const settingsRef = doc(db, 'system/settings');
+			const snapshot = await getDoc(settingsRef);
+			const adminsObj = snapshot.data()?.admins;
+
+			this._state.adminList =
+				adminsObj && typeof adminsObj === 'object'
+					? Object.keys(adminsObj).filter((uid) => adminsObj[uid] === true)
+					: [];
+		} catch (error) {
+			console.error('관리자 목록 로드 실패:', error);
+			this._state.adminList = [];
+		}
+	}
+
+	/**
+	 * Firebase Auth 사용자 프로필을 Firestore에 동기화
+	 *
+	 * 동기화 규칙:
+	 * - photoUrl: 문서에 값이 없거나 공백일 때만 Auth photoURL 저장
+	 * - displayName: 문서에 없을 때만 Auth displayName 저장
+	 * - languageCode: 문서에 없으면 브라우저 언어 저장
+	 */
+	private async syncUserProfile(user: User) {
+		if (!db) {
+			console.warn('Firebase Firestore가 초기화되지 않았습니다.');
+			return;
+		}
+
+		try {
+			const userRef = doc(db, `users/${user.uid}`);
+			const snapshot = await getDoc(userRef);
+			const existingData = snapshot.data() || {};
+			const updates: Record<string, any> = {};
+
+			if (!existingData.photoUrl?.trim() && user.photoURL) {
+				updates.photoUrl = user.photoURL;
+			}
+			if (!existingData.displayName && user.displayName) {
+				updates.displayName = user.displayName;
+			}
+			if (!existingData.languageCode) {
+				updates.languageCode = this.detectBrowserLanguage();
+			}
+
+			if (Object.keys(updates).length > 0) {
+				if (snapshot.exists()) {
+					await updateDoc(userRef, updates);
+				} else {
+					await setDoc(userRef, { uid: user.uid, ...updates });
+				}
+			}
+		} catch (error) {
+			console.error('사용자 프로필 동기화 실패:', error);
+		}
+	}

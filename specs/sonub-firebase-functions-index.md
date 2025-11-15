@@ -13,11 +13,11 @@ dependencies:
 
 ## 개요
 
-Firebase Cloud Functions Gen 2를 사용하여 Firebase Realtime Database의 이벤트를 감지하고 처리하는 트리거 함수들입니다.
+Firebase Cloud Functions Gen 2를 사용하여 Cloud Firestore 및 Storage 이벤트를 감지하고 처리합니다.
 
 ## 목적
 
-- Firebase Realtime Database의 데이터 변경 시 자동으로 비즈니스 로직 실행
+- Cloud Firestore의 데이터 변경 시 자동으로 비즈니스 로직 실행
 - 사용자 등록, 업데이트 등의 이벤트 처리
 - 데이터 정규화 및 동기화 자동화
 
@@ -43,7 +43,7 @@ setGlobalOptions({
 
 **설명:**
 - `maxInstances: 10`: 예상치 못한 비용 급증 방지
-- `region: "asia-southeast1"`: Firebase Realtime Database와 동일한 리전 사용 (성능 최적화)
+- `region: "asia-southeast1"`: Firestore/Storage와 동일한 리전 사용 (성능 최적화)
 
 ## 트리거 함수들
 
@@ -342,5 +342,5 @@ npm run test:unit
 ## 참고 문서
 
 - [Firebase Cloud Functions Gen 2](https://firebase.google.com/docs/functions/2nd-gen)
-- [Firebase Realtime Database Triggers](https://firebase.google.com/docs/functions/database-events)
+- [Firebase Firestore Triggers](https://firebase.google.com/docs/functions/firestore-events)
 - [Firebase Admin SDK](https://firebase.google.com/docs/admin/setup)

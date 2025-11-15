@@ -4,9 +4,9 @@
  * Svelte 5의 runes를 사용하여 Firebase Authentication 상태를 전역으로 관리합니다.
  */
 
-import { auth, rtdb } from '$lib/firebase';
+import { auth, db } from '$lib/firebase';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { ref, get, update } from 'firebase/database';
+import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 
 /**
  * 인증 상태 타입 정의
@@ -42,25 +42,24 @@ class AuthStore {
 	}
 
 	/**
-	 * RTDB에서 관리자 목록 로드
+	 * Firestore에서 관리자 목록 로드
 	 *
-	 * /system/settings/admins는 객체 형식으로 저장됨:
-	 * { "uid-user1": true, "uid-user2": true, ... }
+	 * system/settings 문서의 admins 필드에서 관리자 목록을 가져옵니다:
+	 * { admins: { "uid-user1": true, "uid-user2": true, ... } }
 	 *
 	 * 이를 UID 배열로 변환하여 저장합니다.
-	 * Firebase SDK v9+ 모듈식 API를 사용합니다.
 	 */
 	private async loadAdminList() {
-		if (!rtdb) {
-			console.warn('Firebase Realtime Database가 초기화되지 않았습니다.');
+		if (!db) {
+			console.warn('Firebase Firestore가 초기화되지 않았습니다.');
 			return;
 		}
 
 		try {
-			// Firebase SDK v9+ 모듈식 API 사용
-			const adminRef = ref(rtdb, 'system/settings/admins');
-			const snapshot = await get(adminRef);
-			const adminsObj = snapshot.val();
+			// Firestore에서 system/settings 문서 읽기
+			const settingsRef = doc(db, 'system/settings');
+			const snapshot = await getDoc(settingsRef);
+			const adminsObj = snapshot.data()?.admins;
 
 			// 객체에서 UID 배열로 변환 (value가 true인 항목만 포함)
 			if (adminsObj && typeof adminsObj === 'object') {
@@ -107,28 +106,28 @@ class AuthStore {
 	}
 
 	/**
-	 * Firebase Auth 사용자 프로필을 RTDB에 동기화
+	 * Firebase Auth 사용자 프로필을 Firestore에 동기화
 	 *
 	 * 동기화 규칙:
-	 * - photoUrl: RTDB에 값이 없거나 null이거나 공백일 때만 Auth의 photoURL 저장
-	 * - displayName: RTDB에 값이 없을 때만 Auth의 displayName 저장
-	 * - languageCode: RTDB에 값이 없을 때만 브라우저 언어 저장
+	 * - photoUrl: Firestore에 값이 없거나 null이거나 공백일 때만 Auth의 photoURL 저장
+	 * - displayName: Firestore에 값이 없을 때만 Auth의 displayName 저장
+	 * - languageCode: Firestore에 값이 없을 때만 브라우저 언어 저장
 	 * - email, phoneNumber는 동기화하지 않음
 	 * - createdAt, updatedAt은 Cloud Functions가 자동 처리
 	 *
 	 * @param user - Firebase Auth User 객체
 	 */
 	private async syncUserProfile(user: User) {
-		if (!rtdb) {
-			console.warn('Firebase Realtime Database가 초기화되지 않았습니다.');
+		if (!db) {
+			console.warn('Firebase Firestore가 초기화되지 않았습니다.');
 			return;
 		}
 
 		try {
-			// RTDB에서 현재 사용자 데이터 확인
-			const userRef = ref(rtdb, `users/${user.uid}`);
-			const snapshot = await get(userRef);
-			const existingData = snapshot.val() || {};
+			// Firestore에서 현재 사용자 데이터 확인
+			const userRef = doc(db, `users/${user.uid}`);
+			const snapshot = await getDoc(userRef);
+			const existingData = snapshot.data() || {};
 
 			// 동기화할 데이터 준비
 			const updates: Record<string, any> = {};
@@ -153,9 +152,19 @@ class AuthStore {
 				// console.log('languageCode 동기화:', browserLang);
 			}
 
-			// 업데이트할 항목이 있으면 RTDB에 저장
+			// 업데이트할 항목이 있으면 Firestore에 저장
 			if (Object.keys(updates).length > 0) {
-				await update(userRef, updates);
+				// 문서가 존재하지 않으면 setDoc으로 생성, 존재하면 updateDoc으로 업데이트
+				if (!snapshot.exists()) {
+					// 문서가 없을 경우: uid 필드도 추가하여 생성
+					await setDoc(userRef, {
+						uid: user.uid,
+						...updates
+					});
+				} else {
+					// 문서가 있을 경우: 업데이트만 수행
+					await updateDoc(userRef, updates);
+				}
 				// console.log('사용자 프로필 동기화 완료:', updates);
 			} else {
 				// console.log('동기화할 프로필 정보 없음');
@@ -183,7 +192,7 @@ class AuthStore {
 			if (user) {
 				// console.log('사용자 로그인됨:', user.uid);
 
-				// Firebase Auth의 photoURL, displayName을 RTDB에 동기화
+				// Firebase Auth의 photoURL, displayName을 Firestore에 동기화
 				await this.syncUserProfile(user);
 
 				// 관리자 목록 로드

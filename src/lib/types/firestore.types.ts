@@ -29,10 +29,10 @@ export interface UserData {
 	birthMonth?: number;
 	/** 생일 */
 	birthDay?: number;
-	/** 생년월일 (YYYY-MM-DD) */
-	birthYearMonthDay?: string;
-	/** 생월일 (MM-DD) */
-	birthMonthDay?: string;
+	/** 생년월일 (YYYYMMDD 숫자 또는 YYYY-MM-DD 문자열) */
+	birthYearMonthDay?: number | string;
+	/** 생월일 (MMDD 형식 숫자, 예: 1016) */
+	birthMonthDay?: number;
 	/** 자기소개 */
 	bio?: string;
 	/** 계정 생성 시각 */
@@ -177,7 +177,7 @@ export interface ChatInvitationData {
 // ==================== 채팅방 비밀번호 (Chat Room Passwords) ====================
 
 /**
- * 채팅방 비밀번호 데이터 (Firestore 컬렉션: chatRoomPasswords)
+ * 채팅방 비밀번호 데이터 (Firestore 컬렉션: chat-room-passwords)
  */
 export interface ChatRoomPasswordData {
 	/** 채팅방 ID (문서 ID와 동일) */
@@ -187,7 +187,7 @@ export interface ChatRoomPasswordData {
 }
 
 /**
- * 비밀번호 시도 데이터 (Firestore 서브컬렉션: chatRoomPasswords/{roomId}/tries/{uid})
+ * 비밀번호 시도 데이터 (Firestore 서브컬렉션: chat-room-passwords/{roomId}/tries/{uid})
  */
 export interface PasswordTryData {
 	/** 사용자 UID (문서 ID와 동일) */

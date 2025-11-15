@@ -36,16 +36,28 @@
 	 * 현재 페이지가 채팅방인지 확인
 	 * 채팅방 페이지에서는 모바일에서 TopBar를 숨김
 	 */
-	const isChatRoom = $derived($page.url.pathname.startsWith('/chat/room'));
+	const currentRouteId = $derived($page.route.id ?? '');
+	const currentPathname = $derived($page.url.pathname);
+	const isChatRoom = $derived(
+		(currentRouteId ? currentRouteId.startsWith('/chat/room') : false) ||
+			currentPathname.startsWith('/chat/room')
+	);
 
 	// ========================================
 	// v1.0.0: 새 메시지 알림음 시스템
 	// ========================================
 
 	/**
+	 * v1.0.0: 사용자 문서 타입 (newMessageCount 필드 포함)
+	 */
+	interface UserData {
+		newMessageCount?: number;
+	}
+
+	/**
 	 * v1.0.0: 새 메시지 카운트 실시간 구독
 	 */
-	let newMessageCountStore = $state<ReturnType<typeof firestoreStore<number>> | null>(null);
+	let newMessageCountStore = $state<ReturnType<typeof firestoreStore<UserData>> | null>(null);
 
 	/**
 	 * v1.0.0: 알림음 객체 (클라이언트 사이드에서만 초기화)
@@ -68,17 +80,17 @@
 	let previousCount = $state(0);
 
 	/**
-	 * v1.0.0: 로그인 상태에 따라 newMessageCount 구독
+	 * v1.0.0: 로그인 상태에 따라 사용자 문서 구독 (newMessageCount 필드 포함)
 	 */
 	$effect(() => {
 		if (browser && authStore.isAuthenticated && authStore.user?.uid) {
-			const path = `users/${authStore.user.uid}/newMessageCount`;
-			newMessageCountStore = firestoreStore<number>(path);
-			// console.log(`🔔 [알림음] 새 메시지 카운트 구독 시작: ${path}`);
+			const path = `users/${authStore.user.uid}`;
+			newMessageCountStore = firestoreStore<UserData>(path);
+			// console.log(`🔔 [알림음] 사용자 문서 구독 시작 (newMessageCount 필드 포함): ${path}`);
 		} else {
 			newMessageCountStore = null;
 			previousCount = 0;
-			// console.log('🔔 [알림음] 새 메시지 카운트 구독 해제');
+			// console.log('🔔 [알림음] 사용자 문서 구독 해제');
 		}
 	});
 
@@ -94,8 +106,7 @@
 
 		// Svelte store를 구독
 		const unsubscribe = newMessageCountStore.subscribe((state) => {
-			const currentCount = state.data ?? 0;
-			const count = typeof currentCount === 'number' ? currentCount : 0;
+			const count = state.data?.newMessageCount ?? 0;
 
 			// 증가 감지
 			if (count > previousCount && previousCount >= 0) {

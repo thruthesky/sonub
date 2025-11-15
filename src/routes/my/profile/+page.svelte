@@ -88,11 +88,21 @@
 					(birthYear === null || birthMonth === null || birthDay === null) &&
 					userData.birthYearMonthDay
 				) {
-					const parts = userData.birthYearMonthDay.split('-');
-					if (parts.length === 3) {
-						birthYear = parseInt(parts[0]);
-						birthMonth = parseInt(parts[1]);
-						birthDay = parseInt(parts[2]);
+					// birthYearMonthDay가 숫자(YYYYMMDD) 또는 문자열("YYYY-MM-DD") 형식일 수 있음
+					if (typeof userData.birthYearMonthDay === 'number') {
+						// 숫자 형식: YYYYMMDD (예: 19731016)
+						const dateStr = userData.birthYearMonthDay.toString();
+						birthYear = parseInt(dateStr.substring(0, 4), 10);
+						birthMonth = parseInt(dateStr.substring(4, 6), 10);
+						birthDay = parseInt(dateStr.substring(6, 8), 10);
+					} else {
+						// 문자열 형식: "YYYY-MM-DD" (하위 호환성)
+						const parts = userData.birthYearMonthDay.split('-');
+						if (parts.length === 3) {
+							birthYear = parseInt(parts[0], 10);
+							birthMonth = parseInt(parts[1], 10);
+							birthDay = parseInt(parts[2], 10);
+						}
 					}
 				}
 			} else if (result.success && !result.data) {
@@ -284,10 +294,10 @@
 
 			// 생년월일이 모두 선택된 경우에만 저장
 			if (birthYear !== null && birthMonth !== null && birthDay !== null) {
-				// YYYY-MM-DD 형식으로 변환
+				// YYYYMMDD 형식의 숫자로 변환 (예: 19731016)
 				const month = birthMonth.toString().padStart(2, '0');
 				const day = birthDay.toString().padStart(2, '0');
-				updateData.birthYearMonthDay = `${birthYear}-${month}-${day}`;
+				updateData.birthYearMonthDay = parseInt(`${birthYear}${month}${day}`, 10);
 
 				// 미래 날짜 검증
 				const birthDate = new Date(birthYear, birthMonth - 1, birthDay);

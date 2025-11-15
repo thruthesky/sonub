@@ -11,9 +11,9 @@
 	import { authStore } from '$lib/stores/auth.svelte';
 	import Avatar from '$lib/components/user/avatar.svelte';
 	import { m } from '$lib/paraglide/messages';
-	import { rtdb } from '$lib/firebase';
+	import { db } from '$lib/firebase';
 	import { formatShortDate } from '$lib/functions/date.functions';
-import { get, limitToLast, onValue, orderByChild, query, ref, type DatabaseReference } from 'firebase/database';
+	import { collection, getDocs, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 
 	type UserPreview = {
 		uid: string;
@@ -65,7 +65,7 @@ onMount(() => {
 $effect(() => {
 	const uid = authStore.user?.uid ?? null;
 
-	if (!uid || !rtdb) {
+	if (!uid || !db) {
 		recentOpenChats = [];
 		isLoadingRecentOpenChats = false;
 		return;
@@ -73,23 +73,25 @@ $effect(() => {
 
 	isLoadingRecentOpenChats = true;
 
-	const joinsRef = ref(rtdb, `chat-joins/${uid}`);
-	const openQuery = query(joinsRef, orderByChild('openChatListOrder'), limitToLast(5));
+	// chat-joins 컬렉션에서 현재 사용자의 오픈 채팅방만 쿼리
+	const joinsRef = collection(db, 'chat-joins');
+	const openQuery = query(
+		joinsRef,
+		where('uid', '==', uid),
+		where('roomType', '==', 'open'),
+		orderBy('openChatListOrder', 'desc'),
+		limit(5)
+	);
 
-	return onValue(
+	return onSnapshot(
 		openQuery,
 		(snapshot) => {
 			const items: OpenChatPreview[] = [];
 
-			snapshot.forEach((child) => {
-				const value = child.val() ?? {};
-
-				if (value?.roomType !== 'open') {
-					return;
-				}
-
+			snapshot.forEach((doc) => {
+				const value = doc.data();
 				const orderValue = resolveOrderValue(value?.openChatListOrder);
-				const roomId = child.key ?? '';
+				const roomId = value?.roomId ?? doc.id;
 
 				items.push({
 					roomId,
@@ -114,22 +116,22 @@ $effect(() => {
 });
 
 	async function fetchRecentUsers() {
-		if (!rtdb) {
+		if (!db) {
 			isLoadingRecentUsers = false;
 			return;
 		}
 
 		try {
-			const usersRef: DatabaseReference = ref(rtdb, 'users');
-			const recentQuery = query(usersRef, orderByChild('sort_recentWithPhoto'), limitToLast(5));
-			const snapshot = await get(recentQuery);
+			const usersRef = collection(db, 'users');
+			const recentQuery = query(usersRef, orderBy('sort_recentWithPhoto', 'desc'), limit(5));
+			const snapshot = await getDocs(recentQuery);
 
 			const users: UserPreview[] = [];
 
-			snapshot.forEach((child) => {
-				const value = child.val();
+			snapshot.forEach((doc) => {
+				const value = doc.data();
 				users.push({
-					uid: child.key ?? '',
+					uid: doc.id,
 					displayName: value?.displayName ?? '',
 					photoUrl: value?.photoUrl ?? null,
 					sortRecentWithPhoto: value?.sort_recentWithPhoto ?? 0

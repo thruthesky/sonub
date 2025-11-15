@@ -644,9 +644,9 @@ const targetProfileError = $derived(userProfileStore.getError(uidParam));
   - 프로필 로딩 실패
   - 채팅 중 안내
 
-### 3. 메시지 목록 (DatabaseListView)
+### 3. 메시지 목록 (FirestoreListView)
 
-Firebase Realtime Database의 메시지를 실시간으로 표시합니다.
+Cloud Firestore 메시지를 실시간으로 표시합니다.
 
 #### Firebase 데이터 구조
 
@@ -775,8 +775,8 @@ async function handleSendMessage(event: SubmitEvent) {
 
 #### Firebase 저장
 
-- **함수**: `pushData(path, data)`
-- **경로**: `/chat-messages/{auto-generated-key}`
+- **함수**: `addDocument(messagePath, payload)`
+- **경로**: `chats/{roomId}/messages/{auto-id}`
 - **반환**: `{ success: boolean, error?: string }`
 
 ## 다국어 지원
@@ -869,41 +869,37 @@ const payload = {
 - `-` 접두사로 시작하여 Firebase에서 역순 정렬 가능
 - `{roomId}-{timestamp}` 형식으로 방별 필터링 및 시간순 정렬 지원
 
-#### 3. Firebase 저장 메커니즘
+#### 3. Firestore 저장 메커니즘
 
 ```typescript
-// src/lib/stores/database.svelte.ts:362-378
-const result = await pushData('chat-messages', payload);
+// src/routes/chat/room/+page.svelte:448
+const result = await addDocument(messagePath, payload);
 ```
 
 ✅ **검증 완료**:
-- Firebase Realtime Database의 `chat-messages/{자동생성키}` 경로에 저장
-- `push()` 함수로 고유 키 자동 생성 (예: `-NqxK7bF3M...`)
-- 성공 시 생성된 키 반환: `{ success: true, key: "..." }`
-- 실패 시 에러 메시지 반환: `{ success: false, error: "..." }`
+- `messagePath` = `chats/${activeRoomId}/messages`
+- Firestore가 고유 문서 ID를 생성하고 `FirestoreListView`가 실시간 반영
+- 실패 시 `{ success: false, error }` 반환
 
-#### 4. DatabaseListView 설정
+#### 4. FirestoreListView 설정
 
-```typescript
-// src/routes/chat/room/+page.svelte:194-201
-<DatabaseListView
-  path="chat-messages"              // ✅ Firebase 경로
-  pageSize={25}                     // ✅ 한 페이지당 25개 메시지
-  orderBy="roomOrder"               // ✅ 정렬 필드
-  orderPrefix="-{roomId}-"          // ✅ 특정 방의 메시지만 필터링
-  threshold={280}                   // ✅ 스크롤 임계값 (280px)
-  reverse={true}                    // ⚠️ 최신 메시지가 위에 표시됨
+```svelte
+<FirestoreListView
+  path={`chats/${activeRoomId}/messages`}
+  pageSize={30}
+  orderByField="createdAt"
+  orderDirection="desc"
+  scrollTrigger="top"
 />
 ```
 
 ✅ **검증 완료**:
-- `orderPrefix`가 메시지의 `roomOrder` 필드와 정확히 매칭됨
-- 해당 채팅방의 메시지만 정확히 필터링됨
-- 페이지네이션이 정상 동작함
+- 위로 스크롤할 때 `scrollTrigger="top"` 분기 로직이 이전 메시지를 불러온다.
+- 새 메시지가 도착하면 `collectionUnsubscribe`가 자동으로 항목을 삽입한다.
 
 #### 5. 실시간 업데이트 메커니즘
 
-DatabaseListView 컴포넌트가 제공하는 실시간 리스너:
+FirestoreListView 컴포넌트가 제공하는 실시간 리스너:
 
 ```typescript
 // src/lib/components/DatabaseListView.svelte
@@ -1415,9 +1411,9 @@ const isMember = snapshot.exists();
 
 - **2025-11-11**: 초기 사양 작성 및 1:1 채팅 기능 완전 구현
   - URL 파라미터 기반 채팅방 접근 (uid, roomId)
-  - Firebase Realtime Database를 통한 실시간 메시지 동기화
+  - Cloud Firestore 기반 실시간 메시지 동기화
   - 사용자 프로필 실시간 구독 및 표시
-  - DatabaseListView를 통한 메시지 목록 페이지네이션
+  - FirestoreListView를 통한 메시지 목록 페이지네이션
   - 메시지 입력 및 전송 기능
   - 4개 언어 완전 지원 (한국어, 영어, 일본어, 중국어)
   - 반응형 디자인 (데스크톱/모바일)

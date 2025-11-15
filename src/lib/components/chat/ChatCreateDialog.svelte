@@ -17,8 +17,8 @@
 		DialogTitle
 	} from '$lib/components/ui/dialog';
 	import { authStore } from '$lib/stores/auth.svelte';
-	import { ref, push, set } from 'firebase/database';
-	import { rtdb } from '$lib/firebase';
+	import { collection, doc, setDoc } from 'firebase/firestore';
+	import { db } from '$lib/firebase';
 
 	type ChatRoomType = 'group' | 'open';
 
@@ -74,7 +74,7 @@
 			return;
 		}
 
-		if (!rtdb) {
+		if (!db) {
 			errorMessage = '데이터베이스 연결 오류가 발생했습니다.';
 			return;
 		}
@@ -86,23 +86,23 @@
 			const currentUid = authStore.user.uid;
 			const now = Date.now();
 
-			// 1. chat-rooms에 새 채팅방 생성
-			const chatRoomsRef = ref(rtdb, 'chat-rooms');
-			const newRoomRef = push(chatRoomsRef);
-			const roomId = newRoomRef.key;
+			// 1. chats 컬렉션에 새 채팅방 생성
+			const chatsRef = collection(db, 'chats');
+			const newRoomRef = doc(chatsRef);
+			const roomId = newRoomRef.id;
 
 			if (!roomId) {
 				throw new Error('Failed to generate room ID');
 			}
 
-		// 채팅방 데이터 (type에 따라 동적 생성)
-			// createdAt과 memberCount는 Cloud Functions에서 자동으로 설정됨
+			// 채팅방 데이터 (type에 따라 동적 생성)
+			// owner, createdAt, members, memberCount는 Cloud Functions에서 자동으로 설정됨
 			const roomData: Record<string, unknown> = {
 				name: trimmedName,
 				description: roomDescription.trim() || '',
 				type: type,
 				open: isOpenChat, // 그룹챗은 비공개, 오픈챗은 공개
-				owner: currentUid // 채팅방 소유자 UID
+				owner: currentUid // 채팅방 소유자 UID (Cloud Functions가 검증)
 			};
 
 			// type에 따른 추가 필드
@@ -110,13 +110,12 @@
 				roomData.groupListOrder = -now; // 최신순 정렬을 위한 음수 타임스탬프
 			} else {
 				roomData.openListOrder = -now;
-				roomData.memberCount = 1; // 생성자 포함
 			}
 
-			await set(newRoomRef, roomData);
+			await setDoc(newRoomRef, roomData);
 
-			// 2. 생성자를 chat-joins에 추가
-			const joinRef = ref(rtdb, `chat-joins/${currentUid}/${roomId}`);
+			// 2. 생성자를 users/{uid}/chat-joins에 추가
+			const joinRef = doc(db, `users/${currentUid}/chat-joins/${roomId}`);
 			const joinData: Record<string, unknown> = {
 				roomId,
 				roomType: type,
@@ -132,7 +131,7 @@
 				joinData.openListOrder = -now;
 			}
 
-			await set(joinRef, joinData);
+			await setDoc(joinRef, joinData);
 
 			// console.log(`✅ ${isGroupChat ? '그룹' : '오픈'} 채팅방 생성 완료:`, {
 			// 	roomId,

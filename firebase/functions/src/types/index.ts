@@ -87,16 +87,16 @@ export interface UserData {
   updatedAt?: number;
   /** 성별 (M|F) */
   gender?: string;
-  /** 생년월일 (YYYY-MM-DD 형식, 클라이언트에서 저장) */
-  birthYearMonthDay?: string;
+  /** 생년월일 (YYYYMMDD 형식 숫자, 클라이언트에서 저장, 예: 19731016) */
+  birthYearMonthDay?: number | string;
   /** 생년 (Cloud Functions에서 자동 생성) */
   birthYear?: number;
   /** 생월 (Cloud Functions에서 자동 생성) */
   birthMonth?: number;
   /** 생일 (Cloud Functions에서 자동 생성) */
   birthDay?: number;
-  /** 생월일 (MM-DD 형식, Cloud Functions에서 자동 생성) */
-  birthMonthDay?: string;
+  /** 생월일 (MMDD 형식 숫자, Cloud Functions에서 자동 생성, 예: 1016) */
+  birthMonthDay?: number;
 }
 
 /**

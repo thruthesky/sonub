@@ -1,11 +1,11 @@
 /**
  * 사용자 프로필 전용 스토어
  *
- * Firebase Realtime Database의 /users/{uid} 노드를 실시간으로 구독하여
+ * Firestore의 users/{uid} 문서를 실시간으로 구독하여
  * 사용자 프로필 데이터를 중앙에서 관리합니다.
  *
  * 주요 기능:
- * - 사용자 프로필 캐시 (중복 RTDB 리스너 제거)
+ * - 사용자 프로필 캐시 (중복 Firestore 리스너 제거)
  * - 실시간 프로필 동기화
  * - 여러 컴포넌트에서 동일한 프로필 데이터 공유
  *
@@ -24,12 +24,12 @@
  * ```
  */
 
-import { rtdb } from '$lib/firebase';
-import { ref, onValue, off, type Unsubscribe } from 'firebase/database';
+import { db } from '$lib/firebase';
+import { doc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
 
 /**
  * 사용자 프로필 데이터 타입
- * RTDB의 /users/{uid} 노드 구조
+ * Firestore의 users/{uid} 문서 구조
  */
 export interface UserProfile {
 	/** 사용자 닉네임 (필수) */
@@ -62,7 +62,7 @@ interface ProfileCacheItem {
 	loading: boolean;
 	/** 에러 발생 시 에러 객체 */
 	error: Error | null;
-	/** RTDB 리스너 구독 해제 함수 */
+	/** Firestore 리스너 구독 해제 함수 */
 	unsubscribe: Unsubscribe | null;
 }
 
@@ -70,7 +70,7 @@ interface ProfileCacheItem {
  * 사용자 프로필 스토어 클래스
  *
  * Svelte 5 runes를 사용하여 프로필 데이터를 중앙에서 관리합니다.
- * 동일한 uid에 대해 중복 RTDB 리스너를 방지합니다.
+ * 동일한 uid에 대해 중복 Firestore 리스너를 방지합니다.
  */
 class UserProfileStore {
 	/**
@@ -95,9 +95,9 @@ class UserProfileStore {
 			return;
 		}
 
-		// Firebase RTDB가 초기화되지 않은 경우
-		if (!rtdb) {
-			console.error('[UserProfileStore] ❌ Firebase RTDB가 초기화되지 않았습니다.');
+		// Firebase Firestore가 초기화되지 않은 경우
+		if (!db) {
+			console.error('[UserProfileStore] ❌ Firebase Firestore가 초기화되지 않았습니다.');
 			return;
 		}
 
@@ -180,7 +180,7 @@ class UserProfileStore {
 	 */
 	private subscribeToProfile(uid: string): void {
 		// console.log(`[UserProfileStore] ✅ 프로필 구독 시작: ${uid}`);
-		// console.log(`[UserProfileStore] 🔗 RTDB 경로: /users/${uid}`);
+		// console.log(`[UserProfileStore] 🔗 Firestore 경로: users/${uid}`);
 
 		// 초기 캐시 항목 생성 (로딩 상태)
 		const cacheItem: ProfileCacheItem = {
@@ -192,17 +192,17 @@ class UserProfileStore {
 
 		this.cache.set(uid, cacheItem);
 
-		// RTDB 리스너 등록
-		const userRef = ref(rtdb!, `users/${uid}`);
+		// Firestore 리스너 등록
+		const userRef = doc(db!, `users/${uid}`);
 
 		// unsubscribe 변수를 먼저 선언 (초기화 전 접근 문제 해결)
 		let unsubscribe: Unsubscribe;
 
-		unsubscribe = onValue(
+		unsubscribe = onSnapshot(
 			userRef,
 			(snapshot) => {
 				// 데이터 로드 성공
-				const data = snapshot.val() as UserProfile | null;
+				const data = snapshot.data() as UserProfile | null;
 
 				// console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 				// console.log(`[UserProfileStore] 📥 프로필 데이터 수신: ${uid}`);

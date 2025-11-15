@@ -5,8 +5,8 @@
 import { browser } from '$app/environment';
 import { getFirebaseMessaging } from './firebase';
 import { getToken, onMessage, type MessagePayload } from 'firebase/messaging';
-import { rtdb } from './firebase';
-import { ref, set } from 'firebase/database';
+import { db } from './firebase';
+import { doc, setDoc } from 'firebase/firestore';
 import { auth } from './firebase';
 
 // 환경 변수에서 VAPID Key 가져오기
@@ -76,7 +76,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 }
 
 /**
- * FCM 토큰을 발급받고 Realtime Database에 저장하는 함수
+ * FCM 토큰을 발급받고 Firestore에 저장하는 함수
  *
  * @returns {Promise<string | null>} FCM 토큰 또는 null
  *
@@ -162,7 +162,7 @@ export async function requestFcmToken(): Promise<string | null> {
 		// console.log('[FCM 토큰] 토큰 전체:', token);
 		// console.log('[FCM 토큰] 토큰 길이:', token.length);
 
-		// Realtime Database에 토큰 저장
+		// Firestore에 토큰 저장
 		// console.log('[FCM 토큰] 🔵 데이터베이스에 토큰 저장 시작...');
 		await saveFcmTokenToDatabase(token);
 
@@ -179,9 +179,9 @@ export async function requestFcmToken(): Promise<string | null> {
 }
 
 /**
- * FCM 토큰을 Realtime Database에 저장하는 함수
+ * FCM 토큰을 Firestore에 저장하는 함수
  *
- * 저장 경로: /fcm-tokens/{tokenId}
+ * 저장 경로: fcm-tokens/{tokenId}
  * 데이터 구조:
  * {
  *   device: "web" | "android" | "ios",
@@ -196,12 +196,12 @@ async function saveFcmTokenToDatabase(token: string): Promise<void> {
 	// console.log('[FCM 저장] 🔵 토큰 저장 시작');
 	// console.log('[FCM 저장] 토큰 (앞 20자):', token.substring(0, 20) + '...');
 
-	if (!rtdb) {
-		console.error('[FCM 저장] ❌ Realtime Database가 초기화되지 않았습니다.');
-		console.error('[FCM 저장] rtdb 값:', rtdb);
+	if (!db) {
+		console.error('[FCM 저장] ❌ Firestore가 초기화되지 않았습니다.');
+		console.error('[FCM 저장] db 값:', db);
 		return;
 	}
-	// console.log('[FCM 저장] ✅ Realtime Database 확인됨');
+	// console.log('[FCM 저장] ✅ Firestore 확인됨');
 
 	// 현재 로그인된 사용자 UID 가져오기
 	const uid = auth?.currentUser?.uid;
@@ -223,14 +223,13 @@ async function saveFcmTokenToDatabase(token: string): Promise<void> {
 	// console.log('[FCM 저장] 저장할 데이터:', JSON.stringify(tokenData, null, 2));
 
 	try {
-		// /fcm-tokens/{token} 경로에 저장 (토큰 문자열 자체를 키로 사용)
-		const tokenPath = `fcm-tokens/${token}`;
-		// console.log('[FCM 저장] 저장 경로:', tokenPath);
+		// fcm-tokens/{token} 경로에 저장 (토큰 문자열 자체를 문서 ID로 사용)
+		// console.log('[FCM 저장] 저장 경로: fcm-tokens/', token.substring(0, 20) + '...');
 
-		const tokenRef = ref(rtdb, tokenPath);
-		// console.log('[FCM 저장] 🔵 Firebase set() 호출 중...');
+		const tokenRef = doc(db, `fcm-tokens/${token}`);
+		// console.log('[FCM 저장] 🔵 Firebase setDoc() 호출 중...');
 
-		await set(tokenRef, tokenData);
+		await setDoc(tokenRef, tokenData);
 
 		// console.log('[FCM 저장] ✅✅✅ FCM 토큰이 데이터베이스에 저장되었습니다!');
 		// console.log('[FCM 저장] 저장된 토큰 (앞 20자):', token.substring(0, 20) + '...');

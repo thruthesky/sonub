@@ -1,10 +1,5 @@
 {
   "indexes": [
-    // ==================== Users Collection ====================
-
-    /**
-     * 사용자 검색 및 정렬을 위한 복합 인덱스
-     */
     {
       "collectionGroup": "users",
       "queryScope": "COLLECTION",
@@ -47,12 +42,6 @@
         }
       ]
     },
-
-    // ==================== Chats Collection ====================
-
-    /**
-     * 채팅방 목록 조회를 위한 복합 인덱스
-     */
     {
       "collectionGroup": "chats",
       "queryScope": "COLLECTION",
@@ -95,23 +84,6 @@
         }
       ]
     },
-
-    // ==================== Messages Subcollection ====================
-
-    /**
-     * 채팅 메시지 정렬 (서브컬렉션)
-     *
-     * 단일 필드 인덱스는 Firestore가 자동 생성하므로 복합 인덱스만 정의
-     * 현재는 createdAt만 사용하므로 자동 인덱스로 충분
-     */
-
-    // ==================== Chat-Joins Subcollection ====================
-
-    /**
-     * 채팅 참여 목록 정렬 (서브컬렉션)
-     *
-     * 사용자별 채팅방 목록을 다양한 조건으로 정렬
-     */
     {
       "collectionGroup": "chat-joins",
       "queryScope": "COLLECTION_GROUP",
@@ -176,12 +148,6 @@
         }
       ]
     },
-
-    // ==================== Chat-Invitations Subcollection ====================
-
-    /**
-     * 채팅 초대장 정렬 (서브컬렉션)
-     */
     {
       "collectionGroup": "chat-invitations",
       "queryScope": "COLLECTION_GROUP",
@@ -195,30 +161,7 @@
           "order": "DESCENDING"
         }
       ]
-    },
-
-    // ==================== Chat-Favorites Subcollection ====================
-
-    /**
-     * 채팅 즐겨찾기 정렬 (서브컬렉션)
-     *
-     * folderOrder는 단일 필드 인덱스이므로 자동 생성됨
-     */
-
-    // ==================== Stats Collection ====================
-
-    /**
-     * 통계 데이터 조회
-     *
-     * 통계 데이터는 주로 단일 문서 읽기이므로 특별한 인덱스 불필요
-     */
+    }
   ],
-  "fieldOverrides": [
-    /**
-     * TTL (Time-To-Live) 필드 설정
-     *
-     * expiresAt 필드를 가진 문서는 자동으로 삭제됩니다.
-     * (Firestore에서 지원하는 기능이지만, 현재는 사용하지 않음)
-     */
-  ]
+  "fieldOverrides": []
 }

@@ -27,19 +27,25 @@ export {
  * 1:1 채팅방에 입장합니다.
  *
  * 이 함수는 사용자가 1:1 채팅방에 입장할 때 호출됩니다.
- * users/{uid}/chat-joins/{roomId}에 최소한의 정보만 저장하여 Cloud Functions를 트리거합니다.
- * Cloud Functions(onChatJoinCreate)가 자동으로 필요한 필드들을 추가합니다:
+ * users/{uid}/chat-joins/{roomId}에 최소한의 정보를 저장하여 채팅방 참여를 기록합니다.
+ * - 문서가 없으면 새로 생성 (처음 입장 시)
+ * - 문서가 있으면 업데이트 (재입장 시)
+ *
+ * 저장되는 필드:
+ * - roomId: 채팅방 ID
+ * - roomType: 'single'
+ * - partnerUid: 상대방 UID (roomId에서 추출)
+ * - newMessageCount: 0 (읽음 처리)
+ *
+ * Cloud Functions(onChatMessageCreate)는 메시지가 생성될 때 다음 필드들을 자동으로 추가/업데이트합니다:
  * - singleChatListOrder
  * - allChatListOrder
- * - partnerUid
- * - roomType
- * - joinedAt
- *
- * 또한 사용자가 채팅방에 입장할 때마다 newMessageCount를 0으로 초기화하여
- * 모든 메시지를 읽은 것으로 표시합니다.
+ * - lastMessageText
+ * - lastMessageAt
+ * - updatedAt
  *
  * @param db - Firebase Firestore 인스턴스
- * @param roomId - 채팅방 ID
+ * @param roomId - 채팅방 ID (형식: "single-{uid1}-{uid2}")
  * @param uid - 사용자 UID
  *
  * @example
@@ -56,11 +62,24 @@ export function enterSingleChatRoom(
 	roomId: string,
 	uid: string
 ): void {
+	// roomId에서 상대방 UID 추출
+	// roomId 형식: "single-{uid1}-{uid2}"
+	const [, uid1, uid2] = roomId.split('-');
+	const partnerUid = uid1 === uid ? uid2 : uid1;
+
 	const chatJoinRef = doc(db, `users/${uid}/chat-joins/${roomId}`);
-	updateDoc(chatJoinRef, {
-		roomId: roomId,
-		newMessageCount: 0
-	}).catch((error) => {
+
+	// setDoc with merge: true를 사용하여 문서가 없으면 생성, 있으면 업데이트
+	setDoc(
+		chatJoinRef,
+		{
+			roomId: roomId,
+			roomType: 'single',
+			partnerUid: partnerUid,
+			newMessageCount: 0
+		},
+		{ merge: true }
+	).catch((error) => {
 		console.error('1:1 채팅방 입장 실패:', error);
 	});
 }
@@ -96,29 +115,25 @@ export function joinChatRoom(
 	uid: string
 ): void {
 	// 1. 채팅방 멤버로 등록
-	// 중요: 이미 members 필드에 uid가 존재하면 수정하지 않습니다
-	// - 필드 존재 (true/false): 사용자의 알림 설정 유지
-	// - 필드 없음: 최초 입장이므로 true로 설정 (알림 구독)
+	// merge: true를 사용하여 기존 알림 설정 보존
+	// - 문서가 없으면: value: true로 생성 (최초 입장, 알림 구독)
+	// - 문서가 있으면: 기존 value 유지 (사용자의 알림 설정 보존)
 	const memberRef = doc(db, `chats/${roomId}/members/${uid}`);
-	getDoc(memberRef)
-		.then((snapshot) => {
-			if (!snapshot.exists()) {
-				// 문서가 없을 때만 true로 설정 (최초 입장)
-				setDoc(memberRef, { value: true }).catch((error) => {
-					console.error('채팅방 멤버 등록 실패:', error);
-				});
-			}
-			// 이미 문서가 존재하면 사용자의 알림 설정(true/false) 유지
-		})
+	setDoc(memberRef, { value: true }, { merge: true })
 		.catch((error) => {
-			console.error('멤버 상태 확인 실패:', error);
+			console.error('채팅방 멤버 등록 실패:', error);
 		});
 
 	// 2. newMessageCount를 0으로 초기화 (메시지를 모두 읽은 것으로 표시)
+	// setDoc with merge: true를 사용하여 문서가 없으면 생성, 있으면 업데이트
 	const chatJoinRef = doc(db, `users/${uid}/chat-joins/${roomId}`);
-	updateDoc(chatJoinRef, {
-		newMessageCount: 0
-	}).catch((error) => {
+	setDoc(
+		chatJoinRef,
+		{
+			newMessageCount: 0
+		},
+		{ merge: true }
+	).catch((error) => {
 		console.error('newMessageCount 초기화 실패:', error);
 	});
 }
@@ -192,6 +207,22 @@ export async function togglePinChatRoom(
 
 	// 현재 핀 상태 읽기
 	const snapshot = await getDoc(chatJoinRef);
+
+	// 문서가 없으면 생성 후 핀 설정
+	if (!snapshot.exists()) {
+		await setDoc(
+			chatJoinRef,
+			{
+				roomId,
+				roomType: 'single', // 기본값
+				pin: true
+			},
+			{ merge: true }
+		);
+		// console.log('✅ 채팅방 문서 생성 및 핀 설정 완료:', roomId);
+		return true; // 핀 설정됨
+	}
+
 	const data = snapshot.data();
 	const currentPinValue = data?.pin ?? false;
 	const isPinned = currentPinValue === true;

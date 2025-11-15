@@ -542,10 +542,10 @@ npm run deploy
 
 ### Security Rules 배포
 
-Security Rules는 `firebase/database.rules.json` 파일에 추가되었습니다.
+채팅 초대 컬렉션은 Firestore 규칙(`firebase/firestore.rules`)에 정의되어 있습니다.
 
 ```bash
-firebase deploy --only database
+firebase deploy --only firestore:rules
 ```
 
 ## 테스트 시나리오

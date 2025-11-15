@@ -21,8 +21,8 @@
 	} from '$lib/functions/storage.functions';
 	import type { FileUploadStatus } from '$lib/types/chat.types';
 	import { authStore } from '$lib/stores/auth.svelte';
-	import { rtdb } from '$lib/firebase';
-	import { ref, update } from 'firebase/database';
+	import { db } from '$lib/firebase';
+	import { doc, updateDoc } from 'firebase/firestore';
 	import { m } from '$lib/paraglide/messages';
 
 	// Props
@@ -240,7 +240,7 @@
 			return;
 		}
 
-		if (!rtdb) {
+		if (!db) {
 			error = 'Firebase 연결이 없습니다.';
 			return;
 		}
@@ -249,14 +249,14 @@
 		error = null;
 
 		try {
-			const messageRef = ref(rtdb, `chat-messages/${messageId}`);
+			const messageRef = doc(db, `chat-messages/${messageId}`);
 			const updates = {
 				text: text.trim(),
 				urls,
 				editedAt: Date.now()
 			};
 
-			await update(messageRef, updates);
+			await updateDoc(messageRef, updates);
 
 			// 저장 완료
 			saving = false;

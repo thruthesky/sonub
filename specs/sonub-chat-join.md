@@ -43,11 +43,11 @@ dependencies: []
 - [Firebase Realtime Database 구조 가이드](./sonub-firebase-database-structure.md) 문서 숙지
 
 ## Workflow
-1. 사용자가 채팅 메시지를 전송하면 클라이언트는 `/chat-messages/{messageId}` 노드에 메시지를 저장합니다.
+1. 사용자가 채팅 메시지를 전송하면 클라이언트는 `chats/{roomId}/messages/{messageId}` 서브컬렉션에 메시지를 저장합니다.
 2. Firebase Cloud Functions의 `onChatMessageCreate` 트리거가 메시지 생성을 감지합니다.
-3. Cloud Functions가 자동으로 `/chat-joins/{uid}/{roomId}` 노드를 생성/업데이트합니다.
-4. `onChatJoinCreate` 트리거가 chat-joins 노드 생성을 감지하여 `joinedAt` 필드를 추가합니다.
-5. 클라이언트는 `/chat-joins/{uid}/` 경로를 구독하여 채팅방 목록을 실시간으로 표시합니다.
+3. Cloud Functions가 자동으로 `users/{uid}/chat-joins/{roomId}` 문서를 생성/업데이트합니다.
+4. `onChatJoinCreate` 트리거가 chat-joins 문서 생성을 감지하여 `joinedAt` 필드를 추가합니다.
+5. 클라이언트는 `users/{uid}/chat-joins` 컬렉션을 구독하여 채팅방 목록을 실시간으로 표시합니다.
 
 ## Detail Items
 
@@ -55,44 +55,62 @@ dependencies: []
 
 ## 워크플로우
 
-1. **메시지 전송**: 사용자가 채팅 메시지를 전송
-2. **Cloud Functions 트리거**: `onChatMessageCreate`가 메시지 생성 감지
-3. **chat-joins 생성/업데이트**: Cloud Functions가 자동으로 양쪽 사용자의 chat-joins 노드 생성/업데이트
+1. **메시지 전송**: 사용자가 `chats/{roomId}/messages` 서브컬렉션에 채팅 메시지를 전송
+2. **Cloud Functions 트리거**: `onChatMessageCreate`가 메시지 생성 감지 (트리거 경로: `chats/{roomId}/messages/{messageId}`)
+3. **chat-joins 생성/업데이트**: Cloud Functions가 자동으로 양쪽 사용자의 `users/{uid}/chat-joins/{roomId}` 문서 생성/업데이트
 4. **joinedAt 추가**: `onChatJoinCreate` 트리거가 `joinedAt` 필드 추가
-5. **실시간 동기화**: 클라이언트가 채팅방 목록을 실시간으로 표시
+5. **실시간 동기화**: 클라이언트가 Firestore 쿼리로 채팅방 목록을 실시간 표시
 
 ## 개요
 
-채팅방 참여 정보(`chat-joins`)는 각 사용자가 참여한 채팅방 목록을 관리하는 데이터 구조입니다.
+채팅방 참여 정보(`chat-joins`)는 각 사용자가 참여한 채팅방 목록을 관리하는 Firestore 서브컬렉션입니다.
 
 **주요 특징:**
-- 경로: `/chat-joins/{uid}/{roomId}/`
+- 경로: `users/{uid}/chat-joins/{roomId}`
 - 각 사용자별로 참여한 모든 채팅방 정보를 저장
 - 채팅방 목록 화면에서 사용
 - Cloud Functions가 자동으로 생성/업데이트
 - 클라이언트는 읽음 처리 및 PIN 기능만 직접 수정
+- **중요**: 메시지를 보내면 상대방의 chat-joins가 자동 생성됨
 
-## 데이터베이스 구조
+## 데이터베이스 구조 (Firestore)
 
 ### 경로 구조
 
 ```
-/chat-joins/
+users/
 ├── {uid1}/
-│   ├── {roomId1}/
-│   │   ├── roomId: string
-│   │   ├── roomType: "single" | "group" | "open"
-│   │   ├── partnerUid: string (1:1 채팅만)
-│   │   ├── lastMessageText: string
-│   │   ├── lastMessageAt: number
-│   │   ├── joinedAt: number
-│   │   ├── updatedAt: number
-│   │   ├── listOrder: string
-│   │   └── newMessageCount: number
-│   └── {roomId2}/
-│       └── ...
+│   └── chat-joins/  (서브컬렉션)
+│       ├── {roomId1}/  (문서)
+│       │   ├── roomId: string
+│       │   ├── roomType: "single" | "group" | "open"
+│       │   ├── partnerUid: string (1:1 채팅만)
+│       │   ├── lastMessageText: string
+│       │   ├── lastMessageAt: number (타임스탬프)
+│       │   ├── joinedAt: number (타임스탬프)
+│       │   ├── updatedAt: number (타임스탬프)
+│       │   ├── singleChatListOrder: string (1:1 채팅만)
+│       │   ├── allChatListOrder: string
+│       │   └── newMessageCount: number
+│       └── {roomId2}/
+│           └── ...
 └── {uid2}/
-    └── ...
+    └── chat-joins/
+        └── ...
+```
+
+**메시지 저장 경로:**
+```
+chats/
+└── {roomId}/  (채팅방 문서)
+    └── messages/  (메시지 서브컬렉션)
+        ├── {messageId1}/
+        │   ├── senderUid: string
+        │   ├── text: string
+        │   ├── createdAt: Timestamp
+        │   └── roomId: string
+        └── {messageId2}/
+            └── ...
 ```
 
 ### 필드 상세 설명
@@ -253,32 +271,55 @@ if (chatJoin.roomType === 'single') {
 - ✅ `newMessageCount` 자동 증가 (수신자만 increment(1))
 - ✅ `joinedAt` 자동 생성 (최초 생성 시에만)
 
-## Cloud Functions 동작 흐름
+## Cloud Functions 동작 흐름 (Firestore)
 
 ### 1. 메시지 생성 시 (onChatMessageCreate)
 
-**트리거 경로**: `/chat-messages/{messageId}`
+**트리거 경로**: `chats/{roomId}/messages/{messageId}`
+
+**중요**: 메시지는 반드시 `chats/{roomId}/messages` 서브컬렉션에 저장되어야 합니다.
+- ✅ 올바른 경로: `chats/single-uid1-uid2/messages/{messageId}`
+- ❌ 잘못된 경로: `messages/{messageId}` (Cloud Functions가 트리거되지 않음)
 
 **수행 작업:**
-1. 프로토콜 메시지 건너뛰기
+1. 프로토콜 메시지 건너뛰기 (시스템 메시지)
 2. 필수 필드 유효성 검사 (`senderUid`, `roomId`)
-3. 1:1 채팅 감지 (`isSingleChat` 함수 사용)
-4. 양쪽 사용자의 `chat-joins` 노드 생성/업데이트:
-   - **발신자**: `listOrder` = timestamp (읽음 상태)
-   - **수신자**: `listOrder` = 200+timestamp (읽지 않은 상태), `newMessageCount` = increment(1)
+3. 1:1 채팅인지 확인 (`isSingleChat` 함수 사용)
+4. **양쪽 사용자의 `users/{uid}/chat-joins/{roomId}` 자동 생성/업데이트** (중요!):
+   - **발신자**:
+     - `roomId`, `roomType: "single"`, `partnerUid` 설정
+     - `lastMessageText`, `lastMessageAt`, `updatedAt` 업데이트
+     - `singleChatListOrder` = timestamp (읽음 상태, prefix 없음)
+     - `allChatListOrder` = timestamp
+   - **수신자 (상대방)**:
+     - `roomId`, `roomType: "single"`, `partnerUid: senderUid` 설정
+     - `lastMessageText`, `lastMessageAt`, `updatedAt` 업데이트
+     - `singleChatListOrder` = "200" + timestamp (읽지 않은 상태)
+     - `allChatListOrder` = "200" + timestamp
+     - `newMessageCount` = increment(1)
+5. Firestore batch.commit()으로 원자적 업데이트
 
-**코드 참조**: [firebase/functions/src/handlers/chat.handler.ts](../firebase/functions/src/handlers/chat.handler.ts)
+**핵심 포인트:**
+- 메시지를 보내면 **상대방의 chat-joins가 자동으로 생성됩니다** (처음 메시지일 경우)
+- 상대방이 채팅방 목록에서 즉시 새 채팅방을 확인할 수 있습니다
+- `batch.set(..., {merge: true})`를 사용하여 문서가 없으면 생성, 있으면 업데이트
+
+**코드 참조**: [firebase/functions/src/handlers/chat.handler.ts](../firebase/functions/src/handlers/chat.handler.ts) - `handleChatMessageCreate()` 함수
 
 ### 2. chat-joins 노드 생성 시 (onChatJoinCreate)
 
-**트리거 경로**: `/chat-joins/{uid}/{roomId}`
+**트리거 경로**: `users/{uid}/chat-joins/{roomId}`
 
 **수행 작업:**
 1. `joinedAt` 필드 확인
 2. `joinedAt`이 없으면 현재 타임스탬프로 설정
-3. 이미 있으면 건너뜀
+3. 이미 있으면 건너뜀 (최초 생성 시에만 설정)
+4. 채팅방 타입별로 정렬 필드 자동 설정:
+   - 1:1 채팅: `singleChatListOrder`, `allChatListOrder`
+   - 그룹 채팅: `groupChatListOrder`, `openAndGroupChatListOrder`, `allChatListOrder`
+   - 오픈 채팅: `openChatListOrder`, `openAndGroupChatListOrder`, `allChatListOrder`
 
-**코드 참조**: [firebase/functions/src/handlers/chat.handler.ts](../firebase/functions/src/handlers/chat.handler.ts)
+**코드 참조**: [firebase/functions/src/handlers/chat.handler.ts](../firebase/functions/src/handlers/chat.handler.ts) - `handleChatJoinCreate()` 함수
 
 ## 클라이언트 구현 예시
 

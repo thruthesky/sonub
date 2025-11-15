@@ -2,8 +2,8 @@
 	import { Card } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import { Alert } from '$lib/components/ui/alert';
-	import { rtdb } from '$lib/firebase';
-	import { ref, push, set } from 'firebase/database';
+	import { db } from '$lib/firebase';
+	import { collection, doc, setDoc } from 'firebase/firestore';
 	import { saveTestUsersToFirebase } from '$lib/utils/admin-service';
 	import { generateTestUsers } from '$lib/utils/test-user-generator';
 	import { m } from '$lib/paraglide/messages';
@@ -74,8 +74,8 @@
 	}
 
 	async function handleGenerate(): Promise<void> {
-		if (!rtdb) {
-			errorMessage = 'Firebase Realtime Database 초기화가 필요합니다.';
+		if (!db) {
+			errorMessage = 'Firestore 초기화가 필요합니다.';
 			return;
 		}
 
@@ -93,7 +93,7 @@
 		lastTimestamp = null;
 
 		try {
-			const baseRef = ref(rtdb, 'test/data');
+			const baseRef = collection(db, 'test/data');
 
 			for (let i = 0; i < sanitizedCount; i += 1) {
 				const timestamp = Date.now() + i;
@@ -104,15 +104,15 @@
 					[`${category}CreatedAt`]: timestamp
 				};
 
-				const newRef = push(baseRef);
-				await set(newRef, payload);
+				const newRef = doc(baseRef);
+				await setDoc(newRef, payload);
 
 				progress = i + 1;
 				lastCategory = category;
 				lastTimestamp = timestamp;
 
-				if (newRef.key) {
-					recentKeys = [newRef.key, ...recentKeys].slice(0, 5);
+				if (newRef.id) {
+					recentKeys = [newRef.id, ...recentKeys].slice(0, 5);
 				}
 			}
 		} catch (error) {

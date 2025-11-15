@@ -14,6 +14,7 @@ import {setGlobalOptions} from "firebase-functions/v2";
 import {
   onDocumentCreated,
   onDocumentDeleted,
+  onDocumentUpdated,
   onDocumentWritten,
 } from "firebase-functions/v2/firestore";
 import * as logger from "firebase-functions/logger";
@@ -43,7 +44,7 @@ import {
 import { handleNewMessageCountWritten } from "./handlers/chat.new-message-count.handler";
 
 // 상수 정의
-const FIREBASE_REGION = "asia-southeast1";
+const FIREBASE_REGION = "asia-northeast3";
 
 
 // Firebase Admin 초기화
@@ -72,7 +73,7 @@ setGlobalOptions({
  *    - photoUrl 처리
  *    - users/{uid} 문서 업데이트
  *    - stats 문서 동기화
- *    - stats/counters/user +1 (전체 사용자 통계 업데이트)
+ *    - system/stats 문서의 userCount +1 (전체 사용자 통계 업데이트)
  */
 export const onUserCreate = onDocumentCreated(
   {
@@ -99,7 +100,7 @@ export const onUserCreate = onDocumentCreated(
  * 사용자 문서 필드 변경 시 트리거 (통합)
  *
  * 트리거 경로: users/{uid}
- * 트리거 이벤트: onDocumentWritten (생성, 수정, 삭제 모두 감지)
+ * 트리거 이벤트: onDocumentUpdated (수정만 감지)
  *
  * 수행 작업:
  * - displayName 필드 변경 시: handleUserDisplayNameUpdate 호출
@@ -108,10 +109,10 @@ export const onUserCreate = onDocumentCreated(
  * - gender 필드 변경 시: handleUserGenderUpdate 호출
  *
  * 참고:
- * - Firestore는 문서당 하나의 onDocumentWritten 트리거만 허용
+ * - onDocumentCreated와 분리하여 생성과 수정을 별도 처리
  * - 따라서 모든 필드 변경을 하나의 트리거에서 감지하고 각 핸들러 호출
  */
-export const onUserFieldsWrite = onDocumentWritten(
+export const onUserFieldsWrite = onDocumentUpdated(
   {
     document: "users/{uid}",
     region: FIREBASE_REGION,
@@ -160,7 +161,7 @@ export const onUserFieldsWrite = onDocumentWritten(
 /**
  * 채팅 메시지 생성 시 트리거되는 Cloud Function
  *
- * 트리거 경로: messages/{messageId}
+ * 트리거 경로: chats/{roomId}/messages/{messageId}
  *
  * 수행 작업:
  * 1. 프로토콜 메시지 건너뛰기 (시스템 메시지)
@@ -188,7 +189,7 @@ export const onUserFieldsWrite = onDocumentWritten(
  */
 export const onChatMessageCreate = onDocumentCreated(
   {
-    document: "messages/{messageId}",
+    document: "chats/{roomId}/messages/{messageId}",
     region: FIREBASE_REGION,
   },
   async (event) => {

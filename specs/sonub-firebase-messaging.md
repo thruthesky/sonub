@@ -1473,36 +1473,22 @@ export async function getFcmTokensByUid(uid: string): Promise<string[]> {
 ```
 
 **핵심 최적화**:
-- ❌ **잘못된 방식**: `tokensRef.once("value")` → 모든 토큰 가져오기 → 클라이언트 필터링
+- ❌ **잘못된 방식**: Firestore 컬렉션의 모든 문서를 읽어 클라이언트에서 필터링
   ```typescript
-  // 수백만 개 토큰을 모두 가져오므로 메모리/성능 문제 발생
-  const snapshot = await tokensRef.once("value");
-  const allTokens = snapshot.val();
-  const filtered = Object.entries(allTokens)
-    .filter(([_, data]) => data.uid === uid)
-    .map(([token, _]) => token);
+  const snapshot = await getDocs(collection(db, 'fcm-tokens'));
+  const filtered = snapshot.docs.filter(doc => doc.data().uid === uid);
   ```
 
-- ✅ **올바른 방식**: `orderByChild("uid").equalTo(uid)` → 서버측 필터링
+- ✅ **올바른 방식**: 서버 측 where 필터 사용
   ```typescript
-  // Firebase 서버에서 필터링하여 필요한 토큰만 가져옴
-  const snapshot = await tokensRef
-    .orderByChild("uid")
-    .equalTo(uid)
-    .once("value");
+  import { collection, query, where, getDocs } from 'firebase/firestore';
+
+  const q = query(collection(db, 'fcm-tokens'), where('uid', '==', uid));
+  const snapshot = await getDocs(q);
+  const tokens = snapshot.docs.map(doc => doc.id);
   ```
 
-**데이터베이스 인덱스 설정** (이미 적용됨):
-```json
-// firebase/database.rules.json
-{
-  "fcm-tokens": {
-    ".read": true,
-    ".write": true,
-    ".indexOn": ["uid"]  // ✅ uid 필드 인덱스
-  }
-}
-```
+Firestore에서는 단일 필드 where 쿼리에 별도 인덱스가 필요하지 않습니다. 복합 조건을 추가할 경우 `firestore.indexes.json`에 색인을 등록하세요.
 
 #### 7.1.2 여러 사용자 토큰 조회
 

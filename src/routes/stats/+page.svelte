@@ -1,23 +1,25 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import { rtdb } from '$lib/firebase';
+	import { db } from '$lib/firebase';
 	import { onMount } from 'svelte';
-	import { onValue, ref } from 'firebase/database';
+	import { doc, onSnapshot } from 'firebase/firestore';
 
 	let userCount: number | null = null;
 	let loading = true;
 
 	onMount(() => {
-		if (!browser || !rtdb) {
+		if (!browser || !db) {
 			loading = false;
 			return;
 		}
 
-		const userCounterRef = ref(rtdb, 'stats/counters/user');
-		const unsubscribe = onValue(
-			userCounterRef,
+		// Firestore: system/stats 문서의 userCount 필드
+		const counterRef = doc(db, 'system/stats');
+		const unsubscribe = onSnapshot(
+			counterRef,
 			(snapshot) => {
-				const value = snapshot.val();
+				const data = snapshot.data();
+				const value = data?.userCount;
 				userCount = typeof value === 'number' ? value : 0;
 				loading = false;
 			},
@@ -45,7 +47,7 @@
 				{userCount ?? 0}명
 			{/if}
 		</p>
-		<p class="stats-description">가입 시 Cloud Functions가 `/stats/counters/user`를 자동으로 증가시킵니다.</p>
+		<p class="stats-description">가입 시 Cloud Functions가 `/system/stats` 문서의 `userCount`를 자동으로 증가시킵니다.</p>
 	</div>
 </section>
 

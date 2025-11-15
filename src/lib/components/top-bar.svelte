@@ -19,25 +19,34 @@
 	import { m } from '$lib/paraglide/messages';
 	import { firestoreStore } from '$lib/stores/firestore.svelte';
 
+	/**
+	 * 사용자 문서 타입 (newMessageCount 필드 포함)
+	 */
+	interface UserData {
+		newMessageCount?: number;
+		// ... 기타 필드들
+	}
+
 	// 로그아웃 처리 중 상태
 	let isSigningOut = $state(false);
 
 	// v1.0.0: 새 메시지 카운트 실시간 구독
-	let newMessageCountStore = $state<ReturnType<typeof firestoreStore<number>> | null>(null);
+	let newMessageCountStore = $state<ReturnType<typeof firestoreStore<UserData>> | null>(null);
 	let newMessageCount = $state(0);
 
 	/**
-	 * v1.0.0: 로그인 상태에 따라 newMessageCount 구독
+	 * v1.0.0: 로그인 상태에 따라 사용자 문서 구독 (newMessageCount 필드 포함)
+	 * /users/{uid} 문서의 newMessageCount 필드를 실시간으로 구독합니다.
 	 */
 	$effect(() => {
 		if (authStore.isAuthenticated && authStore.user?.uid) {
-			const path = `users/${authStore.user.uid}/newMessageCount`;
-			newMessageCountStore = firestoreStore<number>(path);
-			// console.log(`📊 새 메시지 카운트 구독 시작: ${path}`);
+			const path = `users/${authStore.user.uid}`;
+			newMessageCountStore = firestoreStore<UserData>(path);
+			// console.log(`📊 사용자 문서 구독 시작 (newMessageCount 필드 포함): ${path}`);
 		} else {
 			newMessageCountStore = null;
 			newMessageCount = 0;
-			// console.log('📊 새 메시지 카운트 구독 해제 (로그아웃)');
+			// console.log('📊 사용자 문서 구독 해제 (로그아웃)');
 		}
 	});
 
@@ -53,7 +62,7 @@
 
 		// Svelte store를 구독 ($로 시작하는 변수 사용 불가 → untrack 사용)
 		const unsubscribe = newMessageCountStore.subscribe((state) => {
-			const count = state.data ?? 0;
+			const count = state.data?.newMessageCount ?? 0;
 			newMessageCount = typeof count === 'number' ? count : 0;
 		});
 
