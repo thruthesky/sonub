@@ -164,6 +164,74 @@ formatShortDate(undefined, 'en-US')
 // → ""
 ```
 
+### 3.3. `formatChatMessageDate()`
+
+채팅 메시지용 날짜/시간 문자열을 반환합니다. 오늘/올해/과거 연도에 따라 다른 형식으로 표시합니다.
+
+**시그니처**:
+```typescript
+function formatChatMessageDate(
+  value?: number | null,
+  locale: string = 'en-US'
+): string
+```
+
+**파라미터**:
+- `value` (optional): Unix 타임스탬프 (밀리초). `undefined` 또는 `null`인 경우 빈 문자열 반환
+- `locale` (optional): BCP 47 locale 코드 (기본값: `'en-US'`)
+
+**반환값**:
+- `string`:
+  - **오늘 날짜**: `"시:분 ap"` (예: `"3:45 PM"`, `"오후 3:45"`)
+  - **올해 (오늘 제외)**: `"월/일 시:분 ap"` (예: `"11/14 3:45 PM"`, `"11월 14일 오후 3:45"`)
+  - **올해가 아님**: `"년 월 일 시:분 ap"` (예: `"2024년 11월 14일 오후 3:45"`)
+
+**비즈니스 로직**:
+1. 현재 날짜(`new Date()`)와 입력 타임스탬프를 비교
+2. 오늘 날짜인 경우 → 시간만 표시 (시:분 AM/PM)
+3. 올해이지만 오늘이 아닌 경우 → 월/일 + 시간 표시
+4. 올해가 아닌 경우 → 년/월/일 + 시간 표시
+
+**Pure Function 보장**:
+- ⚠️ **주의**: `new Date()`를 사용하여 현재 시간을 얻으므로, 엄격한 의미의 순수 함수는 아닙니다
+- 하지만 동일 시점에 실행하면 동일한 결과를 보장합니다
+- 테스트 시 시간을 모킹하여 테스트 가능합니다
+
+**사용 목적**:
+- 채팅 메시지 타임스탬프에 최적화된 형식
+- 최근 메시지는 짧게, 과거 메시지는 상세하게 표시
+- 각 국가의 날짜/시간 표시 관습을 자동으로 적용
+
+**예시**:
+```typescript
+// 현재: 2025년 11월 15일 오후 5:30:00
+
+// 오늘 날짜 (2025-11-15 15:45)
+formatChatMessageDate(1731656700000, 'ko-KR')
+// → "오후 3:45"
+
+formatChatMessageDate(1731656700000, 'en-US')
+// → "3:45 PM"
+
+// 올해 (2025-11-10 14:20)
+formatChatMessageDate(1731224400000, 'ko-KR')
+// → "11월 10일 오후 2:20"
+
+formatChatMessageDate(1731224400000, 'en-US')
+// → "11/10 2:20 PM"
+
+// 과거 연도 (2024-11-14 10:30)
+formatChatMessageDate(1699959000000, 'ko-KR')
+// → "2024년 11월 14일 오전 10:30"
+
+formatChatMessageDate(1699959000000, 'en-US')
+// → "11/14/2024 10:30 AM"
+
+// 빈 값 처리
+formatChatMessageDate(null, 'en-US')
+// → ""
+```
+
 ## 4. 사용 방법
 
 ### 4.1. Svelte 클라이언트에서 사용
@@ -175,7 +243,8 @@ Svelte 클라이언트는 `src/lib/functions/date.functions.ts`를 통해 간접
 import { getLocale } from '$lib/paraglide/runtime.js';
 import {
   formatLongDate as formatLongDatePure,
-  formatShortDate as formatShortDatePure
+  formatShortDate as formatShortDatePure,
+  formatChatMessageDate as formatChatMessageDatePure
 } from '$shared/date.pure-functions';
 
 function resolveLocale(): string {
@@ -194,12 +263,16 @@ export function formatLongDate(timestamp?: number | null): string {
 export function formatShortDate(value?: number | null): string {
   return formatShortDatePure(value, resolveLocale());
 }
+
+export function formatChatMessageDate(value?: number | null): string {
+  return formatChatMessageDatePure(value, resolveLocale());
+}
 ```
 
 **컴포넌트에서 사용**:
 ```svelte
 <script lang="ts">
-  import { formatLongDate, formatShortDate } from '$lib/functions/date.functions';
+  import { formatLongDate, formatShortDate, formatChatMessageDate } from '$lib/functions/date.functions';
 
   const timestamp = 1699876845000;
 </script>
@@ -207,6 +280,7 @@ export function formatShortDate(value?: number | null): string {
 <div>
   <p>긴 형식: {formatLongDate(timestamp)}</p>
   <p>짧은 형식: {formatShortDate(timestamp)}</p>
+  <p>채팅 메시지: {formatChatMessageDate(timestamp)}</p>
 </div>
 ```
 
@@ -218,11 +292,12 @@ Firebase Functions는 shared 폴더에서 직접 import하여 사용합니다.
 // firebase/functions/src/handlers/notification.handler.ts
 import {
   formatLongDate,
-  formatShortDate
+  formatShortDate,
+  formatChatMessageDate
 } from '../../../../shared/date.pure-functions';
 
 export async function sendNotification(timestamp: number, userLocale: string) {
-  const formattedDate = formatLongDate(timestamp, userLocale);
+  const formattedDate = formatChatMessageDate(timestamp, userLocale);
 
   // 알림 발송 로직...
   await admin.messaging().send({
@@ -387,6 +462,7 @@ Svelte 컴포넌트와 Firebase Functions에서의 사용을 검증합니다.
 | 버전  | 날짜       | 변경 내용                                      |
 | ----- | ---------- | ---------------------------------------------- |
 | 1.0.0 | 2025-11-12 | 최초 작성: 순수 함수 분리 및 shared 모듈 생성 |
+| 1.1.0 | 2025-11-15 | `formatChatMessageDate()` 함수 추가: 채팅 메시지에 최적화된 날짜/시간 포맷 |
 
 ## 8. 관련 문서
 

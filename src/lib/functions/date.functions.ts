@@ -8,7 +8,8 @@
 import { getLocale } from '$lib/paraglide/runtime.js';
 import {
 	formatLongDate as formatLongDatePure,
-	formatShortDate as formatShortDatePure
+	formatShortDate as formatShortDatePure,
+	formatChatMessageDate as formatChatMessageDatePure
 } from '$shared/date.pure-functions';
 
 /**
@@ -50,4 +51,19 @@ export function formatLongDate(timestamp?: number | null): string {
  */
 export function formatShortDate(value?: number | null): string {
 	return formatShortDatePure(value, resolveLocale());
+}
+
+/**
+ * 채팅 메시지용 날짜/시간 문자열을 반환합니다.
+ *
+ * Paraglide의 현재 locale을 자동으로 사용합니다.
+ * - 오늘 날짜이면: "시:분 ap" (예: "3:45 PM", "오후 3:45")
+ * - 오늘이 아니지만 올해이면: "월/일 시:분 ap" (예: "11/14 3:45 PM", "11월 14일 오후 3:45")
+ * - 올해가 아니면: "x년 x월 x일 시:분 ap" (예: "2024년 11월 14일 오후 3:45")
+ *
+ * @param value - Unix 타임스탬프 (밀리초)
+ * @returns 채팅 메시지용 날짜/시간 문자열
+ */
+export function formatChatMessageDate(value?: number | null): string {
+	return formatChatMessageDatePure(value, resolveLocale());
 }

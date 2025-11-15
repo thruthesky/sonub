@@ -1,13 +1,13 @@
 ---
 name: sonub-functions-date-functions
 title: 날짜·시간 순수 함수 명세
-version: 1.2.0
+version: 1.3.0
 description: 날짜/시간 i18n 처리를 위한 순수 함수와 Intl 활용 가이드
 author: JaeHo Song
 email: thruthesky@gmail.com
 license: GPL-3.0
 created: 2025-11-11
-updated: 2025-11-11
+updated: 2025-11-15
 step: 30
 priority: "*"
 dependencies:
@@ -91,11 +91,35 @@ export function formatShortDate(value?: number | null): string {
 }
 ```
 
-- **용도**: 채팅 목록, 알림 목록 등에서 “오늘” 기준으로 시간을 간결하게 보여줄 때 사용합니다.
+- **용도**: 채팅 목록, 알림 목록 등에서 "오늘" 기준으로 시간을 간결하게 보여줄 때 사용합니다.
 - **출력 규칙**:
   - 오늘 날짜 → `HH:MM AM/PM` (로케일 기반 12시간제)
   - 오늘 이전 → `YYYY/MM/DD`
-- **주의**: 반환값이 빈 문자열이면 화면에서 “데이터 없음” UI를 별도로 처리합니다.
+- **주의**: 반환값이 빈 문자열이면 화면에서 "데이터 없음" UI를 별도로 처리합니다.
+
+### 1.3 `formatChatMessageDate(value?: number | null): string`
+
+**파일**: `src/lib/functions/date.functions.ts`
+
+```ts
+import { formatChatMessageDate as formatChatMessageDatePure } from '$shared/date.pure-functions';
+
+export function formatChatMessageDate(value?: number | null): string {
+  return formatChatMessageDatePure(value, resolveLocale());
+}
+```
+
+- **용도**: 채팅 메시지의 타임스탬프를 표시할 때 사용합니다. 오늘/올해/과거 연도에 따라 다른 형식으로 표시합니다.
+- **출력 규칙**:
+  - **오늘 날짜**: `"시:분 ap"` (예: `"3:45 PM"`, `"오후 3:45"`)
+  - **올해 (오늘 제외)**: `"월/일 시:분 ap"` (예: `"11/14 3:45 PM"`, `"11월 14일 오후 3:45"`)
+  - **올해가 아님**: `"년 월 일 시:분 ap"` (예: `"2024년 11월 14일 오후 3:45"`)
+- **사용처**: `src/routes/chat/room/+page.svelte` (message-row의 타임스탬프 표시)
+- **특징**:
+  - 최근 메시지는 짧게 표시 (시간만)
+  - 과거 메시지는 상세하게 표시 (날짜 포함)
+  - Intl API를 활용하여 각 국가의 날짜/시간 표시 관습을 자동으로 적용
+- **주의**: 반환값이 빈 문자열이면 화면에서 "데이터 없음" UI를 별도로 처리합니다.
 
 ---
 
@@ -191,5 +215,6 @@ function formatRelative(from: Date, to = new Date(), locale = 'ko-KR') {
 | 날짜 | 작업자 | 변경 내용 |
 | ---- | ------ | -------- |
 | 2025-11-11 | Codex Agent | 최초 작성 |
-| 2025-11-11 | Codex Agent | `formatDate` 함수와 Intl 가이드를 문문화, 구조 정리 |
+| 2025-11-11 | Codex Agent | `formatDate` 함수와 Intl 가이드를 문서화, 구조 정리 |
 | 2025-11-11 | Codex Agent | `formatLongDate`, `formatShortDate`로 개편하고 사용처를 최신화 |
+| 2025-11-15 | Claude Code | `formatChatMessageDate()` 함수 추가: 채팅 메시지 타임스탬프에 최적화된 날짜/시간 포맷 |

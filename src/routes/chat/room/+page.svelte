@@ -22,7 +22,7 @@
 		togglePinChatRoom,
 		inviteUserToChatRoom
 	} from '$lib/functions/chat.functions';
-	import { formatLongDate } from '$lib/functions/date.functions';
+	import { formatChatMessageDate } from '$lib/functions/date.functions';
 	import {
 		uploadChatFile,
 		deleteChatFile,
@@ -825,9 +825,9 @@
 	 * 드롭 (drop)
 	 * - 파일을 드롭할 때 호출
 	 */
-	async function handleDrop(event: DragEvent) {
-		event.preventDefault();
-		event.stopPropagation();
+async function handleDrop(event: DragEvent) {
+	event.preventDefault();
+	event.stopPropagation();
 
 		isDragging = false;
 		dragCounter = 0;
@@ -839,9 +839,17 @@
 
 		// console.log(`📦 드롭된 파일 개수: ${files.length}`);
 
-		// 파일 처리 (handleFileSelect와 동일한 로직)
-		await processFiles(Array.from(files));
-	}
+	// 파일 처리 (handleFileSelect와 동일한 로직)
+	await processFiles(Array.from(files));
+}
+
+/**
+ * 메시지 리스트 등 비드랍 영역에서 기본 드롭 동작만 차단
+ */
+function preventDrop(event: DragEvent) {
+	event.preventDefault();
+	event.stopPropagation();
+}
 
 	/**
 	 * 파일 처리 공통 함수
@@ -1058,15 +1066,13 @@
 		</section>
 	{:else}
 		<!-- v1.2.0: 드래그 앤 드롭 지원 메시지 목록 -->
-		<div
-			class="message-list-section"
-			role="region"
-			aria-label="채팅 메시지 영역"
-			ondragenter={handleDragEnter}
-			ondragover={handleDragOver}
-			ondragleave={handleDragLeave}
-			ondrop={handleDrop}
-		>
+			<div
+				class="message-list-section"
+				role="region"
+				aria-label="채팅 메시지 영역"
+				ondragover={preventDrop}
+				ondrop={preventDrop}
+			>
 			{#if canRenderMessages}
 				{#key roomOrderPrefix}
 					<DatabaseListView
@@ -1153,7 +1159,7 @@
 											</div>
 										{/if}
 									</div>
-									<span class="message-timestamp">{formatLongDate(message.createdAt)}</span>
+									<span class="message-timestamp">{formatChatMessageDate(message.createdAt)}</span>
 								</div>
 							</article>
 						{/snippet}
@@ -1208,26 +1214,7 @@
 				</div>
 			{/if}
 
-			<!-- v1.2.0: 드래그 앤 드롭 오버레이 -->
-			{#if isDragging}
-				<div class="drag-drop-overlay" role="region" aria-label="파일 드래그 앤 드롭 안내">
-					<div class="drag-drop-content">
-						<!-- 파일 아이콘 애니메이션 -->
-						<svg class="drag-drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-							/>
-						</svg>
-						<!-- 안내 텍스트 -->
-						<p class="drag-drop-title">파일을 여기에 놓으세요</p>
-						<p class="drag-drop-subtitle">이미지, 동영상, 문서 등 다양한 파일을 업로드할 수 있습니다</p>
-					</div>
-				</div>
-			{/if}
-		</div>
+			</div>
 
 		<!-- 파일 미리보기 Grid -->
 		{#if uploadingFiles.length > 0}
@@ -1345,7 +1332,14 @@
 		{/if}
 
 		<!-- 입력창 폼 -->
-		<form class="composer-form" onsubmit={handleSendMessage}>
+			<form
+				class="composer-form"
+				onsubmit={handleSendMessage}
+				ondragenter={handleDragEnter}
+				ondragover={handleDragOver}
+				ondragleave={handleDragLeave}
+				ondrop={handleDrop}
+			>
 			<!-- 파일 업로드 버튼 (카메라 아이콘) -->
 			<button
 				type="button"
@@ -1384,12 +1378,12 @@
 				bind:value={composerText}
 				disabled={composerDisabled || isSending}
 			/>
-			<button
-				type="submit"
-				class="composer-button cursor-pointer"
-				disabled={composerDisabled || isSending || (!composerText.trim() && uploadingFiles.length === 0)}
-				aria-label={isSending ? m.chatSending() : m.chatSend()}
-			>
+				<button
+					type="submit"
+					class="composer-button cursor-pointer"
+					disabled={composerDisabled || isSending || (!composerText.trim() && uploadingFiles.length === 0)}
+					aria-label={isSending ? m.chatSending() : m.chatSend()}
+				>
 				<!-- 전송 아이콘 (종이비행기) -->
 				<svg
 					class="w-6 h-6"
@@ -1397,15 +1391,34 @@
 					stroke="currentColor"
 					viewBox="0 0 24 24"
 					stroke-width="2"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
-					/>
-				</svg>
-			</button>
-		</form>
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+						/>
+					</svg>
+				</button>
+
+				{#if isDragging}
+					<div class="drag-drop-overlay" role="region" aria-label="파일 드래그 앤 드롭 안내">
+						<div class="drag-drop-content">
+							<!-- 파일 아이콘 애니메이션 -->
+							<svg class="drag-drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+								/>
+							</svg>
+							<!-- 안내 텍스트 -->
+							<p class="drag-drop-title">파일을 여기에 놓으세요</p>
+							<p class="drag-drop-subtitle">이미지, 동영상, 문서 등 다양한 파일을 업로드할 수 있습니다</p>
+						</div>
+					</div>
+				{/if}
+			</form>
 
 		{#if sendError}
 			<p class="composer-error">{sendError}</p>
@@ -1585,11 +1598,11 @@
 	 * 입력창 폼 스타일
 	 * 고정 높이, shrink-0으로 축소 방지
 	 */
-	.composer-form {
-		@apply flex items-center gap-2 md:gap-3;
-		/* 축소 방지 */
-		@apply shrink-0;
-	}
+		.composer-form {
+			@apply relative flex items-center gap-2 md:gap-3;
+			/* 축소 방지 */
+			@apply shrink-0;
+		}
 
 	/* 파일 미리보기 컨테이너 */
 	.file-preview-container {

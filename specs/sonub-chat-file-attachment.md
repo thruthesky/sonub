@@ -27,6 +27,7 @@ tags: chat, file-upload, firebase-storage, attachment, svelte5, realtime, instan
 - ✅ 파일 미리보기 Grid UI (Storage URL로 실시간 표시)
 - ✅ **원형 프로그레스바 진행률 표시** (v1.2.0) - SVG 원형 프로그레스바와 부드러운 애니메이션
 - ✅ **드래그 앤 드롭 파일 업로드** (v1.2.0) - 파일을 채팅창에 드래그하여 간편하게 업로드
+- ✅ 드롭 존: 채팅 입력창(composer) 영역에서만 드롭 가능 (메시지 목록은 미반응)
 - ✅ 파일 삭제 기능 (Firebase Storage에서 실제 삭제)
 - ✅ Firebase Storage에 파일 저장
 - ✅ RTDB에 URL만 저장하여 용량 최소화
@@ -1003,6 +1004,11 @@ svelte-check found 0 errors and 1170 warnings in 19 files
 - [x] **코드 리팩토링**: `handleFileSelect` 함수를 `processFiles` 공통 함수 사용하도록 변경
 - [x] `processFiles()` 함수로 파일 선택 및 드래그 앤 드롭 로직 통합
 - [x] 중복 코드 제거 및 유지보수성 향상
+
+### v1.2.1 (2025-11-15)
+- [x] **드래그 앤 드롭 드롭존 위치 변경**: 메시지 리스트 대신 채팅 입력창(composer) 영역에서만 드롭 가능하도록 변경
+- [x] 메시지 영역에서는 기본 드롭 동작만 차단하고 업로드는 실행하지 않음
+- [x] 기존 드롭 오버레이를 composer 영역에 표시하도록 이동
 - [x] `npm run check` 실행 및 통과 (0 errors)
 - [x] SED 스펙 문서 업데이트 (v1.2.0)
 
