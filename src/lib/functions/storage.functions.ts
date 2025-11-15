@@ -60,7 +60,7 @@ export async function uploadChatFile(
 				// 업로드 진행률 계산
 				const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
 				onProgress?.(progress);
-				console.log(`📤 업로드 진행률: ${progress}% (${file.name})`);
+				// console.log(`📤 업로드 진행률: ${progress}% (${file.name})`);
 			},
 			(error) => {
 				// 업로드 실패
@@ -71,7 +71,7 @@ export async function uploadChatFile(
 				// 업로드 성공 - URL만 반환
 				try {
 					const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-					console.log('✅ 파일 업로드 성공:', downloadUrl);
+					// console.log('✅ 파일 업로드 성공:', downloadUrl);
 					resolve(downloadUrl);
 				} catch (error) {
 					console.error('❌ 다운로드 URL 가져오기 실패:', error);
@@ -304,14 +304,14 @@ export async function deleteChatFile(url: string): Promise<void> {
 	try {
 		// URL에서 파일 경로 추출
 		const filePath = getFilePathFromUrl(url);
-		console.log(`🗑️ 파일 삭제 시작: ${filePath}`);
+		// console.log(`🗑️ 파일 삭제 시작: ${filePath}`);
 
 		// Storage 참조 생성
 		const storageRef = ref(storage, filePath);
 
 		// 파일 삭제
 		await deleteObject(storageRef);
-		console.log(`✅ 파일 삭제 완료: ${filePath}`);
+		// console.log(`✅ 파일 삭제 완료: ${filePath}`);
 	} catch (error) {
 		console.error('❌ 파일 삭제 실패:', error);
 		throw error;

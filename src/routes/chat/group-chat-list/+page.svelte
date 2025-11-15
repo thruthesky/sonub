@@ -44,7 +44,7 @@
 	 */
 	function handleRoomCreated(event: CustomEvent<{ roomId: string }>) {
 		const { roomId } = event.detail;
-		console.log('✅ 채팅방 생성 완료, 이동:', roomId);
+		// console.log('✅ 채팅방 생성 완료, 이동:', roomId);
 		void goto(`/chat/room?roomId=${roomId}`);
 	}
 
@@ -52,7 +52,7 @@
 	 * 친구 찾기 메뉴 클릭 핸들러
 	 */
 	function handleFindFriends() {
-		console.log('친구 찾기 메뉴 클릭됨');
+		// console.log('친구 찾기 메뉴 클릭됨');
 		// TODO: 친구 찾기 기능 구현
 	}
 
@@ -84,7 +84,7 @@
 	 * 검색 메뉴 클릭 핸들러
 	 */
 	function handleSearch() {
-		console.log('검색 메뉴 클릭됨');
+		// console.log('검색 메뉴 클릭됨');
 		// TODO: 검색 기능 구현
 	}
 
@@ -121,7 +121,7 @@
 
 		try {
 			const isPinned = await togglePinChatRoom(rtdb, roomId, uid, roomType);
-			console.log(`✅ 채팅방 핀 ${isPinned ? '설정' : '해제'} 완료:`, roomId);
+			// console.log(`✅ 채팅방 핀 ${isPinned ? '설정' : '해제'} 완료:`, roomId);
 		} catch (error) {
 			console.error('채팅방 핀 토글 실패:', error);
 		}
@@ -131,8 +131,8 @@
 	const chatJoinPath = $derived.by(() => {
 		const uid = authStore.user?.uid;
 		const path = uid ? `chat-joins/${uid}` : '';
-		console.log('🔍 [Group Chat List Debug] User UID:', uid);
-		console.log('🔍 [Group Chat List Debug] Chat join path:', path);
+		// console.log('🔍 [Group Chat List Debug] User UID:', uid);
+		// console.log('🔍 [Group Chat List Debug] Chat join path:', path);
 		return path;
 	});
 
@@ -218,7 +218,9 @@
 					reverse: true
 				}}
 				{#if chatJoinPath}
-					{console.log('🔍 [Group Chat List Debug] DatabaseListView props:', dbListViewProps)}
+					<!--
+						// console.log('🔍 [Group Chat List Debug] DatabaseListView props:', dbListViewProps)
+					-->
 				{/if}
 				<DatabaseListView
 					path={chatJoinPath}
@@ -228,25 +230,29 @@
 					reverse={true}
 				>
 					{#snippet item(itemData, index)}
-						{console.log('🔍 [Group Chat List Debug] Item received:', {
-							index,
-							key: itemData.key,
-							hasData: !!itemData.data,
-							data: itemData.data
-						})}
+						<!--
+							// console.log('🔍 [Group Chat List Debug] Item received:', {
+							// 	index,
+							// 	key: itemData.key,
+							// 	hasData: !!itemData.data,
+							// 	data: itemData.data
+							// })
+						-->
 						{@const join = (itemData.data ?? {}) as ChatJoinData}
 						{@const roomId = (join.roomId ?? itemData.key ?? '') as string}
 						{@const roomType = (join.roomType ?? join.type ?? 'group').toString()}
 						{@const openAndGroupChatListOrder = join.openAndGroupChatListOrder ?? null}
-						{console.log('🔍 [Group Chat List Debug] Join data:', {
-							roomId,
-							roomType,
-							openAndGroupChatListOrder,
-							lastMessageText: join.lastMessageText,
-							lastMessageAt: join.lastMessageAt,
-							newMessageCount: join.newMessageCount,
-							allFields: Object.keys(join)
-						})}
+						<!--
+							// console.log('🔍 [Group Chat List Debug] Join data:', {
+							// 	roomId,
+							// 	roomType,
+							// 	openAndGroupChatListOrder,
+							// 	lastMessageText: join.lastMessageText,
+							// 	lastMessageAt: join.lastMessageAt,
+							// 	newMessageCount: join.newMessageCount,
+							// 	allFields: Object.keys(join)
+							// })
+						-->
 						{@const lastMessage =
 							typeof join.lastMessageText === 'string' && join.lastMessageText.trim()
 								? join.lastMessageText

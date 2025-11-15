@@ -33,11 +33,11 @@
 		if (authStore.isAuthenticated && authStore.user?.uid) {
 			const path = `users/${authStore.user.uid}/newMessageCount`;
 			newMessageCountStore = rtdbStore<number>(path);
-			console.log(`📊 새 메시지 카운트 구독 시작: ${path}`);
+			// console.log(`📊 새 메시지 카운트 구독 시작: ${path}`);
 		} else {
 			newMessageCountStore = null;
 			newMessageCount = 0;
-			console.log('📊 새 메시지 카운트 구독 해제 (로그아웃)');
+			// console.log('📊 새 메시지 카운트 구독 해제 (로그아웃)');
 		}
 	});
 
@@ -69,7 +69,7 @@
 		isSigningOut = true;
 		try {
 			await signOut(auth);
-			console.log('로그아웃 성공');
+			// console.log('로그아웃 성공');
 			await goto('/');
 		} catch (error) {
 			console.error('로그아웃 에러:', error);

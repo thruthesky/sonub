@@ -47,7 +47,7 @@
 
 		// 포그라운드 메시지 수신 리스너 등록
 		subscribeOnMessage((payload) => {
-			console.log('[FCM Test] 포그라운드 메시지 수신:', payload);
+			// console.log('[FCM Test] 포그라운드 메시지 수신:', payload);
 			lastMessage = payload;
 
 			// Toast 알림 표시

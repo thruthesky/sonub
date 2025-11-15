@@ -1,21 +1,15 @@
 ---
-name: top-bar.svelte
-description: top-bar 컴포넌트
+title: top-bar.svelte
+type: component
+path: src/lib/components/top-bar.svelte
+status: active
 version: 1.0.0
-type: svelte-component
-category: component
-original_path: src/lib/components/top-bar.svelte
+last_updated: 2025-11-15
 ---
-
-# top-bar.svelte
 
 ## 개요
 
-**파일 경로**: `src/lib/components/top-bar.svelte`
-**파일 타입**: svelte-component
-**카테고리**: component
-
-top-bar 컴포넌트
+이 파일은 `src/lib/components/top-bar.svelte`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -26,18 +20,61 @@ top-bar 컴포넌트
 	 *
 	 * 사용자 로그인 상태에 따라 다른 메뉴를 표시하는 반응형 네비게이션 바입니다.
 	 * TailwindCSS와 shadcn-svelte Button 컴포넌트를 사용합니다.
+	 *
+	 * v1.0.0:
+	 * - 새 메시지 알림 배지 추가: /users/{uid}/newMessageCount 실시간 구독
+	 * - 사용자 프로필 사진에 빨간 배지로 읽지 않은 메시지 수 표시
 	 */
 
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { authStore } from '$lib/stores/auth.svelte';
 	import { signOut } from 'firebase/auth';
-	import { auth } from '$lib/firebase';
+	import { auth, rtdb } from '$lib/firebase';
 	import { goto } from '$app/navigation';
-import Avatar from '$lib/components/user/avatar.svelte';
-import { m } from '$lib/paraglide/messages';
+	import Avatar from '$lib/components/user/avatar.svelte';
+	import { m } from '$lib/paraglide/messages';
+	import { rtdbStore } from '$lib/stores/database.svelte';
 
 	// 로그아웃 처리 중 상태
 	let isSigningOut = $state(false);
+
+	// v1.0.0: 새 메시지 카운트 실시간 구독
+	let newMessageCountStore = $state<ReturnType<typeof rtdbStore<number>> | null>(null);
+	let newMessageCount = $state(0);
+
+	/**
+	 * v1.0.0: 로그인 상태에 따라 newMessageCount 구독
+	 */
+	$effect(() => {
+		if (authStore.isAuthenticated && authStore.user?.uid) {
+			const path = `users/${authStore.user.uid}/newMessageCount`;
+			newMessageCountStore = rtdbStore<number>(path);
+			// console.log(`📊 새 메시지 카운트 구독 시작: ${path}`);
+		} else {
+			newMessageCountStore = null;
+			newMessageCount = 0;
+			// console.log('📊 새 메시지 카운트 구독 해제 (로그아웃)');
+		}
+	});
+
+	/**
+	 * v1.0.0: 새 메시지 개수 추출
+	 * Svelte store를 구독하여 reactive 변수에 값 저장
+	 */
+	$effect(() => {
+		if (!newMessageCountStore) {
+			newMessageCount = 0;
+			return;
+		}
+
+		// Svelte store를 구독 ($로 시작하는 변수 사용 불가 → untrack 사용)
+		const unsubscribe = newMessageCountStore.subscribe((state) => {
+			const count = state.data ?? 0;
+			newMessageCount = typeof count === 'number' ? count : 0;
+		});
+
+		return () => unsubscribe();
+	});
 
 	/**
 	 * 로그아웃 처리
@@ -48,7 +85,7 @@ import { m } from '$lib/paraglide/messages';
 		isSigningOut = true;
 		try {
 			await signOut(auth);
-			console.log('로그아웃 성공');
+			// console.log('로그아웃 성공');
 			await goto('/');
 		} catch (error) {
 			console.error('로그아웃 에러:', error);
@@ -154,15 +191,24 @@ import { m } from '$lib/paraglide/messages';
 					<!-- 로딩 중 -->
 					<div class="h-10 w-10 animate-pulse rounded-full bg-gray-200"></div>
 				{:else if authStore.isAuthenticated && authStore.user}
-					<!-- 로그인 상태: 사용자 아바타 -->
-					<a
-						href="/my/profile"
-						class="cursor-pointer hover:opacity-80 transition-opacity"
-						aria-label={m.navMyProfile()}
-						title={authStore.user.displayName || authStore.user.email || m.navMyProfile()}
-					>
-						<Avatar uid={authStore.user?.uid} size={40} />
-					</a>
+					<!-- v1.0.0: 로그인 상태: 사용자 아바타 + 새 메시지 배지 -->
+					<div class="relative">
+						<a
+							href="/my/profile"
+							class="cursor-pointer hover:opacity-80 transition-opacity"
+							aria-label={m.navMyProfile()}
+							title={authStore.user.displayName || authStore.user.email || m.navMyProfile()}
+						>
+							<Avatar uid={authStore.user?.uid} size={40} />
+						</a>
+
+						<!-- v1.0.0: 새 메시지 배지 -->
+						{#if newMessageCount > 0}
+							<div class="absolute -top-1 -right-1 flex items-center justify-center min-w-5 h-5 px-1.5 bg-red-500 rounded-full border-2 border-white shadow-md new-message-badge">
+								<span class="text-xs font-bold text-white leading-none">{newMessageCount > 99 ? '99+' : newMessageCount}</span>
+							</div>
+						{/if}
+					</div>
 				{:else}
 					<!-- 비로그인 상태: 로그인 버튼 -->
 					<Button variant="ghost" size="sm" href="/user/login" class="cursor-pointer">
@@ -198,12 +244,32 @@ import { m } from '$lib/paraglide/messages';
 	</div>
 </nav>
 
+<style lang="postcss">
+	/**
+	 * v1.0.0: 새 메시지 알림 배지 스타일
+	 */
+
+	/* 배지 컨테이너 - 펄스 애니메이션만 적용 */
+	.new-message-badge {
+		animation: badge-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+	}
+
+	/* 펄스 애니메이션 (은은한 효과) */
+	@keyframes badge-pulse {
+		0%,
+		100% {
+			opacity: 1;
+			transform: scale(1);
+		}
+		50% {
+			opacity: 0.9;
+			transform: scale(1.05);
+		}
+	}
+</style>
+
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

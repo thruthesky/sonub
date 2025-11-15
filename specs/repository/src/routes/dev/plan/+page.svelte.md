@@ -1,21 +1,15 @@
 ---
-name: +page.svelte
-description: +page 페이지
+title: +page.svelte
+type: component
+path: src/routes/dev/plan/+page.svelte
+status: active
 version: 1.0.0
-type: svelte-component
-category: route-page
-original_path: src/routes/dev/plan/+page.svelte
+last_updated: 2025-11-15
 ---
-
-# +page.svelte
 
 ## 개요
 
-**파일 경로**: `src/routes/dev/plan/+page.svelte`
-**파일 타입**: svelte-component
-**카테고리**: route-page
-
-+page 페이지
+이 파일은 `src/routes/dev/plan/+page.svelte`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -229,7 +223,7 @@ original_path: src/routes/dev/plan/+page.svelte
 					<span class="todo-number">9</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">채팅 메시지 첨부파일 업로드</Card.Title>
-						<span class="todo-badge todo-badge--pending">📋 예정</span>
+						<span class="todo-badge todo-badge--done">✅ 완료</span>
 					</div>
 				</div>
 			</Card.Header>
@@ -255,17 +249,17 @@ original_path: src/routes/dev/plan/+page.svelte
 					<span class="todo-number">10</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">새 채팅 메시지 카운트 및 화면 표시</Card.Title>
-						<span class="todo-badge todo-badge--pending">📋 예정</span>
+						<span class="todo-badge todo-badge--done">✅ 완료</span>
 					</div>
 				</div>
 			</Card.Header>
 			<Card.Content>
 				<ul class="todo-list">
-					<li>실시간으로 <code>/chat-joins/{'{uid}'}/{'{roomId}'}/newMessageCount</code>를 구독하여 채팅방별 읽지 않은 메시지 수를 관리</li>
-					<li>채팅방 목록과 탭에 숫자 뱃지를 표시하고 99개 초과 시 `99+`로 축약 표기</li>
-					<li>채팅방 화면 상단 헤더에 새 메시지 개수를 노출해 사용자가 마지막 읽은 위치를 파악하도록 돕기</li>
-					<li>최신 메시지까지 읽으면 newMessageCount를 0으로 초기화하고 하이라이트 효과 제거</li>
-					<li>새 메시지가 도착하면 목록 항목에 색상/애니메이션 강조를 적용해 즉시 인지 가능하도록 처리</li>
+					<li>실시간으로 <code>/chat-joins/{'{uid}'}/{'{roomId}'}/newMessageCount</code>를 구독하여 각 채팅방의 읽지 않은 메시지 수를 추적</li>
+					<li>채팅방 목록 카드와 탭에 숫자 뱃지를 표시하고 99개 초과 시 `99+`로 축약하여 노출</li>
+					<li>채팅방 화면 상단에 "새 메시지 X개" 안내 배너를 보여주어 마지막 읽은 위치를 빠르게 파악</li>
+					<li>사용자가 최신 메시지까지 읽으면 newMessageCount를 0으로 초기화하고 강조 효과를 제거</li>
+					<li>새 메시지가 도착하면 목록 항목에 하이라이트 애니메이션을 적용해 즉시 인지 가능하도록 처리</li>
 				</ul>
 			</Card.Content>
 		</Card.Root>
@@ -304,14 +298,8 @@ original_path: src/routes/dev/plan/+page.svelte
 			</Card.Header>
 			<Card.Content>
 				<ul class="todo-list">
-					<li>메시지 삭제 기능 (클라이언트 UI + Cloud Functions로 정합성 유지)</li>
-					<li>메시지 수정 기능 및 수정 표시</li>
-					<li>특정 메시지에 답장(quote) 기능 추가</li>
-					<li>메시지 좋아요/리액션 기능 제공</li>
-					<li>@멘션 기능으로 특정 사용자 호출 및 알림 발송</li>
-					<li>읽음 표시: 상대방이 메시지를 읽었는지 상태 표시</li>
-					<li>채팅 알림음 설정 페이지에서 사용자별 기본 알림음 on/off 제어</li>
-					<li>채팅방별 알림음 토글 및 중요 채팅방 강조음 선택 기능 제공</li>
+					<li>채팅방 내 단일 메시지를 삭제할 수 있는 옵션 제공 (소프트 삭제 + Cloud Functions 정합성 유지)</li>
+					<li>메시지 수정 UI와 수정 이력 표시</li>
 				</ul>
 			</Card.Content>
 		</Card.Root>
@@ -425,28 +413,28 @@ original_path: src/routes/dev/plan/+page.svelte
 					<div>
 						<h4 class="todo-subtitle">15-1. 성별/기본 필터 옵션</h4>
 						<ul class="todo-list">
-							<li><code>/users/{'{uid}'}/gender</code> 필드를 활용한 남성/여성/전체 필터 제공</li>
-							<li>사진 보유 여부, 최근 활동 여부 등의 추가 필터 지원</li>
-							<li>정렬 방식: 최신 가입, 최근 활동, 사진 보유 우선 등</li>
-							<li>필터 변경 시 DatabaseListView를 재구독하여 결과를 즉시 반영</li>
+							<li><code>/users/{'{uid}'}/gender</code> 필드를 활용한 남/여/전체 필터 노출</li>
+							<li>사진 보유 여부, 최근 접속 여부 등 기본 필터 조합 제공</li>
+							<li>정렬: 최신 가입순, 최근 활동순, 사진 있는 사용자 우선</li>
+							<li>필터 값 변경 시 DatabaseListView를 재구독하여 실시간 반영</li>
 						</ul>
 					</div>
 					<div>
 						<h4 class="todo-subtitle">15-2. 추천/탐색 UX</h4>
 						<ul class="todo-list">
-							<li>랜덤 매칭 버튼으로 조건에 맞는 사용자 한 명을 즉시 추천</li>
-							<li>그리드/리스트 전환 토글로 다양한 레이아웃 제공</li>
-							<li>프로필 카드에 사진, 닉네임, 연령/지역 등 핵심 정보 표시</li>
+							<li>랜덤 매칭 버튼으로 조건에 맞는 사용자 한 명을 즉시 제안</li>
+							<li>그리드/리스트 전환 토글 제공 (모바일/데스크톱 대응)</li>
+							<li>프로필 카드에는 프로필 사진, 닉네임, 연령대/지역 등의 핵심 정보 표시</li>
 							<li>즐겨찾기(핀) 기능으로 관심 사용자를 빠르게 다시 찾기</li>
 						</ul>
 					</div>
 					<div>
 						<h4 class="todo-subtitle">15-3. 채팅 연결 플로우</h4>
 						<ul class="todo-list">
-							<li>CTA 클릭 시 `/chat/room?uid={'{targetUid}'}` 경로로 이동하여 채팅 시작</li>
-							<li>상대 온라인 여부를 인디케이터로 표기</li>
-							<li>차단/신고된 사용자는 결과에서 제외하거나 경고 메시지 노출</li>
-							<li>Cloud Functions의 채팅방 생성 및 멤버 등록 로직을 재사용</li>
+							<li>카드 CTA → `/chat/room?uid={'{targetUid}'}` 경로로 이동하여 1:1 채팅 시작</li>
+							<li>채팅 시작 전 상대방이 온라인인지 여부를 인디케이터로 표시</li>
+							<li>차단/신고 사용자에 대해서는 결과에서 제외하거나 경고 메시지 표시</li>
+							<li>Cloud Functions에서 채팅방 생성과 기본 멤버 등록 로직 재사용</li>
 						</ul>
 					</div>
 				</div>
@@ -517,11 +505,34 @@ original_path: src/routes/dev/plan/+page.svelte
 			</Card.Content>
 		</Card.Root>
 
-		<!-- 17. 다음 버전 기능 -->
+		<!-- 17. 나중에 추가해야 할 기능 -->
 		<Card.Root class="todo-card">
 			<Card.Header>
 				<div class="flex items-start gap-3">
 					<span class="todo-number">17</span>
+					<div class="flex flex-col gap-1">
+						<Card.Title class="text-xl">나중에 추가해야 할 기능</Card.Title>
+						<span class="todo-badge todo-badge--pending">📋 예정</span>
+					</div>
+				</div>
+			</Card.Header>
+			<Card.Content>
+				<ul class="todo-list">
+					<li>특정 메시지에 답장(quote) 기능 추가하여 원문 일부를 함께 표시</li>
+					<li>메시지에 좋아요(리액션) 기능으로 간단한 피드백 제공</li>
+					<li>@멘션 기능으로 특정 사용자를 호출하고 알림 트리거</li>
+					<li>상대방 읽음 여부(1:1 및 그룹) 표시: 마지막 읽음 타임스탬프 기반 배지</li>
+					<li>채팅 알림음 설정 페이지에서 사용자별 기본 알림음 on/off 제어</li>
+					<li>채팅방별 알림음 토글 및 중요 채팅방 강조음 선택 기능 제공</li>
+				</ul>
+			</Card.Content>
+		</Card.Root>
+
+		<!-- 18. 다음 버전 기능 -->
+		<Card.Root class="todo-card">
+			<Card.Header>
+				<div class="flex items-start gap-3">
+					<span class="todo-number">18</span>
 					<div class="flex flex-col gap-1">
 						<Card.Title class="text-xl">다음 버전 기능</Card.Title>
 						<span class="todo-badge todo-badge--pending">📋 예정</span>
@@ -531,7 +542,7 @@ original_path: src/routes/dev/plan/+page.svelte
 			<Card.Content>
 				<div class="space-y-4">
 					<div>
-						<h4 class="todo-subtitle">17-1. 서브 채팅방 (Sub Chat Room)</h4>
+						<h4 class="todo-subtitle">18-1. 서브 채팅방 (Sub Chat Room)</h4>
 						<ul class="todo-list">
 							<li>
 								<strong>용도:</strong> 내가 운영 중인 여러 개의 채팅방을 하나로 묶어서 하나의
@@ -558,7 +569,7 @@ original_path: src/routes/dev/plan/+page.svelte
 						</ul>
 					</div>
 					<div>
-						<h4 class="todo-subtitle">17-2. 관리자 페이지 (Dashboard) 및 관리자 기능</h4>
+						<h4 class="todo-subtitle">18-2. 관리자 페이지 (Dashboard) 및 관리자 기능</h4>
 						<ul class="todo-list">
 							<li>관리자 권한 시스템 구현 (<code>/users/{'{uid}'}/isAdmin: boolean</code>)</li>
 							<li>
@@ -677,18 +688,6 @@ original_path: src/routes/dev/plan/+page.svelte
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
-
-## 작업 이력 (SED Log)
-
-| 날짜 | 작업자 | 변경 내용 |
-| ---- | ------ | -------- |
-| 2025-11-14 | Codex Agent | 13번 항목을 남/여 회원 찾기 기능 중심으로 개편하고 콕 포인트 관련 설명을 제거 |
-| 2025-11-14 | Codex Agent | 10번에 새 채팅 메시지 카운트 기능을 추가하고 하위 항목 번호를 전체적으로 재정렬 |
-| 2025-11-14 | Codex Agent | 12번에 채팅 마무리 기능 패키지를 추가하고 이후 카드 번호를 1씩 증가 |
+- 2025-11-15: 스펙 문서 생성

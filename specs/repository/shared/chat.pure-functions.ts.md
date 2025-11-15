@@ -1,21 +1,15 @@
 ---
-name: chat.pure-functions.ts
-description: chat.pure-functions 순수 함수
-version: 1.0.0
+title: chat.pure-functions.ts
 type: typescript
-category: pure-function
-original_path: shared/chat.pure-functions.ts
+path: shared/chat.pure-functions.ts
+status: active
+version: 1.0.0
+last_updated: 2025-11-15
 ---
-
-# chat.pure-functions.ts
 
 ## 개요
 
-**파일 경로**: `shared/chat.pure-functions.ts`
-**파일 타입**: typescript
-**카테고리**: pure-function
-
-chat.pure-functions 순수 함수
+이 파일은 `shared/chat.pure-functions.ts`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -63,6 +57,27 @@ export function extractUidsFromSingleRoomId(roomId: string): [string, string] | 
 }
 
 /**
+ * 1:1 채팅방에서 상대방의 UID를 추출한다.
+ *
+ * @param roomId - 1:1 채팅방 ID (형식: "single-uid1-uid2")
+ * @param myUid - 현재 사용자의 UID
+ * @returns 상대방의 UID, 찾을 수 없으면 null
+ *
+ * @example
+ * ```typescript
+ * const roomId = 'single-alice-bob';
+ * const partnerUid = getPartnerUidFromSingleRoomId(roomId, 'alice');
+ * // 결과: 'bob'
+ * ```
+ */
+export function getPartnerUidFromSingleRoomId(roomId: string, myUid: string): string | null {
+	const uids = extractUidsFromSingleRoomId(roomId);
+	if (!uids) return null;
+
+	return uids.find((uid) => uid !== myUid) || null;
+}
+
+/**
  * 채팅방 유형 문자열을 배지 텍스트로 변환한다.
  *
  * @param roomType - DB에 저장된 채팅방 유형 문자열
@@ -78,10 +93,6 @@ export function resolveRoomTypeLabel(roomType: string): string {
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

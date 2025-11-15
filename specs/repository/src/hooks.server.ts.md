@@ -1,21 +1,15 @@
 ---
-name: hooks.server.ts
-description: hooks.server 파일
-version: 1.0.0
+title: hooks.server.ts
 type: typescript
-category: other
-original_path: src/hooks.server.ts
+path: src/hooks.server.ts
+status: active
+version: 1.0.0
+last_updated: 2025-11-15
 ---
-
-# hooks.server.ts
 
 ## 개요
 
-**파일 경로**: `src/hooks.server.ts`
-**파일 타입**: typescript
-**카테고리**: other
-
-hooks.server 파일
+이 파일은 `src/hooks.server.ts`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -45,10 +39,6 @@ export const handle: Handle = handleParaglide;
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

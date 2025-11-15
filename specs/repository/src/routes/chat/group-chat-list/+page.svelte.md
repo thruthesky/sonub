@@ -1,21 +1,15 @@
 ---
-name: +page.svelte
-description: +page 페이지
+title: +page.svelte
+type: component
+path: src/routes/chat/group-chat-list/+page.svelte
+status: active
 version: 1.0.0
-type: svelte-component
-category: route-page
-original_path: src/routes/chat/group-chat-list/+page.svelte
+last_updated: 2025-11-15
 ---
-
-# +page.svelte
 
 ## 개요
 
-**파일 경로**: `src/routes/chat/group-chat-list/+page.svelte`
-**파일 타입**: svelte-component
-**카테고리**: route-page
-
-+page 페이지
+이 파일은 `src/routes/chat/group-chat-list/+page.svelte`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -66,7 +60,7 @@ original_path: src/routes/chat/group-chat-list/+page.svelte
 	 */
 	function handleRoomCreated(event: CustomEvent<{ roomId: string }>) {
 		const { roomId } = event.detail;
-		console.log('✅ 채팅방 생성 완료, 이동:', roomId);
+		// console.log('✅ 채팅방 생성 완료, 이동:', roomId);
 		void goto(`/chat/room?roomId=${roomId}`);
 	}
 
@@ -74,7 +68,7 @@ original_path: src/routes/chat/group-chat-list/+page.svelte
 	 * 친구 찾기 메뉴 클릭 핸들러
 	 */
 	function handleFindFriends() {
-		console.log('친구 찾기 메뉴 클릭됨');
+		// console.log('친구 찾기 메뉴 클릭됨');
 		// TODO: 친구 찾기 기능 구현
 	}
 
@@ -106,7 +100,7 @@ original_path: src/routes/chat/group-chat-list/+page.svelte
 	 * 검색 메뉴 클릭 핸들러
 	 */
 	function handleSearch() {
-		console.log('검색 메뉴 클릭됨');
+		// console.log('검색 메뉴 클릭됨');
 		// TODO: 검색 기능 구현
 	}
 
@@ -143,7 +137,7 @@ original_path: src/routes/chat/group-chat-list/+page.svelte
 
 		try {
 			const isPinned = await togglePinChatRoom(rtdb, roomId, uid, roomType);
-			console.log(`✅ 채팅방 핀 ${isPinned ? '설정' : '해제'} 완료:`, roomId);
+			// console.log(`✅ 채팅방 핀 ${isPinned ? '설정' : '해제'} 완료:`, roomId);
 		} catch (error) {
 			console.error('채팅방 핀 토글 실패:', error);
 		}
@@ -153,8 +147,8 @@ original_path: src/routes/chat/group-chat-list/+page.svelte
 	const chatJoinPath = $derived.by(() => {
 		const uid = authStore.user?.uid;
 		const path = uid ? `chat-joins/${uid}` : '';
-		console.log('🔍 [Group Chat List Debug] User UID:', uid);
-		console.log('🔍 [Group Chat List Debug] Chat join path:', path);
+		// console.log('🔍 [Group Chat List Debug] User UID:', uid);
+		// console.log('🔍 [Group Chat List Debug] Chat join path:', path);
 		return path;
 	});
 
@@ -240,7 +234,9 @@ original_path: src/routes/chat/group-chat-list/+page.svelte
 					reverse: true
 				}}
 				{#if chatJoinPath}
-					{console.log('🔍 [Group Chat List Debug] DatabaseListView props:', dbListViewProps)}
+					<!--
+						// console.log('🔍 [Group Chat List Debug] DatabaseListView props:', dbListViewProps)
+					-->
 				{/if}
 				<DatabaseListView
 					path={chatJoinPath}
@@ -250,25 +246,29 @@ original_path: src/routes/chat/group-chat-list/+page.svelte
 					reverse={true}
 				>
 					{#snippet item(itemData, index)}
-						{console.log('🔍 [Group Chat List Debug] Item received:', {
-							index,
-							key: itemData.key,
-							hasData: !!itemData.data,
-							data: itemData.data
-						})}
+						<!--
+							// console.log('🔍 [Group Chat List Debug] Item received:', {
+							// 	index,
+							// 	key: itemData.key,
+							// 	hasData: !!itemData.data,
+							// 	data: itemData.data
+							// })
+						-->
 						{@const join = (itemData.data ?? {}) as ChatJoinData}
 						{@const roomId = (join.roomId ?? itemData.key ?? '') as string}
 						{@const roomType = (join.roomType ?? join.type ?? 'group').toString()}
 						{@const openAndGroupChatListOrder = join.openAndGroupChatListOrder ?? null}
-						{console.log('🔍 [Group Chat List Debug] Join data:', {
-							roomId,
-							roomType,
-							openAndGroupChatListOrder,
-							lastMessageText: join.lastMessageText,
-							lastMessageAt: join.lastMessageAt,
-							newMessageCount: join.newMessageCount,
-							allFields: Object.keys(join)
-						})}
+						<!--
+							// console.log('🔍 [Group Chat List Debug] Join data:', {
+							// 	roomId,
+							// 	roomType,
+							// 	openAndGroupChatListOrder,
+							// 	lastMessageText: join.lastMessageText,
+							// 	lastMessageAt: join.lastMessageAt,
+							// 	newMessageCount: join.newMessageCount,
+							// 	allFields: Object.keys(join)
+							// })
+						-->
 						{@const lastMessage =
 							typeof join.lastMessageText === 'string' && join.lastMessageText.trim()
 								? join.lastMessageText
@@ -366,10 +366,6 @@ original_path: src/routes/chat/group-chat-list/+page.svelte
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

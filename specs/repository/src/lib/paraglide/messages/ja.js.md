@@ -1,21 +1,15 @@
 ---
-name: ja.js
-description: ja 파일
-version: 1.0.0
+title: ja.js
 type: javascript
-category: other
-original_path: src/lib/paraglide/messages/ja.js
+path: src/lib/paraglide/messages/ja.js
+status: active
+version: 1.0.0
+last_updated: 2025-11-15
 ---
-
-# ja.js
 
 ## 개요
 
-**파일 경로**: `src/lib/paraglide/messages/ja.js`
-**파일 타입**: javascript
-**카테고리**: other
-
-ja 파일
+이 파일은 `src/lib/paraglide/messages/ja.js`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -1051,6 +1045,14 @@ export const homesectionrecentopenchatdesc5 = /** @type {(inputs: {}) => string}
 	return `リアルタイムのオープンチャットをこの領域に表示予定です。`
 };
 
+export const homesectionrecentopenchatempty5 = /** @type {(inputs: {}) => string} */ () => {
+	return `最近のオープンチャットメッセージはありません。`
+};
+
+export const homesectionrecentopenchatlogin5 = /** @type {(inputs: {}) => string} */ () => {
+	return `ログインすると参加中のオープンチャットの最新メッセージを確認できます。`
+};
+
 export const homesectionpopularopenroom4 = /** @type {(inputs: {}) => string} */ () => {
 	return `人気オープンチャットルーム`
 };
@@ -1071,16 +1073,112 @@ export const homesectionrecentuserscount4 = /** @type {(inputs: { count: NonNull
 	return `直近で参加したユーザー ${i.count}人`
 };
 
+export const homeopenchatnomessage4 = /** @type {(inputs: {}) => string} */ () => {
+	return `まだメッセージがありません。`
+};
+
 export const sidebardevhighlightattachment3 = /** @type {(inputs: {}) => string} */ () => {
-	return `8. 添付ファイルアップロード`
+	return `9. 添付ファイルアップロード`
 };
 
 export const sidebardevhighlightpassword3 = /** @type {(inputs: {}) => string} */ () => {
-	return `9. チャットパスワード機能`
+	return `10. チャットパスワード機能`
 };
 
 export const sidebardevhighlightposttype4 = /** @type {(inputs: {}) => string} */ () => {
-	return `10. Postタイプメッセージ`
+	return `11. Postタイプメッセージ`
+};
+
+export const sidebardevhighlightwrapup4 = /** @type {(inputs: {}) => string} */ () => {
+	return `8. チャットルーム終了機能`
+};
+
+export const chatnomoremessages3 = /** @type {(inputs: {}) => string} */ () => {
+	return `これ以上メッセージはありません。`
+};
+
+export const chatroomlist2 = /** @type {(inputs: {}) => string} */ () => {
+	return `マイチャット`
+};
+
+export const chatroomlistempty3 = /** @type {(inputs: {}) => string} */ () => {
+	return `参加しているチャットルームがありません。`
+};
+
+export const chatroomlistloading3 = /** @type {(inputs: {}) => string} */ () => {
+	return `チャットルーム読み込み中...`
+};
+
+export const chatpasswordsaving2 = /** @type {(inputs: {}) => string} */ () => {
+	return `保存中...`
+};
+
+export const chatpasswordenabletoggle3 = /** @type {(inputs: {}) => string} */ () => {
+	return `パスワードを有効にする`
+};
+
+export const chatpasswordinputplaceholder3 = /** @type {(inputs: {}) => string} */ () => {
+	return `パスワード（最低4文字）`
+};
+
+export const chatpasswordconfirmplaceholder3 = /** @type {(inputs: {}) => string} */ () => {
+	return `パスワード確認`
+};
+
+export const chatpasswordminlengtherror4 = /** @type {(inputs: {}) => string} */ () => {
+	return `パスワードは最低4文字以上でなければなりません`
+};
+
+export const chatpasswordmismatcherror3 = /** @type {(inputs: {}) => string} */ () => {
+	return `パスワードが一致しません`
+};
+
+export const chatpasswordsetsuccess3 = /** @type {(inputs: {}) => string} */ () => {
+	return `パスワードが設定されました`
+};
+
+export const chatpasswordremovesuccess3 = /** @type {(inputs: {}) => string} */ () => {
+	return `パスワードが解除されました`
+};
+
+export const chatpasswordsavefailure3 = /** @type {(inputs: {}) => string} */ () => {
+	return `パスワードの保存に失敗しました`
+};
+
+export const chatpasswordsettings2 = /** @type {(inputs: {}) => string} */ () => {
+	return `パスワード設定`
+};
+
+export const chatpasswordrequired2 = /** @type {(inputs: {}) => string} */ () => {
+	return `このチャットルームはパスワードが必要です。`
+};
+
+export const chatpasswordenterprompt3 = /** @type {(inputs: {}) => string} */ () => {
+	return `パスワードを入力してください`
+};
+
+export const chatpasswordverifying2 = /** @type {(inputs: { countdown: NonNullable<unknown> }) => string} */ (i) => {
+	return `検証中...（残り${i.countdown}秒）`
+};
+
+export const chatpasswordverifysuccess3 = /** @type {(inputs: {}) => string} */ () => {
+	return `パスワードが確認されました`
+};
+
+export const chatpasswordincorrect2 = /** @type {(inputs: {}) => string} */ () => {
+	return `パスワードが正しくありません`
+};
+
+export const chatpasswordverifyfailure3 = /** @type {(inputs: {}) => string} */ () => {
+	return `パスワード検証に失敗しました`
+};
+
+export const chatpassworddelete2 = /** @type {(inputs: {}) => string} */ () => {
+	return `パスワード削除`
+};
+
+export const chatpassworddeletesuccess3 = /** @type {(inputs: {}) => string} */ () => {
+	return `パスワードが削除されました`
 };
 export { chataccept1 } from "./en.js"
 export { chatreject1 } from "./en.js"
@@ -1179,10 +1277,6 @@ export { testuserdeleteallconfirmation4 } from "./en.js"
 export { testuserprogressindicator3 } from "./en.js"
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

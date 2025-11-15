@@ -276,7 +276,7 @@
 
     // cleanup: 컴포넌트 언마운트 시 모든 리스너 해제
     return () => {
-      console.log('DatabaseListView: Cleaning up listeners');
+      // console.log('DatabaseListView: Cleaning up listeners');
 
       // child_added 리스너 해제
       if (childAddedUnsubscribe) {
@@ -299,7 +299,7 @@
       // orderBy 값 추적 맵 초기화
       previousOrderByValues.clear();
 
-      console.log('DatabaseListView: All listeners cleaned up');
+      // console.log('DatabaseListView: All listeners cleaned up');
     };
   });
 
@@ -309,7 +309,7 @@
    * use:action 디렉티브를 사용하여 타이밍 문제를 해결합니다.
    */
   function setupScrollListener(node: HTMLDivElement) {
-    console.log('DatabaseListView: Setting up scroll listeners on mounted node');
+    // console.log('DatabaseListView: Setting up scroll listeners on mounted node');
 
     // 스크롤 컨테이너 찾기
     // 부모 요소 중 overflow-auto 또는 overflow-scroll을 가진 요소를 찾습니다
@@ -320,11 +320,11 @@
       const overflowY = window.getComputedStyle(parent).overflowY;
       if (overflowY === 'auto' || overflowY === 'scroll') {
         actualScrollContainer = parent;
-        console.log('DatabaseListView: Found scroll container (parent with overflow)', {
-          tagName: parent.tagName,
-          className: parent.className,
-          overflowY
-        });
+        // console.log('DatabaseListView: Found scroll container (parent with overflow)', {
+          // tagName: parent.tagName,
+          // className: parent.className,
+          // overflowY
+        // });
         break;
       }
       parent = parent.parentElement;
@@ -333,22 +333,22 @@
     // 스크롤 컨테이너 참조 저장 (autoScrollToEnd 기능을 위해)
     scrollContainerRef = actualScrollContainer;
 
-    console.log('DatabaseListView: Registering scroll listener on', {
-      isParent: actualScrollContainer !== node,
-      tagName: actualScrollContainer.tagName,
-      className: actualScrollContainer.className
-    });
+    // console.log('DatabaseListView: Registering scroll listener on', {
+      // isParent: actualScrollContainer !== node,
+      // tagName: actualScrollContainer.tagName,
+      // className: actualScrollContainer.className
+    // });
 
     // 실제 스크롤 컨테이너에 리스너 등록
     actualScrollContainer.addEventListener('scroll', handleScroll);
     // window 스크롤 감지 (body 스크롤)
     window.addEventListener('scroll', handleWindowScroll);
 
-    console.log('DatabaseListView: Scroll listeners registered successfully');
+    // console.log('DatabaseListView: Scroll listeners registered successfully');
 
     return {
       destroy() {
-        console.log('DatabaseListView: Removing scroll listeners');
+        // console.log('DatabaseListView: Removing scroll listeners');
         actualScrollContainer.removeEventListener('scroll', handleScroll);
         window.removeEventListener('scroll', handleWindowScroll);
         scrollContainerRef = null;
@@ -436,10 +436,10 @@
 
     // 주 필드 값이 있으면 사용
     if (value != null && value !== '') {
-      console.log(`DatabaseListView: Using cursor from '${primaryField}':`, {
-        value: value,
-        key: lastItem.key
-      });
+      // console.log(`DatabaseListView: Using cursor from '${primaryField}':`, {
+        // value: value,
+        // key: lastItem.key
+      // });
       return {
         value: value,
         key: lastItem.key
@@ -464,11 +464,11 @@
    * @param newOrderByValue 새로운 orderBy 필드 값
    */
   function repositionItem(itemKey: string, newData: any, newOrderByValue: any): void {
-    console.log(`[repositionItem] 아이템 재배치 시작: ${itemKey}`, {
-      newOrderByValue,
-      orderBy,
-      reverse
-    });
+    // console.log(`[repositionItem] 아이템 재배치 시작: ${itemKey}`, {
+      // newOrderByValue,
+      // orderBy,
+      // reverse
+    // });
 
     // 1. items 배열에서 현재 아이템 찾기
     const currentIndex = items.findIndex(item => item.key === itemKey);
@@ -480,7 +480,7 @@
     const currentItem = items[currentIndex];
     const oldOrderByValue = currentItem.data[orderBy];
 
-    console.log(`[repositionItem] 현재 위치: ${currentIndex}, 이전 값: ${oldOrderByValue}, 새 값: ${newOrderByValue}`);
+    // console.log(`[repositionItem] 현재 위치: ${currentIndex}, 이전 값: ${oldOrderByValue}, 새 값: ${newOrderByValue}`);
 
     // 2. items 배열에서 해당 아이템 제거
     const updatedItem: ItemData = {
@@ -505,7 +505,7 @@
       insertIndex = i + 1;
     }
 
-    console.log(`[repositionItem] 새 위치: ${insertIndex} (전체 ${itemsWithoutCurrent.length + 1}개 중)`);
+    // console.log(`[repositionItem] 새 위치: ${insertIndex} (전체 ${itemsWithoutCurrent.length + 1}개 중)`);
 
     // 4. 해당 위치에 아이템 삽입
     const newItems = [
@@ -527,13 +527,13 @@
       setupItemListener(item.key, index);
     });
 
-    console.log(`[repositionItem] 재배치 완료. 아이템 순서:`,
-      items.map((item, idx) => ({
-        index: idx,
-        key: item.key,
-        [orderBy]: item.data[orderBy]
-      }))
-    );
+    // console.log(`[repositionItem] 재배치 완료. 아이템 순서:`,
+      // items.map((item, idx) => ({
+        // index: idx,
+        // key: item.key,
+        // [orderBy]: item.data[orderBy]
+      // }))
+    // );
   }
 
   /**
@@ -560,7 +560,7 @@
     if (currentItem) {
       const currentOrderByValue = currentItem.data[orderBy];
       previousOrderByValues.set(itemKey, currentOrderByValue);
-      console.log(`[setupItemListener] 초기 orderBy 값 저장: ${itemKey} = ${currentOrderByValue}`);
+      // console.log(`[setupItemListener] 초기 orderBy 값 저장: ${itemKey} = ${currentOrderByValue}`);
     }
 
     const itemRef = dbRef(database, `${path}/${itemKey}`);
@@ -572,15 +572,15 @@
           const newOrderByValue = updatedData[orderBy];
           const previousOrderByValue = previousOrderByValues.get(itemKey);
 
-          console.log(`[setupItemListener] 아이템 업데이트 감지: ${itemKey}`, {
-            orderBy,
-            previousValue: previousOrderByValue,
-            newValue: newOrderByValue
-          });
+          // console.log(`[setupItemListener] 아이템 업데이트 감지: ${itemKey}`, {
+            // orderBy,
+            // previousValue: previousOrderByValue,
+            // newValue: newOrderByValue
+          // });
 
           // orderBy 필드 값이 변경되었는지 확인
           if (previousOrderByValue !== undefined && previousOrderByValue !== newOrderByValue) {
-            console.log(`[setupItemListener] orderBy 필드 변경 감지! ${itemKey}: ${previousOrderByValue} → ${newOrderByValue}`);
+            // console.log(`[setupItemListener] orderBy 필드 변경 감지! ${itemKey}: ${previousOrderByValue} → ${newOrderByValue}`);
 
             // 이전 값 업데이트
             previousOrderByValues.set(itemKey, newOrderByValue);
@@ -597,7 +597,7 @@
                 data: updatedData
               };
               items = [...items]; // 반응성을 위해 배열 재할당
-              console.log(`DatabaseListView: Item updated ${itemKey} at index ${itemIndex}`, updatedData);
+              // console.log(`DatabaseListView: Item updated ${itemKey} at index ${itemIndex}`, updatedData);
             }
           }
         }
@@ -634,7 +634,7 @@
       childAddedUnsubscribe = null;
     }
 
-    console.log('DatabaseListView: Setting up child_added listener for', path);
+    // console.log('DatabaseListView: Setting up child_added listener for', path);
     childAddedListenerReady = false;
 
     const baseRef = dbRef(database, path);
@@ -645,7 +645,7 @@
     let dataQuery;
     if (hasEqualFilter) {
       dataQuery = query(baseRef, orderByChild(orderBy), equalTo(resolvedEqualValue));
-      console.log('DatabaseListView: child_added listener with equalTo filter:', resolvedEqualValue);
+      // console.log('DatabaseListView: child_added listener with equalTo filter:', resolvedEqualValue);
     } else if (orderPrefix) {
       dataQuery = query(
         baseRef,
@@ -653,7 +653,7 @@
         startAt(orderPrefix),
         endAt(orderPrefix + '\uf8ff')
       );
-      console.log('DatabaseListView: child_added listener with orderPrefix:', orderPrefix);
+      // console.log('DatabaseListView: child_added listener with orderPrefix:', orderPrefix);
     } else {
       // orderPrefix가 없으면 startAt(false) 사용
       // 이렇게 하면 orderBy 필드가 null 또는 undefined인 항목은 제외됩니다
@@ -662,7 +662,7 @@
         orderByChild(orderBy),
         startAt(false)
       );
-      console.log('DatabaseListView: child_added listener with startAt(false) to filter null/undefined');
+      // console.log('DatabaseListView: child_added listener with startAt(false) to filter null/undefined');
     }
 
     childAddedUnsubscribe = onChildAdded(dataQuery, (snapshot) => {
@@ -683,11 +683,11 @@
       // 중복 체크: 이미 items에 있는 key는 추가하지 않음
       const exists = items.some(item => item.key === newItemKey);
       if (exists) {
-        console.log('DatabaseListView: Child already exists, skipping:', newItemKey);
+        // console.log('DatabaseListView: Child already exists, skipping:', newItemKey);
         return;
       }
 
-      console.log('DatabaseListView: New child added:', newItemKey, newItemData);
+      // console.log('DatabaseListView: New child added:', newItemKey, newItemData);
 
       const newItem: ItemData = {
         key: newItemKey,
@@ -698,7 +698,7 @@
       if (reverse) {
         // reverse가 true: 최신 글이 위에 → 배열 맨 앞에 추가
         items = [newItem, ...items];
-        console.log('DatabaseListView: Added new item to the beginning (reverse mode)');
+        // console.log('DatabaseListView: Added new item to the beginning (reverse mode)');
 
         // 새 아이템에 onValue 리스너 설정 (인덱스 0)
         setupItemListener(newItemKey, 0);
@@ -711,7 +711,7 @@
         // reverse가 false: 오래된 글이 위에 → 배열 맨 뒤에 추가
         const newIndex = items.length;
         items = [...items, newItem];
-        console.log('DatabaseListView: Added new item to the end (normal mode)');
+        // console.log('DatabaseListView: Added new item to the end (normal mode)');
 
         // 새 아이템에 onValue 리스너 설정
         setupItemListener(newItemKey, newIndex);
@@ -719,7 +719,7 @@
 
       // 부모 컴포넌트에 새 아이템 추가 알림
       if (onItemAdded) {
-        console.log('DatabaseListView: Calling onItemAdded callback with new item:', newItem);
+        // console.log('DatabaseListView: Calling onItemAdded callback with new item:', newItem);
         onItemAdded(newItem);
       }
 
@@ -730,25 +730,25 @@
         const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef;
         const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
 
-        console.log('DatabaseListView: Auto-scroll check', {
-          distanceFromBottom,
-          threshold,
-          willAutoScroll: distanceFromBottom <= threshold
-        });
+        // console.log('DatabaseListView: Auto-scroll check', {
+          // distanceFromBottom,
+          // threshold,
+          // willAutoScroll: distanceFromBottom <= threshold
+        // });
 
         if (distanceFromBottom <= threshold) {
           // DOM 업데이트 완료 대기 후 스크롤
           tick().then(() => {
             if (scrollContainerRef) {
               scrollContainerRef.scrollTop = scrollContainerRef.scrollHeight;
-              console.log('DatabaseListView: Auto-scrolled to bottom on new data', {
-                scrollHeight: scrollContainerRef.scrollHeight,
-                scrollTop: scrollContainerRef.scrollTop
-              });
+              // console.log('DatabaseListView: Auto-scrolled to bottom on new data', {
+                // scrollHeight: scrollContainerRef.scrollHeight,
+                // scrollTop: scrollContainerRef.scrollTop
+              // });
             }
           });
         } else {
-          console.log('DatabaseListView: User scrolled up beyond threshold, skipping auto-scroll');
+          // console.log('DatabaseListView: User scrolled up beyond threshold, skipping auto-scroll');
         }
       }
     }, (error) => {
@@ -759,7 +759,7 @@
     // Firebase는 리스너 설정 직후 기존 아이템들에 대해 child_added를 발생시킴
     setTimeout(() => {
       childAddedListenerReady = true;
-      console.log('DatabaseListView: child_added listener is now ready to accept new children');
+      // console.log('DatabaseListView: child_added listener is now ready to accept new children');
     }, 1000);
   }
 
@@ -783,7 +783,7 @@
       childRemovedUnsubscribe = null;
     }
 
-    console.log('DatabaseListView: Setting up child_removed listener for', path);
+    // console.log('DatabaseListView: Setting up child_removed listener for', path);
 
     const baseRef = dbRef(database, path);
 
@@ -793,7 +793,7 @@
     let dataQuery;
     if (hasEqualFilter) {
       dataQuery = query(baseRef, orderByChild(orderBy), equalTo(resolvedEqualValue));
-      console.log('DatabaseListView: child_removed listener with equalTo filter:', resolvedEqualValue);
+      // console.log('DatabaseListView: child_removed listener with equalTo filter:', resolvedEqualValue);
     } else if (orderPrefix) {
       dataQuery = query(
         baseRef,
@@ -801,7 +801,7 @@
         startAt(orderPrefix),
         endAt(orderPrefix + '\uf8ff')
       );
-      console.log('DatabaseListView: child_removed listener with orderPrefix:', orderPrefix);
+      // console.log('DatabaseListView: child_removed listener with orderPrefix:', orderPrefix);
     } else {
       // orderPrefix가 없으면 startAt(false) 사용
       dataQuery = query(
@@ -809,7 +809,7 @@
         orderByChild(orderBy),
         startAt(false)
       );
-      console.log('DatabaseListView: child_removed listener with startAt(false)');
+      // console.log('DatabaseListView: child_removed listener with startAt(false)');
     }
 
     childRemovedUnsubscribe = onChildRemoved(dataQuery, (snapshot) => {
@@ -821,7 +821,7 @@
         return;
       }
 
-      console.log('DatabaseListView: Child removed:', removedKey);
+      // console.log('DatabaseListView: Child removed:', removedKey);
 
       // items 배열에서 해당 key를 가진 아이템 찾기
       const removedIndex = items.findIndex(item => item.key === removedKey);
@@ -829,7 +829,7 @@
       if (removedIndex !== -1) {
         // items 배열에서 제거
         items = items.filter(item => item.key !== removedKey);
-        console.log('DatabaseListView: Removed item from list:', removedKey, '(was at index', removedIndex, ')');
+        // console.log('DatabaseListView: Removed item from list:', removedKey, '(was at index', removedIndex, ')');
 
         // 해당 아이템의 onValue 리스너 해제
         const listenerKey = `${removedKey}`;
@@ -837,10 +837,10 @@
         if (unsubscribe) {
           unsubscribe();
           unsubscribers.delete(listenerKey);
-          console.log('DatabaseListView: Unsubscribed from removed item:', removedKey);
+          // console.log('DatabaseListView: Unsubscribed from removed item:', removedKey);
         }
       } else {
-        console.log('DatabaseListView: Removed item not found in current list:', removedKey);
+        // console.log('DatabaseListView: Removed item not found in current list:', removedKey);
       }
     }, (error) => {
       console.error('DatabaseListView: Error in child_removed listener', error);
@@ -865,7 +865,7 @@
       return;
     }
 
-    console.log('DatabaseListView: Loading initial data from', path, '(reverse:', reverse, ')');
+    // console.log('DatabaseListView: Loading initial data from', path, '(reverse:', reverse, ')');
     initialLoading = true;
     error = null;
     items = [];
@@ -877,7 +877,7 @@
 
     // orderBy 값 추적 맵 초기화
     previousOrderByValues.clear();
-    console.log('DatabaseListView: previousOrderByValues cleared');
+    // console.log('DatabaseListView: previousOrderByValues cleared');
 
     // child_added 리스너 해제
     if (childAddedUnsubscribe) {
@@ -910,7 +910,7 @@
       let dataQuery;
       if (hasEqualFilter) {
         dataQuery = query(baseRef, orderByChild(orderBy), equalTo(resolvedEqualValue));
-        console.log('DatabaseListView: Using equalTo filter for initial load:', resolvedEqualValue);
+        // console.log('DatabaseListView: Using equalTo filter for initial load:', resolvedEqualValue);
       } else if (scrollTrigger === 'top' || reverse) {
         // 채팅방 스타일 또는 역순 정렬: limitToLast 사용
         if (orderPrefix) {
@@ -922,7 +922,7 @@
             endAt(orderPrefix + '\uf8ff'),
             limitToLast(pageSize + 1)
           );
-          console.log('DatabaseListView: Using limitToLast with orderPrefix:', orderPrefix, '(scrollTrigger:', scrollTrigger, ')');
+          // console.log('DatabaseListView: Using limitToLast with orderPrefix:', orderPrefix, '(scrollTrigger:', scrollTrigger, ')');
         } else {
           // orderPrefix가 없으면 startAt(false) 사용
           // 이렇게 하면 orderBy 필드가 null 또는 undefined인 항목은 제외됩니다
@@ -933,7 +933,7 @@
             startAt(false),
             limitToLast(pageSize + 1)
           );
-          console.log('DatabaseListView: Using limitToLast with startAt(false) to filter null/undefined (scrollTrigger:', scrollTrigger, ')');
+          // console.log('DatabaseListView: Using limitToLast with startAt(false) to filter null/undefined (scrollTrigger:', scrollTrigger, ')');
         }
       } else {
         // 정순 정렬: limitToFirst 사용
@@ -946,7 +946,7 @@
             endAt(orderPrefix + '\uf8ff'),
             limitToFirst(pageSize + 1)
           );
-          console.log('DatabaseListView: Using limitToFirst with orderPrefix:', orderPrefix);
+          // console.log('DatabaseListView: Using limitToFirst with orderPrefix:', orderPrefix);
         } else {
           // orderPrefix가 없으면 startAt(false) 사용
           // 이렇게 하면 orderBy 필드가 null 또는 undefined인 항목은 제외됩니다
@@ -957,7 +957,7 @@
             startAt(false),
             limitToFirst(pageSize + 1)
           );
-          console.log('DatabaseListView: Using limitToFirst with startAt(false) to filter null/undefined');
+          // console.log('DatabaseListView: Using limitToFirst with startAt(false) to filter null/undefined');
         }
       }
 
@@ -980,25 +980,25 @@
         });
 
         // 🔍 디버깅: 초기 로드 결과
-        console.log(
-          `%c[DatabaseListView] Initial Load - Query Settings`,
-          'color: #10b981; font-weight: bold;',
-          { path, orderBy, orderPrefix, reverse, pageSize }
-        );
-        console.log(
-          `%c[DatabaseListView] Initial Load - Firebase returned ${loadedItems.length} items`,
-          'color: #3b82f6; font-weight: bold;'
-        );
-        console.log(
-          `%c[DatabaseListView] Initial Load - Items in Firebase order:`,
-          'color: #6366f1;',
-          loadedItems.map((item, idx) => ({
-            index: idx,
-            key: item.key,
-            [orderBy]: item.data[orderBy],
-            title: item.data.title
-          }))
-        );
+        // console.log(
+          // `%c[DatabaseListView] Initial Load - Query Settings`,
+          // 'color: #10b981; font-weight: bold;',
+          // { path, orderBy, orderPrefix, reverse, pageSize }
+        // );
+        // console.log(
+          // `%c[DatabaseListView] Initial Load - Firebase returned ${loadedItems.length} items`,
+          // 'color: #3b82f6; font-weight: bold;'
+        // );
+        // console.log(
+          // `%c[DatabaseListView] Initial Load - Items in Firebase order:`,
+          // 'color: #6366f1;',
+          // loadedItems.map((item, idx) => ({
+            // index: idx,
+            // key: item.key,
+            // [orderBy]: item.data[orderBy],
+            // title: item.data.title
+          // }))
+        // );
 
         // orderBy 필드가 있는 항목만 필터링
         // startAt(false)를 사용했지만, 추가 안전성을 위해 클라이언트에서도 필터링합니다
@@ -1016,10 +1016,10 @@
         });
 
         if (beforeFilterCount !== loadedItems.length) {
-          console.log(
-            `%c[DatabaseListView] After filtering: ${beforeFilterCount} → ${loadedItems.length} items`,
-            'color: #8b5cf6;'
-          );
+          // console.log(
+            // `%c[DatabaseListView] After filtering: ${beforeFilterCount} → ${loadedItems.length} items`,
+            // 'color: #8b5cf6;'
+          // );
         }
 
         // limitToLast를 사용하면 Firebase가 오름차순으로 반환하므로
@@ -1027,35 +1027,35 @@
         // 단, scrollTrigger='top'일 때는 채팅방 스타일이므로 reverse하지 않습니다
         // (오래된 메시지가 위에, 최신 메시지가 아래에 있어야 함)
         if (reverse && scrollTrigger !== 'top') {
-          console.log(
-            `%c[DatabaseListView] Before reverse:`,
-            'color: #ec4899;',
-            loadedItems.map((item, idx) => ({
-              index: idx,
-              [orderBy]: item.data[orderBy],
-              title: item.data.title
-            }))
-          );
+          // console.log(
+            // `%c[DatabaseListView] Before reverse:`,
+            // 'color: #ec4899;',
+            // loadedItems.map((item, idx) => ({
+              // index: idx,
+              // [orderBy]: item.data[orderBy],
+              // title: item.data.title
+            // }))
+          // );
           loadedItems.reverse();
-          console.log(
-            `%c[DatabaseListView] After reverse (newest first):`,
-            'color: #10b981;',
-            loadedItems.map((item, idx) => ({
-              index: idx,
-              [orderBy]: item.data[orderBy],
-              title: item.data.title
-            }))
-          );
+          // console.log(
+            // `%c[DatabaseListView] After reverse (newest first):`,
+            // 'color: #10b981;',
+            // loadedItems.map((item, idx) => ({
+              // index: idx,
+              // [orderBy]: item.data[orderBy],
+              // title: item.data.title
+            // }))
+          // );
         } else if (scrollTrigger === 'top') {
-          console.log(
-            `%c[DatabaseListView] Chat style - NOT reversing (oldest first, newest last):`,
-            'color: #10b981;',
-            loadedItems.map((item, idx) => ({
-              index: idx,
-              [orderBy]: item.data[orderBy],
-              title: item.data.title
-            }))
-          );
+          // console.log(
+            // `%c[DatabaseListView] Chat style - NOT reversing (oldest first, newest last):`,
+            // 'color: #10b981;',
+            // loadedItems.map((item, idx) => ({
+              // index: idx,
+              // [orderBy]: item.data[orderBy],
+              // title: item.data.title
+            // }))
+          // );
         }
 
         // equalToValue가 있으면 한 번의 로드로 모든 결과를 표시하고 페이징을 중단한다.
@@ -1064,7 +1064,7 @@
           items = loadedItems;
           lastLoadedValue = null;
           lastLoadedKey = null;
-          console.log('DatabaseListView: equalTo filter active - pagination disabled after initial load.');
+          // console.log('DatabaseListView: equalTo filter active - pagination disabled after initial load.');
         }
         // pageSize보다 많으면 hasMore = true
         // 채팅방 스타일(scrollTrigger='top')에서는 첫 번째 아이템을 버리고 나머지 사용 (가장 최신 메시지 보존)
@@ -1077,16 +1077,16 @@
             // Firebase limitToLast는 [오래된, ..., 최신] 순서로 반환하므로
             // 첫 번째를 버리면 [더 최신, ..., 가장 최신]이 됩니다
             items = loadedItems.slice(1);
-            console.log(
-              `%c[DatabaseListView] Chat style - keeping newest ${items.length} items (removed oldest)`,
-              'color: #f59e0b;',
-              {
-                total: loadedItems.length,
-                kept: items.length,
-                firstKept: items[0]?.data[orderBy],
-                lastKept: items[items.length - 1]?.data[orderBy]
-              }
-            );
+            // console.log(
+              // `%c[DatabaseListView] Chat style - keeping newest ${items.length} items (removed oldest)`,
+              // 'color: #f59e0b;',
+              // {
+                // total: loadedItems.length,
+                // kept: items.length,
+                // firstKept: items[0]?.data[orderBy],
+                // lastKept: items[items.length - 1]?.data[orderBy]
+              // }
+            // );
 
             // 커서는 첫 번째 아이템에서 추출 (스크롤 업 시 더 오래된 메시지 로드)
             const cursor = items.length > 0 ? {
@@ -1097,7 +1097,7 @@
             if (cursor && cursor.value != null) {
               lastLoadedValue = cursor.value;
               lastLoadedKey = cursor.key;
-              console.log('DatabaseListView: Chat style cursor (first item):', { lastLoadedValue, lastLoadedKey });
+              // console.log('DatabaseListView: Chat style cursor (first item):', { lastLoadedValue, lastLoadedKey });
             } else {
               hasMore = false;
             }
@@ -1110,7 +1110,7 @@
             if (cursor) {
               lastLoadedValue = cursor.value;
               lastLoadedKey = cursor.key;
-              console.log('DatabaseListView: Next page cursor set:', { lastLoadedValue, lastLoadedKey });
+              // console.log('DatabaseListView: Next page cursor set:', { lastLoadedValue, lastLoadedKey });
             } else {
               hasMore = false;
             }
@@ -1129,7 +1129,7 @@
               if (cursor.value != null) {
                 lastLoadedValue = cursor.value;
                 lastLoadedKey = cursor.key;
-                console.log('DatabaseListView: Chat style cursor (first item, last page):', { lastLoadedValue, lastLoadedKey });
+                // console.log('DatabaseListView: Chat style cursor (first item, last page):', { lastLoadedValue, lastLoadedKey });
               }
             } else {
               // 일반 목록: 마지막 항목에서 페이지 커서 값 추출
@@ -1137,7 +1137,7 @@
               if (cursor) {
                 lastLoadedValue = cursor.value;
                 lastLoadedKey = cursor.key;
-                console.log('DatabaseListView: Last cursor set:', { lastLoadedValue, lastLoadedKey });
+                // console.log('DatabaseListView: Last cursor set:', { lastLoadedValue, lastLoadedKey });
               }
             }
           }
@@ -1151,22 +1151,22 @@
           setupItemListener(item.key, index);
         });
 
-        console.log(
-          `%c[DatabaseListView] ✅ Initial Load Complete`,
-          'color: #10b981; font-weight: bold; font-size: 14px;',
-          {
-            page: currentPage,
-            loaded: items.length,
-            hasMore,
-            finalOrder: items.map((item, idx) => ({
-              index: idx,
-              [orderBy]: item.data[orderBy],
-              title: item.data.title
-            }))
-          }
-        );
+        // console.log(
+          // `%c[DatabaseListView] ✅ Initial Load Complete`,
+          // 'color: #10b981; font-weight: bold; font-size: 14px;',
+          // {
+            // page: currentPage,
+            // loaded: items.length,
+            // hasMore,
+            // finalOrder: items.map((item, idx) => ({
+              // index: idx,
+              // [orderBy]: item.data[orderBy],
+              // title: item.data.title
+            // }))
+          // }
+        // );
       } else {
-        console.log('DatabaseListView: No data found');
+        // console.log('DatabaseListView: No data found');
         items = [];
         hasMore = false;
       }
@@ -1191,10 +1191,10 @@
         setTimeout(() => {
           if (scrollContainerRef) {
             scrollContainerRef.scrollTop = scrollContainerRef.scrollHeight;
-            console.log('DatabaseListView: Auto-scrolled to bottom', {
-              scrollHeight: scrollContainerRef.scrollHeight,
-              scrollTop: scrollContainerRef.scrollTop
-            });
+            // console.log('DatabaseListView: Auto-scrolled to bottom', {
+              // scrollHeight: scrollContainerRef.scrollHeight,
+              // scrollTop: scrollContainerRef.scrollTop
+            // });
           }
         }, 100);
       }
@@ -1218,12 +1218,12 @@
     }
 
     if (loading || !hasMore) {
-      console.log('DatabaseListView: Cannot load more - loading:', loading, 'hasMore:', hasMore);
+      // console.log('DatabaseListView: Cannot load more - loading:', loading, 'hasMore:', hasMore);
       return;
     }
 
     if (hasEqualFilter) {
-      console.log('DatabaseListView: equalTo filter active - pagination skipped.');
+      // console.log('DatabaseListView: equalTo filter active - pagination skipped.');
       hasMore = false;
       return;
     }
@@ -1233,13 +1233,13 @@
     isLoadingMore = true;
     error = null;
 
-    console.log(`[loadMore] Page ${currentPage} 시작, cursor:`, lastLoadedValue);
+    // console.log(`[loadMore] Page ${currentPage} 시작, cursor:`, lastLoadedValue);
 
     try {
       // lastLoadedValue가 null 또는 undefined이면 더 이상 로드할 수 없음
       // (undefined 체크도 필수 - orderBy 필드가 없는 항목이 있을 수 있음)
       if (lastLoadedValue == null) {
-        console.log('DatabaseListView: No lastLoadedValue (null or undefined), cannot load more');
+        // console.log('DatabaseListView: No lastLoadedValue (null or undefined), cannot load more');
         hasMore = false;
         loading = false;
         return;
@@ -1267,7 +1267,7 @@
             endBefore(lastLoadedValue),
             limitToLast(pageSize + 1)
           );
-          console.log('DatabaseListView: Using startAt + endBefore + limitToLast for chat/reverse pagination with orderPrefix:', orderPrefix, '(scrollTrigger:', scrollTrigger, ')');
+          // console.log('DatabaseListView: Using startAt + endBefore + limitToLast for chat/reverse pagination with orderPrefix:', orderPrefix, '(scrollTrigger:', scrollTrigger, ')');
         } else {
           // orderPrefix가 없으면 endBefore()만 사용
           // 초기 로드에서 이미 null/undefined 값을 제외했으므로,
@@ -1278,7 +1278,7 @@
             endBefore(lastLoadedValue),
             limitToLast(pageSize + 1)
           );
-          console.log('DatabaseListView: Using endBefore + limitToLast for chat/reverse pagination (scrollTrigger:', scrollTrigger, ')');
+          // console.log('DatabaseListView: Using endBefore + limitToLast for chat/reverse pagination (scrollTrigger:', scrollTrigger, ')');
         }
       } else {
         // 정순 정렬: startAfter + limitToFirst 사용
@@ -1293,7 +1293,7 @@
             endAt(orderPrefix + '\uf8ff'),
             limitToFirst(pageSize + 1)
           );
-          console.log('DatabaseListView: Using startAfter + endAt + limitToFirst for normal pagination with orderPrefix:', orderPrefix);
+          // console.log('DatabaseListView: Using startAfter + endAt + limitToFirst for normal pagination with orderPrefix:', orderPrefix);
         } else {
           // orderPrefix가 없으면 startAfter()만 사용
           // 초기 로드에서 이미 null/undefined 값을 제외했으므로,
@@ -1304,7 +1304,7 @@
             startAfter(lastLoadedValue),
             limitToFirst(pageSize + 1)
           );
-          console.log('DatabaseListView: Using startAfter + limitToFirst for normal pagination');
+          // console.log('DatabaseListView: Using startAfter + limitToFirst for normal pagination');
         }
       }
 
@@ -1321,7 +1321,7 @@
           }
         });
 
-        console.log(`[loadMore] Firebase 반환: ${newItems.length}개`);
+        // console.log(`[loadMore] Firebase 반환: ${newItems.length}개`);
 
         // reverse 처리
         if (reverse && scrollTrigger !== 'top') {
@@ -1337,7 +1337,7 @@
           return item.data[orderBy] != null && item.data[orderBy] !== '';
         });
 
-        console.log(`[loadMore] 중복 제거 후: ${uniqueItems.length}개`);
+        // console.log(`[loadMore] 중복 제거 후: ${uniqueItems.length}개`);
 
         if (uniqueItems.length === 0) {
           hasMore = false;
@@ -1353,7 +1353,7 @@
             scrollTop: scrollContainerRef.scrollTop,
             scrollHeight: scrollContainerRef.scrollHeight
           };
-          console.log('[loadMore] 스크롤 위치 저장:', scrollRestoreInfo);
+          // console.log('[loadMore] 스크롤 위치 저장:', scrollRestoreInfo);
         }
 
         // hasMore 판단 및 items 배열 업데이트
@@ -1447,13 +1447,13 @@
 
             scrollContainerRef.scrollTop = newScrollTop;
 
-            console.log('[loadMore] 스크롤 복원 완료:', {
-              이전높이: scrollRestoreInfo.scrollHeight,
-              새높이: newScrollHeight,
-              높이차이: heightDifference,
-              이전스크롤: scrollRestoreInfo.scrollTop,
-              새스크롤: newScrollTop
-            });
+            // console.log('[loadMore] 스크롤 복원 완료:', {
+              // 이전높이: scrollRestoreInfo.scrollHeight,
+              // 새높이: newScrollHeight,
+              // 높이차이: heightDifference,
+              // 이전스크롤: scrollRestoreInfo.scrollTop,
+              // 새스크롤: newScrollTop
+            // });
           }
         }
 
@@ -1470,9 +1470,9 @@
           });
         }
 
-        console.log(`[loadMore] 완료 - 추가: ${uniqueItems.length}, 전체: ${items.length}, hasMore: ${hasMore}`);
+        // console.log(`[loadMore] 완료 - 추가: ${uniqueItems.length}, 전체: ${items.length}, hasMore: ${hasMore}`);
       } else {
-        console.log('DatabaseListView: Query returned no data, hasMore set to false');
+        // console.log('DatabaseListView: Query returned no data, hasMore set to false');
         hasMore = false;
       }
     } catch (err) {
@@ -1501,25 +1501,25 @@
     if (scrollTrigger === 'top') {
       // 채팅방 스타일: 위로 스크롤하여 천장에 가까워지면 이전 페이지 로드
       if (scrollTop < threshold) {
-        console.log('DatabaseListView: Near top (container scroll), loading more...', {
-          scrollTop,
-          scrollHeight,
-          clientHeight,
-          threshold
-        });
+        // console.log('DatabaseListView: Near top (container scroll), loading more...', {
+          // scrollTop,
+          // scrollHeight,
+          // clientHeight,
+          // threshold
+        // });
         loadMore();
       }
     } else {
       // 일반 목록: 아래로 스크롤하여 바닥에 가까워지면 다음 페이지 로드
       const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
       if (distanceFromBottom < threshold) {
-        console.log('DatabaseListView: Near bottom (container scroll), loading more...', {
-          scrollTop,
-          scrollHeight,
-          clientHeight,
-          distanceFromBottom,
-          threshold
-        });
+        // console.log('DatabaseListView: Near bottom (container scroll), loading more...', {
+          // scrollTop,
+          // scrollHeight,
+          // clientHeight,
+          // distanceFromBottom,
+          // threshold
+        // });
         loadMore();
       }
     }
@@ -1545,25 +1545,25 @@
     if (scrollTrigger === 'top') {
       // 채팅방 스타일: 위로 스크롤하여 천장에 가까워지면 이전 페이지 로드
       if (scrollTop < threshold) {
-        console.log('DatabaseListView: Near top (window scroll), loading more...', {
-          scrollTop,
-          scrollHeight,
-          clientHeight,
-          threshold
-        });
+        // console.log('DatabaseListView: Near top (window scroll), loading more...', {
+          // scrollTop,
+          // scrollHeight,
+          // clientHeight,
+          // threshold
+        // });
         loadMore();
       }
     } else {
       // 일반 목록: 아래로 스크롤하여 바닥에 가까워지면 다음 페이지 로드
       const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
       if (distanceFromBottom < threshold) {
-        console.log('DatabaseListView: Near bottom (window scroll), loading more...', {
-          scrollTop,
-          scrollHeight,
-          clientHeight,
-          distanceFromBottom,
-          threshold
-        });
+        // console.log('DatabaseListView: Near bottom (window scroll), loading more...', {
+          // scrollTop,
+          // scrollHeight,
+          // clientHeight,
+          // distanceFromBottom,
+          // threshold
+        // });
         loadMore();
       }
     }
@@ -1573,7 +1573,7 @@
    * 새로고침 (처음부터 다시 로드)
    */
   export function refresh() {
-    console.log('DatabaseListView: Refreshing...');
+    // console.log('DatabaseListView: Refreshing...');
     loadInitialData();
   }
 
@@ -1584,7 +1584,7 @@
   export function scrollToTop() {
     if (scrollContainerRef) {
       scrollContainerRef.scrollTop = 0;
-      console.log('DatabaseListView: Scrolled to top');
+      // console.log('DatabaseListView: Scrolled to top');
     } else {
       console.warn('DatabaseListView: Cannot scroll to top - scrollContainerRef is null');
     }
@@ -1597,10 +1597,10 @@
   export function scrollToBottom() {
     if (scrollContainerRef) {
       scrollContainerRef.scrollTop = scrollContainerRef.scrollHeight;
-      console.log('DatabaseListView: Scrolled to bottom', {
-        scrollHeight: scrollContainerRef.scrollHeight,
-        scrollTop: scrollContainerRef.scrollTop
-      });
+      // console.log('DatabaseListView: Scrolled to bottom', {
+        // scrollHeight: scrollContainerRef.scrollHeight,
+        // scrollTop: scrollContainerRef.scrollTop
+      // });
     } else {
       console.warn('DatabaseListView: Cannot scroll to bottom - scrollContainerRef is null');
     }

@@ -1,21 +1,15 @@
 ---
-name: ko.js
-description: ko 파일
-version: 1.0.0
+title: ko.js
 type: javascript
-category: other
-original_path: src/lib/paraglide/messages/ko.js
+path: src/lib/paraglide/messages/ko.js
+status: active
+version: 1.0.0
+last_updated: 2025-11-15
 ---
-
-# ko.js
 
 ## 개요
 
-**파일 경로**: `src/lib/paraglide/messages/ko.js`
-**파일 타입**: javascript
-**카테고리**: other
-
-ko 파일
+이 파일은 `src/lib/paraglide/messages/ko.js`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -1045,6 +1039,14 @@ export const homesectionrecentopenchatdesc5 = /** @type {(inputs: {}) => string}
 	return `실시간 오픈 채팅 메시지를 곧 확인할 수 있습니다.`
 };
 
+export const homesectionrecentopenchatempty5 = /** @type {(inputs: {}) => string} */ () => {
+	return `최근 오픈 채팅 메시지가 없습니다.`
+};
+
+export const homesectionrecentopenchatlogin5 = /** @type {(inputs: {}) => string} */ () => {
+	return `로그인하면 참여 중인 오픈 채팅의 최신 메시지를 볼 수 있습니다.`
+};
+
 export const homesectionpopularopenroom4 = /** @type {(inputs: {}) => string} */ () => {
 	return `인기 오픈 채팅방`
 };
@@ -1065,16 +1067,112 @@ export const homesectionrecentuserscount4 = /** @type {(inputs: { count: NonNull
 	return `최근 가입한 회원 ${i.count}명`
 };
 
+export const homeopenchatnomessage4 = /** @type {(inputs: {}) => string} */ () => {
+	return `아직 대화가 없습니다.`
+};
+
 export const sidebardevhighlightattachment3 = /** @type {(inputs: {}) => string} */ () => {
-	return `8. 첨부파일 업로드`
+	return `9. 첨부파일 업로드`
 };
 
 export const sidebardevhighlightpassword3 = /** @type {(inputs: {}) => string} */ () => {
-	return `9. 채팅 비밀번호 기능`
+	return `10. 채팅 비밀번호 기능`
 };
 
 export const sidebardevhighlightposttype4 = /** @type {(inputs: {}) => string} */ () => {
-	return `10. Post 타입 메시지`
+	return `11. Post 타입 메시지`
+};
+
+export const sidebardevhighlightwrapup4 = /** @type {(inputs: {}) => string} */ () => {
+	return `8. 채팅방 마무리 기능`
+};
+
+export const chatnomoremessages3 = /** @type {(inputs: {}) => string} */ () => {
+	return `더 이상 메시지가 없습니다.`
+};
+
+export const chatroomlist2 = /** @type {(inputs: {}) => string} */ () => {
+	return `내 채팅`
+};
+
+export const chatroomlistempty3 = /** @type {(inputs: {}) => string} */ () => {
+	return `참여한 채팅방이 없습니다.`
+};
+
+export const chatroomlistloading3 = /** @type {(inputs: {}) => string} */ () => {
+	return `채팅방 로딩 중...`
+};
+
+export const chatpasswordsaving2 = /** @type {(inputs: {}) => string} */ () => {
+	return `저장 중...`
+};
+
+export const chatpasswordenabletoggle3 = /** @type {(inputs: {}) => string} */ () => {
+	return `비밀번호 활성화`
+};
+
+export const chatpasswordinputplaceholder3 = /** @type {(inputs: {}) => string} */ () => {
+	return `비밀번호 (최소 4자)`
+};
+
+export const chatpasswordconfirmplaceholder3 = /** @type {(inputs: {}) => string} */ () => {
+	return `비밀번호 확인`
+};
+
+export const chatpasswordminlengtherror4 = /** @type {(inputs: {}) => string} */ () => {
+	return `비밀번호는 최소 4자 이상이어야 합니다`
+};
+
+export const chatpasswordmismatcherror3 = /** @type {(inputs: {}) => string} */ () => {
+	return `비밀번호가 일치하지 않습니다`
+};
+
+export const chatpasswordsetsuccess3 = /** @type {(inputs: {}) => string} */ () => {
+	return `비밀번호가 설정되었습니다`
+};
+
+export const chatpasswordremovesuccess3 = /** @type {(inputs: {}) => string} */ () => {
+	return `비밀번호가 해제되었습니다`
+};
+
+export const chatpasswordsavefailure3 = /** @type {(inputs: {}) => string} */ () => {
+	return `비밀번호 저장에 실패했습니다`
+};
+
+export const chatpasswordsettings2 = /** @type {(inputs: {}) => string} */ () => {
+	return `비밀번호 설정`
+};
+
+export const chatpasswordrequired2 = /** @type {(inputs: {}) => string} */ () => {
+	return `이 채팅방은 비밀번호가 필요합니다.`
+};
+
+export const chatpasswordenterprompt3 = /** @type {(inputs: {}) => string} */ () => {
+	return `비밀번호를 입력하세요`
+};
+
+export const chatpasswordverifying2 = /** @type {(inputs: { countdown: NonNullable<unknown> }) => string} */ (i) => {
+	return `검증 중... (${i.countdown}초 남음)`
+};
+
+export const chatpasswordverifysuccess3 = /** @type {(inputs: {}) => string} */ () => {
+	return `비밀번호가 확인되었습니다`
+};
+
+export const chatpasswordincorrect2 = /** @type {(inputs: {}) => string} */ () => {
+	return `비밀번호가 올바르지 않습니다`
+};
+
+export const chatpasswordverifyfailure3 = /** @type {(inputs: {}) => string} */ () => {
+	return `비밀번호 검증에 실패했습니다`
+};
+
+export const chatpassworddelete2 = /** @type {(inputs: {}) => string} */ () => {
+	return `비밀번호 삭제`
+};
+
+export const chatpassworddeletesuccess3 = /** @type {(inputs: {}) => string} */ () => {
+	return `비밀번호가 삭제되었습니다`
 };
 
 export const chataccept1 = /** @type {(inputs: {}) => string} */ () => {
@@ -1188,10 +1286,6 @@ export { testuserdeleteallconfirmation4 } from "./en.js"
 export { testuserprogressindicator3 } from "./en.js"
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

@@ -1,21 +1,15 @@
 ---
-name: ja.json
-description: ja 다국어 메시지
+title: ja.json
+type: config
+path: messages/ja.json
+status: active
 version: 1.0.0
-type: configuration
-category: i18n-message
-original_path: messages/ja.json
+last_updated: 2025-11-15
 ---
-
-# ja.json
 
 ## 개요
 
-**파일 경로**: `messages/ja.json`
-**파일 타입**: configuration
-**카테고리**: i18n-message
-
-ja 다국어 메시지
+이 파일은 `messages/ja.json`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -280,22 +274,44 @@ ja 다국어 메시지
 	"homeSectionRecentUsersDesc": "新しく参加したユーザーをここで確認できるようにします。",
 	"homeSectionRecentOpenChat": "最近のオープンチャットメッセージ",
 	"homeSectionRecentOpenChatDesc": "リアルタイムのオープンチャットをこの領域に表示予定です。",
+	"homeSectionRecentOpenChatEmpty": "最近のオープンチャットメッセージはありません。",
+	"homeSectionRecentOpenChatLogin": "ログインすると参加中のオープンチャットの最新メッセージを確認できます。",
 	"homeSectionPopularOpenRoom": "人気オープンチャットルーム",
 	"homeSectionPopularOpenRoomDesc": "参加者が多いルームをおすすめとして表示します。",
 	"homeSectionRecentPosts": "最新の投稿＆コメント",
 	"homeSectionRecentPostsDesc": "掲示板の最新投稿とコメントをまとめて確認できるよう準備中です。",
 	"homeSectionRecentUsersCount": "直近で参加したユーザー {count}人",
-	"sidebarDevHighlightAttachment": "8. 添付ファイルアップロード",
-	"sidebarDevHighlightPassword": "9. チャットパスワード機能",
-	"sidebarDevHighlightPostType": "10. Postタイプメッセージ"
+	"homeOpenChatNoMessage": "まだメッセージがありません。",
+	"sidebarDevHighlightAttachment": "9. 添付ファイルアップロード",
+	"sidebarDevHighlightPassword": "10. チャットパスワード機能",
+	"sidebarDevHighlightPostType": "11. Postタイプメッセージ",
+	"sidebarDevHighlightWrapUp": "8. チャットルーム終了機能",
+	"chatNoMoreMessages": "これ以上メッセージはありません。",
+	"chatRoomList": "マイチャット",
+	"chatRoomListEmpty": "参加しているチャットルームがありません。",
+	"chatRoomListLoading": "チャットルーム読み込み中...",
+	"chatPasswordSaving": "保存中...",
+	"chatPasswordEnableToggle": "パスワードを有効にする",
+	"chatPasswordInputPlaceholder": "パスワード（最低4文字）",
+	"chatPasswordConfirmPlaceholder": "パスワード確認",
+	"chatPasswordMinLengthError": "パスワードは最低4文字以上でなければなりません",
+	"chatPasswordMismatchError": "パスワードが一致しません",
+	"chatPasswordSetSuccess": "パスワードが設定されました",
+	"chatPasswordRemoveSuccess": "パスワードが解除されました",
+	"chatPasswordSaveFailure": "パスワードの保存に失敗しました",
+	"chatPasswordSettings": "パスワード設定",
+	"chatPasswordRequired": "このチャットルームはパスワードが必要です。",
+	"chatPasswordEnterPrompt": "パスワードを入力してください",
+	"chatPasswordVerifying": "検証中...（残り{countdown}秒）",
+	"chatPasswordVerifySuccess": "パスワードが確認されました",
+	"chatPasswordIncorrect": "パスワードが正しくありません",
+	"chatPasswordVerifyFailure": "パスワード検証に失敗しました",
+	"chatPasswordDelete": "パスワード削除",
+	"chatPasswordDeleteSuccess": "パスワードが削除されました"
 }
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

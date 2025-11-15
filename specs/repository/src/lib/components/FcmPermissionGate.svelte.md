@@ -1,21 +1,15 @@
 ---
-name: FcmPermissionGate.svelte
-description: FcmPermissionGate 컴포넌트
+title: FcmPermissionGate.svelte
+type: component
+path: src/lib/components/FcmPermissionGate.svelte
+status: active
 version: 1.0.0
-type: svelte-component
-category: component
-original_path: src/lib/components/FcmPermissionGate.svelte
+last_updated: 2025-11-15
 ---
-
-# FcmPermissionGate.svelte
 
 ## 개요
 
-**파일 경로**: `src/lib/components/FcmPermissionGate.svelte`
-**파일 타입**: svelte-component
-**카테고리**: component
-
-FcmPermissionGate 컴포넌트
+이 파일은 `src/lib/components/FcmPermissionGate.svelte`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -134,8 +128,8 @@ FcmPermissionGate 컴포넌트
 	 * User gesture 안에서 Notification.requestPermission() 호출
 	 */
 	async function handleAllowClick() {
-		console.log('[FCM Permission] 🔵🔵🔵 퍼미션 허용 버튼 클릭됨');
-		console.log('[FCM Permission] 현재 권한 상태:', Notification.permission);
+		// console.log('[FCM Permission] 🔵🔵🔵 퍼미션 허용 버튼 클릭됨');
+		// console.log('[FCM Permission] 현재 권한 상태:', Notification.permission);
 
 		if (typeof Notification === 'undefined') {
 			console.error('[FCM Permission] ❌ Notification API 미지원');
@@ -154,25 +148,25 @@ FcmPermissionGate 컴포넌트
 		}
 
 		isProcessing = true;
-		console.log('[FCM Permission] 🔵 권한 요청 시작...');
+		// console.log('[FCM Permission] 🔵 권한 요청 시작...');
 
 		try {
 			// 🔥 User gesture 안에서 권한 요청 (자동 거절 방지)
-			console.log('[FCM Permission] 🔵 Notification.requestPermission() 호출 중...');
+			// console.log('[FCM Permission] 🔵 Notification.requestPermission() 호출 중...');
 			const result = await Notification.requestPermission();
-			console.log('[FCM Permission] ✅ requestPermission 결과:', result);
+			// console.log('[FCM Permission] ✅ requestPermission 결과:', result);
 
 			if (result === 'granted') {
-				console.log('[FCM Permission] ✅✅✅ 권한 허용됨!');
+				// console.log('[FCM Permission] ✅✅✅ 권한 허용됨!');
 				showRequestDialog = false;
 				toast.success('알림 권한이 허용되었습니다.');
 
 				// FCM 토큰 발급 및 저장
-				console.log('[FCM Permission] 🔵 FCM 토큰 발급 시작...');
+				// console.log('[FCM Permission] 🔵 FCM 토큰 발급 시작...');
 				const token = await requestFcmToken();
 
 				if (token) {
-					console.log('[FCM Permission] ✅✅✅ FCM 토큰 발급 완료!');
+					// console.log('[FCM Permission] ✅✅✅ FCM 토큰 발급 완료!');
 					toast.success('푸시 알림이 활성화되었습니다!');
 				} else {
 					console.error('[FCM Permission] ❌ FCM 토큰 발급 실패');
@@ -186,7 +180,7 @@ FcmPermissionGate 컴포넌트
 				goto('/settings/fcm/permission');
 			} else {
 				// 'default' 그대로인 경우 (사용자가 브라우저 팝업을 닫은 경우 등)
-				console.log('[FCM Permission] ℹ️  권한 요청 취소됨 (default 상태 유지)');
+				// console.log('[FCM Permission] ℹ️  권한 요청 취소됨 (default 상태 유지)');
 				showRequestDialog = false;
 			}
 		} catch (error) {
@@ -200,7 +194,7 @@ FcmPermissionGate 컴포넌트
 			showRequestDialog = false;
 		} finally {
 			isProcessing = false;
-			console.log('[FCM Permission] 🔵 권한 요청 처리 완료');
+			// console.log('[FCM Permission] 🔵 권한 요청 처리 완료');
 		}
 	}
 
@@ -331,10 +325,6 @@ FcmPermissionGate 컴포넌트
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

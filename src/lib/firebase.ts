@@ -53,13 +53,13 @@ const firebaseConfig = {
 
 // 디버깅: Firebase 설정 확인
 if (browser) {
-	console.log('✅ Firebase 환경 변수 로드 성공');
-	console.log('Firebase Config:', {
-		apiKey: firebaseConfig.apiKey ? '✓ Loaded' : '✗ Missing',
-		authDomain: firebaseConfig.authDomain ? '✓ Loaded' : '✗ Missing',
-		projectId: firebaseConfig.projectId ? '✓ Loaded' : '✗ Missing',
-		appId: firebaseConfig.appId ? '✓ Loaded' : '✗ Missing'
-	});
+	// console.log('✅ Firebase 환경 변수 로드 성공');
+	// console.log('Firebase Config:', {
+	// 	apiKey: firebaseConfig.apiKey ? '✓ Loaded' : '✗ Missing',
+	// 	authDomain: firebaseConfig.authDomain ? '✓ Loaded' : '✗ Missing',
+	// 	projectId: firebaseConfig.projectId ? '✓ Loaded' : '✗ Missing',
+	// 	appId: firebaseConfig.appId ? '✓ Loaded' : '✗ Missing'
+	// });
 }
 
 /**
@@ -153,7 +153,7 @@ export async function getFirebaseMessaging(): Promise<Messaging | null> {
 
 		// Messaging 인스턴스 생성
 		messaging = getMessaging(app);
-		console.log('✅ Firebase Messaging 초기화 완료');
+		// console.log('✅ Firebase Messaging 초기화 완료');
 
 		return messaging;
 	} catch (error) {

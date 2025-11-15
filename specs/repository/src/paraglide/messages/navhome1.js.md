@@ -1,21 +1,15 @@
 ---
-name: navhome1.js
-description: navhome1 파일
-version: 1.0.0
+title: navhome1.js
 type: javascript
-category: other
-original_path: src/paraglide/messages/navhome1.js
+path: src/paraglide/messages/navhome1.js
+status: active
+version: 1.0.0
+last_updated: 2025-11-15
 ---
-
-# navhome1.js
 
 ## 개요
 
-**파일 경로**: `src/paraglide/messages/navhome1.js`
-**파일 타입**: javascript
-**카테고리**: other
-
-navhome1 파일
+이 파일은 `src/paraglide/messages/navhome1.js`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -66,10 +60,6 @@ const navhome1 = (inputs = {}, options = {}) => {
 export { navhome1 as "navHome" }
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

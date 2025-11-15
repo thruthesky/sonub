@@ -1,21 +1,15 @@
 ---
-name: pagetitleuserlist3.js
-description: pagetitleuserlist3 파일
-version: 1.0.0
+title: pagetitleuserlist3.js
 type: javascript
-category: other
-original_path: src/paraglide/messages/pagetitleuserlist3.js
+path: src/paraglide/messages/pagetitleuserlist3.js
+status: active
+version: 1.0.0
+last_updated: 2025-11-15
 ---
-
-# pagetitleuserlist3.js
 
 ## 개요
 
-**파일 경로**: `src/paraglide/messages/pagetitleuserlist3.js`
-**파일 타입**: javascript
-**카테고리**: other
-
-pagetitleuserlist3 파일
+이 파일은 `src/paraglide/messages/pagetitleuserlist3.js`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -66,10 +60,6 @@ const pagetitleuserlist3 = (inputs = {}, options = {}) => {
 export { pagetitleuserlist3 as "pageTitleUserList" }
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

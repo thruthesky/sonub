@@ -1,21 +1,15 @@
 ---
-name: database.svelte.ts
-description: database.svelte 스토어
-version: 1.0.0
+title: database.svelte.ts
 type: typescript
-category: store
-original_path: src/lib/stores/database.svelte.ts
+path: src/lib/stores/database.svelte.ts
+status: active
+version: 1.0.0
+last_updated: 2025-11-15
 ---
-
-# database.svelte.ts
 
 ## 개요
 
-**파일 경로**: `src/lib/stores/database.svelte.ts`
-**파일 타입**: typescript
-**카테고리**: store
-
-database.svelte 스토어
+이 파일은 `src/lib/stores/database.svelte.ts`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -187,7 +181,7 @@ export function createRealtimeStore<T = any>(
 				loading: false,
 				error: null
 			});
-			console.log(`✅ 실시간 데이터 로드 성공: ${path}`, data !== null ? data : (defaultValue ?? null));
+			// console.log(`✅ 실시간 데이터 로드 성공: ${path}`, data !== null ? data : (defaultValue ?? null));
 		},
 		(error) => {
 			// 데이터 로드 실패 (권한 오류, 네트워크 오류 등)
@@ -274,7 +268,7 @@ export async function writeData(path: string, data: any): Promise<DataOperationR
 	try {
 		const dbRef = ref(rtdb, path);
 		await set(dbRef, data);
-		console.log(`✅ 데이터 쓰기 성공: ${path}`);
+		// console.log(`✅ 데이터 쓰기 성공: ${path}`);
 		return { success: true };
 	} catch (error) {
 		console.error('❌ 데이터 쓰기 오류:', error);
@@ -314,7 +308,7 @@ export async function updateData(
 	try {
 		const dbRef = ref(rtdb, path);
 		await update(dbRef, updates);
-		console.log(`✅ 데이터 업데이트 성공: ${path}`, updates);
+		// console.log(`✅ 데이터 업데이트 성공: ${path}`, updates);
 		return { success: true };
 	} catch (error) {
 		console.error('❌ 데이터 업데이트 오류:', error);
@@ -349,7 +343,7 @@ export async function deleteData(path: string): Promise<DataOperationResult> {
 	try {
 		const dbRef = ref(rtdb, path);
 		await remove(dbRef);
-		console.log(`✅ 데이터 삭제 성공: ${path}`);
+		// console.log(`✅ 데이터 삭제 성공: ${path}`);
 		return { success: true };
 	} catch (error) {
 		console.error('❌ 데이터 삭제 오류:', error);
@@ -391,7 +385,7 @@ export async function pushData(path: string, data: any): Promise<PushDataResult>
 		const dbRef = ref(rtdb, path);
 		const newRef = push(dbRef);
 		await set(newRef, data);
-		console.log(`✅ 데이터 추가 성공: ${path}, 생성된 키: ${newRef.key}`);
+		// console.log(`✅ 데이터 추가 성공: ${path}, 생성된 키: ${newRef.key}`);
 		return { success: true, key: newRef.key };
 	} catch (error) {
 		console.error('❌ 데이터 추가 오류:', error);
@@ -434,10 +428,10 @@ export async function readData<T = any>(path: string): Promise<ReadDataResult<T>
 		const snapshot = await get(dbRef);
 
 		if (snapshot.exists()) {
-			console.log(`✅ 데이터 읽기 성공: ${path}`);
+			// console.log(`✅ 데이터 읽기 성공: ${path}`);
 			return { success: true, data: snapshot.val() as T };
 		} else {
-			console.log(`ℹ️ 데이터가 존재하지 않음: ${path}`);
+			// console.log(`ℹ️ 데이터가 존재하지 않음: ${path}`);
 			return { success: true, data: null };
 		}
 	} catch (error) {
@@ -516,10 +510,6 @@ export function setupPresence(userId: string): () => void {
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

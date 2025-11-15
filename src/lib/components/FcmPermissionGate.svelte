@@ -112,8 +112,8 @@
 	 * User gesture 안에서 Notification.requestPermission() 호출
 	 */
 	async function handleAllowClick() {
-		console.log('[FCM Permission] 🔵🔵🔵 퍼미션 허용 버튼 클릭됨');
-		console.log('[FCM Permission] 현재 권한 상태:', Notification.permission);
+		// console.log('[FCM Permission] 🔵🔵🔵 퍼미션 허용 버튼 클릭됨');
+		// console.log('[FCM Permission] 현재 권한 상태:', Notification.permission);
 
 		if (typeof Notification === 'undefined') {
 			console.error('[FCM Permission] ❌ Notification API 미지원');
@@ -132,25 +132,25 @@
 		}
 
 		isProcessing = true;
-		console.log('[FCM Permission] 🔵 권한 요청 시작...');
+		// console.log('[FCM Permission] 🔵 권한 요청 시작...');
 
 		try {
 			// 🔥 User gesture 안에서 권한 요청 (자동 거절 방지)
-			console.log('[FCM Permission] 🔵 Notification.requestPermission() 호출 중...');
+			// console.log('[FCM Permission] 🔵 Notification.requestPermission() 호출 중...');
 			const result = await Notification.requestPermission();
-			console.log('[FCM Permission] ✅ requestPermission 결과:', result);
+			// console.log('[FCM Permission] ✅ requestPermission 결과:', result);
 
 			if (result === 'granted') {
-				console.log('[FCM Permission] ✅✅✅ 권한 허용됨!');
+				// console.log('[FCM Permission] ✅✅✅ 권한 허용됨!');
 				showRequestDialog = false;
 				toast.success('알림 권한이 허용되었습니다.');
 
 				// FCM 토큰 발급 및 저장
-				console.log('[FCM Permission] 🔵 FCM 토큰 발급 시작...');
+				// console.log('[FCM Permission] 🔵 FCM 토큰 발급 시작...');
 				const token = await requestFcmToken();
 
 				if (token) {
-					console.log('[FCM Permission] ✅✅✅ FCM 토큰 발급 완료!');
+					// console.log('[FCM Permission] ✅✅✅ FCM 토큰 발급 완료!');
 					toast.success('푸시 알림이 활성화되었습니다!');
 				} else {
 					console.error('[FCM Permission] ❌ FCM 토큰 발급 실패');
@@ -164,7 +164,7 @@
 				goto('/settings/fcm/permission');
 			} else {
 				// 'default' 그대로인 경우 (사용자가 브라우저 팝업을 닫은 경우 등)
-				console.log('[FCM Permission] ℹ️  권한 요청 취소됨 (default 상태 유지)');
+				// console.log('[FCM Permission] ℹ️  권한 요청 취소됨 (default 상태 유지)');
 				showRequestDialog = false;
 			}
 		} catch (error) {
@@ -178,7 +178,7 @@
 			showRequestDialog = false;
 		} finally {
 			isProcessing = false;
-			console.log('[FCM Permission] 🔵 권한 요청 처리 완료');
+			// console.log('[FCM Permission] 🔵 권한 요청 처리 완료');
 		}
 	}
 

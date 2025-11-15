@@ -1,21 +1,15 @@
 ---
-name: auth-helpers.ts
-description: auth-helpers 유틸리티
-version: 1.0.0
+title: auth-helpers.ts
 type: typescript
-category: utility
-original_path: src/lib/utils/auth-helpers.ts
+path: src/lib/utils/auth-helpers.ts
+status: active
+version: 1.0.0
+last_updated: 2025-11-15
 ---
-
-# auth-helpers.ts
 
 ## 개요
 
-**파일 경로**: `src/lib/utils/auth-helpers.ts`
-**파일 타입**: typescript
-**카테고리**: utility
-
-auth-helpers 유틸리티
+이 파일은 `src/lib/utils/auth-helpers.ts`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -81,7 +75,7 @@ export async function signInWithGoogle(): Promise<UserCredential> {
 		// 팝업 방식으로 로그인
 		const result = await signInWithPopup(auth, provider);
 
-		console.log('Google 로그인 성공:', result.user.uid);
+		// console.log('Google 로그인 성공:', result.user.uid);
 		return result;
 	} catch (error: any) {
 		console.error('Google 로그인 실패:', error);
@@ -120,7 +114,7 @@ export async function signInWithApple(): Promise<UserCredential> {
 		// 팝업 방식으로 로그인
 		const result = await signInWithPopup(auth, provider);
 
-		console.log('Apple 로그인 성공:', result.user.uid);
+		// console.log('Apple 로그인 성공:', result.user.uid);
 		return result;
 	} catch (error: any) {
 		console.error('Apple 로그인 실패:', error);
@@ -143,7 +137,7 @@ export async function signOut(): Promise<void> {
 
 	try {
 		await firebaseSignOut(auth);
-		console.log('로그아웃 성공');
+		// console.log('로그아웃 성공');
 	} catch (error: any) {
 		console.error('로그아웃 실패:', error);
 		throw error;
@@ -184,10 +178,6 @@ export function getAuthErrorMessage(errorCode: string, provider: 'google' | 'app
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

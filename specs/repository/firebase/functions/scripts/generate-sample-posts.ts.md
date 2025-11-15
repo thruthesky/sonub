@@ -1,21 +1,15 @@
 ---
-name: generate-sample-posts.ts
-description: generate-sample-posts Cloud Function
+title: generate-sample-posts.ts
+type: typescript
+path: firebase/functions/scripts/generate-sample-posts.ts
+status: active
 version: 1.0.0
-type: firebase-function
-category: cloud-function
-original_path: firebase/functions/scripts/generate-sample-posts.ts
+last_updated: 2025-11-15
 ---
-
-# generate-sample-posts.ts
 
 ## 개요
 
-**파일 경로**: `firebase/functions/scripts/generate-sample-posts.ts`
-**파일 타입**: firebase-function
-**카테고리**: cloud-function
-
-generate-sample-posts Cloud Function
+이 파일은 `firebase/functions/scripts/generate-sample-posts.ts`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -53,10 +47,10 @@ function initializeFirebase() {
   // 자격증명 경로 확인
   const credentialsPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
-  console.log("🔧 Firebase Admin 초기화 중...");
-  console.log(
-    `📍 Credentials: ${credentialsPath || "Default Application Credentials"}`
-  );
+  // console.log("🔧 Firebase Admin 초기화 중...");
+  // console.log(
+    // `📍 Credentials: ${credentialsPath || "Default Application Credentials"}`
+  // );
 
   if (!admin.apps.length) {
     admin.initializeApp({
@@ -67,7 +61,7 @@ function initializeFirebase() {
     });
   }
 
-  console.log("✅ Firebase Admin 초기화 완료\n");
+  // console.log("✅ Firebase Admin 초기화 완료\n");
 }
 
 // ========================================================================
@@ -228,7 +222,7 @@ async function generateSamplePosts() {
   const totalPosts = 100; // 생성할 글 개수
   const batchSize = 10; // 한 번에 10개씩 처리 (메모리 효율성)
 
-  console.log(`📝 Community 카테고리 ${totalPosts}개 글 생성 시작...\n`);
+  // console.log(`📝 Community 카테고리 ${totalPosts}개 글 생성 시작...\n`);
 
   const startTime = Date.now();
   let createdCount = 0;
@@ -250,9 +244,9 @@ async function generateSamplePosts() {
         const promise = postsRef
           .push(postData)
           .then((ref) => {
-            console.log(
-              `✅ [${i + 1}/${totalPosts}] 글 생성 완료: ${ref.key}`
-            );
+            // console.log(
+              // `✅ [${i + 1}/${totalPosts}] 글 생성 완료: ${ref.key}`
+            // );
             createdCount++;
             return {success: true, postId: ref.key};
           })
@@ -273,31 +267,31 @@ async function generateSamplePosts() {
       // 진행 상황 출력
       const progress = Math.min(endIndex, totalPosts);
       const progressPercent = Math.round((progress / totalPosts) * 100);
-      console.log(
-        `\n📊 진행 상황: ${progress}/${totalPosts} (${progressPercent}%)\n`
-      );
+      // console.log(
+        // `\n📊 진행 상황: ${progress}/${totalPosts} (${progressPercent}%)\n`
+      // );
     }
 
     // 완료 결과 출력
     const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
 
-    console.log("\n" + "=".repeat(60));
-    console.log("✅ 글 생성 완료!");
-    console.log("=".repeat(60));
-    console.log(`📊 생성된 글 수: ${createdCount}/${totalPosts}`);
-    console.log(`⏱️  소요 시간: ${elapsedTime}초`);
+    // console.log("\n" + "=".repeat(60));
+    // console.log("✅ 글 생성 완료!");
+    // console.log("=".repeat(60));
+    // console.log(`📊 생성된 글 수: ${createdCount}/${totalPosts}`);
+    // console.log(`⏱️  소요 시간: ${elapsedTime}초`);
 
     if (errors.length > 0) {
-      console.log(`⚠️  오류 발생 수: ${errors.length}`);
+      // console.log(`⚠️  오류 발생 수: ${errors.length}`);
       errors.forEach(({index, error}) => {
-        console.log(`   - [${index}] ${error}`);
+        // console.log(`   - [${index}] ${error}`);
       });
     }
 
-    console.log("=".repeat(60));
-    console.log("\n🎉 샘플 글 생성이 완료되었습니다!");
-    console.log("   Firebase Console에서 확인하거나");
-    console.log("   웹 애플리케이션의 게시판 페이지에서 확인할 수 있습니다.\n");
+    // console.log("=".repeat(60));
+    // console.log("\n🎉 샘플 글 생성이 완료되었습니다!");
+    // console.log("   Firebase Console에서 확인하거나");
+    // console.log("   웹 애플리케이션의 게시판 페이지에서 확인할 수 있습니다.\n");
 
     return {
       success: errors.length === 0,
@@ -339,10 +333,6 @@ main();
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성

@@ -191,10 +191,10 @@ function ensureDir(dirPath: string): void {
  * 메인 실행 함수
  */
 async function main() {
-	console.log('🚀 SED 스펙 문서 생성 시작...\n');
-	console.log(`📁 작업 디렉토리: ${BASE_DIR}`);
-	console.log(`📝 출력 디렉토리: ${SPEC_OUTPUT_DIR}`);
-	console.log(`🔄 강제 덮어쓰기: ${FORCE_OVERWRITE ? '예' : '아니오'}\n`);
+	// console.log('🚀 SED 스펙 문서 생성 시작...\n');
+	// console.log(`📁 작업 디렉토리: ${BASE_DIR}`);
+	// console.log(`📝 출력 디렉토리: ${SPEC_OUTPUT_DIR}`);
+	// console.log(`🔄 강제 덮어쓰기: ${FORCE_OVERWRITE ? '예' : '아니오'}\n`);
 
 	// 모든 소스 파일 찾기
 	const allFiles: string[] = [];
@@ -203,7 +203,7 @@ async function main() {
 		allFiles.push(...files);
 	}
 
-	console.log(`📊 찾은 파일 개수: ${allFiles.length}개\n`);
+	// console.log(`📊 찾은 파일 개수: ${allFiles.length}개\n`);
 
 	let successCount = 0;
 	let skipCount = 0;
@@ -214,7 +214,7 @@ async function main() {
 	for (const filePath of allFiles) {
 		try {
 			const relativePath = path.relative(BASE_DIR, filePath);
-			console.log(`🔍 처리 중: ${relativePath}`);
+			// console.log(`🔍 처리 중: ${relativePath}`);
 
 			// 소스 파일 읽기
 			const content = fs.readFileSync(filePath, 'utf-8');
@@ -227,7 +227,7 @@ async function main() {
 
 			// 이미 존재하는지 확인
 			if (fs.existsSync(specFilePath) && !FORCE_OVERWRITE) {
-				console.log(`  ⏭️  건너뛰기 (이미 존재함): ${specFilePath}\n`);
+				// console.log(`  ⏭️  건너뛰기 (이미 존재함): ${specFilePath}\n`);
 				skipCount++;
 				continue;
 			}
@@ -238,7 +238,7 @@ async function main() {
 			// 스펙 문서 저장 (UTF-8)
 			fs.writeFileSync(specFilePath, specDoc, { encoding: 'utf-8' });
 
-			console.log(`  ✅ 생성 완료: ${specFilePath}\n`);
+			// console.log(`  ✅ 생성 완료: ${specFilePath}\n`);
 			successCount++;
 		} catch (error) {
 			console.error(`  ❌ 에러 발생: ${filePath}`);
@@ -252,24 +252,24 @@ async function main() {
 	}
 
 	// 최종 보고
-	console.log('\n' + '='.repeat(60));
-	console.log('📊 작업 완료 보고서');
-	console.log('='.repeat(60));
-	console.log(`총 파일 수: ${allFiles.length}개`);
-	console.log(`성공: ${successCount}개`);
-	console.log(`건너뛰기: ${skipCount}개`);
-	console.log(`실패: ${errorCount}개`);
-	console.log('='.repeat(60));
+	// console.log('\n' + '='.repeat(60));
+	// console.log('📊 작업 완료 보고서');
+	// console.log('='.repeat(60));
+	// console.log(`총 파일 수: ${allFiles.length}개`);
+	// console.log(`성공: ${successCount}개`);
+	// console.log(`건너뛰기: ${skipCount}개`);
+	// console.log(`실패: ${errorCount}개`);
+	// console.log('='.repeat(60));
 
 	if (errors.length > 0) {
-		console.log('\n❌ 실패한 파일 목록:');
+		// console.log('\n❌ 실패한 파일 목록:');
 		errors.forEach(({ file, error }) => {
-			console.log(`  - ${file}`);
-			console.log(`    에러: ${error}`);
+			// console.log(`  - ${file}`);
+			// console.log(`    에러: ${error}`);
 		});
 	}
 
-	console.log('\n✨ 작업 완료!');
+	// console.log('\n✨ 작업 완료!');
 }
 
 // 실행

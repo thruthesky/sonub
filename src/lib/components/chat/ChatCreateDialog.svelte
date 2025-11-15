@@ -134,10 +134,10 @@
 
 			await set(joinRef, joinData);
 
-			console.log(`✅ ${isGroupChat ? '그룹' : '오픈'} 채팅방 생성 완료:`, {
-				roomId,
-				roomData
-			});
+			// console.log(`✅ ${isGroupChat ? '그룹' : '오픈'} 채팅방 생성 완료:`, {
+			// 	roomId,
+			// 	roomData
+			// });
 
 			// 폼 초기화
 			roomName = '';

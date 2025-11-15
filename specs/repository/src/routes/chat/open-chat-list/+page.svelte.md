@@ -1,21 +1,15 @@
 ---
-name: +page.svelte
-description: +page 페이지
+title: +page.svelte
+type: component
+path: src/routes/chat/open-chat-list/+page.svelte
+status: active
 version: 1.0.0
-type: svelte-component
-category: route-page
-original_path: src/routes/chat/open-chat-list/+page.svelte
+last_updated: 2025-11-15
 ---
-
-# +page.svelte
 
 ## 개요
 
-**파일 경로**: `src/routes/chat/open-chat-list/+page.svelte`
-**파일 타입**: svelte-component
-**카테고리**: route-page
-
-+page 페이지
+이 파일은 `src/routes/chat/open-chat-list/+page.svelte`의 소스 코드를 포함하는 SED 스펙 문서입니다.
 
 ## 소스 코드
 
@@ -66,7 +60,7 @@ original_path: src/routes/chat/open-chat-list/+page.svelte
 	 */
 	function handleRoomCreated(event: CustomEvent<{ roomId: string }>) {
 		const { roomId } = event.detail;
-		console.log('✅ 채팅방 생성 완료, 이동:', roomId);
+		// console.log('✅ 채팅방 생성 완료, 이동:', roomId);
 		void goto(`/chat/room?roomId=${roomId}`);
 	}
 
@@ -74,7 +68,7 @@ original_path: src/routes/chat/open-chat-list/+page.svelte
 	 * 친구 찾기 메뉴 클릭 핸들러
 	 */
 	function handleFindFriends() {
-		console.log('친구 찾기 메뉴 클릭됨');
+		// console.log('친구 찾기 메뉴 클릭됨');
 		// TODO: 친구 찾기 기능 구현
 	}
 
@@ -106,7 +100,7 @@ original_path: src/routes/chat/open-chat-list/+page.svelte
 	 * 검색 메뉴 클릭 핸들러
 	 */
 	function handleSearch() {
-		console.log('검색 메뉴 클릭됨');
+		// console.log('검색 메뉴 클릭됨');
 		// TODO: 검색 기능 구현
 	}
 
@@ -146,7 +140,7 @@ original_path: src/routes/chat/open-chat-list/+page.svelte
 
 		try {
 			const isPinned = await togglePinChatRoom(rtdb, roomId, uid, roomType);
-			console.log(`✅ 채팅방 핀 ${isPinned ? '설정' : '해제'} 완료:`, roomId);
+			// console.log(`✅ 채팅방 핀 ${isPinned ? '설정' : '해제'} 완료:`, roomId);
 		} catch (error) {
 			console.error('채팅방 핀 토글 실패:', error);
 			alert('이 기능은 참여한 채팅방에서만 사용할 수 있습니다');
@@ -244,7 +238,9 @@ original_path: src/routes/chat/open-chat-list/+page.svelte
 					threshold: 320,
 					reverse: true
 				}}
-				{console.log('🔍 [Open Chat List Debug] DatabaseListView props:', dbListViewProps)}
+				<!--
+					// console.log('🔍 [Open Chat List Debug] DatabaseListView props:', dbListViewProps)
+				-->
 				<DatabaseListView
 					path={CHAT_ROOMS_PATH}
 					pageSize={PAGE_SIZE}
@@ -253,24 +249,28 @@ original_path: src/routes/chat/open-chat-list/+page.svelte
 					reverse={true}
 				>
 				{#snippet item(itemData, index)}
-					{console.log('🔍 [Open Chat List Debug] Item received:', {
-						index,
-						key: itemData.key,
-						hasData: !!itemData.data,
-						data: itemData.data
-					})}
+					<!--
+						// console.log('🔍 [Open Chat List Debug] Item received:', {
+						// 	index,
+						// 	key: itemData.key,
+						// 	hasData: !!itemData.data,
+						// 	data: itemData.data
+						// })
+					-->
 					{@const room = (itemData.data ?? {}) as ChatRoomData}
 					{@const roomId = (itemData.key ?? '') as string}
 					{@const roomType = (room.type ?? 'open').toString()}
 					{@const isOpen = room.open === true}
-					{console.log('🔍 [Open Chat List Debug] Room data:', {
-						roomId,
-						roomType,
-						isOpen,
-						openListOrder: room.openListOrder,
-						name: room.name,
-						allFields: Object.keys(room)
-					})}
+					<!--
+						// console.log('🔍 [Open Chat List Debug] Room data:', {
+						// 	roomId,
+						// 	roomType,
+						// 	isOpen,
+						// 	openListOrder: room.openListOrder,
+						// 	name: room.name,
+						// 	allFields: Object.keys(room)
+						// })
+					-->
 					{@const lastMessage =
 						typeof room.lastMessageText === 'string' && room.lastMessageText.trim()
 							? room.lastMessageText
@@ -372,10 +372,6 @@ original_path: src/routes/chat/open-chat-list/+page.svelte
 
 ```
 
-## 주요 기능
+## 변경 이력
 
-(이 섹션은 수동으로 업데이트 필요)
-
-## 관련 파일
-
-(이 섹션은 수동으로 업데이트 필요)
+- 2025-11-15: 스펙 문서 생성
