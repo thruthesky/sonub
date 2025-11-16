@@ -172,7 +172,7 @@
               ) &&
               (
                 // b) 삭제되지 않은 메시지여야 함
-                !data.child('deleted').val()
+                data.child('deleted').val() != true
               ) &&
               (
                 // c) 90분(5,400,000ms) 이내 메시지여야 함
