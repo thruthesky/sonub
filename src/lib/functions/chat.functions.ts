@@ -114,28 +114,41 @@ export function joinChatRoom(
 	roomId: string,
 	uid: string
 ): void {
+	console.log(`🚪 [joinChatRoom 시작] roomId: ${roomId}, uid: ${uid}`);
+
 	// 1. 채팅방 멤버로 등록
 	// merge: true를 사용하여 기존 알림 설정 보존
 	// - 문서가 없으면: value: true로 생성 (최초 입장, 알림 구독)
 	// - 문서가 있으면: 기존 value 유지 (사용자의 알림 설정 보존)
 	const memberRef = doc(db, `chats/${roomId}/members/${uid}`);
+	console.log(`📝 [멤버 등록 시도] 경로: chats/${roomId}/members/${uid}`);
 	setDoc(memberRef, { value: true }, { merge: true })
+		.then(() => {
+			console.log(`✅ [멤버 등록 성공] roomId: ${roomId}, uid: ${uid}`);
+		})
 		.catch((error) => {
-			console.error('채팅방 멤버 등록 실패:', error);
+			console.error(`❌ [멤버 등록 실패] roomId: ${roomId}, uid: ${uid}`, error);
+			console.error(`❌ [에러 상세] code: ${error.code}, message: ${error.message}`);
 		});
 
 	// 2. newMessageCount를 0으로 초기화 (메시지를 모두 읽은 것으로 표시)
 	// setDoc with merge: true를 사용하여 문서가 없으면 생성, 있으면 업데이트
 	const chatJoinRef = doc(db, `users/${uid}/chat-joins/${roomId}`);
+	console.log(`📝 [chat-joins 업데이트 시도] 경로: users/${uid}/chat-joins/${roomId}`);
 	setDoc(
 		chatJoinRef,
 		{
 			newMessageCount: 0
 		},
 		{ merge: true }
-	).catch((error) => {
-		console.error('newMessageCount 초기화 실패:', error);
-	});
+	)
+		.then(() => {
+			console.log(`✅ [chat-joins 업데이트 성공] roomId: ${roomId}, uid: ${uid}`);
+		})
+		.catch((error) => {
+			console.error(`❌ [chat-joins 업데이트 실패] roomId: ${roomId}, uid: ${uid}`, error);
+			console.error(`❌ [에러 상세] code: ${error.code}, message: ${error.message}`);
+		});
 }
 
 /**

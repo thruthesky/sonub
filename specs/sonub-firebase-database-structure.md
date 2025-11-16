@@ -141,5 +141,6 @@ Cloud Firestore
 - 채팅 클라이언트 로직: `src/routes/chat/room/+page.svelte`, `src/lib/functions/chat.functions.ts`
 - Cloud Functions: `firebase/functions/src/index.ts`, `firebase/functions/src/handlers/user.handler.ts`
 - 통계 UI: `src/lib/components/right-sidebar.svelte`, `src/routes/stats/+page.svelte`
+- Firestore/RTDB 하이브리드 비용 계획: [sonub-plan-next-version.md](./sonub-plan-next-version.md)
 
 이 문서는 Firestore 소스 코드와의 싱크를 유지해야 합니다. 새로운 컬렉션이나 서브컬렉션을 추가할 때는 Firestore 규칙과 Cloud Functions 구현을 먼저 확정한 후 본 문서를 업데이트해 주세요.

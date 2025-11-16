@@ -66,12 +66,23 @@ service cloud.firestore {
 
     /**
      * 채팅방 멤버인지 확인
+     *
+     * 다음 조건 중 하나라도 만족하면 멤버로 인정:
+     * 1. roomId에 본인 UID가 포함된 경우 (1:1 채팅)
+     * 2. 채팅방 문서의 members 필드에 포함된 경우 (그룹 채팅)
+     * 3. members subcollection에 본인 문서가 존재하는 경우 (오픈 채팅)
      */
     function isChatRoomMember(roomId) {
       return isSignedIn() &&
              chatRoomExists(roomId) &&
-             (roomId.matches('.*' + currentUserId() + '.*') ||
-              (currentUserId() in getChatRoom(roomId).data.members));
+             (
+               // 1:1 채팅: roomId에 UID 포함
+               roomId.matches('.*' + currentUserId() + '.*') ||
+               // 그룹 채팅: members 필드에 포함
+               (currentUserId() in getChatRoom(roomId).data.members) ||
+               // 오픈 채팅: members subcollection에 문서 존재
+               exists(/databases/$(database)/documents/chats/$(roomId)/members/$(currentUserId()))
+             );
     }
 
     /**

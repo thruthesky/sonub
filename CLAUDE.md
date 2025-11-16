@@ -3,6 +3,7 @@
 - [ ] 당신은 Svelte5 + SvelteKit + Tailwind CSS + Svelte-Shadcn + Firebase Cloud Functions 개발 전문가입니다.
 - [ ] 당신은 SED (Software Engineering Discipline) 방법론을 엄격히 준수합니다.
 - [ ] 모든 소스 코드의 주석과 모든 문서는 한국어로 작성해야 합니다. 반드시 utf-8 인코딩을 사용해야 합니다.
+- [ ] **중요**: 본 프로젝트는 Firebase Firestore만 사용합니다. Firebase Realtime Database는 사용하지 않습니다.
 - [ ] 반드시 https://sedai.dev/instructions 및 ./specs/index.md 파일을 먼저 읽고 이해해야 합니다.
 - [ ] 개발자 요청을 받으면 [Workflow for Claude SED Agent](#workflow-for-claude-sed-agent)을 따릅니다.
 - [ ] 관련된 사양 문서를 모두 읽고 YAML 헤더를 구문 분석합니다.
@@ -25,10 +26,6 @@
   - [ ] Svelte 의 Tailwind CSS 스타일링은 아래의 [CSS 스타일링](#css-스타일링) 섹션을 따릅니다.
   - [ ] Svelte 의 paraglide i18n 다국어 처리는 아래의 [다국어 (i18n) 처리](#다국어-i18n-처리) 섹션을 따릅니다.
   - [ ] 모든 UI/UX 작업(코딩)을 할 때에 svelte-shadcn 과 Tailwind CSS 를 씁니다.
-- [ ] Firebase Realtime Database Security Rules 작업 시에는 JSONC 기능을 적극 활용합니다.
-  - [ ] 모든 `.read/.write/.validate` 조건식에 `&&` 또는 `||` 가 등장하면 반드시 여러 줄로 나누어 작성합니다.
-  - [ ] 각 조건 블록 앞에는 세부 의도를 설명하는 주석을 남기고, 괄호로 우선순위를 명확히 표현합니다.
-  - [ ] 단일 줄 논리식이나 주석 없는 규칙은 허용되지 않습니다.
 
 ## CSS 스타일링
 

@@ -102,35 +102,53 @@
 	 * - activeRoomId가 변경되면 새로운 방이므로 다시 입장 시도
 	 */
 	$effect(() => {
-		if (!activeRoomId || !authStore.user?.uid || !db) return;
+		if (!activeRoomId || !authStore.user?.uid || !db) {
+			console.log(`⏸️ [채팅방 입장 처리 스킵] activeRoomId: ${activeRoomId}, uid: ${authStore.user?.uid}`);
+			return;
+		}
 
 		// 이미 이 방에 대해 입장 시도했으면 스킵 (무한 루프 방지)
-		if (joinAttemptedRoomId === activeRoomId) return;
+		if (joinAttemptedRoomId === activeRoomId) {
+			console.log(`⏸️ [채팅방 입장 처리 스킵] 이미 입장 시도함: ${activeRoomId}`);
+			return;
+		}
+
+		console.log(`🚪 [채팅방 입장 처리 시작] roomId: ${activeRoomId}, isSingleChat: ${isSingleChat}`);
 
 		if (isSingleChat) {
 			// 1:1 채팅: chat-joins 문서에 최소 정보만 업데이트
 			// Cloud Functions(onChatJoinCreate)가 자동으로 필요한 필드들을 추가합니다.
+			console.log(`💬 [1:1 채팅방 입장] roomId: ${activeRoomId}`);
 			enterSingleChatRoom(db, activeRoomId, authStore.user.uid);
 			joinAttemptedRoomId = activeRoomId; // 입장 시도 기록
 		} else {
 			// 그룹/오픈 채팅: 비밀번호 확인 후 입장
 			// 채팅방 정보 로드 완료 확인 (roomOwner가 null이 아니면 로드 완료)
 			if (roomOwner !== null) {
+				console.log(
+					`📊 [그룹/오픈 채팅 상태] owner: ${roomOwner}, passwordEnabled: ${roomPasswordEnabled}, isRoomMember: ${isRoomMember}, isRoomOwner: ${isRoomOwner}`
+				);
+
 				const needsPassword = roomPasswordEnabled && !isRoomMember && !isRoomOwner;
 
 				if (needsPassword) {
 					// 비밀번호 필요: 모달 표시
+					console.log(`🔒 [비밀번호 필요] 비밀번호 입력 모달 표시`);
 					passwordPromptOpen = true;
 					joinAttemptedRoomId = activeRoomId; // 입장 시도 기록
 				} else if (isRoomMember || isRoomOwner) {
 					// 이미 members이거나 owner인 경우: 입장 (chat-joins 업데이트)
+					console.log(`✅ [멤버/Owner 입장] chat-joins 업데이트`);
 					joinChatRoom(db, activeRoomId, authStore.user.uid);
 					joinAttemptedRoomId = activeRoomId; // 입장 시도 기록
 				} else {
 					// 비밀번호 불필요하지만 members도 아닌 경우: 자동으로 members에 추가
+					console.log(`🆕 [새 멤버 입장] 자동으로 members에 추가`);
 					joinChatRoom(db, activeRoomId, authStore.user.uid);
 					joinAttemptedRoomId = activeRoomId; // 입장 시도 기록
 				}
+			} else {
+				console.log(`⏳ [채팅방 정보 로딩 중] roomOwner가 아직 로드되지 않음`);
 			}
 		}
 	});
@@ -229,18 +247,34 @@
 			return;
 		}
 
+		console.log(`🔍 [채팅방 정보 구독 시작] roomId: ${activeRoomId}, uid: ${authStore.user.uid}`);
+
 		// 채팅방 기본 정보 구독 (owner, password 플래그)
 		const roomRef = doc(db, `chats/${activeRoomId}`);
-		const unsubscribeRoom = onSnapshot(roomRef, (snapshot) => {
-			if (snapshot.exists()) {
-				const data = snapshot.data();
-				roomOwner = data?.owner ?? null;
-				roomPasswordEnabled = data?.password === true;
-			} else {
+		console.log(`📝 [채팅방 문서 구독] 경로: chats/${activeRoomId}`);
+		const unsubscribeRoom = onSnapshot(
+			roomRef,
+			(snapshot) => {
+				if (snapshot.exists()) {
+					const data = snapshot.data();
+					roomOwner = data?.owner ?? null;
+					roomPasswordEnabled = data?.password === true;
+					console.log(
+						`✅ [채팅방 문서 로드 성공] owner: ${roomOwner}, password: ${roomPasswordEnabled}`
+					);
+				} else {
+					roomOwner = null;
+					roomPasswordEnabled = false;
+					console.log(`⚠️ [채팅방 문서 없음] roomId: ${activeRoomId}`);
+				}
+			},
+			(error) => {
+				console.error(`❌ [채팅방 문서 구독 에러] roomId: ${activeRoomId}`, error);
+				console.error(`❌ [에러 상세] code: ${error.code}, message: ${error.message}`);
 				roomOwner = null;
 				roomPasswordEnabled = false;
 			}
-		});
+		);
 
 		// 현재 사용자의 members 상태 구독
 		// 중요: members/{uid} 문서가 존재하면 멤버입니다
@@ -248,22 +282,55 @@
 		// - value: false → 멤버이지만 알림 미구독
 		// - 문서 없음 → 멤버가 아님
 		const memberRef = doc(db, `chats/${activeRoomId}/members/${authStore.user.uid}`);
-		const unsubscribeMember = onSnapshot(memberRef, (snapshot) => {
-			isRoomMember = snapshot.exists(); // 문서 존재 여부만 확인
-		});
+		console.log(
+			`📝 [멤버 문서 구독] 경로: chats/${activeRoomId}/members/${authStore.user.uid}`
+		);
+		const unsubscribeMember = onSnapshot(
+			memberRef,
+			(snapshot) => {
+				isRoomMember = snapshot.exists(); // 문서 존재 여부만 확인
+				console.log(`✅ [멤버 문서 로드 성공] isRoomMember: ${isRoomMember}`);
+			},
+			(error) => {
+				console.error(
+					`❌ [멤버 문서 구독 에러] roomId: ${activeRoomId}, uid: ${authStore.user.uid}`,
+					error
+				);
+				console.error(`❌ [에러 상세] code: ${error.code}, message: ${error.message}`);
+				isRoomMember = false;
+			}
+		);
 
 		// 실제 비밀번호 구독 (owner만 읽기 가능)
 		const passwordRef = doc(db, `chat-passwords/${activeRoomId}`);
-		const unsubscribePassword = onSnapshot(passwordRef, (snapshot) => {
-			if (snapshot.exists()) {
-				const data = snapshot.data();
-				roomPasswordValue = data?.password ?? '';
-			} else {
-				roomPasswordValue = '';
+		console.log(`📝 [비밀번호 문서 구독] 경로: chat-passwords/${activeRoomId}`);
+		const unsubscribePassword = onSnapshot(
+			passwordRef,
+			(snapshot) => {
+				if (snapshot.exists()) {
+					const data = snapshot.data();
+					roomPasswordValue = data?.password ?? '';
+					console.log(`✅ [비밀번호 문서 로드 성공] password: ${roomPasswordValue ? '***' : '(없음)'}`);
+				} else {
+					roomPasswordValue = '';
+					console.log(`⚠️ [비밀번호 문서 없음] roomId: ${activeRoomId}`);
+				}
+			},
+			(error) => {
+				// owner가 아닌 경우 퍼미션 에러 발생 (정상)
+				if (error.code === 'permission-denied') {
+					console.log(`ℹ️ [비밀번호 문서 권한 없음] owner가 아니므로 정상 (roomId: ${activeRoomId})`);
+					roomPasswordValue = '';
+				} else {
+					console.error(`❌ [비밀번호 문서 구독 에러] roomId: ${activeRoomId}`, error);
+					console.error(`❌ [에러 상세] code: ${error.code}, message: ${error.message}`);
+					roomPasswordValue = '';
+				}
 			}
-		});
+		);
 
 		return () => {
+			console.log(`🔚 [채팅방 정보 구독 종료] roomId: ${activeRoomId}`);
 			unsubscribeRoom();
 			unsubscribeMember();
 			unsubscribePassword();

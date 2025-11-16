@@ -817,8 +817,7 @@ specs/repository/
 │   │   ├── src/                  # Cloud Functions 소스
 │   │   ├── test/                 # 테스트 파일
 │   │   └── lib/                  # 빌드 산출물
-│   ├── firebase.json             # Firebase 설정
-│   └── database.rules.json       # 보안 규칙
+│   └── firebase.json             # Firebase 설정
 ├── shared/                       # Shared 순수 함수 (2개)
 ├── messages/                     # 다국어 원본 메시지 (4개)
 ├── e2e/                          # E2E 테스트 (1개)
@@ -1417,11 +1416,10 @@ Switch 컴포넌트 (2개):
   - sonub-chat-overview.md
   - sonub-setup-firebase.md
   - sonub-firebase-database-structure.md
-  - sonub-firebase-realtime-database.md
-- **Tags**: chat, password, security, firebase-rtdb, cloud-functions, svelte5, authentication
+- **Tags**: chat, password, security, firestore, cloud-functions, svelte5, authentication
 - **Files**:
   - `firebase/functions/src/handlers/chat.password-verification.handler.ts` - 비밀번호 검증 Cloud Function
-  - `firebase/database.rules.json` - Firebase Security Rules (password 보호 로직)
+  - `firebase/firestore.rules` - Firebase Security Rules (password 보호 로직)
   - `src/lib/components/chat/room-password-setting.svelte` - 비밀번호 설정 UI (Owner 전용)
   - `src/lib/components/chat/room-password-prompt.svelte` - 비밀번호 입력 모달
   - `src/routes/chat/room/+page.svelte` - 채팅방 입장 로직 수정

@@ -8,8 +8,7 @@ dependencies:
   - sonub-chat-room.md
   - sonub-firebase-database-structure.md
   - sonub-firebase-cloudfunctions.md
-  - sonub-firebase-realtime-database.md
-tags: chat, notification, sound, badge, realtime, cloud-functions, rtdb, broadcast-channel, multi-tab, alert-sound
+tags: chat, notification, sound, badge, realtime, cloud-functions, firestore, broadcast-channel, multi-tab, alert-sound
 ---
 
 # 채팅 새 메시지 알림 시스템 (Chat Notification & Sound)
@@ -22,9 +21,9 @@ tags: chat, notification, sound, badge, realtime, cloud-functions, rtdb, broadca
 
 ### 1.2 주요 기능
 
-- ✅ **전체 채팅방 newMessageCount 합계**: 모든 채팅방의 읽지 않은 메시지 수를 `/users/{uid}/newMessageCount`에 누적
+- ✅ **전체 채팅방 newMessageCount 합계**: 모든 채팅방의 읽지 않은 메시지 수를 `users/{uid}` 문서의 `newMessageCount` 필드에 누적
 - ✅ **TopBar 알림 배지**: 사용자 프로필 사진에 빨간 배지로 새 메시지 수 표시
-- ✅ **실시간 업데이트**: rtdbStore로 `/users/{uid}/newMessageCount` 실시간 구독
+- ✅ **실시간 업데이트**: firestoreStore로 `users/{uid}` 문서 실시간 구독
 - ✅ **알림음 재생**: 새 메시지 수가 증가할 때만 알림음 재생 (감소 시 재생 안 함)
 - ✅ **다중 탭 중복 방지**: BroadcastChannel로 여러 탭에서 동시 재생 방지
 - ✅ **채팅방 페이지 예외 처리**: 채팅방에 있을 때는 알림음 재생 안 함
@@ -33,8 +32,8 @@ tags: chat, notification, sound, badge, realtime, cloud-functions, rtdb, broadca
 ### 1.3 구현 범위
 
 **백엔드 (Firebase Cloud Functions):**
-- `/chat-joins/{uid}/{roomId}/newMessageCount` 변경 감지 트리거
-- 증가 시: `/users/{uid}/newMessageCount`를 `increment()`
+- `users/{uid}/chat-joins/{roomId}` 문서의 `newMessageCount` 필드 변경 감지 트리거
+- 증가 시: `users/{uid}` 문서의 `newMessageCount` 필드를 `FieldValue.increment()`로 증가
 - 0/삭제 시: 모든 채팅방의 `newMessageCount > 0`인 값만 합산하여 저장
 
 **프론트엔드 (Svelte):**
@@ -48,12 +47,12 @@ tags: chat, notification, sound, badge, realtime, cloud-functions, rtdb, broadca
 
 ### 2.1 newMessageCount 합산 방식: Cloud Functions vs 클라이언트
 
-**결정:** Cloud Functions에서 `/users/{uid}/newMessageCount` 합계 관리
+**결정:** Cloud Functions에서 `users/{uid}` 문서의 `newMessageCount` 필드로 합계 관리
 
 **이유:**
 1. **성능 최적화**: 클라이언트가 모든 채팅방 데이터를 구독할 필요 없음
 2. **데이터 일관성**: 서버에서 중앙 관리로 데이터 불일치 방지
-3. **네트워크 비용 절감**: RTDB 읽기 횟수 최소화
+3. **네트워크 비용 절감**: Firestore 읽기 횟수 최소화
 4. **정확성**: increment와 전체 재계산 혼용으로 예기치 못한 오류 방지
 
 **트레이드오프:**
@@ -67,13 +66,13 @@ tags: chat, notification, sound, badge, realtime, cloud-functions, rtdb, broadca
 **이유:**
 
 **증가 시 (newMessageCount 1씩 증가):**
-- `transaction()` + `increment`로 빠르게 처리
+- `FieldValue.increment()`로 빠르게 처리
 - 각 채팅방에서 메시지가 올 때마다 즉시 반영
-- 예: 채팅방 A에서 +1 → `/users/{uid}/newMessageCount` +1
+- 예: 채팅방 A에서 +1 → `users/{uid}` 문서의 `newMessageCount` 필드 +1
 
 **0/삭제 시 (사용자가 채팅방 읽음 처리):**
 - ⚠️ **중요**: `increment`가 아닌 **전체 재계산** 수행
-- 모든 `/chat-joins/{uid}/*`에서 `newMessageCount > 0`인 채팅방만 가져와 합산
+- 모든 `users/{uid}/chat-joins/{roomId}` 문서에서 `newMessageCount > 0`인 채팅방만 가져와 합산
 - 이유: 예기치 못한 상황에서 데이터 불일치 발생 시 자동 복구
 - 예:
   - 채팅방 A: 5개, 채팅방 B: 3개 → 합계: 8개
@@ -81,7 +80,7 @@ tags: chat, notification, sound, badge, realtime, cloud-functions, rtdb, broadca
 
 **트레이드오프:**
 - 장점: 데이터 정확성 보장, 불일치 자동 복구
-- 단점: 0으로 변경 시 약간의 추가 RTDB 읽기 발생 (무시할 수준)
+- 단점: 0으로 변경 시 약간의 추가 Firestore 읽기 발생 (무시할 수준)
 
 ### 2.3 알림음 재생 조건: 증가할 때만
 
@@ -113,71 +112,71 @@ tags: chat, notification, sound, badge, realtime, cloud-functions, rtdb, broadca
 
 ## 3. 데이터 구조
 
-### 3.1 RTDB 경로
+### 3.1 Firestore 경로
 
 **기존 경로 (채팅방별):**
 ```
-/chat-joins/{uid}/{roomId}/newMessageCount: number
+users/{uid}/chat-joins/{roomId} 문서의 newMessageCount 필드: number
 ```
 
 **새로운 경로 (전체 합계):**
 ```
-/users/{uid}/newMessageCount: number
+users/{uid} 문서의 newMessageCount 필드: number
 ```
 
 **예시:**
 ```
-/chat-joins/user123/room-abc/newMessageCount: 5
-/chat-joins/user123/room-def/newMessageCount: 3
-/users/user123/newMessageCount: 8  ← Cloud Functions가 자동 관리
+users/user123/chat-joins/room-abc { newMessageCount: 5 }
+users/user123/chat-joins/room-def { newMessageCount: 3 }
+users/user123 { newMessageCount: 8 }  ← Cloud Functions가 자동 관리
 ```
 
 ### 3.2 Cloud Functions 트리거
 
 **트리거 경로:**
 ```typescript
-/chat-joins/{uid}/{roomId}/newMessageCount
+users/{uid}/chat-joins/{roomId}
 ```
 
-**트리거 이벤트:** `onValueWritten` (생성, 수정, 삭제 모두 감지)
+**트리거 이벤트:** `onDocumentWritten` (생성, 수정, 삭제 모두 감지)
 
 **핸들러 로직:**
 ```typescript
 export async function handleNewMessageCountWritten(
   uid: string,
   roomId: string,
-  beforeValue: number | null,
-  afterValue: number | null
+  beforeData: { newMessageCount?: number } | null,
+  afterData: { newMessageCount?: number } | null
 ): Promise<void> {
-  const before = Number(beforeValue ?? 0);
-  const after = Number(afterValue ?? 0);
+  const before = Number(beforeData?.newMessageCount ?? 0);
+  const after = Number(afterData?.newMessageCount ?? 0);
 
   // 1단계: 증가 감지 → increment
   if (after > before) {
     const increment = after - before;
-    await admin.database().ref(`users/${uid}/newMessageCount`).transaction(
-      (current) => (current || 0) + increment
-    );
+    await admin.firestore()
+      .doc(`users/${uid}`)
+      .update({
+        newMessageCount: admin.firestore.FieldValue.increment(increment)
+      });
   }
 
   // 2단계: 0/삭제 감지 → 전체 재계산
-  if (after === 0 || afterValue === null) {
-    const snapshot = await admin.database()
-      .ref(`chat-joins/${uid}`)
-      .orderByChild('newMessageCount')
-      .startAt(1)  // newMessageCount >= 1인 채팅방만
-      .once('value');
+  if (after === 0 || afterData === null) {
+    const snapshot = await admin.firestore()
+      .collection(`users/${uid}/chat-joins`)
+      .where('newMessageCount', '>', 0)  // newMessageCount > 0인 채팅방만
+      .get();
 
     let total = 0;
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      for (const roomKey in data) {
-        const count = Number(data[roomKey].newMessageCount ?? 0);
-        if (count > 0) total += count;
-      }
-    }
+    snapshot.forEach((doc) => {
+      const count = Number(doc.data()?.newMessageCount ?? 0);
+      if (count > 0) total += count;
+    });
 
-    await admin.database().ref(`users/${uid}/newMessageCount`).set(total);
+    await admin.firestore()
+      .doc(`users/${uid}`)
+      .update({ newMessageCount: total });
   }
 
   // 3단계: 기존 order 필드 업데이트 (0이 되는 경우만)
@@ -191,42 +190,41 @@ export async function handleNewMessageCountWritten(
 
 ### 4.1 Cloud Functions 구현
 
-**파일:** `firebase/functions/src/handlers/chat.new-message.handler.ts`
+**파일:** `firebase/functions/src/handlers/chat.new-message-count.handler.ts`
 
 **주요 함수:**
 - `handleNewMessageCountWritten()`: newMessageCount 변경 시 비즈니스 로직 처리
 
 **코드 위치:**
-- Lines 30-155: 핸들러 함수 전체
-- Lines 49-86: 증가 감지 및 increment 로직
-- Lines 91-142: 0/삭제 감지 및 전체 재계산 로직
-- Lines 147-155: 기존 order 필드 업데이트 로직
+- 증가 감지 및 increment 로직: `FieldValue.increment()` 사용
+- 0/삭제 감지 및 전체 재계산 로직: Firestore query 사용
+- 기존 order 필드 업데이트 로직
 
 **트리거 등록:**
-- `firebase/functions/src/index.ts` Lines 641-662
+- `firebase/functions/src/index.ts`에서 `onDocumentWritten` 트리거 등록
 
 ### 4.2 TopBar 알림 배지 구현
 
 **파일:** `src/lib/components/top-bar.svelte`
 
 **주요 기능:**
-1. `/users/{uid}/newMessageCount` 실시간 구독
+1. `users/{uid}` 문서의 `newMessageCount` 필드 실시간 구독
 2. 사용자 프로필 사진에 빨간 배지 오버레이
 3. 배지에 숫자 표시 (0이면 숨김, 99+는 "99+"로 표시)
 4. 펄스 애니메이션으로 시각적 피드백
 
 **코드 위치:**
-- Lines 26-49: rtdbStore 구독 및 데이터 추출
-- Lines 167-183: 아바타 컨테이너 + 배지 UI
-- Lines 225-252: 배지 스타일 (Tailwind CSS + keyframes)
+- firestoreStore 구독 및 데이터 추출
+- 아바타 컨테이너 + 배지 UI
+- 배지 스타일 (Tailwind CSS + keyframes)
 
 **주요 로직:**
 ```typescript
 // 로그인 시 자동 구독
 $effect(() => {
   if (authStore.isAuthenticated && authStore.user?.uid) {
-    const path = `users/${authStore.user.uid}/newMessageCount`;
-    newMessageCountStore = rtdbStore<number>(rtdb, path);
+    const path = `users/${authStore.user.uid}`;
+    newMessageCountStore = firestoreStore<UserData>(firestore, path);
   } else {
     newMessageCountStore = null;
   }
@@ -235,7 +233,7 @@ $effect(() => {
 // 새 메시지 개수 추출
 let newMessageCount = $derived.by(() => {
   if (!newMessageCountStore) return 0;
-  const count = newMessageCountStore.data ?? 0;
+  const count = newMessageCountStore.data?.newMessageCount ?? 0;
   return typeof count === 'number' ? count : 0;
 });
 ```
@@ -256,17 +254,17 @@ let newMessageCount = $derived.by(() => {
 **파일:** `src/routes/+layout.svelte`
 
 **주요 기능:**
-1. `/users/{uid}/newMessageCount` 실시간 구독
+1. `users/{uid}` 문서의 `newMessageCount` 필드 실시간 구독
 2. 증가 감지 시 알림음 재생
 3. 채팅방 페이지에서는 재생 안 함
 4. 디바운스 처리 (500ms 최소 간격)
 5. BroadcastChannel로 다중 탭 중복 방지
 
 **코드 위치:**
-- Lines 49-84: rtdbStore 구독 및 상태 관리
-- Lines 89-127: newMessageCount 증가 감지 및 알림음 재생
-- Lines 132-152: 알림음 재생 함수
-- Lines 179-216: Audio 객체 및 BroadcastChannel 초기화
+- firestoreStore 구독 및 상태 관리
+- newMessageCount 증가 감지 및 알림음 재생
+- 알림음 재생 함수
+- Audio 객체 및 BroadcastChannel 초기화
 
 **주요 로직:**
 
@@ -275,7 +273,7 @@ let newMessageCount = $derived.by(() => {
 let previousCount = $state(0);
 
 $effect(() => {
-  const count = newMessageCountStore.data ?? 0;
+  const count = newMessageCountStore.data?.newMessageCount ?? 0;
 
   // 증가 감지
   if (count > previousCount && previousCount >= 0) {
@@ -374,17 +372,17 @@ audio.play();
 sequenceDiagram
     participant User as 사용자 A
     participant Chat as 채팅방
-    participant RTDB as Firebase RTDB
+    participant Firestore as Firestore
     participant CF as Cloud Functions
     participant Client as 클라이언트 (사용자 B)
 
     User->>Chat: 메시지 전송
-    Chat->>RTDB: /chat-messages/{messageId} 생성
-    RTDB->>CF: onChatMessageCreate 트리거
-    CF->>RTDB: /chat-joins/userB/roomId/newMessageCount += 1
-    RTDB->>CF: onNewMessageCountWrite 트리거
-    CF->>RTDB: /users/userB/newMessageCount += 1
-    RTDB->>Client: newMessageCount 실시간 업데이트
+    Chat->>Firestore: chats/{roomId}/messages/{messageId} 생성
+    Firestore->>CF: onChatMessageCreate 트리거
+    CF->>Firestore: users/userB/chat-joins/roomId.newMessageCount += 1
+    Firestore->>CF: onNewMessageCountWrite 트리거
+    CF->>Firestore: users/userB.newMessageCount += 1
+    Firestore->>Client: newMessageCount 실시간 업데이트
     Client->>Client: 배지 업데이트 (TopBar)
     Client->>Client: 알림음 재생 (+layout)
 ```
@@ -395,16 +393,16 @@ sequenceDiagram
 sequenceDiagram
     participant User as 사용자
     participant Chat as 채팅방
-    participant RTDB as Firebase RTDB
+    participant Firestore as Firestore
     participant CF as Cloud Functions
 
     User->>Chat: 채팅방 입장 (790ms 후)
-    Chat->>RTDB: /chat-joins/{uid}/{roomId}/newMessageCount = 0
-    RTDB->>CF: onNewMessageCountWrite 트리거
-    CF->>RTDB: 모든 chat-joins 조회 (newMessageCount > 0)
+    Chat->>Firestore: users/{uid}/chat-joins/{roomId}.newMessageCount = 0
+    Firestore->>CF: onNewMessageCountWrite 트리거
+    CF->>Firestore: 모든 chat-joins 조회 (newMessageCount > 0)
     CF->>CF: 전체 합산 계산
-    CF->>RTDB: /users/{uid}/newMessageCount = 총합
-    RTDB->>User: 배지 업데이트 (감소)
+    CF->>Firestore: users/{uid}.newMessageCount = 총합
+    Firestore->>User: 배지 업데이트 (감소)
     Note over User: 알림음 재생 안 함 (감소)
 ```
 
@@ -417,8 +415,8 @@ sequenceDiagram
 **시나리오 1: 새 메시지 수신**
 1. 사용자 A가 로그인
 2. 사용자 B가 사용자 A에게 메시지 전송
-3. ✅ `/chat-joins/userA/roomId/newMessageCount`: 0 → 1
-4. ✅ `/users/userA/newMessageCount`: 0 → 1
+3. ✅ `users/userA/chat-joins/roomId.newMessageCount`: 0 → 1
+4. ✅ `users/userA.newMessageCount`: 0 → 1
 5. ✅ TopBar 배지에 "1" 표시
 6. ✅ 알림음 재생
 
@@ -426,15 +424,15 @@ sequenceDiagram
 1. 사용자 A가 로그인
 2. 채팅방 1에서 메시지 2개 수신
 3. 채팅방 2에서 메시지 3개 수신
-4. ✅ `/users/userA/newMessageCount`: 0 → 2 → 5
+4. ✅ `users/userA.newMessageCount`: 0 → 2 → 5
 5. ✅ TopBar 배지에 "5" 표시
 6. ✅ 알림음 2회 재생 (500ms 간격으로)
 
 **시나리오 3: 채팅방 읽음 처리**
 1. 사용자 A가 로그인 (newMessageCount = 5)
 2. 채팅방 1 입장 (newMessageCount = 2)
-3. ✅ `/chat-joins/userA/room1/newMessageCount`: 2 → 0
-4. ✅ `/users/userA/newMessageCount`: 5 → 3 (전체 재계산)
+3. ✅ `users/userA/chat-joins/room1.newMessageCount`: 2 → 0
+4. ✅ `users/userA.newMessageCount`: 5 → 3 (전체 재계산)
 5. ✅ TopBar 배지에 "3" 표시
 6. ✅ 알림음 재생 안 함 (감소)
 
@@ -443,28 +441,28 @@ sequenceDiagram
 **시나리오 4: 채팅방에 있을 때 메시지 수신**
 1. 사용자 A가 채팅방 1에 입장
 2. 사용자 B가 채팅방 1에 메시지 전송
-3. ✅ `/chat-joins/userA/room1/newMessageCount`: 0 → 1 → 0 (790ms 후)
-4. ✅ `/users/userA/newMessageCount`: 0 → 1 → 0
+3. ✅ `users/userA/chat-joins/room1.newMessageCount`: 0 → 1 → 0 (790ms 후)
+4. ✅ `users/userA.newMessageCount`: 0 → 1 → 0
 5. ✅ 알림음 재생 안 함 (채팅방 페이지)
 
 **시나리오 5: 다중 탭에서 메시지 수신**
 1. 사용자 A가 탭 1과 탭 2에서 로그인
 2. 사용자 B가 메시지 전송
-3. ✅ `/users/userA/newMessageCount`: 0 → 1
+3. ✅ `users/userA.newMessageCount`: 0 → 1
 4. ✅ 탭 1에서 알림음 재생
 5. ✅ 탭 2에서 알림음 재생 안 함 (BroadcastChannel)
 
 **시나리오 6: 빠른 연속 메시지 수신**
 1. 사용자 A가 로그인
 2. 사용자 B가 100ms 간격으로 메시지 5개 전송
-3. ✅ `/users/userA/newMessageCount`: 0 → 1 → 2 → 3 → 4 → 5
+3. ✅ `users/userA.newMessageCount`: 0 → 1 → 2 → 3 → 4 → 5
 4. ✅ 알림음 재생 1-2회 (디바운스 500ms)
 
 **시나리오 7: 데이터 불일치 복구**
-1. 예기치 못한 에러로 `/users/userA/newMessageCount` = 10 (실제: 5)
+1. 예기치 못한 에러로 `users/userA.newMessageCount` = 10 (실제: 5)
 2. 사용자 A가 채팅방 1 읽음 처리
 3. ✅ Cloud Functions가 전체 재계산
-4. ✅ `/users/userA/newMessageCount`: 10 → 3 (정확한 값)
+4. ✅ `users/userA.newMessageCount`: 10 → 3 (정확한 값)
 
 ### 6.3 브라우저 호환성 테스트
 
@@ -491,23 +489,23 @@ sequenceDiagram
 - 예상 비용: $0.40 (무료 할당량 200만 회 초과 시)
 - 결론: **무시할 수준의 비용**
 
-### 7.2 RTDB 읽기/쓰기
+### 7.2 Firestore 읽기/쓰기
 
 **증가 시:**
-- RTDB 쓰기 1회: `/users/{uid}/newMessageCount` update
+- Firestore 쓰기 1회: `users/{uid}` 문서의 `newMessageCount` 필드 update
 
 **0/삭제 시:**
-- RTDB 읽기 1회: `/chat-joins/{uid}` 전체 조회 (필터링)
-- RTDB 쓰기 1회: `/users/{uid}/newMessageCount` update
+- Firestore 읽기: `users/{uid}/chat-joins` 컬렉션 조회 (where 필터링)
+- Firestore 쓰기 1회: `users/{uid}` 문서의 `newMessageCount` 필드 update
 
 **최적화:**
-- `orderByChild('newMessageCount').startAt(1)`: 0인 채팅방 제외로 읽기 최소화
+- `where('newMessageCount', '>', 0)`: 0인 채팅방 제외로 읽기 최소화
 
 ### 7.3 클라이언트 성능
 
-**rtdbStore 구독:**
-- 1개 경로만 구독: `/users/{uid}/newMessageCount`
-- 메모리 사용량: 최소 (숫자 1개)
+**firestoreStore 구독:**
+- 1개 문서만 구독: `users/{uid}`
+- 메모리 사용량: 최소 (사용자 문서 1개)
 - 네트워크 트래픽: 거의 없음 (값 변경 시에만 업데이트)
 
 **알림음 재생:**
@@ -518,27 +516,26 @@ sequenceDiagram
 
 ## 8. 보안 고려사항
 
-### 8.1 RTDB 보안 규칙
+### 8.1 Firestore 보안 규칙
 
 **필수 규칙:**
-```json
-{
-  "rules": {
-    "users": {
-      "$uid": {
-        "newMessageCount": {
-          ".read": "$uid === auth.uid",
-          ".write": false  // Cloud Functions만 쓰기 가능
-        }
-      }
-    }
-  }
+```javascript
+match /users/{uid} {
+  allow read: if request.auth != null && request.auth.uid == uid;
+  allow create, update: if request.auth != null && request.auth.uid == uid
+    && !request.resource.data.keys().hasAny(['newMessageCount']);
+  // newMessageCount 필드는 Cloud Functions만 수정 가능
+}
+
+match /users/{uid}/chat-joins/{roomId} {
+  allow read, write: if request.auth != null && request.auth.uid == uid;
 }
 ```
 
 **이유:**
 - 읽기: 본인만 확인 가능
-- 쓰기: Cloud Functions만 가능 (클라이언트 조작 방지)
+- 쓰기: `newMessageCount` 필드는 Cloud Functions만 수정 가능 (클라이언트 조작 방지)
+- `chat-joins` 서브컬렉션: 본인만 읽기/쓰기 가능
 
 ### 8.2 XSS 방지
 

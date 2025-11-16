@@ -33,11 +33,12 @@ last_updated: 2025-11-15
       ]
     }
   ],
-  "database": {
-    "rules": "database.rules.json"
-  },
   "storage": {
     "rules": "storage.rules"
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   }
 }
 

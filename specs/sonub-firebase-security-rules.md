@@ -1,6 +1,6 @@
 ---
 name: sonub-firestore-security
-version: 2.1.0
+version: 2.2.0
 description: Firestore/Storage 보안 규칙 요약 및 작성 지침
 author: Codex Agent
 email: noreply@openai.com
@@ -115,6 +115,94 @@ Storage 규칙도 kebab-case 폴더명(`/users/{uid}/profile/`)을 사용한다.
 ---
 
 ## 6. 변경 이력
+
+### v2.2.0 (2025-01-16)
+
+**작업 내용: 오픈 채팅방 메시지 읽기 권한 오류 수정**
+
+#### 수정 사항
+
+**1. isChatRoomMember() 함수 수정**
+- **문제**: 오픈 채팅방 입장 후 메시지 로딩 시 권한 오류 발생
+  ```
+  Failed to load messages.
+  Missing or insufficient permissions.
+  ```
+- **원인**:
+  - `isChatRoomMember()` 함수가 채팅방 메인 문서의 `members` 필드만 확인 ([firebase/firestore.rules:70-75](firebase/firestore.rules#L70-L75))
+  - 오픈 채팅방은 멤버 정보를 `/chats/{roomId}/members/{uid}` subcollection에 저장
+  - 메인 문서의 `members` 필드는 그룹 채팅방에서만 사용
+  - 따라서 오픈 채팅방 멤버가 `isChatRoomMember()` 검증을 통과하지 못함
+  - 메시지 읽기 권한이 `isChatRoomMember()` 함수에 의존하므로 메시지 로딩 실패
+
+- **해결**: `firebase/firestore.rules:75-86`에서 `isChatRoomMember()` 함수 수정
+  ```groovy
+  function isChatRoomMember(roomId) {
+    return isSignedIn() &&
+           chatRoomExists(roomId) &&
+           (
+             // 1:1 채팅: roomId에 UID 포함
+             roomId.matches('.*' + currentUserId() + '.*') ||
+             // 그룹 채팅: members 필드에 포함
+             (currentUserId() in getChatRoom(roomId).data.members) ||
+             // 오픈 채팅: members subcollection에 문서 존재
+             exists(/databases/$(database)/documents/chats/$(roomId)/members/$(currentUserId()))
+           );
+  }
+  ```
+  - `exists()` 함수로 members subcollection에서 사용자 문서 존재 확인
+  - 세 가지 채팅 유형 모두 지원: 1:1, 그룹, 오픈 채팅
+
+#### 배포 결과
+
+```bash
+cd firebase && firebase deploy --only firestore:rules
+# ✔  Deploy complete!
+```
+
+#### 검증
+
+```bash
+npm run check
+# ✅ Type check 통과 (CSS 경고만 존재 - 정상)
+```
+
+#### 영향받은 파일
+
+- `firebase/firestore.rules` (Lines 75-86)
+
+#### 기술적 배경
+
+**Firestore Security Rules에서 Subcollection 확인:**
+- Firestore는 문서와 subcollection을 별도로 관리
+- Security Rules에서 subcollection의 존재를 확인하려면 `exists()` 함수 사용 필요
+- `exists()` 함수는 해당 문서에 대한 읽기 권한이 있어야 작동
+- Members subcollection은 본인 문서만 읽기 가능하도록 설정되어 있음 ([firebase/firestore.rules:260-263](firebase/firestore.rules#L260-L263))
+- 따라서 `exists()` 함수로 자신의 멤버 문서 존재를 확인할 수 있음
+
+**채팅 유형별 멤버십 확인 방식:**
+1. **1:1 채팅**: `roomId.matches('.*' + currentUserId() + '.*')` - roomId에 두 사용자의 UID가 포함됨
+2. **그룹 채팅**: `currentUserId() in getChatRoom(roomId).data.members` - 메인 문서의 members 필드 확인
+3. **오픈 채팅**: `exists(/databases/$(database)/documents/chats/$(roomId)/members/$(currentUserId()))` - members subcollection 확인
+
+#### 문제 해결 패턴
+
+1. **Permission Error 디버깅**:
+   - 에러 메시지에서 어떤 리소스에 대한 권한이 없는지 확인
+   - Security Rules에서 해당 리소스의 읽기/쓰기 조건 확인
+   - 헬퍼 함수가 모든 케이스를 처리하는지 검증
+
+2. **Subcollection vs Field**:
+   - Firestore에서 데이터를 subcollection에 저장하는지 필드에 저장하는지 명확히 구분
+   - Security Rules의 헬퍼 함수가 실제 데이터 구조와 일치하는지 확인
+   - 여러 데이터 저장 방식을 지원해야 하는 경우 OR 조건으로 모두 확인
+
+3. **exists() 함수 활용**:
+   - Subcollection 문서의 존재 여부를 확인할 때 사용
+   - 읽기 권한이 있는 문서에 대해서만 작동
+   - 경로는 절대 경로로 작성: `/databases/$(database)/documents/...`
+
+---
 
 ### v2.1.0 (2025-01-16)
 
